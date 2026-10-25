@@ -1,0 +1,54 @@
+package sdfx.plugins
+
+import sdfx.core.plugins.api.{Plugin, XyzAxis}
+
+/** Built-in plugins in a stable display order (scripts first, then extras, then AlwaysOn).
+  * docs/PLUGINS.md maps each of them to the reForge built-in it rewrites.
+  */
+object StandardPlugins:
+  def alwaysOn: Seq[Plugin] = Seq(
+    // guidance
+    new FreeUPlugin, new DynamicThresholdingPlugin, new ApgPlugin, new MahiroPlugin, new RescaleCfgPlugin, new PagPlugin,
+    new SagPlugin,
+    // structure / sampling
+    new HyperTilePlugin, new KohyaHrFixPlugin, new MultiDiffusionPlugin, new ModelSamplingPlugin, new LatentModifierPlugin,
+    new RandomResolutionsPlugin,
+    // image prompts / control
+    new ReferencePlugin, new RevisionPlugin, new IpAdapterPlugin, new ControlLLLitePlugin, new PhotoMakerPlugin,
+    // inpainting / post
+    new SoftInpaintingPlugin, new FooocusInpaintPlugin, new FaceRestorePlugin,
+    // memory
+    new NeverOomPlugin
+  )
+
+  def scripts(extraAxes: () => Seq[XyzAxis]): Seq[Plugin] = Seq(
+    new XyzGridPlugin(extraAxes),
+    new PromptMatrixPlugin,
+    new PromptsFromFilePlugin,
+    new LoopbackPlugin,
+    new SdUpscalePlugin,
+    new OutpaintPlugin,
+    new OutpaintMk2Plugin,
+    new Img2ImgAltPlugin,
+    new SvdPlugin,
+    new Zero123Plugin,
+    new CustomCodePlugin
+  )
+
+  def extras: Seq[Plugin] = Seq(
+    new UpscaleExtrasPlugin,
+    new FaceRestoreExtrasPlugin,
+    new CaptionPlugin,
+    new FlippedCopiesPlugin,
+    new SplitOversizedPlugin,
+    new AutosizedCropPlugin,
+    new FocalCropPlugin
+  )
+
+  /** `extraAxes` lets the host contribute axes of all loaded plugins (including these AlwaysOn ones). */
+  def all(extraAxes: () => Seq[XyzAxis]): Seq[Plugin] = scripts(extraAxes) ++ extras ++ alwaysOn
+
+  /** Convenience: all standard plugins with the X/Y/Z grid seeing the standard AlwaysOn axes. */
+  def withOwnAxes: Seq[Plugin] =
+    lazy val ps: Seq[Plugin] = all(() => ps.flatMap(_.xyzAxes))
+    ps

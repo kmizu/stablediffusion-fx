@@ -1,0 +1,20 @@
+# sdfx engine runtime requirements (torch is installed separately from requirements-torch.txt)
+diffusers==0.33.1
+transformers==4.51.3
+accelerate==1.6.0
+peft==0.15.2
+safetensors==0.5.3
+huggingface_hub==0.30.2
+tokenizers==0.21.1
+numpy==2.2.5
+pillow==11.2.1
+scipy==1.15.3
+opencv-python-headless==4.11.0.86
+spandrel==0.4.1
+torchsde==0.2.6
+psutil==7.0.0
+onnxruntime==1.23.2  # WD14 tagger (Caption plugin, method wd14)
+# optional: PhotoMaker plugin (v1 adapters). Install without dependencies so the pins above stay intact:
+#   pip install --no-deps "git+https://github.com/TencentARC/PhotoMaker.git"
+# optional extra preprocessors (openpose, lineart, hed, mlsd, normal_bae):
+# controlnet_aux==0.0.10

@@ -1,0 +1,23 @@
+target/
+project/target/
+project/project/
+.bsp/
+.metals/
+.bloop/
+.idea/
+python/.venv/
+**/__pycache__/
+.pytest_cache/
+outputs/
+config/*.json
+models/**/*
+!models/**/
+!models/**/README.txt
+plugins-ext/*.jar
+python/.venv-test/
+python/.venv-smoke/
+python/.cache/
+
+# The parent repo ignores *.bat / *.sh; keep this app's launchers tracked.
+!*.bat
+!*.sh

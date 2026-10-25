@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "stablediffusion-fx": {
+      "command": "D:/stable-diffusion-webui-reForge/stablediffusion-fx/run.bat",
+      "args": ["--mcp"]
+    },
+    "stablediffusion-fx-java": {
+      "command": "java",
+      "args": [
+        "-cp", "D:/stable-diffusion-webui-reForge/stablediffusion-fx/target/stablediffusion-fx.jar",
+        "sdfx.mcp.McpMain",
+        "--home", "D:/stable-diffusion-webui-reForge/stablediffusion-fx"
+      ]
+    },
+    "stablediffusion-fx-gui": {
+      "type": "http",
+      "url": "http://127.0.0.1:7861/mcp"
+    }
+  }
+}

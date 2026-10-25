@@ -1,0 +1,9 @@
+[project]
+name = "sdfx-engine"
+version = "0.1.0"
+description = "Inference engine (diffusers) for stablediffusion-fx, JSON Lines over stdin/stdout"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
