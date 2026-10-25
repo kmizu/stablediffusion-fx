@@ -254,13 +254,15 @@ class ScriptsSuite extends munit.FunSuite:
   // ------------------------------------------------------------- registry
   test("standard plugins have unique ids in a stable order") {
     val ps = StandardPlugins.all(() => Nil)
-    assertEquals(
-      ps.map(_.id),
-      Seq("xyz_grid", "prompt_matrix", "prompts_from_file", "loopback", "sd_upscale", "outpaint", "outpaint_mk2", "img2img_alt",
-        "svd", "zero123", "custom_code", "upscale_extras", "face_restore_extras", "caption", "flipped_copies", "split_oversized",
-        "autosized_crop", "focal_crop", "freeu", "dynamic_thresholding", "apg", "mahiro", "rescale_cfg", "pag", "sag", "hypertile",
-        "kohya_hrfix", "multidiffusion", "model_sampling", "latent_modifier", "random_resolutions", "reference", "revision",
-        "ip_adapter", "controllllite", "photomaker", "soft_inpainting", "fooocus_inpaint", "face_restore", "neveroom")
-    )
+    // the original standard set keeps its relative order; later additions may be inserted per group
+    val ids = ps.map(_.id)
+    assertEquals(ids.distinct.size, ids.size, "duplicate plugin ids")
+    val original = Seq(
+      "xyz_grid", "prompt_matrix", "prompts_from_file", "loopback", "sd_upscale", "outpaint", "outpaint_mk2", "img2img_alt",
+      "svd", "zero123", "custom_code", "upscale_extras", "face_restore_extras", "caption", "flipped_copies", "split_oversized",
+      "autosized_crop", "focal_crop", "freeu", "dynamic_thresholding", "apg", "mahiro", "rescale_cfg", "pag", "sag", "hypertile",
+      "kohya_hrfix", "multidiffusion", "model_sampling", "latent_modifier", "random_resolutions", "reference", "revision",
+      "ip_adapter", "controllllite", "photomaker", "soft_inpainting", "fooocus_inpaint", "face_restore", "neveroom")
+    assertEquals(ids.filter(original.toSet), original)
     assert(ps.forall(p => p.controls.map(_.key).distinct.size == p.controls.size), "duplicate control keys")
   }

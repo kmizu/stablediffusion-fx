@@ -323,3 +323,8 @@ Scala ランタイムは fat jar(`ui` の jar)に含まれているので、プ�
 - **MCP クライアントで JSON パースエラー**: stdout にログが混ざっていないか確認してください。`run.bat --mcp` 自体は何も出力しません。
   独自の起動スクリプトで `echo` や `pause` を入れないでください。JVM 警告を抑えるには `-Xlog:disable -Xlog:all=warning:stderr -Djava.awt.headless=true`。
 - **エンジンが起動しない**: 画面右下の Log を開いて確認します。`run.bat --dry-run` で UI だけ確認すると切り分けられます。
+
+## ライセンス
+
+AGPL-3.0（`LICENSE`）。AUTOMATIC1111 web UI・Forge・reForge（AGPL-3.0）と ComfyUI・Fooocus（GPL-3.0）の処理を移植しているためです。
+移植元・再実装元・依存ライブラリごとのライセンスは `THIRD_PARTY_NOTICES.md` と `licenses/` にあります（`python scripts/third_party.py` で再生成）。

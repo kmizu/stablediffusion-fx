@@ -18,7 +18,10 @@ object StandardPlugins:
     // inpainting / post
     new SoftInpaintingPlugin, new FooocusInpaintPlugin, new FaceRestorePlugin,
     // memory
-    new NeverOomPlugin
+    new NeverOomPlugin,
+    // prompt processing (extension index)
+    new RandomizePlugin, new PromptFormatPlugin, new PromptFilterPlugin, new NegativePromptWeightPlugin,
+    new NovelAIPromptPlugin, new StyleVariablesPlugin()
   )
 
   def scripts(extraAxes: () => Seq[XyzAxis]): Seq[Plugin] = Seq(
@@ -32,7 +35,11 @@ object StandardPlugins:
     new Img2ImgAltPlugin,
     new SvdPlugin,
     new Zero123Plugin,
-    new CustomCodePlugin
+    new CustomCodePlugin,
+    // extension index: prompt and sequence scripts
+    new DynamicPromptsPlugin, new OneButtonPromptPlugin, new TestMyPromptPlugin, new ScramblePromptsPlugin,
+    new TweakWeightsPlugin, new LoraQueuePlugin, new BatchCheckpointsPromptsPlugin, new SeedTravelPlugin,
+    new ShiftAttentionPlugin
   )
 
   def extras: Seq[Plugin] = Seq(

@@ -114,6 +114,20 @@ S = {
 }
 
 
+# plugin ids / core features that are implemented: their `todo:` entries are reported as `done:`
+IMPLEMENTED = {
+    "dynamic_prompts", "randomize", "prompt_format", "prompt_filter", "negative_prompt_weight", "novelai_prompt",
+    "style_variables", "test_my_prompt", "scramble_prompts", "tweak_weights", "lora_queue", "batch_checkpoints_prompts",
+    "seed_travel", "shift_attention", "one_button_prompt",
+}
+
+
+def status(i: int) -> str:
+    st = S[i]
+    kind, _, target = st.partition(":")
+    return f"done:{target}" if kind == "todo" and target in IMPLEMENTED else st
+
+
 def main():
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     idx = json.load(open(os.path.join(root, "docs", "extensions-index.json"), encoding="utf-8"))
@@ -122,7 +136,7 @@ def main():
         sys.exit(f"unclassified index entries: {missing}")
     rows, counts = [], {"done": 0, "todo": 0, "na": 0}
     for i, e in enumerate(idx):
-        st = S[i]
+        st = status(i)
         kind, _, target = st.partition(":")
         counts[kind] += 1
         note = NA_REASONS.get(target, "") if kind == "na" else ""
@@ -135,6 +149,9 @@ def main():
           "| # | Extension | Stars | Status | stablediffusion-fx | Why not applicable |", "|---|---|---|---|---|---|"] + rows
     md += ["", "Reason codes for `na`:", ""] + [f"- `{k}`: {v}" for k, v in NA_REASONS.items()]
     open(os.path.join(root, "docs", "EXTENSIONS.md"), "w", encoding="utf-8", newline="\n").write("\n".join(md) + "\n")
+    status_json = [{"index": i, "name": e["name"], "url": e["url"], "status": status(i)} for i, e in enumerate(idx)]
+    with open(os.path.join(root, "docs", "extensions-status.json"), "w", encoding="utf-8", newline="\n") as fh:
+        json.dump(status_json, fh, ensure_ascii=False, indent=0)
     print(counts)
 
 

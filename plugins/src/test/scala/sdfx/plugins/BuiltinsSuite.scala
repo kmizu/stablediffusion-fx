@@ -29,6 +29,15 @@ class BuiltinsSuite extends munit.FunSuite:
     val doc = Files.readString(Paths.get("docs/PLUGINS.md"))
     expected.foreach(id => assert(doc.contains(s"`$id`"), s"docs/PLUGINS.md misses $id"))
 
+  test("every extension-index entry marked done names a real plugin (docs/extensions-status.json)"):
+    val ids = StandardPlugins.withOwnAxes.map(_.id).toSet
+    val status = ujson.read(Files.readString(Paths.get("docs/extensions-status.json"))).arr
+    assertEquals(status.size, 353)
+    val done = status.map(_("status").str).filter(_.startsWith("done:")).map(_.stripPrefix("done:")).filterNot(_.startsWith("core:"))
+    assert(done.nonEmpty)
+    assertEquals(done.filterNot(ids.contains).toSet, Set.empty[String])
+    assert(status.forall(e => Seq("done:", "todo:", "na:").exists(e("status").str.startsWith)))
+
   test("every hook plugin declares its engine feature and emits JSON with numeric/bool types"):
     StandardPlugins.alwaysOn.collect { case h: HookPlugin => h }.foreach { h =>
       assertEquals(h.requiresEngineFeatures, Seq(h.hook))

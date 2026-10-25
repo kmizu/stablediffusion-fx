@@ -1,0 +1,2120 @@
+[
+{
+"index": 0,
+"name": "Agent Scheduler",
+"url": "https://github.com/ArtVentureX/sd-webui-agent-scheduler.git",
+"status": "done:core:job-queue"
+},
+{
+"index": 1,
+"name": "TemporalKit",
+"url": "https://github.com/CiaraStrawberry/TemporalKit",
+"status": "todo:temporal_kit"
+},
+{
+"index": 2,
+"name": "ua_UA Localization",
+"url": "https://github.com/razorback456/webui-localization-ua_UA",
+"status": "todo:core:localization"
+},
+{
+"index": 3,
+"name": "Batch Checkpoints and Prompts",
+"url": "https://github.com/h43lb1t0/SD-WebUI-BatchCheckpointPrompt",
+"status": "done:batch_checkpoints_prompts"
+},
+{
+"index": 4,
+"name": "Kandinsky",
+"url": "https://github.com/MMqd/kandinsky-for-automatic1111",
+"status": "todo:kandinsky"
+},
+{
+"index": 5,
+"name": "Txt/Img to 3D Model",
+"url": "https://github.com/jtydhr88/sd-webui-txt-img-to-3d-model.git",
+"status": "todo:shap_e"
+},
+{
+"index": 6,
+"name": "sd-webui-openpose-editor",
+"url": "https://github.com/huchenlei/sd-webui-openpose-editor.git",
+"status": "todo:openpose_editor"
+},
+{
+"index": 7,
+"name": "sd-webui-segment-anything",
+"url": "https://github.com/continue-revolution/sd-webui-segment-anything.git",
+"status": "todo:segment_anything"
+},
+{
+"index": 8,
+"name": "Aesthetic Gradients",
+"url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-aesthetic-gradients.git",
+"status": "todo:aesthetic_gradients"
+},
+{
+"index": 9,
+"name": "Dreambooth",
+"url": "https://github.com/d8ahazard/sd_dreambooth_extension.git",
+"status": "todo:train_dreambooth"
+},
+{
+"index": 10,
+"name": "training-picker",
+"url": "https://github.com/Maurdekye/training-picker.git",
+"status": "todo:training_picker"
+},
+{
+"index": 11,
+"name": "Dataset Tag Editor",
+"url": "https://github.com/toshiaki1729/stable-diffusion-webui-dataset-tag-editor.git",
+"status": "todo:dataset_tag_editor"
+},
+{
+"index": 12,
+"name": "DreamArtist",
+"url": "https://github.com/7eu7d7/DreamArtist-sd-webui-extension.git",
+"status": "todo:dreamartist"
+},
+{
+"index": 13,
+"name": "Hypernetwork-Monkeypatch-Extension",
+"url": "https://github.com/aria1th/Hypernetwork-MonkeyPatch-Extension.git",
+"status": "todo:hypernetwork_training"
+},
+{
+"index": 14,
+"name": "Custom Diffusion",
+"url": "https://github.com/guaneec/custom-diffusion-webui.git",
+"status": "todo:custom_diffusion"
+},
+{
+"index": 15,
+"name": "Smart Process",
+"url": "https://github.com/d8ahazard/sd_smartprocess.git",
+"status": "todo:smart_process"
+},
+{
+"index": 16,
+"name": "Embeddings editor",
+"url": "https://github.com/CodeExplode/stable-diffusion-webui-embedding-editor.git",
+"status": "todo:embedding_editor"
+},
+{
+"index": 17,
+"name": "Merge Board",
+"url": "https://github.com/bbc-mc/sdweb-merge-board.git",
+"status": "todo:model_merge"
+},
+{
+"index": 18,
+"name": "Model Converter",
+"url": "https://github.com/Akegarasu/sd-webui-model-converter.git",
+"status": "todo:model_converter"
+},
+{
+"index": 19,
+"name": "Kohya-ss Additional Networks",
+"url": "https://github.com/kohya-ss/sd-webui-additional-networks.git",
+"status": "done:core:lora"
+},
+{
+"index": 20,
+"name": "Merge Block Weighted",
+"url": "https://github.com/bbc-mc/sdweb-merge-block-weighted-gui.git",
+"status": "todo:model_merge"
+},
+{
+"index": 21,
+"name": "Embedding Merge",
+"url": "https://github.com/klimaleksus/stable-diffusion-webui-embedding-merge.git",
+"status": "todo:embedding_merge"
+},
+{
+"index": 22,
+"name": "SuperMerger",
+"url": "https://github.com/hako-mikan/sd-webui-supermerger.git",
+"status": "todo:model_merge"
+},
+{
+"index": 23,
+"name": "LoRA Block Weight",
+"url": "https://github.com/hako-mikan/sd-webui-lora-block-weight.git",
+"status": "todo:lora_block_weight"
+},
+{
+"index": 24,
+"name": "Image browser",
+"url": "https://github.com/AlUlkesh/stable-diffusion-webui-images-browser.git",
+"status": "done:core:gallery"
+},
+{
+"index": 25,
+"name": "Infinite image browsing",
+"url": "https://github.com/zanllp/sd-webui-infinite-image-browsing.git",
+"status": "done:core:gallery"
+},
+{
+"index": 26,
+"name": "Inspiration",
+"url": "https://github.com/yfszzx/stable-diffusion-webui-inspiration.git",
+"status": "todo:inspiration"
+},
+{
+"index": 27,
+"name": "Artists to study",
+"url": "https://github.com/camenduru/stable-diffusion-webui-artists-to-study.git",
+"status": "todo:inspiration"
+},
+{
+"index": 28,
+"name": "Prompt Gallery",
+"url": "https://github.com/dr413677671/PromptGallery-stable-diffusion-webui.git",
+"status": "todo:prompt_gallery"
+},
+{
+"index": 29,
+"name": "Infinity Grid Generator",
+"url": "https://github.com/mcmonkeyprojects/sd-infinity-grid-generator-script.git",
+"status": "todo:infinity_grid"
+},
+{
+"index": 30,
+"name": "Config-Presets",
+"url": "https://github.com/Zyin055/Config-Presets.git",
+"status": "todo:core:presets"
+},
+{
+"index": 31,
+"name": "Preset Utilities",
+"url": "https://github.com/Gerschel/sd_web_ui_preset_utils.git",
+"status": "todo:core:presets"
+},
+{
+"index": 32,
+"name": "openOutpaint extension",
+"url": "https://github.com/zero01101/openOutpaint-webUI-extension.git",
+"status": "todo:outpaint_canvas"
+},
+{
+"index": 33,
+"name": "quick-css",
+"url": "https://github.com/Gerschel/sd-web-ui-quickcss.git",
+"status": "na:webui-css"
+},
+{
+"index": 34,
+"name": "Aspect Ratio selector",
+"url": "https://github.com/alemelis/sd-webui-ar.git",
+"status": "done:core:size-presets"
+},
+{
+"index": 35,
+"name": "Nevysha's Cozy Nest",
+"url": "https://github.com/Nevysha/Cozy-Nest.git",
+"status": "na:webui-css"
+},
+{
+"index": 36,
+"name": "Catppuccin Theme",
+"url": "https://github.com/catppuccin/stable-diffusion-webui.git",
+"status": "na:webui-css"
+},
+{
+"index": 37,
+"name": "Bilingual Localization",
+"url": "https://github.com/journey-ad/sd-webui-bilingual-localization.git",
+"status": "todo:core:localization"
+},
+{
+"index": 38,
+"name": "Dynamic Prompts",
+"url": "https://github.com/adieyal/sd-dynamic-prompts.git",
+"status": "done:dynamic_prompts"
+},
+{
+"index": 39,
+"name": "Unprompted",
+"url": "https://github.com/ThereforeGames/unprompted.git",
+"status": "todo:unprompted"
+},
+{
+"index": 40,
+"name": "StylePile",
+"url": "https://github.com/some9000/StylePile.git",
+"status": "todo:stylepile"
+},
+{
+"index": 41,
+"name": "Booru tag autocompletion",
+"url": "https://github.com/DominikDoom/a1111-sd-webui-tagcomplete.git",
+"status": "todo:core:tag-autocomplete"
+},
+{
+"index": 42,
+"name": "novelai-2-local-prompt",
+"url": "https://github.com/animerl/novelai-2-local-prompt.git",
+"status": "done:novelai_prompt"
+},
+{
+"index": 43,
+"name": "tokenizer",
+"url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-tokenizer.git",
+"status": "todo:tokenizer"
+},
+{
+"index": 44,
+"name": "Randomize",
+"url": "https://github.com/innightwolfsleep/stable-diffusion-webui-randomize.git",
+"status": "done:randomize"
+},
+{
+"index": 45,
+"name": "conditioning-highres-fix",
+"url": "https://github.com/klimaleksus/stable-diffusion-webui-conditioning-highres-fix.git",
+"status": "todo:conditioning_highres_fix"
+},
+{
+"index": 46,
+"name": "model-keyword",
+"url": "https://github.com/mix1009/model-keyword.git",
+"status": "todo:model_keyword"
+},
+{
+"index": 47,
+"name": "Prompt Generator",
+"url": "https://github.com/imrayya/stable-diffusion-webui-Prompt_Generator.git",
+"status": "todo:prompt_generator"
+},
+{
+"index": 48,
+"name": "Promptgen",
+"url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-promptgen.git",
+"status": "todo:prompt_generator"
+},
+{
+"index": 49,
+"name": "text2prompt",
+"url": "https://github.com/toshiaki1729/stable-diffusion-webui-text2prompt.git",
+"status": "todo:text2prompt"
+},
+{
+"index": 50,
+"name": "Prompt Translator",
+"url": "https://github.com/butaixianran/Stable-Diffusion-Webui-Prompt-Translator",
+"status": "na:account"
+},
+{
+"index": 51,
+"name": "Deforum",
+"url": "https://github.com/deforum-art/deforum-for-automatic1111-webui.git",
+"status": "todo:deforum"
+},
+{
+"index": 52,
+"name": "gif2gif",
+"url": "https://github.com/LonicaMewinsky/gif2gif.git",
+"status": "todo:gif2gif"
+},
+{
+"index": 53,
+"name": "Video Loopback",
+"url": "https://github.com/fishslot/video_loopback_for_webui.git",
+"status": "todo:video_loopback"
+},
+{
+"index": 54,
+"name": "seed travel",
+"url": "https://github.com/yownas/seed_travel.git",
+"status": "done:seed_travel"
+},
+{
+"index": 55,
+"name": "shift-attention",
+"url": "https://github.com/yownas/shift-attention.git",
+"status": "done:shift_attention"
+},
+{
+"index": 56,
+"name": "prompt travel",
+"url": "https://github.com/Kahsolt/stable-diffusion-webui-prompt-travel.git",
+"status": "todo:prompt_travel"
+},
+{
+"index": 57,
+"name": "Steps Animation",
+"url": "https://github.com/vladmandic/sd-extension-steps-animation.git",
+"status": "todo:steps_animation"
+},
+{
+"index": 58,
+"name": "auto-sd-paint-ext",
+"url": "https://github.com/Interpause/auto-sd-paint-ext.git",
+"status": "na:external-app"
+},
+{
+"index": 59,
+"name": "Batch Face Swap",
+"url": "https://github.com/kex0/batch-face-swap.git",
+"status": "todo:batch_face_swap"
+},
+{
+"index": 60,
+"name": "Depth Maps",
+"url": "https://github.com/thygate/stable-diffusion-webui-depthmap-script.git",
+"status": "todo:depth_maps"
+},
+{
+"index": 61,
+"name": "multi-subject-render",
+"url": "https://github.com/Extraltodeus/multi-subject-render.git",
+"status": "todo:multi_subject_render"
+},
+{
+"index": 62,
+"name": "depthmap2mask",
+"url": "https://github.com/Extraltodeus/depthmap2mask.git",
+"status": "todo:depthmap2mask"
+},
+{
+"index": 63,
+"name": "ABG_extension",
+"url": "https://github.com/KutsuyaYuki/ABG_extension.git",
+"status": "todo:remove_background"
+},
+{
+"index": 64,
+"name": "Pixel",
+"url": "https://github.com/Leodotpy/sd-pixel.git",
+"status": "todo:pixel_art"
+},
+{
+"index": 65,
+"name": "Pixelization",
+"url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-pixelization.git",
+"status": "todo:pixelization"
+},
+{
+"index": 66,
+"name": "haku-img",
+"url": "https://github.com/KohakuBlueleaf/a1111-sd-webui-haku-img.git",
+"status": "todo:haku_img"
+},
+{
+"index": 67,
+"name": "Asymmetric Tiling",
+"url": "https://github.com/tjm35/asymmetric-tiling-sd-webui.git",
+"status": "todo:asymmetric_tiling"
+},
+{
+"index": 68,
+"name": "Latent Mirroring",
+"url": "https://github.com/dfaker/SD-latent-mirroring.git",
+"status": "todo:latent_mirroring"
+},
+{
+"index": 69,
+"name": "Sonar",
+"url": "https://github.com/Kahsolt/stable-diffusion-webui-sonar.git",
+"status": "todo:sonar"
+},
+{
+"index": 70,
+"name": "Depth Image I/O",
+"url": "https://github.com/AnonymousCervine/depth-image-io-for-SDWebui.git",
+"status": "todo:depth_image_io"
+},
+{
+"index": 71,
+"name": "Ultimate SD Upscale",
+"url": "https://github.com/Coyote-A/ultimate-upscale-for-automatic1111.git",
+"status": "todo:ultimate_sd_upscale"
+},
+{
+"index": 72,
+"name": "Prompt Fusion",
+"url": "https://github.com/ljleb/prompt-fusion-extension.git",
+"status": "todo:prompt_fusion"
+},
+{
+"index": 73,
+"name": "Neutral Prompt",
+"url": "https://github.com/ljleb/sd-webui-neutral-prompt.git",
+"status": "todo:neutral_prompt"
+},
+{
+"index": 74,
+"name": "Dynamic Thresholding",
+"url": "https://github.com/mcmonkeyprojects/sd-dynamic-thresholding.git",
+"status": "done:dynamic_thresholding"
+},
+{
+"index": 75,
+"name": "anti-burn",
+"url": "https://github.com/klimaleksus/stable-diffusion-webui-anti-burn.git",
+"status": "todo:anti_burn"
+},
+{
+"index": 76,
+"name": "sd-webui-controlnet",
+"url": "https://github.com/Mikubill/sd-webui-controlnet.git",
+"status": "done:core:controlnet"
+},
+{
+"index": 77,
+"name": "Latent Couple",
+"url": "https://github.com/ashen-sensored/stable-diffusion-webui-two-shot.git",
+"status": "todo:latent_couple"
+},
+{
+"index": 78,
+"name": "Composable LoRA",
+"url": "https://github.com/a2569875/stable-diffusion-webui-composable-lora.git",
+"status": "todo:composable_lora"
+},
+{
+"index": 79,
+"name": "Auto TLS-HTTPS",
+"url": "https://github.com/papuSpartan/stable-diffusion-webui-auto-tls-https.git",
+"status": "na:server-ops"
+},
+{
+"index": 80,
+"name": "booru2prompt",
+"url": "https://github.com/Malisius/booru2prompt.git",
+"status": "todo:booru_prompt"
+},
+{
+"index": 81,
+"name": "Gelbooru Prompt",
+"url": "https://github.com/antis0007/sd-webui-gelbooru-prompt.git",
+"status": "todo:booru_prompt"
+},
+{
+"index": 82,
+"name": "e621 Prompt",
+"url": "https://github.com/nochnoe/sd-webui-e621-prompt.git",
+"status": "todo:booru_prompt"
+},
+{
+"index": 83,
+"name": "NSFW checker",
+"url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-nsfw-censor.git",
+"status": "todo:nsfw_checker"
+},
+{
+"index": 84,
+"name": "Diffusion Defender",
+"url": "https://github.com/WildBanjos/DiffusionDefender.git",
+"status": "done:prompt_filter"
+},
+{
+"index": 85,
+"name": "DH Patch",
+"url": "https://github.com/d8ahazard/sd_auto_fix.git",
+"status": "na:obsolete"
+},
+{
+"index": 86,
+"name": "Riffusion",
+"url": "https://github.com/enlyth/sd-webui-riffusion.git",
+"status": "todo:riffusion"
+},
+{
+"index": 87,
+"name": "Save Intermediate Images",
+"url": "https://github.com/AlUlkesh/sd_save_intermediate_images.git",
+"status": "todo:save_intermediate"
+},
+{
+"index": 88,
+"name": "Add image number to grid",
+"url": "https://github.com/AlUlkesh/sd_grid_add_image_number.git",
+"status": "todo:grid_numbers"
+},
+{
+"index": 89,
+"name": "Multiple Hypernetworks",
+"url": "https://github.com/antis0007/sd-webui-multiple-hypernetworks.git",
+"status": "todo:hypernetworks"
+},
+{
+"index": 90,
+"name": "System Info",
+"url": "https://github.com/vladmandic/sd-extension-system-info.git",
+"status": "todo:core:system-info"
+},
+{
+"index": 91,
+"name": "OpenPose Editor",
+"url": "https://github.com/fkunn1326/openpose-editor.git",
+"status": "todo:openpose_editor"
+},
+{
+"index": 92,
+"name": "Stable Horde Worker",
+"url": "https://github.com/sdwebui-w-horde/sd-webui-stable-horde-worker.git",
+"status": "na:account"
+},
+{
+"index": 93,
+"name": "Discord Rich Presence",
+"url": "https://github.com/kabachuha/discord-rpc-for-automatic1111-webui.git",
+"status": "na:account"
+},
+{
+"index": 94,
+"name": "mine-diffusion",
+"url": "https://github.com/fropych/mine-diffusion.git",
+"status": "todo:minecraft_schematic"
+},
+{
+"index": 95,
+"name": "Aesthetic Image Scorer",
+"url": "https://github.com/tsngo/stable-diffusion-webui-aesthetic-image-scorer.git",
+"status": "todo:aesthetic_score"
+},
+{
+"index": 96,
+"name": "Aesthetic Scorer",
+"url": "https://github.com/vladmandic/sd-extension-aesthetic-scorer.git",
+"status": "todo:aesthetic_score"
+},
+{
+"index": 97,
+"name": "cafe-aesthetic",
+"url": "https://github.com/p1atdev/stable-diffusion-webui-cafe-aesthetic.git",
+"status": "todo:aesthetic_score"
+},
+{
+"index": 98,
+"name": "Clip Interrogator",
+"url": "https://github.com/pharmapsychotic/clip-interrogator-ext.git",
+"status": "todo:clip_interrogator"
+},
+{
+"index": 99,
+"name": "Visualize Cross-Attention",
+"url": "https://github.com/benkyoujouzu/stable-diffusion-webui-visualize-cross-attention-extension.git",
+"status": "todo:cross_attention_viz"
+},
+{
+"index": 100,
+"name": "Dump U-Net",
+"url": "https://github.com/hnmr293/stable-diffusion-webui-dumpunet.git",
+"status": "todo:dump_unet"
+},
+{
+"index": 101,
+"name": "posex",
+"url": "https://github.com/hnmr293/posex.git",
+"status": "todo:openpose_editor"
+},
+{
+"index": 102,
+"name": "LLuL",
+"url": "https://github.com/hnmr293/sd-webui-llul.git",
+"status": "todo:llul"
+},
+{
+"index": 103,
+"name": "CFG-Schedule-for-Automatic1111-SD",
+"url": "https://github.com/guzuligo/CFG-Schedule-for-Automatic1111-SD.git",
+"status": "todo:cfg_schedule"
+},
+{
+"index": 104,
+"name": "ebsynth_utility",
+"url": "https://github.com/s9roll7/ebsynth_utility.git",
+"status": "todo:ebsynth_utility"
+},
+{
+"index": 105,
+"name": "VRAM Estimator",
+"url": "https://github.com/space-nuko/a1111-stable-diffusion-webui-vram-estimator.git",
+"status": "todo:vram_estimator"
+},
+{
+"index": 106,
+"name": "TiledDiffusion with Tiled VAE",
+"url": "https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111.git",
+"status": "todo:tiled_diffusion"
+},
+{
+"index": 107,
+"name": "3D Model&Pose Loader",
+"url": "https://github.com/jtydhr88/sd-3dmodel-loader.git",
+"status": "todo:openpose_editor"
+},
+{
+"index": 108,
+"name": "Corridor Crawler Outpainting",
+"url": "https://github.com/brick2face/corridor-crawler-outpainting.git",
+"status": "todo:corridor_crawler"
+},
+{
+"index": 109,
+"name": "Panorama Viewer",
+"url": "https://github.com/GeorgLegato/sd-webui-panorama-viewer.git",
+"status": "todo:core:panorama-viewer"
+},
+{
+"index": 110,
+"name": "db-storage1111",
+"url": "https://github.com/takoyaro/db-storage1111.git",
+"status": "na:account"
+},
+{
+"index": 111,
+"name": "stable-diffusion-webui-rembg",
+"url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-rembg.git",
+"status": "todo:remove_background"
+},
+{
+"index": 112,
+"name": "sd-webui-tunnels",
+"url": "https://github.com/Bing-su/sd-webui-tunnels.git",
+"status": "na:server-ops"
+},
+{
+"index": 113,
+"name": "3D Openpose Editor",
+"url": "https://github.com/nonnonstop/sd-webui-3d-open-pose-editor.git",
+"status": "todo:openpose_editor"
+},
+{
+"index": 114,
+"name": "sd-webui-enable-checker",
+"url": "https://github.com/shirayu/sd-webui-enable-checker.git",
+"status": "na:webui-css"
+},
+{
+"index": 115,
+"name": "stable-diffusion-webui-state",
+"url": "https://github.com/ilian6806/stable-diffusion-webui-state.git",
+"status": "done:core:ui-state"
+},
+{
+"index": 116,
+"name": "text2video",
+"url": "https://github.com/kabachuha/sd-webui-text2video.git",
+"status": "todo:text2video"
+},
+{
+"index": 117,
+"name": "Aspect Ratio Helper",
+"url": "https://github.com/thomasasfk/sd-webui-aspect-ratio-helper.git",
+"status": "done:core:size-presets"
+},
+{
+"index": 118,
+"name": "Canvas Zoom",
+"url": "https://github.com/richrobber2/canvas-zoom.git",
+"status": "done:core:mask-canvas"
+},
+{
+"index": 119,
+"name": "Regional Prompter",
+"url": "https://github.com/hako-mikan/sd-webui-regional-prompter.git",
+"status": "todo:regional_prompter"
+},
+{
+"index": 120,
+"name": "Auto Translate",
+"url": "https://github.com/hyd998877/stable-diffusion-webui-auto-translate-language.git",
+"status": "todo:prompt_translate"
+},
+{
+"index": 121,
+"name": "Prompt Translator",
+"url": "https://github.com/ParisNeo/prompt_translator.git",
+"status": "todo:prompt_translate"
+},
+{
+"index": 122,
+"name": "Abysz LAB",
+"url": "https://github.com/AbyszOne/Abysz-LAB-Ext.git",
+"status": "todo:abysz_lab"
+},
+{
+"index": 123,
+"name": "Negative Prompt Weight",
+"url": "https://github.com/muerrilla/stable-diffusion-NPW.git",
+"status": "done:negative_prompt_weight"
+},
+{
+"index": 124,
+"name": "Discord - Dynamic Rich Presence",
+"url": "https://github.com/davehornik/sd-discord-rich_presence.git",
+"status": "na:account"
+},
+{
+"index": 125,
+"name": "PBRemTools",
+"url": "https://github.com/mattyamonaca/PBRemTools.git",
+"status": "todo:remove_background"
+},
+{
+"index": 126,
+"name": "a1111-sd-webui-lycoris",
+"url": "https://github.com/KohakuBlueleaf/a1111-sd-webui-lycoris.git",
+"status": "na:obsolete"
+},
+{
+"index": 127,
+"name": "sd-canvas-editor",
+"url": "https://github.com/jtydhr88/sd-canvas-editor.git",
+"status": "todo:outpaint_canvas"
+},
+{
+"index": 128,
+"name": "Infinite Zoom",
+"url": "https://github.com/v8hid/infinite-zoom-automatic1111-webui.git",
+"status": "todo:infinite_zoom"
+},
+{
+"index": 129,
+"name": "Eye Mask",
+"url": "https://github.com/ilian6806/stable-diffusion-webui-eyemask.git",
+"status": "todo:adetailer"
+},
+{
+"index": 130,
+"name": "zh_CN Localization",
+"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
+"status": "todo:core:localization"
+},
+{
+"index": 131,
+"name": "zh_TW Localization",
+"url": "https://github.com/harukaxxxx/stable-diffusion-webui-localization-zh_TW.git",
+"status": "todo:core:localization"
+},
+{
+"index": 132,
+"name": "ko_KR Localization",
+"url": "https://github.com/36DB/stable-diffusion-webui-localization-ko_KR",
+"status": "todo:core:localization"
+},
+{
+"index": 133,
+"name": "th_TH Localization",
+"url": "https://github.com/econDS/thai-localization-for-Automatic-stable-diffusion-webui",
+"status": "todo:core:localization"
+},
+{
+"index": 134,
+"name": "es_ES Localization",
+"url": "https://github.com/innovaciones/stable-diffusion-webui-localization-es_ES",
+"status": "todo:core:localization"
+},
+{
+"index": 135,
+"name": "it_IT Localization",
+"url": "https://github.com/Harvester62/stable-diffusion-webui-localization-it_IT",
+"status": "todo:core:localization"
+},
+{
+"index": 136,
+"name": "de_DE Localization",
+"url": "https://github.com/Strothis/stable-diffusion-webui-de_DE",
+"status": "todo:core:localization"
+},
+{
+"index": 137,
+"name": "ja_JP Localization",
+"url": "https://github.com/AI-Creators-Society/stable-diffusion-webui-localization-ja_JP",
+"status": "todo:core:localization"
+},
+{
+"index": 138,
+"name": "pt_BR Localization",
+"url": "https://github.com/M-art-ucci/stable-diffusion-webui-localization-pt_BR",
+"status": "todo:core:localization"
+},
+{
+"index": 139,
+"name": "tr_TR Localization",
+"url": "https://github.com/camenduru/stable-diffusion-webui-localization-tr_TR",
+"status": "todo:core:localization"
+},
+{
+"index": 140,
+"name": "no_NO Localization",
+"url": "https://github.com/Cyanz83/stable-diffusion-webui-localization-no_NO",
+"status": "todo:core:localization"
+},
+{
+"index": 141,
+"name": "ru_RU Localization",
+"url": "https://github.com/ProfaneServitor/stable-diffusion-webui-localization-ru_RU",
+"status": "todo:core:localization"
+},
+{
+"index": 142,
+"name": "fi_FI Localization",
+"url": "https://github.com/otsoniemi/stable-diffusion-webui-localization-fi_FI",
+"status": "todo:core:localization"
+},
+{
+"index": 143,
+"name": "zh_Hans Localization",
+"url": "https://github.com/hanamizuki-ai/stable-diffusion-webui-localization-zh_Hans.git",
+"status": "todo:core:localization"
+},
+{
+"index": 144,
+"name": "old localizations",
+"url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-old-localizations.git",
+"status": "todo:core:localization"
+},
+{
+"index": 145,
+"name": "Model Organizer",
+"url": "https://github.com/alexandersokol/sd-model-organizer.git",
+"status": "todo:model_organizer"
+},
+{
+"index": 146,
+"name": "Model Preset Manager",
+"url": "https://github.com/rifeWithKaiju/model_preset_manager.git",
+"status": "todo:model_presets"
+},
+{
+"index": 147,
+"name": "SD-CN-Animation",
+"url": "https://github.com/volotat/SD-CN-Animation.git",
+"status": "todo:cn_animation"
+},
+{
+"index": 148,
+"name": "Model toolkit",
+"url": "https://github.com/arenasys/stable-diffusion-webui-model-toolkit.git",
+"status": "todo:model_converter"
+},
+{
+"index": 149,
+"name": "sd-webui-prompt-all-in-one",
+"url": "https://github.com/Physton/sd-webui-prompt-all-in-one",
+"status": "todo:core:prompt-tools"
+},
+{
+"index": 150,
+"name": "sd-model-preview-xd",
+"url": "https://github.com/CurtisDS/sd-model-preview-xd",
+"status": "todo:model_organizer"
+},
+{
+"index": 151,
+"name": "ADetailer",
+"url": "https://github.com/Bing-su/adetailer.git",
+"status": "todo:adetailer"
+},
+{
+"index": 152,
+"name": "Weight Gradient",
+"url": "https://github.com/DingoBite/weight_gradient",
+"status": "todo:weight_gradient"
+},
+{
+"index": 153,
+"name": "One Button Prompt",
+"url": "https://github.com/AIrjen/OneButtonPrompt",
+"status": "done:one_button_prompt"
+},
+{
+"index": 154,
+"name": "Miaoshouai Assistant",
+"url": "https://github.com/miaoshouai/miaoshouai-assistant.git",
+"status": "todo:model_organizer"
+},
+{
+"index": 155,
+"name": "miniPaint",
+"url": "https://github.com/0Tick/a1111-mini-paint",
+"status": "todo:image_editor"
+},
+{
+"index": 156,
+"name": "StableSR",
+"url": "https://github.com/pkuliyi2015/sd-webui-stablesr.git",
+"status": "todo:stable_sr"
+},
+{
+"index": 157,
+"name": "Web UI client queue",
+"url": "https://github.com/Kryptortio/SDAtom-WebUi-client-queue-ext.git",
+"status": "done:core:job-queue"
+},
+{
+"index": 158,
+"name": "Distributed",
+"url": "https://github.com/papuSpartan/stable-diffusion-webui-distributed.git",
+"status": "na:server-ops"
+},
+{
+"index": 159,
+"name": "StableStudio Adapter",
+"url": "https://github.com/jtydhr88/sd-webui-StableStudio.git",
+"status": "na:webui-api"
+},
+{
+"index": 160,
+"name": "Quick Tab Switch",
+"url": "https://github.com/AJpon/a1111-sd-webui-quickswitch.git",
+"status": "na:webui-ux"
+},
+{
+"index": 161,
+"name": "Lua",
+"url": "https://github.com/yownas/sd-webui-lua.git",
+"status": "todo:lua_scripting"
+},
+{
+"index": 162,
+"name": "Model Downloader",
+"url": "https://github.com/Iyashinouta/sd-model-downloader.git",
+"status": "todo:model_downloader"
+},
+{
+"index": 163,
+"name": "Styles Editor",
+"url": "https://github.com/chrisgoringe/Styles-Editor.git",
+"status": "todo:core:styles-editor"
+},
+{
+"index": 164,
+"name": "Clip I/O",
+"url": "https://github.com/Filexor/Clip_IO.git",
+"status": "todo:clip_io"
+},
+{
+"index": 165,
+"name": "Inpaint Anything",
+"url": "https://github.com/Uminosachi/sd-webui-inpaint-anything.git",
+"status": "todo:inpaint_anything"
+},
+{
+"index": 166,
+"name": "QR Code Generator",
+"url": "https://github.com/missionfloyd/webui-qrcode-generator.git",
+"status": "todo:qr_code"
+},
+{
+"index": 167,
+"name": "sd-webui-roop",
+"url": "https://github.com/s0md3v/sd-webui-roop",
+"status": "todo:face_swap"
+},
+{
+"index": 168,
+"name": "sd-webui-color-enhance",
+"url": "https://git.mmaker.moe/mmaker/sd-webui-color-enhance.git",
+"status": "todo:color_enhance"
+},
+{
+"index": 169,
+"name": "sd-webui-bluescape",
+"url": "https://github.com/Bluescape/sd-webui-bluescape",
+"status": "na:account"
+},
+{
+"index": 170,
+"name": "sd-webui-prompt_history",
+"url": "https://github.com/namkazt/sd-webui-prompt-history",
+"status": "done:core:gallery"
+},
+{
+"index": 171,
+"name": "Pixel art",
+"url": "https://github.com/mrreplicart/sd-webui-pixelart.git",
+"status": "todo:pixel_art"
+},
+{
+"index": 172,
+"name": "Lobe Theme",
+"url": "https://github.com/canisminor1990/sd-webui-lobe-theme.git",
+"status": "na:webui-css"
+},
+{
+"index": 173,
+"name": "Kitchen Theme",
+"url": "https://github.com/canisminor1990/sd-webui-kitchen-theme-legacy.git",
+"status": "na:webui-css"
+},
+{
+"index": 174,
+"name": "IF_prompt_MKR",
+"url": "https://github.com/if-ai/IF_prompt_MKR.git",
+"status": "todo:llm_prompt"
+},
+{
+"index": 175,
+"name": "3D Editor",
+"url": "https://github.com/jtydhr88/sd-webui-3d-editor.git",
+"status": "todo:openpose_editor"
+},
+{
+"index": 176,
+"name": "Aspect Ratio selector plus",
+"url": "https://github.com/LEv145/--sd-webui-ar-plus",
+"status": "done:core:size-presets"
+},
+{
+"index": 177,
+"name": "SD Delete Button",
+"url": "https://github.com/AlUlkesh/sd_delete_button.git",
+"status": "done:core:gallery"
+},
+{
+"index": 178,
+"name": "sd-webui-qrcode-toolkit",
+"url": "https://github.com/antfu/sd-webui-qrcode-toolkit.git",
+"status": "todo:qr_code"
+},
+{
+"index": 179,
+"name": "SadTalker",
+"url": "https://github.com/OpenTalker/SadTalker.git",
+"status": "todo:sadtalker"
+},
+{
+"index": 180,
+"name": "Auto-Photoshop-StableDiffusion-Plugin",
+"url": "https://github.com/AbdullahAlfaraj/Auto-Photoshop-StableDiffusion-Plugin.git",
+"status": "na:external-app"
+},
+{
+"index": 181,
+"name": "Civitai Shortcut",
+"url": "https://github.com/sunnyark/civitai-shortcut.git",
+"status": "todo:model_downloader"
+},
+{
+"index": 182,
+"name": "WD 1.4 Tagger",
+"url": "https://github.com/picobyte/stable-diffusion-webui-wd14-tagger.git",
+"status": "done:caption"
+},
+{
+"index": 183,
+"name": "Loopback Scaler",
+"url": "https://github.com/Elldreth/loopback_scaler.git",
+"status": "todo:loopback_scaler"
+},
+{
+"index": 184,
+"name": "Mask2Background",
+"url": "https://github.com/limithit/Mask2Background.git",
+"status": "todo:mask2background"
+},
+{
+"index": 185,
+"name": "ComfyUI",
+"url": "https://github.com/ModelSurge/sd-webui-comfyui.git",
+"status": "na:external-app"
+},
+{
+"index": 186,
+"name": "GPU temperature protection",
+"url": "https://github.com/w-e-w/stable-diffusion-webui-GPU-temperature-protection.git",
+"status": "todo:gpu_temperature_guard"
+},
+{
+"index": 187,
+"name": "zoom-image",
+"url": "https://github.com/viyiviyi/stable-diffusion-webui-zoomimage.git",
+"status": "done:core:zoom"
+},
+{
+"index": 188,
+"name": "Shutdown button",
+"url": "https://github.com/EnsignMK/sd_shutdown_button.git",
+"status": "na:server-ops"
+},
+{
+"index": 189,
+"name": "Latent Upscale",
+"url": "https://github.com/feynlee/latent-upscale.git",
+"status": "todo:latent_upscale"
+},
+{
+"index": 190,
+"name": "sd-history-slider",
+"url": "https://github.com/LucasMali/sd-history-slider",
+"status": "done:core:gallery"
+},
+{
+"index": 191,
+"name": "prompts filter",
+"url": "https://github.com/viyiviyi/prompts-filter.git",
+"status": "done:prompt_filter"
+},
+{
+"index": 192,
+"name": "sd-webui-animatediff",
+"url": "https://github.com/continue-revolution/sd-webui-animatediff.git",
+"status": "todo:animatediff"
+},
+{
+"index": 193,
+"name": "Dynamic Javascript",
+"url": "https://github.com/pmcculler/sd-dynamic-javascript",
+"status": "na:webui-ux"
+},
+{
+"index": 194,
+"name": "Detection Detailer",
+"url": "https://github.com/Bing-su/dddetailer.git",
+"status": "todo:adetailer"
+},
+{
+"index": 195,
+"name": "seamless-tile-inpainting",
+"url": "https://github.com/brick2face/seamless-tile-inpainting.git",
+"status": "todo:seamless_tile"
+},
+{
+"index": 196,
+"name": "FaceSwapLab",
+"url": "https://github.com/glucauze/sd-webui-faceswaplab",
+"status": "todo:face_swap"
+},
+{
+"index": 197,
+"name": "Style Selector for SDXL 1.0",
+"url": "https://github.com/ahgsql/StyleSelectorXL.git",
+"status": "todo:style_selector"
+},
+{
+"index": 198,
+"name": "sd-webui-oldsix-prompt",
+"url": "https://github.com/thisjam/sd-webui-oldsix-prompt.git",
+"status": "todo:prompt_library"
+},
+{
+"index": 199,
+"name": "Custom Hires Fix",
+"url": "https://github.com/wcde/custom-hires-fix-for-automatic1111.git",
+"status": "todo:custom_hires_fix"
+},
+{
+"index": 200,
+"name": "Refiner",
+"url": "https://github.com/wcde/sd-webui-refiner.git",
+"status": "todo:refiner"
+},
+{
+"index": 201,
+"name": "sd-webui-deoldify",
+"url": "https://github.com/SpenserCai/sd-webui-deoldify",
+"status": "todo:deoldify"
+},
+{
+"index": 202,
+"name": "sd-wav2lip-uhq",
+"url": "https://github.com/numz/sd-wav2lip-uhq",
+"status": "todo:wav2lip"
+},
+{
+"index": 203,
+"name": "Controlnet Fastload",
+"url": "https://github.com/pk5ls20/sd-webui-controlnet-fastload.git",
+"status": "todo:core:presets"
+},
+{
+"index": 204,
+"name": "LoRA Control",
+"url": "https://github.com/cheald/sd-webui-loractl.git",
+"status": "todo:lora_control"
+},
+{
+"index": 205,
+"name": "Wildcards",
+"url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-wildcards.git",
+"status": "done:dynamic_prompts"
+},
+{
+"index": 206,
+"name": "SD Ratio Lock",
+"url": "https://github.com/bit9labs/sd-ratio-lock.git",
+"status": "done:core:size-presets"
+},
+{
+"index": 207,
+"name": "sd-webui-chatgpt",
+"url": "https://github.com/NON906/sd-webui-chatgpt.git",
+"status": "na:account"
+},
+{
+"index": 208,
+"name": "sd-webui-auto-tweet.json",
+"url": "https://github.com/sinano1107/sd-webui-auto-tweet.git",
+"status": "na:account"
+},
+{
+"index": 209,
+"name": "zh_Hant Localization",
+"url": "https://github.com/bluelovers/stable-diffusion-webui-localization-zh_Hant.git",
+"status": "todo:core:localization"
+},
+{
+"index": 210,
+"name": "SD Webui Vectorscope CC",
+"url": "https://github.com/Haoming02/sd-webui-vectorscope-cc.git",
+"status": "todo:vectorscope_cc"
+},
+{
+"index": 211,
+"name": "Prompt Formatter - by uwidev",
+"url": "https://github.com/uwidev/sd_extension-prompt_formatter.git",
+"status": "done:prompt_format"
+},
+{
+"index": 212,
+"name": "Prompt Format - by Haoming02",
+"url": "https://github.com/Haoming02/sd-webui-prompt-format.git",
+"status": "done:prompt_format"
+},
+{
+"index": 213,
+"name": "FABRIC",
+"url": "https://github.com/dvruette/sd-webui-fabric.git",
+"status": "todo:fabric"
+},
+{
+"index": 214,
+"name": "Webpage close confirmation dialogue",
+"url": "https://github.com/w-e-w/sdwebui-close-confirmation-dialogue.git",
+"status": "done:core:close-confirm"
+},
+{
+"index": 215,
+"name": "sd-webui-discord-ex",
+"url": "https://github.com/SpenserCai/sd-webui-discord-ex.git",
+"status": "na:account"
+},
+{
+"index": 216,
+"name": "CivitAI Browser+",
+"url": "https://github.com/BlafKing/sd-civitai-browser-plus.git",
+"status": "todo:model_downloader"
+},
+{
+"index": 217,
+"name": "Img2img batch interrogator",
+"url": "https://github.com/Alvi-alvarez/sd-Img2img-batch-interrogator.git",
+"status": "todo:batch_interrogate"
+},
+{
+"index": 218,
+"name": "SD Masonry Gallery",
+"url": "https://github.com/bit9labs/sd-masonry.git",
+"status": "done:core:gallery"
+},
+{
+"index": 219,
+"name": "sd-webui-depth-lib",
+"url": "https://github.com/wywywywy/sd-webui-depth-lib.git",
+"status": "todo:depth_library"
+},
+{
+"index": 220,
+"name": "Stable Diffusion Webui Civitai Helper",
+"url": "https://github.com/zixaphir/Stable-Diffusion-Webui-Civitai-Helper.git",
+"status": "todo:model_downloader"
+},
+{
+"index": 221,
+"name": "Scenario loader",
+"url": "https://github.com/Chaest/sd-webui-sc-loader.git",
+"status": "todo:core:presets"
+},
+{
+"index": 222,
+"name": "PromptsBrowser",
+"url": "https://github.com/AlpacaInTheNight/PromptsBrowser.git",
+"status": "todo:prompt_library"
+},
+{
+"index": 223,
+"name": "Model Mixer",
+"url": "https://github.com/wkpark/sd-webui-model-mixer.git",
+"status": "todo:model_merge"
+},
+{
+"index": 224,
+"name": "Fast PNG Info",
+"url": "https://github.com/NoCrypt/sd-fast-pnginfo.git",
+"status": "done:core:png-info"
+},
+{
+"index": 225,
+"name": "sd-webui-mov2mov",
+"url": "https://github.com/Scholar01/sd-webui-mov2mov.git",
+"status": "todo:mov2mov"
+},
+{
+"index": 226,
+"name": "EasyPhoto",
+"url": "https://github.com/aigc-apps/sd-webui-EasyPhoto.git",
+"status": "todo:easyphoto"
+},
+{
+"index": 227,
+"name": "sd-webui-rich-text",
+"url": "https://github.com/songweige/sd-webui-rich-text.git",
+"status": "todo:rich_text"
+},
+{
+"index": 228,
+"name": "sd-webui-bg-mask",
+"url": "https://github.com/Scholar01/sd-webui-bg-mask.git",
+"status": "todo:remove_background"
+},
+{
+"index": 229,
+"name": "Ranbooru",
+"url": "https://github.com/Inzaniak/sd-webui-ranbooru.git",
+"status": "todo:booru_prompt"
+},
+{
+"index": 230,
+"name": "CivBrowser",
+"url": "https://github.com/SignalFlagZ/sd-webui-civbrowser.git",
+"status": "todo:model_downloader"
+},
+{
+"index": 231,
+"name": "NSFW Blurrer-NSFWJS",
+"url": "https://github.com/aria1th/sd-webui-nsfw-filter.git",
+"status": "todo:nsfw_checker"
+},
+{
+"index": 232,
+"name": "NegPiP",
+"url": "https://github.com/hako-mikan/sd-webui-negpip.git",
+"status": "todo:negpip"
+},
+{
+"index": 233,
+"name": "CD(Color/Detail) Tuner",
+"url": "https://github.com/hako-mikan/sd-webui-cd-tuner.git",
+"status": "todo:cd_tuner"
+},
+{
+"index": 234,
+"name": "DevDark theme",
+"url": "https://github.com/devdarktheme/stable-diffusion-webui-devdark.git",
+"status": "na:webui-css"
+},
+{
+"index": 235,
+"name": "auxiliary API",
+"url": "https://github.com/aria1th/webui-model-uploader.git",
+"status": "na:webui-api"
+},
+{
+"index": 236,
+"name": "TensorRT",
+"url": "https://github.com/NVIDIA/Stable-Diffusion-WebUI-TensorRT",
+"status": "todo:core:compile"
+},
+{
+"index": 237,
+"name": "encrypt-image",
+"url": "https://github.com/viyiviyi/sd-encrypt-image.git",
+"status": "todo:encrypt_image"
+},
+{
+"index": 238,
+"name": "NudeNet NSFW Censor",
+"url": "https://github.com/w-e-w/sd-webui-nudenet-nsfw-censor.git",
+"status": "todo:nsfw_checker"
+},
+{
+"index": 239,
+"name": "Latent Consistency Models",
+"url": "https://github.com/0xbitches/sd-webui-lcm.git",
+"status": "todo:lcm"
+},
+{
+"index": 240,
+"name": "CADS",
+"url": "https://github.com/v0xie/sd-webui-cads.git",
+"status": "todo:cads"
+},
+{
+"index": 241,
+"name": "sd-webui-facefusion",
+"url": "https://github.com/diffus-me/sd-webui-facefusion",
+"status": "todo:face_swap"
+},
+{
+"index": 242,
+"name": "Hotshot-XL-Automatic1111",
+"url": "https://github.com/hotshotco/Hotshot-XL-Automatic1111.git",
+"status": "todo:hotshot_xl"
+},
+{
+"index": 243,
+"name": "Inpaint difference",
+"url": "https://github.com/John-WL/sd-webui-inpaint-difference",
+"status": "todo:inpaint_difference"
+},
+{
+"index": 244,
+"name": "Temporal",
+"url": "https://github.com/Iniquitatis/sd-webui-temporal",
+"status": "todo:temporal"
+},
+{
+"index": 245,
+"name": "FaceChain",
+"url": "https://github.com/modelscope/facechain.git",
+"status": "todo:facechain"
+},
+{
+"index": 246,
+"name": "Stylez",
+"url": "https://github.com/javsezlol1/Stylez.git",
+"status": "todo:style_selector"
+},
+{
+"index": 247,
+"name": "sd-webui-panorama-tools",
+"url": "https://github.com/Flyguygx/sd-webui-panorama-tools.git",
+"status": "todo:panorama_tools"
+},
+{
+"index": 248,
+"name": "sd-webui-extended-style-saver",
+"url": "https://github.com/harukei-tech/sd-webui-extended-style-saver.git",
+"status": "todo:core:styles-editor"
+},
+{
+"index": 249,
+"name": "Semantic Guidance",
+"url": "https://github.com/v0xie/sd-webui-semantic-guidance.git",
+"status": "todo:semantic_guidance"
+},
+{
+"index": 250,
+"name": "SD Web UI Modal Info",
+"url": "https://github.com/luminouspear/sd-webui-modal-info.git",
+"status": "done:core:png-info"
+},
+{
+"index": 251,
+"name": "A Person Mask Generator",
+"url": "https://github.com/djbielejeski/a-person-mask-generator.git",
+"status": "todo:person_mask"
+},
+{
+"index": 252,
+"name": "Style variables",
+"url": "https://github.com/SirVeggie/extension-style-vars",
+"status": "done:style_variables"
+},
+{
+"index": 253,
+"name": "SD-WebUI API Payload Display",
+"url": "https://github.com/huchenlei/sd-webui-api-payload-display.git",
+"status": "todo:core:api-payload"
+},
+{
+"index": 254,
+"name": "µ Detection Detailer",
+"url": "https://github.com/wkpark/uddetailer.git",
+"status": "todo:adetailer"
+},
+{
+"index": 255,
+"name": "Lora Queue Helper",
+"url": "https://github.com/Yinzo/sd-webui-Lora-queue-helper.git",
+"status": "done:lora_queue"
+},
+{
+"index": 256,
+"name": "Deep Shrink Hires.fix",
+"url": "https://github.com/wcde/sd-webui-kohya-hiresfix.git",
+"status": "done:kohya_hrfix"
+},
+{
+"index": 257,
+"name": "Test my prompt!",
+"url": "https://github.com/Extraltodeus/test_my_prompt.git",
+"status": "done:test_my_prompt"
+},
+{
+"index": 258,
+"name": "sd-webui-breadcrumbs",
+"url": "https://github.com/ThereforeGames/sd-webui-breadcrumbs.git",
+"status": "na:webui-ux"
+},
+{
+"index": 259,
+"name": "Kohaku-NAI",
+"url": "https://github.com/KohakuBlueleaf/Kohaku-NAI",
+"status": "na:account"
+},
+{
+"index": 260,
+"name": "Replacer - fast inpaint",
+"url": "https://github.com/light-and-ray/sd-webui-replacer.git",
+"status": "todo:replacer"
+},
+{
+"index": 261,
+"name": "Color Correction Extras",
+"url": "https://github.com/light-and-ray/sd-webui-color-correction-extras.git",
+"status": "todo:color_correction"
+},
+{
+"index": 262,
+"name": "State Manager",
+"url": "https://github.com/SenshiSentou/sd-webui-state-manager.git",
+"status": "todo:core:presets"
+},
+{
+"index": 263,
+"name": "Agent Attention",
+"url": "https://github.com/v0xie/sd-webui-agentattention.git",
+"status": "todo:agent_attention"
+},
+{
+"index": 264,
+"name": "Deepdanbooru object recognition",
+"url": "https://github.com/Jibaku789/sd-webui-deepdanbooru-object-recognition.git",
+"status": "todo:deepdanbooru"
+},
+{
+"index": 265,
+"name": "Deepdanbooru Tag2Folder",
+"url": "https://github.com/Jibaku789/sd-webui-deepdanbooru-tag2folder",
+"status": "todo:deepdanbooru"
+},
+{
+"index": 266,
+"name": "sd-webui-ocr",
+"url": "https://github.com/SpenserCai/sd-webui-ocr",
+"status": "todo:ocr"
+},
+{
+"index": 267,
+"name": "Characteristic Guidance Web UI",
+"url": "https://github.com/scraed/CharacteristicGuidanceWebUI.git",
+"status": "todo:characteristic_guidance"
+},
+{
+"index": 268,
+"name": "embedding-inspector",
+"url": "https://github.com/w-e-w/embedding-inspector.git",
+"status": "todo:embedding_inspector"
+},
+{
+"index": 269,
+"name": "Lama cleaner as masked content",
+"url": "https://github.com/light-and-ray/sd-webui-lama-cleaner-masked-content.git",
+"status": "todo:lama_cleaner"
+},
+{
+"index": 270,
+"name": "Latent Regional Helper",
+"url": "https://github.com/safubuki/sd-webui-latent-regional-helper.git",
+"status": "todo:regional_prompter"
+},
+{
+"index": 271,
+"name": "Thumbnailizer",
+"url": "https://github.com/MNeMoNiCuZ/sd-webui-thumbnailizer.git",
+"status": "todo:model_organizer"
+},
+{
+"index": 272,
+"name": "GPT-4 Vision Image Captioner",
+"url": "https://github.com/SleeeepyZhou/sd-webui-GPT4V-Image-Captioner.git",
+"status": "na:account"
+},
+{
+"index": 273,
+"name": "Video in Extras tab",
+"url": "https://github.com/light-and-ray/sd-webui-video-extras-tab.git",
+"status": "todo:video_extras"
+},
+{
+"index": 274,
+"name": "Inpaint background",
+"url": "https://github.com/John-WL/sd-webui-inpaint-background.git",
+"status": "todo:inpaint_background"
+},
+{
+"index": 275,
+"name": "DAAM",
+"url": "https://github.com/kousw/stable-diffusion-webui-daam.git",
+"status": "todo:daam"
+},
+{
+"index": 276,
+"name": "ControlNet Preprocessor in extras tab",
+"url": "https://github.com/light-and-ray/sd-webui-cn-in-extras-tab.git",
+"status": "todo:controlnet_preprocess_extras"
+},
+{
+"index": 277,
+"name": "Stable Diffusion Database Manager",
+"url": "https://github.com/nicholas-ooi/stable-diffusion-database-manager.git",
+"status": "na:account"
+},
+{
+"index": 278,
+"name": "RPG-DiffusionMaster",
+"url": "https://github.com/zydxt/sd-webui-rpg-diffusionmaster",
+"status": "todo:rpg_diffusion"
+},
+{
+"index": 279,
+"name": "sd-webui-creaprompt",
+"url": "https://github.com/tritant/sd-webui-creaprompt.git",
+"status": "todo:creaprompt"
+},
+{
+"index": 280,
+"name": "Workflow",
+"url": "https://github.com/Inzaniak/sd-webui-workflow",
+"status": "todo:img2img_workflow"
+},
+{
+"index": 281,
+"name": "QIC Console",
+"url": "https://github.com/SenshiSentou/sd-webui-qic-console",
+"status": "na:server-ops"
+},
+{
+"index": 282,
+"name": "Custom AutoLaunch",
+"url": "https://github.com/w-e-w/sd-webui-custom-autolaunch.git",
+"status": "na:webui-ux"
+},
+{
+"index": 283,
+"name": "SimpleTaggerEditor",
+"url": "https://github.com/davidkingzyb/SimpleTaggerEditor.git",
+"status": "todo:dataset_tag_editor"
+},
+{
+"index": 284,
+"name": "ReSharpen",
+"url": "https://github.com/Haoming02/sd-webui-resharpen.git",
+"status": "todo:resharpen"
+},
+{
+"index": 285,
+"name": "Clear Screen",
+"url": "https://github.com/Haoming02/sd-webui-clear-screen.git",
+"status": "na:webui-ux"
+},
+{
+"index": 286,
+"name": "SD Webui Image Comparison",
+"url": "https://github.com/Haoming02/sd-webui-image-comparison.git",
+"status": "todo:core:image-compare"
+},
+{
+"index": 287,
+"name": "SD Webui Tabs Extension",
+"url": "https://github.com/Haoming02/sd-webui-tabs-extension.git",
+"status": "na:webui-ux"
+},
+{
+"index": 288,
+"name": "Mosaic Outpaint",
+"url": "https://github.com/Haoming02/sd-webui-mosaic-outpaint.git",
+"status": "todo:mosaic_outpaint"
+},
+{
+"index": 289,
+"name": "SD Webui Boomer",
+"url": "https://github.com/Haoming02/sd-webui-boomer.git",
+"status": "na:webui-ux"
+},
+{
+"index": 290,
+"name": "Diffusion Color Grading",
+"url": "https://github.com/Haoming02/sd-webui-diffusion-cg.git",
+"status": "todo:color_grading"
+},
+{
+"index": 291,
+"name": "Moar Generate Button",
+"url": "https://github.com/Haoming02/sd-webui-moar-generate.git",
+"status": "na:webui-ux"
+},
+{
+"index": 292,
+"name": "Old Photo Restoration",
+"url": "https://github.com/Haoming02/sd-webui-old-photo-restoration.git",
+"status": "todo:old_photo_restoration"
+},
+{
+"index": 293,
+"name": "Mobile friendly UI tweaks",
+"url": "https://github.com/Haoming02/sd-webui-mobile-friendly.git",
+"status": "na:webui-ux"
+},
+{
+"index": 294,
+"name": "Easy Tag Insert",
+"url": "https://github.com/Haoming02/sd-webui-easy-tag-insert.git",
+"status": "todo:core:prompt-tools"
+},
+{
+"index": 295,
+"name": "Token Downsampling",
+"url": "https://github.com/feffy380/sd-webui-token-downsampling.git",
+"status": "todo:token_downsampling"
+},
+{
+"index": 296,
+"name": "Aspect Ratio Resolutions selector-xhox",
+"url": "https://github.com/xhoxye/sd-webui-ar_xhox.git",
+"status": "done:core:size-presets"
+},
+{
+"index": 297,
+"name": "Hires Fix Tweaks",
+"url": "https://github.com/w-e-w/sd-webui-hires-fix-tweaks.git",
+"status": "todo:hires_fix_tweaks"
+},
+{
+"index": 298,
+"name": "Simple Manga Maker",
+"url": "https://github.com/new-sankaku/stable-diffusion-webui-simple-manga-maker.git",
+"status": "todo:manga_maker"
+},
+{
+"index": 299,
+"name": "Card Master",
+"url": "https://github.com/SenshiSentou/sd-webui-cardmaster.git",
+"status": "todo:model_organizer"
+},
+{
+"index": 300,
+"name": "cli-interruption",
+"url": "https://github.com/light-and-ray/sd-webui-cli-interruption.git",
+"status": "na:server-ops"
+},
+{
+"index": 301,
+"name": "DemoFusion",
+"url": "https://github.com/sebaxakerhtc/sd-webui-demofusion.git",
+"status": "todo:demofusion"
+},
+{
+"index": 302,
+"name": "Incantations",
+"url": "https://github.com/v0xie/sd-webui-incantations.git",
+"status": "todo:incantations"
+},
+{
+"index": 303,
+"name": "Old SD firstpasser",
+"url": "https://github.com/light-and-ray/sd-webui-old-sd-firstpasser.git",
+"status": "todo:old_sd_firstpasser"
+},
+{
+"index": 304,
+"name": "SD Image Editor",
+"url": "https://github.com/sontungdo/sd-image-editor.git",
+"status": "todo:image_editor"
+},
+{
+"index": 305,
+"name": "TripoSR",
+"url": "https://github.com/AlbedoFire/sd-webui-triposr.git",
+"status": "todo:triposr"
+},
+{
+"index": 306,
+"name": "Readme browser",
+"url": "https://github.com/light-and-ray/sd-webui-readme-browser.git",
+"status": "na:webui-ux"
+},
+{
+"index": 307,
+"name": "D2 Prompt Selector",
+"url": "https://github.com/da2el-ai/sd-d2-prompt-selector.git",
+"status": "todo:core:prompt-tools"
+},
+{
+"index": 308,
+"name": "Untitled Merger",
+"url": "https://github.com/silveroxides/sd-webui-untitledmerger.git",
+"status": "todo:model_merge"
+},
+{
+"index": 309,
+"name": "Hardware Info in metadata",
+"url": "https://github.com/light-and-ray/sd-webui-hardware-info-in-metadata.git",
+"status": "todo:hardware_info"
+},
+{
+"index": 310,
+"name": "PNGINFO Beautify",
+"url": "https://github.com/bluelovers/sd-webui-pnginfo-beautify.git",
+"status": "done:core:png-info"
+},
+{
+"index": 311,
+"name": "InputAccordion Highlight",
+"url": "https://github.com/w-e-w/sd-webui-input-accordion-highlight.git",
+"status": "na:webui-css"
+},
+{
+"index": 312,
+"name": "Metadata Utils",
+"url": "https://github.com/Tzigo/metadata_utils.git",
+"status": "todo:metadata_utils"
+},
+{
+"index": 313,
+"name": "webui-foooxus-prompt-expansion",
+"url": "https://github.com/power88/webui-fooocus-prompt-expansion.git",
+"status": "todo:prompt_expansion"
+},
+{
+"index": 314,
+"name": "Bilingual Localization Refactored Fork",
+"url": "https://github.com/bluelovers/sd-webui-bilingual-localization.git",
+"status": "todo:core:localization"
+},
+{
+"index": 315,
+"name": "SD-PPP",
+"url": "https://github.com/zombieyang/sd-ppp.git",
+"status": "na:external-app"
+},
+{
+"index": 316,
+"name": "ControlNet preprocessor: Segment Anything",
+"url": "https://github.com/light-and-ray/sd-webui-cn-sam-preprocessor.git",
+"status": "todo:segment_anything"
+},
+{
+"index": 317,
+"name": "Aspect Ratio and Resolution Buttons (ar-plusplus)",
+"url": "https://github.com/altoiddealer/--sd-webui-ar-plusplus.git",
+"status": "done:core:size-presets"
+},
+{
+"index": 318,
+"name": "ScramblePrompts [m9]",
+"url": "https://github.com/MarcusNyne/sd-scramble-prompts-m9.git",
+"status": "done:scramble_prompts"
+},
+{
+"index": 319,
+"name": "TweakWeights [m9]",
+"url": "https://github.com/MarcusNyne/sd-tweak-weights-m9.git",
+"status": "done:tweak_weights"
+},
+{
+"index": 320,
+"name": "Prevent interruption",
+"url": "https://github.com/light-and-ray/sd-webui-prevent-interruption.git",
+"status": "todo:core:prevent-interrupt"
+},
+{
+"index": 321,
+"name": "Waifu2x Upscaler",
+"url": "https://github.com/light-and-ray/sd-webui-waifu2x-upscaler.git",
+"status": "todo:waifu2x"
+},
+{
+"index": 322,
+"name": "sd-webui-udav2",
+"url": "https://github.com/MackinationsAi/sd-webui-udav2.git",
+"status": "todo:depth_anything"
+},
+{
+"index": 323,
+"name": "Topaz Photo AI integration",
+"url": "https://github.com/light-and-ray/sd-webui-topaz-photo-ai-integration.git",
+"status": "na:external-app"
+},
+{
+"index": 324,
+"name": "Detail Daemon",
+"url": "https://github.com/muerrilla/sd-webui-detail-daemon.git",
+"status": "todo:detail_daemon"
+},
+{
+"index": 325,
+"name": "Yandere Inpainting as masked content",
+"url": "https://github.com/light-and-ray/sd-webui-yandere-inpaint-masked-content.git",
+"status": "todo:masked_content_extras"
+},
+{
+"index": 326,
+"name": "Multi-Prompt Manager",
+"url": "https://github.com/camdenFletcher03/sd-webui-Multi-Prompt-Manager.git",
+"status": "todo:core:prompt-tools"
+},
+{
+"index": 327,
+"name": "Resynthesizer as masked content",
+"url": "https://github.com/light-and-ray/sd-webui-resynthesizer-masked-content.git",
+"status": "todo:masked_content_extras"
+},
+{
+"index": 328,
+"name": "Toggle light dark",
+"url": "https://github.com/light-and-ray/sd-webui-toggle-dark-light.git",
+"status": "done:core:theme"
+},
+{
+"index": 329,
+"name": "Manga Inpainting",
+"url": "https://github.com/light-and-ray/sd-webui-manga-inpainting.git",
+"status": "todo:manga_inpainting"
+},
+{
+"index": 330,
+"name": "sd-queue",
+"url": "https://github.com/nmygle/sd-queue.git",
+"status": "na:webui-api"
+},
+{
+"index": 331,
+"name": "chara-searcher",
+"url": "https://github.com/NON906/chara-searcher.git",
+"status": "todo:chara_searcher"
+},
+{
+"index": 332,
+"name": "AMD FSR 1.0 integration",
+"url": "https://github.com/AndreyRGW/sd-webui-fsr-integration.git",
+"status": "todo:fsr_upscale"
+},
+{
+"index": 333,
+"name": "stupid-nsfw-card-blur-a1111",
+"url": "https://github.com/CurtisDS/stupid-nsfw-card-blur-a1111.git",
+"status": "todo:core:nsfw-card-blur"
+},
+{
+"index": 334,
+"name": "extra-network-side-panel-for-a1111",
+"url": "https://github.com/CurtisDS/extra-network-side-panel-for-a1111.git",
+"status": "na:webui-ux"
+},
+{
+"index": 335,
+"name": "Face manipulations - extras",
+"url": "https://github.com/light-and-ray/sd-webui-face-manipulation-extras.git",
+"status": "todo:face_manipulation"
+},
+{
+"index": 336,
+"name": "Stable Diffusion PNGINFO Injection extension",
+"url": "https://github.com/bluelovers/sd-webui-pnginfo-injection.git",
+"status": "todo:pnginfo_injection"
+},
+{
+"index": 337,
+"name": "sd-webui-decadetw-auto-prompt-llm",
+"url": "https://github.com/xlinx/sd-webui-decadetw-auto-prompt-llm.git",
+"status": "todo:llm_prompt"
+},
+{
+"index": 338,
+"name": "GeekyRemB",
+"url": "https://github.com/GeekyGhost/Automatic1111-Geeky-Remb.git",
+"status": "todo:remove_background"
+},
+{
+"index": 339,
+"name": "img2img-hires-fix",
+"url": "https://github.com/Amadeus-AI/img2img-hires-fix.git",
+"status": "todo:img2img_hires_fix"
+},
+{
+"index": 340,
+"name": "Diffusion Cocktail (Ditail)",
+"url": "https://github.com/MAPS-research/sd-webui-ditail.git",
+"status": "todo:ditail"
+},
+{
+"index": 341,
+"name": "sd-webui-live-portrait",
+"url": "https://github.com/dimitribarbot/sd-webui-live-portrait.git",
+"status": "todo:live_portrait"
+},
+{
+"index": 342,
+"name": "TIPO/DanTagGen Extension",
+"url": "https://github.com/KohakuBlueleaf/z-tipo-extension",
+"status": "todo:tipo"
+},
+{
+"index": 343,
+"name": "SD Web UI UX",
+"url": "https://github.com/anapnoe/sd-webui-ux.git",
+"status": "na:webui-ux"
+},
+{
+"index": 344,
+"name": "Stable Horde Client",
+"url": "https://github.com/w-e-w/stable-diffusion-webui-stable-horde.git",
+"status": "na:account"
+},
+{
+"index": 345,
+"name": "sd-webui-quickrecents",
+"url": "https://github.com/MINENEMA/sd-webui-quickrecents.git",
+"status": "done:core:gallery"
+},
+{
+"index": 346,
+"name": "LoRA Keywords Finder",
+"url": "https://github.com/Avaray/lora-keywords-finder.git",
+"status": "na:account"
+},
+{
+"index": 347,
+"name": "Gelbooru Prompt Randomizer",
+"url": "https://github.com/RED1cat/Gelbooru-Prompt-Randomizer.git",
+"status": "todo:booru_prompt"
+},
+{
+"index": 348,
+"name": "stable-diffusion-webui-chat-gpt-prompts",
+"url": "https://github.com/ilian6806/stable-diffusion-webui-chat-gpt-prompts",
+"status": "na:account"
+},
+{
+"index": 349,
+"name": "SD Hub",
+"url": "https://github.com/gutris1/sd-hub.git",
+"status": "todo:model_downloader"
+},
+{
+"index": 350,
+"name": "SD Simple Dimension Preset",
+"url": "https://github.com/gutris1/sd-simple-dimension-preset.git",
+"status": "done:core:size-presets"
+},
+{
+"index": 351,
+"name": "Style Organizer",
+"url": "https://github.com/KazeKaze93/sd-webui-style-organizer.git",
+"status": "todo:style_selector"
+},
+{
+"index": 352,
+"name": "VAE Tools (in extras tab)",
+"url": "https://github.com/light-and-ray/sd-webui-vae-tools.git",
+"status": "todo:vae_tools"
+}
+]

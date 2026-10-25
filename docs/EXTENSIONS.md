@@ -2,14 +2,14 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 29, todo 273, na 51.
+Totals: done 47, todo 255, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-fx | Why not applicable |
 |---|---|---|---|---|---|
 | 0 | [Agent Scheduler](https://github.com/ArtVentureX/sd-webui-agent-scheduler.git) | 690 | done | `core:job-queue` |  |
 | 1 | [TemporalKit](https://github.com/CiaraStrawberry/TemporalKit) | 1955 | todo | `temporal_kit` |  |
 | 2 | [ua_UA Localization](https://github.com/razorback456/webui-localization-ua_UA) | 6 | todo | `core:localization` |  |
-| 3 | [Batch Checkpoints and Prompts](https://github.com/h43lb1t0/SD-WebUI-BatchCheckpointPrompt) | 54 | todo | `batch_checkpoints_prompts` |  |
+| 3 | [Batch Checkpoints and Prompts](https://github.com/h43lb1t0/SD-WebUI-BatchCheckpointPrompt) | 54 | done | `batch_checkpoints_prompts` |  |
 | 4 | [Kandinsky](https://github.com/MMqd/kandinsky-for-automatic1111) | 100 | todo | `kandinsky` |  |
 | 5 | [Txt/Img to 3D Model](https://github.com/jtydhr88/sd-webui-txt-img-to-3d-model.git) | 268 | todo | `shap_e` |  |
 | 6 | [sd-webui-openpose-editor](https://github.com/huchenlei/sd-webui-openpose-editor.git) | 797 | todo | `openpose_editor` |  |
@@ -44,13 +44,13 @@ Totals: done 29, todo 273, na 51.
 | 35 | [Nevysha's Cozy Nest](https://github.com/Nevysha/Cozy-Nest.git) | 374 | na | `webui-css` | styles / JavaScript tweaks of the Gradio web page; the JavaFX UI has its own theme and layout |
 | 36 | [Catppuccin Theme](https://github.com/catppuccin/stable-diffusion-webui.git) | 302 | na | `webui-css` | styles / JavaScript tweaks of the Gradio web page; the JavaFX UI has its own theme and layout |
 | 37 | [Bilingual Localization](https://github.com/journey-ad/sd-webui-bilingual-localization.git) | 907 | todo | `core:localization` |  |
-| 38 | [Dynamic Prompts](https://github.com/adieyal/sd-dynamic-prompts.git) | 2298 | todo | `dynamic_prompts` |  |
+| 38 | [Dynamic Prompts](https://github.com/adieyal/sd-dynamic-prompts.git) | 2298 | done | `dynamic_prompts` |  |
 | 39 | [Unprompted](https://github.com/ThereforeGames/unprompted.git) | 805 | todo | `unprompted` |  |
 | 40 | [StylePile](https://github.com/some9000/StylePile.git) | 571 | todo | `stylepile` |  |
 | 41 | [Booru tag autocompletion](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete.git) | 2811 | todo | `core:tag-autocomplete` |  |
-| 42 | [novelai-2-local-prompt](https://github.com/animerl/novelai-2-local-prompt.git) | 73 | todo | `novelai_prompt` |  |
+| 42 | [novelai-2-local-prompt](https://github.com/animerl/novelai-2-local-prompt.git) | 73 | done | `novelai_prompt` |  |
 | 43 | [tokenizer](https://github.com/AUTOMATIC1111/stable-diffusion-webui-tokenizer.git) | 171 | todo | `tokenizer` |  |
-| 44 | [Randomize](https://github.com/innightwolfsleep/stable-diffusion-webui-randomize.git) | 25 | todo | `randomize` |  |
+| 44 | [Randomize](https://github.com/innightwolfsleep/stable-diffusion-webui-randomize.git) | 25 | done | `randomize` |  |
 | 45 | [conditioning-highres-fix](https://github.com/klimaleksus/stable-diffusion-webui-conditioning-highres-fix.git) | 43 | todo | `conditioning_highres_fix` |  |
 | 46 | [model-keyword](https://github.com/mix1009/model-keyword.git) | 269 | todo | `model_keyword` |  |
 | 47 | [Prompt Generator](https://github.com/imrayya/stable-diffusion-webui-Prompt_Generator.git) | 243 | todo | `prompt_generator` |  |
@@ -60,8 +60,8 @@ Totals: done 29, todo 273, na 51.
 | 51 | [Deforum](https://github.com/deforum-art/deforum-for-automatic1111-webui.git) | 2855 | todo | `deforum` |  |
 | 52 | [gif2gif](https://github.com/LonicaMewinsky/gif2gif.git) | 247 | todo | `gif2gif` |  |
 | 53 | [Video Loopback](https://github.com/fishslot/video_loopback_for_webui.git) | 325 | todo | `video_loopback` |  |
-| 54 | [seed travel](https://github.com/yownas/seed_travel.git) | 312 | todo | `seed_travel` |  |
-| 55 | [shift-attention](https://github.com/yownas/shift-attention.git) | 164 | todo | `shift_attention` |  |
+| 54 | [seed travel](https://github.com/yownas/seed_travel.git) | 312 | done | `seed_travel` |  |
+| 55 | [shift-attention](https://github.com/yownas/shift-attention.git) | 164 | done | `shift_attention` |  |
 | 56 | [prompt travel](https://github.com/Kahsolt/stable-diffusion-webui-prompt-travel.git) | 267 | todo | `prompt_travel` |  |
 | 57 | [Steps Animation](https://github.com/vladmandic/sd-extension-steps-animation.git) | 142 | todo | `steps_animation` |  |
 | 58 | [auto-sd-paint-ext](https://github.com/Interpause/auto-sd-paint-ext.git) | 482 | na | `external-app` | bridge to a specific external application (Photoshop, Krita, ComfyUI, ...) |
@@ -90,7 +90,7 @@ Totals: done 29, todo 273, na 51.
 | 81 | [Gelbooru Prompt](https://github.com/antis0007/sd-webui-gelbooru-prompt.git) | 40 | todo | `booru_prompt` |  |
 | 82 | [e621 Prompt](https://github.com/nochnoe/sd-webui-e621-prompt.git) | 29 | todo | `booru_prompt` |  |
 | 83 | [NSFW checker](https://github.com/AUTOMATIC1111/stable-diffusion-webui-nsfw-censor.git) | 141 | todo | `nsfw_checker` |  |
-| 84 | [Diffusion Defender](https://github.com/WildBanjos/DiffusionDefender.git) | 29 | todo | `prompt_filter` |  |
+| 84 | [Diffusion Defender](https://github.com/WildBanjos/DiffusionDefender.git) | 29 | done | `prompt_filter` |  |
 | 85 | [DH Patch](https://github.com/d8ahazard/sd_auto_fix.git) | 12 | na | `obsolete` | superseded: the feature is in the base app (A1111 >= 1.5) or the extension is deprecated |
 | 86 | [Riffusion](https://github.com/enlyth/sd-webui-riffusion.git) | 202 | todo | `riffusion` |  |
 | 87 | [Save Intermediate Images](https://github.com/AlUlkesh/sd_save_intermediate_images.git) | 112 | todo | `save_intermediate` |  |
@@ -129,7 +129,7 @@ Totals: done 29, todo 273, na 51.
 | 120 | [Auto Translate](https://github.com/hyd998877/stable-diffusion-webui-auto-translate-language.git) | 34 | todo | `prompt_translate` |  |
 | 121 | [Prompt Translator](https://github.com/ParisNeo/prompt_translator.git) | 163 | todo | `prompt_translate` |  |
 | 122 | [Abysz LAB](https://github.com/AbyszOne/Abysz-LAB-Ext.git) | 148 | todo | `abysz_lab` |  |
-| 123 | [Negative Prompt Weight](https://github.com/muerrilla/stable-diffusion-NPW.git) | 111 | todo | `negative_prompt_weight` |  |
+| 123 | [Negative Prompt Weight](https://github.com/muerrilla/stable-diffusion-NPW.git) | 111 | done | `negative_prompt_weight` |  |
 | 124 | [Discord - Dynamic Rich Presence](https://github.com/davehornik/sd-discord-rich_presence.git) | 23 | na | `account` | needs a third-party account / paid API key and posts data to that service |
 | 125 | [PBRemTools](https://github.com/mattyamonaca/PBRemTools.git) | 369 | todo | `remove_background` |  |
 | 126 | [a1111-sd-webui-lycoris](https://github.com/KohakuBlueleaf/a1111-sd-webui-lycoris.git) | 884 | na | `obsolete` | superseded: the feature is in the base app (A1111 >= 1.5) or the extension is deprecated |
@@ -159,7 +159,7 @@ Totals: done 29, todo 273, na 51.
 | 150 | [sd-model-preview-xd](https://github.com/CurtisDS/sd-model-preview-xd) | 78 | todo | `model_organizer` |  |
 | 151 | [ADetailer](https://github.com/Bing-su/adetailer.git) | 4793 | todo | `adetailer` |  |
 | 152 | [Weight Gradient](https://github.com/DingoBite/weight_gradient) | 22 | todo | `weight_gradient` |  |
-| 153 | [One Button Prompt](https://github.com/AIrjen/OneButtonPrompt) | 1069 | todo | `one_button_prompt` |  |
+| 153 | [One Button Prompt](https://github.com/AIrjen/OneButtonPrompt) | 1069 | done | `one_button_prompt` |  |
 | 154 | [Miaoshouai Assistant](https://github.com/miaoshouai/miaoshouai-assistant.git) | 309 | todo | `model_organizer` |  |
 | 155 | [miniPaint](https://github.com/0Tick/a1111-mini-paint) | 123 | todo | `image_editor` |  |
 | 156 | [StableSR](https://github.com/pkuliyi2015/sd-webui-stablesr.git) | 1089 | todo | `stable_sr` |  |
@@ -197,7 +197,7 @@ Totals: done 29, todo 273, na 51.
 | 188 | [Shutdown button](https://github.com/EnsignMK/sd_shutdown_button.git) | 18 | na | `server-ops` | operating a shared web server (tunnels, TLS, multi-instance, kill buttons) |
 | 189 | [Latent Upscale](https://github.com/feynlee/latent-upscale.git) | 76 | todo | `latent_upscale` |  |
 | 190 | [sd-history-slider](https://github.com/LucasMali/sd-history-slider) | 19 | done | `core:gallery` |  |
-| 191 | [prompts filter](https://github.com/viyiviyi/prompts-filter.git) | 10 | todo | `prompt_filter` |  |
+| 191 | [prompts filter](https://github.com/viyiviyi/prompts-filter.git) | 10 | done | `prompt_filter` |  |
 | 192 | [sd-webui-animatediff](https://github.com/continue-revolution/sd-webui-animatediff.git) | 3424 | todo | `animatediff` |  |
 | 193 | [Dynamic Javascript](https://github.com/pmcculler/sd-dynamic-javascript) | 24 | na | `webui-ux` | Gradio page behaviour (tabs, buttons, dialogs); the desktop UI provides the equivalent natively |
 | 194 | [Detection Detailer](https://github.com/Bing-su/dddetailer.git) | 130 | todo | `adetailer` |  |
@@ -211,14 +211,14 @@ Totals: done 29, todo 273, na 51.
 | 202 | [sd-wav2lip-uhq](https://github.com/numz/sd-wav2lip-uhq) | 1422 | todo | `wav2lip` |  |
 | 203 | [Controlnet Fastload](https://github.com/pk5ls20/sd-webui-controlnet-fastload.git) | 36 | todo | `core:presets` |  |
 | 204 | [LoRA Control](https://github.com/cheald/sd-webui-loractl.git) | 265 | todo | `lora_control` |  |
-| 205 | [Wildcards](https://github.com/AUTOMATIC1111/stable-diffusion-webui-wildcards.git) | 481 | todo | `dynamic_prompts` |  |
+| 205 | [Wildcards](https://github.com/AUTOMATIC1111/stable-diffusion-webui-wildcards.git) | 481 | done | `dynamic_prompts` |  |
 | 206 | [SD Ratio Lock](https://github.com/bit9labs/sd-ratio-lock.git) | 16 | done | `core:size-presets` |  |
 | 207 | [sd-webui-chatgpt](https://github.com/NON906/sd-webui-chatgpt.git) | 42 | na | `account` | needs a third-party account / paid API key and posts data to that service |
 | 208 | [sd-webui-auto-tweet.json](https://github.com/sinano1107/sd-webui-auto-tweet.git) | 9 | na | `account` | needs a third-party account / paid API key and posts data to that service |
 | 209 | [zh_Hant Localization](https://github.com/bluelovers/stable-diffusion-webui-localization-zh_Hant.git) | 20 | todo | `core:localization` |  |
 | 210 | [SD Webui Vectorscope CC](https://github.com/Haoming02/sd-webui-vectorscope-cc.git) | 192 | todo | `vectorscope_cc` |  |
-| 211 | [Prompt Formatter - by uwidev](https://github.com/uwidev/sd_extension-prompt_formatter.git) | 96 | todo | `prompt_format` |  |
-| 212 | [Prompt Format - by Haoming02](https://github.com/Haoming02/sd-webui-prompt-format.git) | 97 | todo | `prompt_format` |  |
+| 211 | [Prompt Formatter - by uwidev](https://github.com/uwidev/sd_extension-prompt_formatter.git) | 96 | done | `prompt_format` |  |
+| 212 | [Prompt Format - by Haoming02](https://github.com/Haoming02/sd-webui-prompt-format.git) | 97 | done | `prompt_format` |  |
 | 213 | [FABRIC](https://github.com/dvruette/sd-webui-fabric.git) | 405 | todo | `fabric` |  |
 | 214 | [Webpage close confirmation dialogue](https://github.com/w-e-w/sdwebui-close-confirmation-dialogue.git) | 38 | done | `core:close-confirm` |  |
 | 215 | [sd-webui-discord-ex](https://github.com/SpenserCai/sd-webui-discord-ex.git) | 24 | na | `account` | needs a third-party account / paid API key and posts data to that service |
@@ -258,12 +258,12 @@ Totals: done 29, todo 273, na 51.
 | 249 | [Semantic Guidance](https://github.com/v0xie/sd-webui-semantic-guidance.git) | 68 | todo | `semantic_guidance` |  |
 | 250 | [SD Web UI Modal Info](https://github.com/luminouspear/sd-webui-modal-info.git) | 10 | done | `core:png-info` |  |
 | 251 | [A Person Mask Generator](https://github.com/djbielejeski/a-person-mask-generator.git) | 407 | todo | `person_mask` |  |
-| 252 | [Style variables](https://github.com/SirVeggie/extension-style-vars) | 23 | todo | `style_variables` |  |
+| 252 | [Style variables](https://github.com/SirVeggie/extension-style-vars) | 23 | done | `style_variables` |  |
 | 253 | [SD-WebUI API Payload Display](https://github.com/huchenlei/sd-webui-api-payload-display.git) | 201 | todo | `core:api-payload` |  |
 | 254 | [µ Detection Detailer](https://github.com/wkpark/uddetailer.git) | 83 | todo | `adetailer` |  |
-| 255 | [Lora Queue Helper](https://github.com/Yinzo/sd-webui-Lora-queue-helper.git) | 35 | todo | `lora_queue` |  |
+| 255 | [Lora Queue Helper](https://github.com/Yinzo/sd-webui-Lora-queue-helper.git) | 35 | done | `lora_queue` |  |
 | 256 | [Deep Shrink Hires.fix](https://github.com/wcde/sd-webui-kohya-hiresfix.git) | 222 | done | `kohya_hrfix` |  |
-| 257 | [Test my prompt!](https://github.com/Extraltodeus/test_my_prompt.git) | 193 | todo | `test_my_prompt` |  |
+| 257 | [Test my prompt!](https://github.com/Extraltodeus/test_my_prompt.git) | 193 | done | `test_my_prompt` |  |
 | 258 | [sd-webui-breadcrumbs](https://github.com/ThereforeGames/sd-webui-breadcrumbs.git) | 28 | na | `webui-ux` | Gradio page behaviour (tabs, buttons, dialogs); the desktop UI provides the equivalent natively |
 | 259 | [Kohaku-NAI](https://github.com/KohakuBlueleaf/Kohaku-NAI) | 93 | na | `account` | needs a third-party account / paid API key and posts data to that service |
 | 260 | [Replacer - fast inpaint](https://github.com/light-and-ray/sd-webui-replacer.git) | 242 | todo | `replacer` |  |
@@ -324,8 +324,8 @@ Totals: done 29, todo 273, na 51.
 | 315 | [SD-PPP](https://github.com/zombieyang/sd-ppp.git) | 2191 | na | `external-app` | bridge to a specific external application (Photoshop, Krita, ComfyUI, ...) |
 | 316 | [ControlNet preprocessor: Segment Anything](https://github.com/light-and-ray/sd-webui-cn-sam-preprocessor.git) | 16 | todo | `segment_anything` |  |
 | 317 | [Aspect Ratio and Resolution Buttons (ar-plusplus)](https://github.com/altoiddealer/--sd-webui-ar-plusplus.git) | 69 | done | `core:size-presets` |  |
-| 318 | [ScramblePrompts [m9]](https://github.com/MarcusNyne/sd-scramble-prompts-m9.git) | 9 | todo | `scramble_prompts` |  |
-| 319 | [TweakWeights [m9]](https://github.com/MarcusNyne/sd-tweak-weights-m9.git) | 2 | todo | `tweak_weights` |  |
+| 318 | [ScramblePrompts [m9]](https://github.com/MarcusNyne/sd-scramble-prompts-m9.git) | 9 | done | `scramble_prompts` |  |
+| 319 | [TweakWeights [m9]](https://github.com/MarcusNyne/sd-tweak-weights-m9.git) | 2 | done | `tweak_weights` |  |
 | 320 | [Prevent interruption](https://github.com/light-and-ray/sd-webui-prevent-interruption.git) | 1 | todo | `core:prevent-interrupt` |  |
 | 321 | [Waifu2x Upscaler](https://github.com/light-and-ray/sd-webui-waifu2x-upscaler.git) | 6 | todo | `waifu2x` |  |
 | 322 | [sd-webui-udav2](https://github.com/MackinationsAi/sd-webui-udav2.git) | 45 | todo | `depth_anything` |  |
