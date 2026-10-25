@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 47, todo 255, na 51.
+Totals: done 56, todo 246, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-fx | Why not applicable |
 |---|---|---|---|---|---|
@@ -73,15 +73,15 @@ Totals: done 47, todo 255, na 51.
 | 64 | [Pixel](https://github.com/Leodotpy/sd-pixel.git) | 51 | todo | `pixel_art` |  |
 | 65 | [Pixelization](https://github.com/AUTOMATIC1111/stable-diffusion-webui-pixelization.git) | 636 | todo | `pixelization` |  |
 | 66 | [haku-img](https://github.com/KohakuBlueleaf/a1111-sd-webui-haku-img.git) | 198 | todo | `haku_img` |  |
-| 67 | [Asymmetric Tiling](https://github.com/tjm35/asymmetric-tiling-sd-webui.git) | 216 | todo | `asymmetric_tiling` |  |
-| 68 | [Latent Mirroring](https://github.com/dfaker/SD-latent-mirroring.git) | 111 | todo | `latent_mirroring` |  |
+| 67 | [Asymmetric Tiling](https://github.com/tjm35/asymmetric-tiling-sd-webui.git) | 216 | done | `asymmetric_tiling` |  |
+| 68 | [Latent Mirroring](https://github.com/dfaker/SD-latent-mirroring.git) | 111 | done | `latent_mirroring` |  |
 | 69 | [Sonar](https://github.com/Kahsolt/stable-diffusion-webui-sonar.git) | 112 | todo | `sonar` |  |
 | 70 | [Depth Image I/O](https://github.com/AnonymousCervine/depth-image-io-for-SDWebui.git) | 73 | todo | `depth_image_io` |  |
 | 71 | [Ultimate SD Upscale](https://github.com/Coyote-A/ultimate-upscale-for-automatic1111.git) | 1764 | todo | `ultimate_sd_upscale` |  |
 | 72 | [Prompt Fusion](https://github.com/ljleb/prompt-fusion-extension.git) | 265 | todo | `prompt_fusion` |  |
 | 73 | [Neutral Prompt](https://github.com/ljleb/sd-webui-neutral-prompt.git) | 184 | todo | `neutral_prompt` |  |
 | 74 | [Dynamic Thresholding](https://github.com/mcmonkeyprojects/sd-dynamic-thresholding.git) | 1224 | done | `dynamic_thresholding` |  |
-| 75 | [anti-burn](https://github.com/klimaleksus/stable-diffusion-webui-anti-burn.git) | 164 | todo | `anti_burn` |  |
+| 75 | [anti-burn](https://github.com/klimaleksus/stable-diffusion-webui-anti-burn.git) | 164 | done | `anti_burn` |  |
 | 76 | [sd-webui-controlnet](https://github.com/Mikubill/sd-webui-controlnet.git) | 17822 | done | `core:controlnet` |  |
 | 77 | [Latent Couple](https://github.com/ashen-sensored/stable-diffusion-webui-two-shot.git) | 428 | todo | `latent_couple` |  |
 | 78 | [Composable LoRA](https://github.com/a2569875/stable-diffusion-webui-composable-lora.git) | 159 | todo | `composable_lora` |  |
@@ -109,7 +109,7 @@ Totals: done 47, todo 255, na 51.
 | 100 | [Dump U-Net](https://github.com/hnmr293/stable-diffusion-webui-dumpunet.git) | 108 | todo | `dump_unet` |  |
 | 101 | [posex](https://github.com/hnmr293/posex.git) | 591 | todo | `openpose_editor` |  |
 | 102 | [LLuL](https://github.com/hnmr293/sd-webui-llul.git) | 794 | todo | `llul` |  |
-| 103 | [CFG-Schedule-for-Automatic1111-SD](https://github.com/guzuligo/CFG-Schedule-for-Automatic1111-SD.git) | 41 | todo | `cfg_schedule` |  |
+| 103 | [CFG-Schedule-for-Automatic1111-SD](https://github.com/guzuligo/CFG-Schedule-for-Automatic1111-SD.git) | 41 | done | `cfg_schedule` |  |
 | 104 | [ebsynth_utility](https://github.com/s9roll7/ebsynth_utility.git) | 1273 | todo | `ebsynth_utility` |  |
 | 105 | [VRAM Estimator](https://github.com/space-nuko/a1111-stable-diffusion-webui-vram-estimator.git) | 113 | todo | `vram_estimator` |  |
 | 106 | [TiledDiffusion with Tiled VAE](https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111.git) | 4991 | todo | `tiled_diffusion` |  |
@@ -216,7 +216,7 @@ Totals: done 47, todo 255, na 51.
 | 207 | [sd-webui-chatgpt](https://github.com/NON906/sd-webui-chatgpt.git) | 42 | na | `account` | needs a third-party account / paid API key and posts data to that service |
 | 208 | [sd-webui-auto-tweet.json](https://github.com/sinano1107/sd-webui-auto-tweet.git) | 9 | na | `account` | needs a third-party account / paid API key and posts data to that service |
 | 209 | [zh_Hant Localization](https://github.com/bluelovers/stable-diffusion-webui-localization-zh_Hant.git) | 20 | todo | `core:localization` |  |
-| 210 | [SD Webui Vectorscope CC](https://github.com/Haoming02/sd-webui-vectorscope-cc.git) | 192 | todo | `vectorscope_cc` |  |
+| 210 | [SD Webui Vectorscope CC](https://github.com/Haoming02/sd-webui-vectorscope-cc.git) | 192 | done | `vectorscope_cc` |  |
 | 211 | [Prompt Formatter - by uwidev](https://github.com/uwidev/sd_extension-prompt_formatter.git) | 96 | done | `prompt_format` |  |
 | 212 | [Prompt Format - by Haoming02](https://github.com/Haoming02/sd-webui-prompt-format.git) | 97 | done | `prompt_format` |  |
 | 213 | [FABRIC](https://github.com/dvruette/sd-webui-fabric.git) | 405 | todo | `fabric` |  |
@@ -246,7 +246,7 @@ Totals: done 47, todo 255, na 51.
 | 237 | [encrypt-image](https://github.com/viyiviyi/sd-encrypt-image.git) | 64 | todo | `encrypt_image` |  |
 | 238 | [NudeNet NSFW Censor](https://github.com/w-e-w/sd-webui-nudenet-nsfw-censor.git) | 139 | todo | `nsfw_checker` |  |
 | 239 | [Latent Consistency Models](https://github.com/0xbitches/sd-webui-lcm.git) | 606 | todo | `lcm` |  |
-| 240 | [CADS](https://github.com/v0xie/sd-webui-cads.git) | 106 | todo | `cads` |  |
+| 240 | [CADS](https://github.com/v0xie/sd-webui-cads.git) | 106 | done | `cads` |  |
 | 241 | [sd-webui-facefusion](https://github.com/diffus-me/sd-webui-facefusion) | 102 | todo | `face_swap` |  |
 | 242 | [Hotshot-XL-Automatic1111](https://github.com/hotshotco/Hotshot-XL-Automatic1111.git) | 79 | todo | `hotshot_xl` |  |
 | 243 | [Inpaint difference](https://github.com/John-WL/sd-webui-inpaint-difference) | 56 | todo | `inpaint_difference` |  |
@@ -290,13 +290,13 @@ Totals: done 47, todo 255, na 51.
 | 281 | [QIC Console](https://github.com/SenshiSentou/sd-webui-qic-console) | 6 | na | `server-ops` | operating a shared web server (tunnels, TLS, multi-instance, kill buttons) |
 | 282 | [Custom AutoLaunch](https://github.com/w-e-w/sd-webui-custom-autolaunch.git) | 8 | na | `webui-ux` | Gradio page behaviour (tabs, buttons, dialogs); the desktop UI provides the equivalent natively |
 | 283 | [SimpleTaggerEditor](https://github.com/davidkingzyb/SimpleTaggerEditor.git) | 8 | todo | `dataset_tag_editor` |  |
-| 284 | [ReSharpen](https://github.com/Haoming02/sd-webui-resharpen.git) | 86 | todo | `resharpen` |  |
+| 284 | [ReSharpen](https://github.com/Haoming02/sd-webui-resharpen.git) | 86 | done | `resharpen` |  |
 | 285 | [Clear Screen](https://github.com/Haoming02/sd-webui-clear-screen.git) | 8 | na | `webui-ux` | Gradio page behaviour (tabs, buttons, dialogs); the desktop UI provides the equivalent natively |
 | 286 | [SD Webui Image Comparison](https://github.com/Haoming02/sd-webui-image-comparison.git) | 66 | todo | `core:image-compare` |  |
 | 287 | [SD Webui Tabs Extension](https://github.com/Haoming02/sd-webui-tabs-extension.git) | 103 | na | `webui-ux` | Gradio page behaviour (tabs, buttons, dialogs); the desktop UI provides the equivalent natively |
 | 288 | [Mosaic Outpaint](https://github.com/Haoming02/sd-webui-mosaic-outpaint.git) | 118 | todo | `mosaic_outpaint` |  |
 | 289 | [SD Webui Boomer](https://github.com/Haoming02/sd-webui-boomer.git) | 56 | na | `webui-ux` | Gradio page behaviour (tabs, buttons, dialogs); the desktop UI provides the equivalent natively |
-| 290 | [Diffusion Color Grading](https://github.com/Haoming02/sd-webui-diffusion-cg.git) | 74 | todo | `color_grading` |  |
+| 290 | [Diffusion Color Grading](https://github.com/Haoming02/sd-webui-diffusion-cg.git) | 74 | done | `color_grading` |  |
 | 291 | [Moar Generate Button](https://github.com/Haoming02/sd-webui-moar-generate.git) | 30 | na | `webui-ux` | Gradio page behaviour (tabs, buttons, dialogs); the desktop UI provides the equivalent natively |
 | 292 | [Old Photo Restoration](https://github.com/Haoming02/sd-webui-old-photo-restoration.git) | 151 | todo | `old_photo_restoration` |  |
 | 293 | [Mobile friendly UI tweaks](https://github.com/Haoming02/sd-webui-mobile-friendly.git) | 16 | na | `webui-ux` | Gradio page behaviour (tabs, buttons, dialogs); the desktop UI provides the equivalent natively |
@@ -330,7 +330,7 @@ Totals: done 47, todo 255, na 51.
 | 321 | [Waifu2x Upscaler](https://github.com/light-and-ray/sd-webui-waifu2x-upscaler.git) | 6 | todo | `waifu2x` |  |
 | 322 | [sd-webui-udav2](https://github.com/MackinationsAi/sd-webui-udav2.git) | 45 | todo | `depth_anything` |  |
 | 323 | [Topaz Photo AI integration](https://github.com/light-and-ray/sd-webui-topaz-photo-ai-integration.git) | 12 | na | `external-app` | bridge to a specific external application (Photoshop, Krita, ComfyUI, ...) |
-| 324 | [Detail Daemon](https://github.com/muerrilla/sd-webui-detail-daemon.git) | 190 | todo | `detail_daemon` |  |
+| 324 | [Detail Daemon](https://github.com/muerrilla/sd-webui-detail-daemon.git) | 190 | done | `detail_daemon` |  |
 | 325 | [Yandere Inpainting as masked content](https://github.com/light-and-ray/sd-webui-yandere-inpaint-masked-content.git) | 12 | todo | `masked_content_extras` |  |
 | 326 | [Multi-Prompt Manager](https://github.com/camdenFletcher03/sd-webui-Multi-Prompt-Manager.git) | 13 | todo | `core:prompt-tools` |  |
 | 327 | [Resynthesizer as masked content](https://github.com/light-and-ray/sd-webui-resynthesizer-masked-content.git) | 3 | todo | `masked_content_extras` |  |

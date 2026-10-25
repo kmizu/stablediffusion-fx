@@ -196,6 +196,7 @@ class Engine(BaseEngine):
         f += ["apg", "mahiro", "rescale_cfg", "model_sampling", "kohya_hrfix", "multidiffusion", "latent_modifier",
               "soft_inpainting", "neveroom", "reference", "revision", "ip_adapter", "controllllite", "fooocus_inpaint",
               "img2imgalt", "caption", "ldsr"]
+        f += list(ext_mod.sampling_ext.HOOKS)
         if hasattr(diffusers, "StableDiffusionSAGPipeline"):
             f.append("sag")
         if adapters.photomaker_available():

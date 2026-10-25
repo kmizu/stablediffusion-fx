@@ -21,7 +21,10 @@ object StandardPlugins:
     new NeverOomPlugin,
     // prompt processing (extension index)
     new RandomizePlugin, new PromptFormatPlugin, new PromptFilterPlugin, new NegativePromptWeightPlugin,
-    new NovelAIPromptPlugin, new StyleVariablesPlugin()
+    new NovelAIPromptPlugin, new StyleVariablesPlugin(),
+    // sampling (extension index)
+    new DetailDaemonPlugin, new VectorscopeCcPlugin, new LatentMirroringPlugin, new AsymmetricTilingPlugin,
+    new AntiBurnPlugin, new ReSharpenPlugin, new ColorGradingPlugin, new CfgSchedulePlugin, new CadsPlugin
   )
 
   def scripts(extraAxes: () => Seq[XyzAxis]): Seq[Plugin] = Seq(

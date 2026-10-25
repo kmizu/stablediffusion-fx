@@ -119,6 +119,8 @@ IMPLEMENTED = {
     "dynamic_prompts", "randomize", "prompt_format", "prompt_filter", "negative_prompt_weight", "novelai_prompt",
     "style_variables", "test_my_prompt", "scramble_prompts", "tweak_weights", "lora_queue", "batch_checkpoints_prompts",
     "seed_travel", "shift_attention", "one_button_prompt",
+    "detail_daemon", "vectorscope_cc", "latent_mirroring", "asymmetric_tiling", "anti_burn", "resharpen",
+    "color_grading", "cfg_schedule", "cads",
 }
 
 

@@ -16,7 +16,7 @@ import os
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional
 
-from . import adapters, guidance, latent_ops, unet_hooks
+from . import adapters, guidance, latent_ops, sampling_ext, unet_hooks
 from .hooks import coerce_bool, hook_config
 from .protocol import INVALID_PARAMS, UNSUPPORTED, EngineError
 
@@ -25,7 +25,7 @@ log = logging.getLogger("sdfx.extensions")
 # hooks handled here (the engine handles freeu, dynamic_thresholding, hypertile, pag itself)
 EXTENSION_HOOKS = ("apg", "mahiro", "rescale_cfg", "model_sampling", "kohya_hrfix", "multidiffusion", "latent_modifier",
                    "soft_inpainting", "sag", "neveroom", "reference", "revision", "ip_adapter", "controllllite",
-                   "fooocus_inpaint", "photomaker", "face_restore", "img2imgalt")
+                   "fooocus_inpaint", "photomaker", "face_restore", "img2imgalt") + sampling_ext.HOOKS
 
 MODEL_SAMPLING_DEFAULTS = {"sampling": "default", "zsnr": False}
 SAG_DEFAULTS = {"scale": 0.5, "blur_sigma": 2.0}
@@ -181,6 +181,8 @@ def install(engine, pipe, task: str, gp, req, kw: dict, ctx, cleanups: list, *, 
         gh = guidance.GuidanceHook(unet, ac, sched.config.get("prediction_type", "epsilon"), cfg_scale,
                                    guidance.normalize_apg(apg) if apg else None, bool(mah), post).install()
         cleanups.append(gh.remove)
+    sampling_ext.install(engine, pipe, gp, kw, ctx, cleanups, sched=sched, cfg_scale=cfg_scale, steps=steps, seed=seed,
+                         chain=_chain_callback)
     if plan.sag:
         kw["sag_scale"] = plan.sag["scale"]
         if plan.sag["blur_sigma"] != SAG_DEFAULTS["blur_sigma"]:

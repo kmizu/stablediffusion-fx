@@ -405,13 +405,13 @@
 "index": 67,
 "name": "Asymmetric Tiling",
 "url": "https://github.com/tjm35/asymmetric-tiling-sd-webui.git",
-"status": "todo:asymmetric_tiling"
+"status": "done:asymmetric_tiling"
 },
 {
 "index": 68,
 "name": "Latent Mirroring",
 "url": "https://github.com/dfaker/SD-latent-mirroring.git",
-"status": "todo:latent_mirroring"
+"status": "done:latent_mirroring"
 },
 {
 "index": 69,
@@ -453,7 +453,7 @@
 "index": 75,
 "name": "anti-burn",
 "url": "https://github.com/klimaleksus/stable-diffusion-webui-anti-burn.git",
-"status": "todo:anti_burn"
+"status": "done:anti_burn"
 },
 {
 "index": 76,
@@ -621,7 +621,7 @@
 "index": 103,
 "name": "CFG-Schedule-for-Automatic1111-SD",
 "url": "https://github.com/guzuligo/CFG-Schedule-for-Automatic1111-SD.git",
-"status": "todo:cfg_schedule"
+"status": "done:cfg_schedule"
 },
 {
 "index": 104,
@@ -1263,7 +1263,7 @@
 "index": 210,
 "name": "SD Webui Vectorscope CC",
 "url": "https://github.com/Haoming02/sd-webui-vectorscope-cc.git",
-"status": "todo:vectorscope_cc"
+"status": "done:vectorscope_cc"
 },
 {
 "index": 211,
@@ -1443,7 +1443,7 @@
 "index": 240,
 "name": "CADS",
 "url": "https://github.com/v0xie/sd-webui-cads.git",
-"status": "todo:cads"
+"status": "done:cads"
 },
 {
 "index": 241,
@@ -1707,7 +1707,7 @@
 "index": 284,
 "name": "ReSharpen",
 "url": "https://github.com/Haoming02/sd-webui-resharpen.git",
-"status": "todo:resharpen"
+"status": "done:resharpen"
 },
 {
 "index": 285,
@@ -1743,7 +1743,7 @@
 "index": 290,
 "name": "Diffusion Color Grading",
 "url": "https://github.com/Haoming02/sd-webui-diffusion-cg.git",
-"status": "todo:color_grading"
+"status": "done:color_grading"
 },
 {
 "index": 291,
@@ -1947,7 +1947,7 @@
 "index": 324,
 "name": "Detail Daemon",
 "url": "https://github.com/muerrilla/sd-webui-detail-daemon.git",
-"status": "todo:detail_daemon"
+"status": "done:detail_daemon"
 },
 {
 "index": 325,

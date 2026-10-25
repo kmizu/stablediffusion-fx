@@ -20,6 +20,7 @@ except ImportError:
 from .base import LATENT_UPSCALERS, BaseEngine
 from .images import (HAVE_PIL, Image, ImageFilter, ImageOps, load_mask, load_rgb, next_output_path, png_size,
                      resize_image, save_png, to_jpeg_b64, write_png_rgb)
+from . import sampling_ext
 from .params import hires_steps, img2img_steps, resolve_seed
 from .protocol import INVALID_PARAMS, MODEL_LOAD_FAILED, UNSUPPORTED, EngineError, JobContext
 
@@ -71,7 +72,7 @@ class FakeEngine(BaseEngine):
         return ["freeu", "dynamic_thresholding", "hypertile", "pag", "controlnet", "apg", "mahiro", "rescale_cfg",
                 "model_sampling", "kohya_hrfix", "multidiffusion", "latent_modifier", "soft_inpainting", "sag", "neveroom",
                 "reference", "revision", "ip_adapter", "controllllite", "fooocus_inpaint", "photomaker", "img2imgalt",
-                "face_restore", "caption", "img2vid", "novel_view", "ldsr", "marigold"] + (
+                "face_restore", "caption", "img2vid", "novel_view", "ldsr", "marigold"] + list(sampling_ext.HOOKS) + (
                     ["custom_code"] if os.environ.get("SDFX_ALLOW_CODE") == "1" else [])
 
     def preprocessors(self) -> list[str]:
