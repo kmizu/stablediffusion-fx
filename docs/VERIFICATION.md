@@ -1,5 +1,23 @@
 # Real-model verification log
 
+## Full pass (2026-10-26 06:32:11 – 07:13:39)
+
+One script run, final code, one log, stages in order. Each stage starts its own engine process(es); the run as a whole
+covers every plugin and every test suite. Errors in the log: 0.
+
+| Stage | What runs | Result |
+|---|---|---|
+| E | engine requests, one fresh engine per item: GFPGAN, CodeFormer, face-restore hook, BLIP, WD14, LDSR, Marigold depth / normal, recolor / tile / blur, custom code, ControlNet canny, IP-Adapter, ControlNet-LLLite, Fooocus inpaint, PhotoMaker v1, SVD, Zero123 | 19 / 19 |
+| H15 | every hook plugin on SD1.5 (incl. SAG with DPM++, Revision skip-with-warning) | 20 / 20 |
+| HXL | hook plugins on SDXL (incl. Revision, SAG skip-with-warning) | 17 / 17 |
+| V | Revision with / without on animagine-xl-3.1 and waiIllustriousSDXL_v170, same seed | 10 / 10 images |
+| S | every AlwaysOn plugin through the Scala path (`RealAlwaysOnCheck`: Plugin.process -> JobQueue -> engine -> GPU); random_resolutions -> 576x448 | 18 / 18 |
+| M | every Script / Extras plugin through the jar (`McpMain` stdio -> JobQueue -> engine -> GPU) | 17 / 17 |
+| T | sbt test (core 200, engine 60, plugins 83, mcp 39, ui 62 = 444), smoke, pytest without torch (197 passed, 10 skipped) and with torch (209 passed) | all passed |
+
+## Earlier per-item runs
+
+
 Date: 2026-10-26, 02:18–02:55 (re-runs of sag, revision, custom_code, photomaker, fooocus_inpaint, zero123 at 02:40–02:55), NVIDIA RTX 3090, final code (after all fixes), python `.venv-smoke`
 (torch 2.9 / diffusers 0.32.2), models: `animekawa_v10` (SD1.5), `waiIllustriousSDXL_v170` (SDXL).
 
