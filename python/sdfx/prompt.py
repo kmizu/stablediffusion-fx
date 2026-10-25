@@ -111,8 +111,6 @@ def strip_extra_networks(text: str) -> str:
 
 def unsupported_syntax_warnings(text: str) -> list[str]:
     w = []
-    if re_prompt_editing.search(text or ""):
-        w.append("prompt editing / alternation syntax ([a:b:n], [a|b]) is not supported; treated as plain text")
     if re_and.search(text or ""):
         w.append("composable diffusion (AND) is not supported; treated as plain text")
     return w

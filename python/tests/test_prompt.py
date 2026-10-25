@@ -100,6 +100,6 @@ def test_apply_pad():
 
 def test_extra_networks_and_warnings():
     assert strip_extra_networks("a <lora:foo:0.5> b") == "a  b"
-    assert unsupported_syntax_warnings("[cat:dog:0.5]")
+    assert unsupported_syntax_warnings("[cat:dog:0.5]") == []  # prompt editing is supported (prompt_schedule)
     assert unsupported_syntax_warnings("x AND y")
     assert unsupported_syntax_warnings("(cat:1.2) [dog]") == []

@@ -147,8 +147,10 @@ def test_dryrun_validation_parity(eng, tmp_path):
                                            "upscaler_paths": {"X": str(tmp_path / "x.pth")}}))[-1]
     assert res["code"] == "invalid_params"
     # prompt-syntax warnings are reported by the dry run too
+    res = eng.collect(eng.send("txt2img", gen_params(tmp_path / "o", prompt="cat AND dog", steps=1)))[-1]
+    assert res["type"] == "result" and any("composable diffusion" in w for w in res["result"]["warnings"])
     res = eng.collect(eng.send("txt2img", gen_params(tmp_path / "o", prompt="[cat:dog:0.5]", steps=1)))[-1]
-    assert res["type"] == "result" and any("prompt editing" in w for w in res["result"]["warnings"])
+    assert res["type"] == "result" and not any("prompt editing" in w for w in res["result"]["warnings"])
 
 
 def test_build_engine_degrades_on_non_import_errors(monkeypatch):

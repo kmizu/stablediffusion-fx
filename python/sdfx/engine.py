@@ -23,7 +23,7 @@ import diffusers  # noqa: F401
 from . import controlnet as cn_mod
 from . import hires as hires_mod
 from . import hooks as hooks_mod
-from . import adapters, extras, inpaint, models, preview, prompt, schedulers, upscalers
+from . import adapters, extras, inpaint, models, preview, prompt, prompt_schedule, schedulers, upscalers
 from . import extensions as ext_mod
 from .base import LATENT_UPSCALERS, BaseEngine
 from .images import Image, load_mask, load_rgb, next_output_path, resize_image, save_png
@@ -46,6 +46,11 @@ MAX_CONTROLNETS = 2  # resident ControlNet models (LRU)
 MAX_DERIVED = 6      # cached from_pipe pipelines (LRU)
 
 DTYPES = {"fp16": torch.float16, "bf16": torch.bfloat16, "fp32": torch.float32}
+
+
+class ScheduledEmbeds(dict):
+    """Embeddings for step 1, plus `schedule` = [(end_step, embeds), ...] when the prompt changes mid-sampling."""
+    schedule: list = []
 
 
 def slerp(val: float, low, high):
@@ -581,6 +586,87 @@ class Engine(BaseEngine):
             return {"prompt_embeds": pe.repeat(bs, 1, 1).to(self.dtype),
                     "negative_prompt_embeds": ne.repeat(bs, 1, 1).to(self.dtype)}
 
+    def _encode_scheduled(self, pos: str, neg: str, gp: GenerationParams, bs: int, steps: int,
+                          hires_total: Optional[int] = None) -> dict:
+        """_encode plus A1111 prompt editing / alternation: returns the embeddings for step 1; when the prompt
+        changes during sampling the result is a ScheduledEmbeds carrying [(end_step, embeds), ...] (equal lengths)."""
+        ps = prompt_schedule.schedule(prompt.strip_extra_networks(pos), steps, hires_total)
+        ns = prompt_schedule.schedule(prompt.strip_extra_networks(neg), steps, hires_total)
+        if len(ps) == 1 and len(ns) == 1:
+            return self._encode(ps[0][1], ns[0][1], gp, bs)
+        cache: dict = {}
+        variants = []
+        for e in sorted({e for e, _ in ps} | {e for e, _ in ns}):
+            key = (prompt_schedule.text_at(ps, e), prompt_schedule.text_at(ns, e))
+            if key not in cache:
+                cache[key] = self._encode(key[0], key[1], gp, bs)
+            variants.append((e, cache[key]))
+        longest = max(v["prompt_embeds"].shape[1] for _, v in variants)
+        if any(v["prompt_embeds"].shape[1] != longest for _, v in variants):
+            with torch.no_grad():
+                empty = (prompt.encode_sdxl(self.pipe, "", gp.clip_skip)[0] if self.sdxl
+                         else prompt.encode_sd15(self.pipe, "", gp.clip_skip, self.kind == "sd2"))
+            for d in cache.values():
+                for k in ("prompt_embeds", "negative_prompt_embeds"):
+                    t = d[k]
+                    if t.shape[1] < longest:
+                        fill = torch.zeros_like(empty) if not bool(t.abs().any()) else empty
+                        reps = (longest - t.shape[1]) // fill.shape[1]
+                        d[k] = torch.cat([t] + [fill.to(t.device, t.dtype).repeat(t.shape[0], 1, 1)] * reps, dim=1)
+        out = ScheduledEmbeds(variants[0][1])
+        out.schedule = variants
+        return out
+
+    def _adjust_embeds(self, gp: GenerationParams, embeds: dict, ctx: JobContext) -> dict:
+        sch = getattr(embeds, "schedule", None)
+        if not sch:
+            return ext_mod.adjust_embeds(self, gp, embeds, ctx)
+        done: dict = {}
+        variants = []
+        for e, v in sch:
+            if id(v) not in done:
+                done[id(v)] = ext_mod.adjust_embeds(self, gp, v, ctx)
+            variants.append((e, done[id(v)]))
+        out = ScheduledEmbeds(variants[0][1])
+        out.schedule = variants
+        return out
+
+    def _schedule_swapper(self, schedule: list):
+        """callback_on_step_end that swaps the (CFG / PAG concatenated) text embeddings when the prompt changes."""
+        state = {"last": schedule[0][1]}
+
+        def at(step):
+            for e, v in schedule:
+                if step <= e:
+                    return v
+            return schedule[-1][1]
+
+        def cb(pipe, i, t, d):
+            cur = at(i + 2)  # embeddings for the next step (1-based)
+            if cur is state["last"]:
+                return d
+            state["last"] = cur
+            cfg = bool(getattr(pipe, "do_classifier_free_guidance", False))
+            pag = bool(getattr(pipe, "do_perturbed_attention_guidance", False))
+
+            def build(pk, nk, ref):
+                p, n = cur[pk], cur[nk]
+                parts = [n, p, p] if cfg and pag else [n, p] if cfg else [p, p] if pag else [p]
+                x = torch.cat(parts).to(ref.device, ref.dtype)
+                return x if x.shape == ref.shape else None
+            pe = d.get("prompt_embeds")
+            if pe is not None:
+                x = build("prompt_embeds", "negative_prompt_embeds", pe)
+                if x is not None:
+                    d["prompt_embeds"] = x
+            te = d.get("add_text_embeds")
+            if te is not None and "pooled_prompt_embeds" in cur:
+                x = build("pooled_prompt_embeds", "negative_pooled_prompt_embeds", te)
+                if x is not None:
+                    d["add_text_embeds"] = x
+            return d
+        return cb
+
     # -- noise ---------------------------------------------------------------
     def _rng_device(self, gp: GenerationParams) -> str:
         r = (gp.extra or {}).get("rng", "gpu").lower()
@@ -781,9 +867,21 @@ class Engine(BaseEngine):
             kw["prompt"] = prompt.strip_extra_networks(gp.prompt)
             kw["negative_prompt"] = prompt.strip_extra_networks(gp.negative_prompt)
             kw["num_images_per_prompt"] = len(seeds)
+            if getattr(embeds, "schedule", None):
+                ctx.warn("prompt editing is not available with PhotoMaker; the first prompt is used")
             if not re.search(r"\b" + re.escape(pm.get("trigger_word", "img")) + r"\b", kw["prompt"]):
                 raise EngineError(INVALID_PARAMS, f"PhotoMaker: put the trigger word '{pm.get('trigger_word', 'img')}' after "
                                                   "the class word in the prompt, e.g. 'a man img'")
+
+        sch = getattr(embeds, "schedule", None)
+        if sch and "prompt_embeds" in kw:
+            ext_mod._chain_callback(kw, self._schedule_swapper(sch))
+            avail = list(getattr(pipe, "_callback_tensor_inputs", ["latents"]))
+            want = list(kw.get("callback_on_step_end_tensor_inputs") or ["latents"])
+            for k in ("prompt_embeds", "add_text_embeds"):
+                if k in avail and k not in want:
+                    want.append(k)
+            kw["callback_on_step_end_tensor_inputs"] = [k for k in want if k in avail]
 
         cleanups = []
         unet = pipe.unet
@@ -862,14 +960,16 @@ class Engine(BaseEngine):
         self._load_embeddings(req, texts, ctx)
         pag = self._pag_config(gp, ctx)
 
-        embeds = self._encode(gp.prompt, gp.negative_prompt, gp, bs)
-        if hires and (hp.prompt or hp.negative_prompt):
-            hr_embeds = self._encode(hp.prompt or gp.prompt, hp.negative_prompt or gp.negative_prompt, gp, bs)
+        embeds = self._encode_scheduled(gp.prompt, gp.negative_prompt, gp, bs, gp.steps)
+        hr_pos, hr_neg = (hp.prompt or gp.prompt, hp.negative_prompt or gp.negative_prompt) if hires else ("", "")
+        if hires and (hp.prompt or hp.negative_prompt or prompt_schedule.has_schedule(hr_pos)
+                      or prompt_schedule.has_schedule(hr_neg)):
+            hr_embeds = self._encode_scheduled(hr_pos, hr_neg, gp, bs, gp.steps, hp.second_pass_steps or gp.steps)
         else:
             hr_embeds = embeds
         same_hr = hr_embeds is embeds
-        embeds = ext_mod.adjust_embeds(self, gp, embeds, ctx)
-        hr_embeds = embeds if same_hr else ext_mod.adjust_embeds(self, gp, hr_embeds, ctx)
+        embeds = self._adjust_embeds(gp, embeds, ctx)
+        hr_embeds = embeds if same_hr else self._adjust_embeds(gp, hr_embeds, ctx)
 
         init_img = None
         job = None
