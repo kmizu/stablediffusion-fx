@@ -39,6 +39,7 @@ object StandardPlugins:
     new SvdPlugin,
     new Zero123Plugin,
     new CustomCodePlugin,
+    new UltimateSdUpscalePlugin,
     // extension index: prompt and sequence scripts
     new DynamicPromptsPlugin, new OneButtonPromptPlugin, new TestMyPromptPlugin, new ScramblePromptsPlugin,
     new TweakWeightsPlugin, new LoraQueuePlugin, new BatchCheckpointsPromptsPlugin, new SeedTravelPlugin,

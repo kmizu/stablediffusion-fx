@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 56, todo 246, na 51.
+Totals: done 57, todo 245, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-fx | Why not applicable |
 |---|---|---|---|---|---|
@@ -77,7 +77,7 @@ Totals: done 56, todo 246, na 51.
 | 68 | [Latent Mirroring](https://github.com/dfaker/SD-latent-mirroring.git) | 111 | done | `latent_mirroring` |  |
 | 69 | [Sonar](https://github.com/Kahsolt/stable-diffusion-webui-sonar.git) | 112 | todo | `sonar` |  |
 | 70 | [Depth Image I/O](https://github.com/AnonymousCervine/depth-image-io-for-SDWebui.git) | 73 | todo | `depth_image_io` |  |
-| 71 | [Ultimate SD Upscale](https://github.com/Coyote-A/ultimate-upscale-for-automatic1111.git) | 1764 | todo | `ultimate_sd_upscale` |  |
+| 71 | [Ultimate SD Upscale](https://github.com/Coyote-A/ultimate-upscale-for-automatic1111.git) | 1764 | done | `ultimate_sd_upscale` |  |
 | 72 | [Prompt Fusion](https://github.com/ljleb/prompt-fusion-extension.git) | 265 | todo | `prompt_fusion` |  |
 | 73 | [Neutral Prompt](https://github.com/ljleb/sd-webui-neutral-prompt.git) | 184 | todo | `neutral_prompt` |  |
 | 74 | [Dynamic Thresholding](https://github.com/mcmonkeyprojects/sd-dynamic-thresholding.git) | 1224 | done | `dynamic_thresholding` |  |
