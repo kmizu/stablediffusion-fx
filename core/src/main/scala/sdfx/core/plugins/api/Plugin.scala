@@ -24,6 +24,8 @@ sealed trait Control:
   def key: String
   def label: String
   def default: String
+  /** False for layout-only controls (notes, sections) that carry no value. */
+  def hasValue: Boolean = true
 
 object Control:
   case class Slider(key: String, label: String, min: Double, max: Double, step: Double, defaultValue: Double) extends Control:
@@ -43,6 +45,11 @@ object Control:
     def default: String = ""
   case class Note(key: String, label: String) extends Control:
     def default: String = ""
+    override def hasValue: Boolean = false
+  /** Starts a collapsible group: the controls after it (up to the next Section) are shown inside it. */
+  case class Section(key: String, label: String, expanded: Boolean = true) extends Control:
+    def default: String = ""
+    override def hasValue: Boolean = false
 
 /** String-typed control values with lenient typed accessors. */
 final case class Values(map: Map[String, String]):
@@ -54,7 +61,7 @@ final case class Values(map: Map[String, String]):
 
 object Values:
   val empty: Values = Values(Map.empty)
-  def defaults(controls: Seq[Control]): Values = Values(controls.collect { case c if !c.isInstanceOf[Control.Note] => c.key -> c.default }.toMap)
+  def defaults(controls: Seq[Control]): Values = Values(controls.collect { case c if c.hasValue => c.key -> c.default }.toMap)
   def fmt(d: Double): String =
     if d.isNaN || d.isInfinite then d.toString
     else if d == math.rint(d) && math.abs(d) < 1e15 then d.toLong.toString
@@ -113,6 +120,8 @@ trait Plugin:
   def id: String
   def name: String
   def description: String = ""
+  /** Control key -> key of the checkbox that enables it; the host greys the control out while the box is off. */
+  def enabledBy: Map[String, String] = Map.empty
   def kind: PluginKind
   def tabs: Set[Tab] = Set(Tab.Txt2Img, Tab.Img2Img)
   def controls: Seq[Control] = Nil

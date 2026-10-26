@@ -186,17 +186,26 @@ object W:
     grid.setHgap(10)
     grid.setVgap(7)
     private val c0 = new ColumnConstraints()
-    c0.setMinWidth(88)
-    c0.setPrefWidth(96)
+    // the label column grows to the widest inline label; longer labels go above their control (see add)
+    c0.setMinWidth(Region.USE_PREF_SIZE)
+    c0.setPrefWidth(Region.USE_COMPUTED_SIZE)
     c0.setHalignment(javafx.geometry.HPos.LEFT)
     private val c1 = new ColumnConstraints()
     c1.setHgrow(Priority.ALWAYS)
     c1.setFillWidth(true)
     grid.getColumnConstraints.addAll(c0, c1)
+    // keeps the label column at least 88px so stacked cards line up; longer inline labels widen it
+    private val labelSpacer = new Region()
+    labelSpacer.setMinWidth(88)
+    labelSpacer.setPrefWidth(88)
+    labelSpacer.setMaxHeight(0)
+    labelSpacer.setMouseTransparent(true)
+    grid.add(labelSpacer, 0, 0)
     private var row = 0
 
     def add(label: String, node: Node, tooltip: String = ""): Form =
       val l = new Label(label)
+      l.disableProperty.bind(node.disableProperty) // a greyed-out control greys its label too
       l.getStyleClass.add("form-label")
       l.setMinWidth(Region.USE_PREF_SIZE)
       if tooltip.nonEmpty then
@@ -204,12 +213,21 @@ object W:
         node match
           case c: Control if c.getTooltip == null => tip(c, tooltip)
           case _                                  => ()
-      grid.add(l, 0, row)
-      grid.add(node, 1, row)
-      GridPane.setHgrow(node, Priority.ALWAYS)
       node match
         case r: Region => r.setMaxWidth(Double.MaxValue)
         case _         => ()
+      if label.length > Form.MaxInlineLabel then
+        l.setWrapText(true)
+        l.setMinWidth(0)
+        l.getStyleClass.add("form-label-stacked")
+        val box = new VBox(3, l, node)
+        box.setFillWidth(true)
+        grid.add(box, 0, row, 2, 1)
+        GridPane.setHgrow(box, Priority.ALWAYS)
+      else
+        grid.add(l, 0, row)
+        grid.add(node, 1, row)
+        GridPane.setHgrow(node, Priority.ALWAYS)
       row += 1
       this
 
@@ -218,6 +236,10 @@ object W:
       GridPane.setHgrow(node, Priority.ALWAYS)
       row += 1
       this
+
+  object Form:
+    /** Labels longer than this are put above their control instead of in the label column. */
+    val MaxInlineLabel = 18
 
   def form(): Form = new Form
 

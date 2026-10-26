@@ -16,7 +16,7 @@ object StandardPlugins:
     // image prompts / control
     new ReferencePlugin, new RevisionPlugin, new IpAdapterPlugin, new ControlLLLitePlugin, new PhotoMakerPlugin,
     // inpainting / post
-    new SoftInpaintingPlugin, new FooocusInpaintPlugin, new FaceRestorePlugin,
+    new SoftInpaintingPlugin, new FooocusInpaintPlugin, new FaceRestorePlugin, new AdetailerPlugin,
     // memory
     new NeverOomPlugin,
     // prompt processing (extension index)

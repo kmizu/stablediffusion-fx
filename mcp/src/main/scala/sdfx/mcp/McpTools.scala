@@ -533,6 +533,8 @@ final class McpTools(
         o("description") = if multiple then "newline separated absolute image paths (allowed dirs only)" else "absolute image path (allowed dirs only)"
       case Control.Note(_, _) =>
         o("type") = "note"
+      case Control.Section(_, _, _) =>
+        o("type") = "section"
     o
 
   private def scriptJson(p: Plugin): ujson.Value =

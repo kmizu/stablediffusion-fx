@@ -121,7 +121,7 @@ IMPLEMENTED = {
     "seed_travel", "shift_attention", "one_button_prompt",
     "detail_daemon", "vectorscope_cc", "latent_mirroring", "asymmetric_tiling", "anti_burn", "resharpen",
     "color_grading", "cfg_schedule", "cads",
-    "ultimate_sd_upscale",
+    "ultimate_sd_upscale", "adetailer",
 }
 
 

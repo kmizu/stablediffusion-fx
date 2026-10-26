@@ -37,6 +37,7 @@ description of their behaviour only.
 | [opencv/opencv-python](https://github.com/opencv/opencv-python) | dependency | MIT ([text](licenses/opencv__opencv-python.txt)) | image processing (canny, face detection) |
 | [python-pillow/Pillow](https://github.com/python-pillow/Pillow) | dependency | NOASSERTION ([text](licenses/python-pillow__Pillow.txt)) | images |
 | [microsoft/onnxruntime](https://github.com/microsoft/onnxruntime) | dependency | MIT ([text](licenses/microsoft__onnxruntime.txt)) | WD14 tagger |
+| [ultralytics/ultralytics](https://github.com/ultralytics/ultralytics) | dependency | AGPL-3.0 ([text](licenses/ultralytics__ultralytics.txt)) | YOLO detectors for ADetailer (optional Python package) |
 | [openjdk/jfx](https://github.com/openjdk/jfx) | dependency | GPL-2.0 ([text](licenses/openjdk__jfx.txt)) | JavaFX UI toolkit |
 | [com-lihaoyi/upickle](https://github.com/com-lihaoyi/upickle) | dependency | MIT ([text](licenses/com-lihaoyi__upickle.txt)) | JSON |
 | [scala/scala3](https://github.com/scala/scala3) | dependency | Apache-2.0 ([text](licenses/scala__scala3.txt)) | Scala runtime |
@@ -46,6 +47,8 @@ description of their behaviour only.
 | [AlUlkesh/sd_delete_button](https://github.com/AlUlkesh/sd_delete_button) | reimplemented | Unlicense ([text](licenses/AlUlkesh__sd_delete_button.txt)) | extension rewritten as SD Delete Button -> `core:gallery` |
 | [AlUlkesh/stable-diffusion-webui-images-browser](https://github.com/AlUlkesh/stable-diffusion-webui-images-browser) | reimplemented | no license file published | extension rewritten as Image browser -> `core:gallery` |
 | [ArtVentureX/sd-webui-agent-scheduler](https://github.com/ArtVentureX/sd-webui-agent-scheduler) | reimplemented | no license file published | extension rewritten as Agent Scheduler -> `core:job-queue` |
+| [Bing-su/adetailer](https://github.com/Bing-su/adetailer) | reimplemented | AGPL-3.0 ([text](licenses/Bing-su__adetailer.txt)) | extension rewritten as ADetailer -> `adetailer` |
+| [Bing-su/dddetailer](https://github.com/Bing-su/dddetailer) | reimplemented | no license file published | extension rewritten as Detection Detailer -> `adetailer` |
 | [Coyote-A/ultimate-upscale-for-automatic1111](https://github.com/Coyote-A/ultimate-upscale-for-automatic1111) | reimplemented | GPL-3.0 ([text](licenses/Coyote-A__ultimate-upscale-for-automatic1111.txt)) | extension rewritten as Ultimate SD Upscale -> `ultimate_sd_upscale` |
 | [Extraltodeus/test_my_prompt](https://github.com/Extraltodeus/test_my_prompt) | reimplemented | no license file published | extension rewritten as Test my prompt! -> `test_my_prompt` |
 | [Haoming02/sd-webui-diffusion-cg](https://github.com/Haoming02/sd-webui-diffusion-cg) | reimplemented | MIT ([text](licenses/Haoming02__sd-webui-diffusion-cg.txt)) | extension rewritten as Diffusion Color Grading -> `color_grading` |
@@ -74,6 +77,7 @@ description of their behaviour only.
 | [gutris1/sd-simple-dimension-preset](https://github.com/gutris1/sd-simple-dimension-preset) | reimplemented | MIT ([text](licenses/gutris1__sd-simple-dimension-preset.txt)) | extension rewritten as SD Simple Dimension Preset -> `core:size-presets` |
 | [guzuligo/CFG-Schedule-for-Automatic1111-SD](https://github.com/guzuligo/CFG-Schedule-for-Automatic1111-SD) | reimplemented | GPL-3.0 ([text](licenses/guzuligo__CFG-Schedule-for-Automatic1111-SD.txt)) | extension rewritten as CFG-Schedule-for-Automatic1111-SD -> `cfg_schedule` |
 | [h43lb1t0/SD-WebUI-BatchCheckpointPrompt](https://github.com/h43lb1t0/SD-WebUI-BatchCheckpointPrompt) | reimplemented | MIT ([text](licenses/h43lb1t0__SD-WebUI-BatchCheckpointPrompt.txt)) | extension rewritten as Batch Checkpoints and Prompts -> `batch_checkpoints_prompts` |
+| [ilian6806/stable-diffusion-webui-eyemask](https://github.com/ilian6806/stable-diffusion-webui-eyemask) | reimplemented | MIT ([text](licenses/ilian6806__stable-diffusion-webui-eyemask.txt)) | extension rewritten as Eye Mask -> `adetailer` |
 | [ilian6806/stable-diffusion-webui-state](https://github.com/ilian6806/stable-diffusion-webui-state) | reimplemented | MIT ([text](licenses/ilian6806__stable-diffusion-webui-state.txt)) | extension rewritten as stable-diffusion-webui-state -> `core:ui-state` |
 | [innightwolfsleep/stable-diffusion-webui-randomize](https://github.com/innightwolfsleep/stable-diffusion-webui-randomize) | reimplemented | MIT ([text](licenses/innightwolfsleep__stable-diffusion-webui-randomize.txt)) | extension rewritten as Randomize -> `randomize` |
 | [klimaleksus/stable-diffusion-webui-anti-burn](https://github.com/klimaleksus/stable-diffusion-webui-anti-burn) | reimplemented | Unlicense ([text](licenses/klimaleksus__stable-diffusion-webui-anti-burn.txt)) | extension rewritten as anti-burn -> `anti_burn` |
@@ -93,6 +97,7 @@ description of their behaviour only.
 | [viyiviyi/stable-diffusion-webui-zoomimage](https://github.com/viyiviyi/stable-diffusion-webui-zoomimage) | reimplemented | AGPL-3.0 ([text](licenses/viyiviyi__stable-diffusion-webui-zoomimage.txt)) | extension rewritten as zoom-image -> `core:zoom` |
 | [w-e-w/sdwebui-close-confirmation-dialogue](https://github.com/w-e-w/sdwebui-close-confirmation-dialogue) | reimplemented | MIT ([text](licenses/w-e-w__sdwebui-close-confirmation-dialogue.txt)) | extension rewritten as Webpage close confirmation dialogue -> `core:close-confirm` |
 | [wcde/sd-webui-kohya-hiresfix](https://github.com/wcde/sd-webui-kohya-hiresfix) | reimplemented | no license file published | extension rewritten as Deep Shrink Hires.fix -> `kohya_hrfix` |
+| [wkpark/uddetailer](https://github.com/wkpark/uddetailer) | reimplemented | AGPL-3.0 ([text](licenses/wkpark__uddetailer.txt)) | extension rewritten as µ Detection Detailer -> `adetailer` |
 | [xhoxye/sd-webui-ar_xhox](https://github.com/xhoxye/sd-webui-ar_xhox) | reimplemented | no license file published | extension rewritten as Aspect Ratio Resolutions selector-xhox -> `core:size-presets` |
 | [yownas/seed_travel](https://github.com/yownas/seed_travel) | reimplemented | NOASSERTION ([text](licenses/yownas__seed_travel.txt)) | extension rewritten as seed travel -> `seed_travel` |
 | [yownas/shift-attention](https://github.com/yownas/shift-attention) | reimplemented | NOASSERTION ([text](licenses/yownas__shift-attention.txt)) | extension rewritten as shift-attention -> `shift_attention` |

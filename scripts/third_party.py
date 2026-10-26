@@ -42,6 +42,7 @@ BASE = [
     ("opencv/opencv-python", "dependency", "image processing (canny, face detection)"),
     ("python-pillow/Pillow", "dependency", "images"),
     ("microsoft/onnxruntime", "dependency", "WD14 tagger"),
+    ("ultralytics/ultralytics", "dependency", "YOLO detectors for ADetailer (optional Python package)"),
     ("openjdk/jfx", "dependency", "JavaFX UI toolkit"),
     ("com-lihaoyi/upickle", "dependency", "JSON"),
     ("scala/scala3", "dependency", "Scala runtime"),

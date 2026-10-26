@@ -22,7 +22,7 @@ class BuiltinsUiSuite extends munit.FunSuite:
     StandardPlugins.withOwnAxes.foreach { p =>
       p.controls.foreach(c => PluginValuesVM.widgetFor(c))
       val vm = new PluginValuesVM(p)
-      p.controls.filterNot(_.isInstanceOf[Control.Note]).foreach(c => assert(vm.prop(c.key).isDefined, s"${p.id}.${c.key}"))
+      p.controls.filter(_.hasValue).foreach(c => assert(vm.prop(c.key).isDefined, s"${p.id}.${c.key}"))
     }
 
   test("image-based AlwaysOn plugins are not active from defaults alone"):

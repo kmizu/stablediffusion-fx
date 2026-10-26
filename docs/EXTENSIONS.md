@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 57, todo 245, na 51.
+Totals: done 61, todo 241, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-fx | Why not applicable |
 |---|---|---|---|---|---|
@@ -135,7 +135,7 @@ Totals: done 57, todo 245, na 51.
 | 126 | [a1111-sd-webui-lycoris](https://github.com/KohakuBlueleaf/a1111-sd-webui-lycoris.git) | 884 | na | `obsolete` | superseded: the feature is in the base app (A1111 >= 1.5) or the extension is deprecated |
 | 127 | [sd-canvas-editor](https://github.com/jtydhr88/sd-canvas-editor.git) | 157 | todo | `outpaint_canvas` |  |
 | 128 | [Infinite Zoom](https://github.com/v8hid/infinite-zoom-automatic1111-webui.git) | 670 | todo | `infinite_zoom` |  |
-| 129 | [Eye Mask](https://github.com/ilian6806/stable-diffusion-webui-eyemask.git) | 59 | todo | `adetailer` |  |
+| 129 | [Eye Mask](https://github.com/ilian6806/stable-diffusion-webui-eyemask.git) | 59 | done | `adetailer` |  |
 | 130 | [zh_CN Localization](https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN) | 1618 | todo | `core:localization` |  |
 | 131 | [zh_TW Localization](https://github.com/harukaxxxx/stable-diffusion-webui-localization-zh_TW.git) | 15 | todo | `core:localization` |  |
 | 132 | [ko_KR Localization](https://github.com/36DB/stable-diffusion-webui-localization-ko_KR) | 26 | todo | `core:localization` |  |
@@ -157,7 +157,7 @@ Totals: done 57, todo 245, na 51.
 | 148 | [Model toolkit](https://github.com/arenasys/stable-diffusion-webui-model-toolkit.git) | 528 | todo | `model_converter` |  |
 | 149 | [sd-webui-prompt-all-in-one](https://github.com/Physton/sd-webui-prompt-all-in-one) | 3242 | todo | `core:prompt-tools` |  |
 | 150 | [sd-model-preview-xd](https://github.com/CurtisDS/sd-model-preview-xd) | 78 | todo | `model_organizer` |  |
-| 151 | [ADetailer](https://github.com/Bing-su/adetailer.git) | 4793 | todo | `adetailer` |  |
+| 151 | [ADetailer](https://github.com/Bing-su/adetailer.git) | 4793 | done | `adetailer` |  |
 | 152 | [Weight Gradient](https://github.com/DingoBite/weight_gradient) | 22 | todo | `weight_gradient` |  |
 | 153 | [One Button Prompt](https://github.com/AIrjen/OneButtonPrompt) | 1069 | done | `one_button_prompt` |  |
 | 154 | [Miaoshouai Assistant](https://github.com/miaoshouai/miaoshouai-assistant.git) | 309 | todo | `model_organizer` |  |
@@ -200,7 +200,7 @@ Totals: done 57, todo 245, na 51.
 | 191 | [prompts filter](https://github.com/viyiviyi/prompts-filter.git) | 10 | done | `prompt_filter` |  |
 | 192 | [sd-webui-animatediff](https://github.com/continue-revolution/sd-webui-animatediff.git) | 3424 | todo | `animatediff` |  |
 | 193 | [Dynamic Javascript](https://github.com/pmcculler/sd-dynamic-javascript) | 24 | na | `webui-ux` | Gradio page behaviour (tabs, buttons, dialogs); the desktop UI provides the equivalent natively |
-| 194 | [Detection Detailer](https://github.com/Bing-su/dddetailer.git) | 130 | todo | `adetailer` |  |
+| 194 | [Detection Detailer](https://github.com/Bing-su/dddetailer.git) | 130 | done | `adetailer` |  |
 | 195 | [seamless-tile-inpainting](https://github.com/brick2face/seamless-tile-inpainting.git) | 41 | todo | `seamless_tile` |  |
 | 196 | [FaceSwapLab](https://github.com/glucauze/sd-webui-faceswaplab) | 821 | todo | `face_swap` |  |
 | 197 | [Style Selector for SDXL 1.0](https://github.com/ahgsql/StyleSelectorXL.git) | 475 | todo | `style_selector` |  |
@@ -260,7 +260,7 @@ Totals: done 57, todo 245, na 51.
 | 251 | [A Person Mask Generator](https://github.com/djbielejeski/a-person-mask-generator.git) | 407 | todo | `person_mask` |  |
 | 252 | [Style variables](https://github.com/SirVeggie/extension-style-vars) | 23 | done | `style_variables` |  |
 | 253 | [SD-WebUI API Payload Display](https://github.com/huchenlei/sd-webui-api-payload-display.git) | 201 | todo | `core:api-payload` |  |
-| 254 | [µ Detection Detailer](https://github.com/wkpark/uddetailer.git) | 83 | todo | `adetailer` |  |
+| 254 | [µ Detection Detailer](https://github.com/wkpark/uddetailer.git) | 83 | done | `adetailer` |  |
 | 255 | [Lora Queue Helper](https://github.com/Yinzo/sd-webui-Lora-queue-helper.git) | 35 | done | `lora_queue` |  |
 | 256 | [Deep Shrink Hires.fix](https://github.com/wcde/sd-webui-kohya-hiresfix.git) | 222 | done | `kohya_hrfix` |  |
 | 257 | [Test my prompt!](https://github.com/Extraltodeus/test_my_prompt.git) | 193 | done | `test_my_prompt` |  |

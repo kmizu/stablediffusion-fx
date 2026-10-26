@@ -5,13 +5,13 @@ import sdfx.core.plugins.api.*
 
 /** How a declarative [[Control]] is rendered by the generic plugin form. */
 enum Widget:
-  case SliderSpinner, IntSpinner, CheckBox, Combo, DynamicCombo, TextField, TextArea, Label, ImagePicker, ImageList
+  case SliderSpinner, IntSpinner, CheckBox, Combo, DynamicCombo, TextField, TextArea, Label, Section, ImagePicker, ImageList
 
 /** Editable values of one plugin for one tab. Values are kept as strings exactly like [[Values]]. */
 final class PluginValuesVM(val plugin: Plugin, initial: Values = Values.empty):
   val props: Map[String, StringProperty] =
     plugin.controls.collect {
-      case c if !c.isInstanceOf[Control.Note] => c.key -> new SimpleStringProperty(initial.map.getOrElse(c.key, c.default))
+      case c if c.hasValue => c.key -> new SimpleStringProperty(initial.map.getOrElse(c.key, c.default))
     }.toMap
 
   def prop(key: String): Option[StringProperty] = props.get(key)
@@ -34,6 +34,7 @@ object PluginValuesVM:
     case t: Control.Text if t.multiline   => Widget.TextArea
     case _: Control.Text                  => Widget.TextField
     case _: Control.Note                  => Widget.Label
+    case _: Control.Section               => Widget.Section
     case i: Control.ImageFile if i.multiple => Widget.ImageList
     case _: Control.ImageFile             => Widget.ImagePicker
 

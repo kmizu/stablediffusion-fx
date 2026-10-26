@@ -195,7 +195,7 @@ class Engine(BaseEngine):
             f.append("taesd")
         f += ["apg", "mahiro", "rescale_cfg", "model_sampling", "kohya_hrfix", "multidiffusion", "latent_modifier",
               "soft_inpainting", "neveroom", "reference", "revision", "ip_adapter", "controllllite", "fooocus_inpaint",
-              "img2imgalt", "caption", "ldsr"]
+              "img2imgalt", "caption", "ldsr", "adetailer"]
         f += list(ext_mod.sampling_ext.HOOKS)
         if hasattr(diffusers, "StableDiffusionSAGPipeline"):
             f.append("sag")
@@ -1066,6 +1066,9 @@ class Engine(BaseEngine):
                                            hook_seed=seeds[0])
                 if job is not None:
                     imgs = [job.finalize(im) for im in imgs]
+            ad = hooks_mod.hook_config(gp.hooks, "adetailer", {})
+            if ad:
+                imgs = self._adetailer(gp, req, ctx, ad, imgs, seeds, idx0, total, pag)
             imgs = ext_mod.post_images(self, gp, None, imgs, ctx=ctx, faces=True)
             for j, im in enumerate(imgs):
                 k = idx0 + j
@@ -1085,6 +1088,62 @@ class Engine(BaseEngine):
             "scheduler": plan.schedule if plan else schedulers.resolve_schedule(gp.sampler_name, gp.scheduler),
             "warnings": list(ctx.warnings),
         }
+
+    # hooks that must not run again on ADetailer's inpainting passes (whole-image effects, or ADetailer itself)
+    _ADETAILER_SKIP_HOOKS = ("adetailer", "tiling", "latent_mirroring", "multidiffusion", "kohya_hrfix", "reference",
+                             "revision", "ip_adapter", "controllllite", "photomaker", "img2imgalt", "soft_inpainting")
+
+    def _adetailer(self, gp, req, ctx, cfg, imgs, seeds, idx0, total, pag):
+        """ADetailer: detect, then inpaint every detection of every unit (in unit order) at full resolution."""
+        import dataclasses
+
+        from . import adetailer as adm
+        units = adm.normalize_units(cfg)
+        if not units:
+            return imgs
+        sub = dataclasses.replace(gp, hooks={k: v for k, v in (gp.hooks or {}).items()
+                                             if k not in self._ADETAILER_SKIP_HOOKS and not k.endswith("_xyz")})
+        dev = "cuda" if self.cuda else "cpu"
+        out = []
+        for j, im in enumerate(imgs):
+            seed = seeds[j] if j < len(seeds) else seeds[0]
+            for ui, u in enumerate(units):
+                ctx.check_interrupt()
+                try:
+                    masks = adm.unit_masks(im, u, dev, cfg.get("model_dirs"))
+                except ImportError as e:
+                    raise EngineError(UNSUPPORTED, f"ADetailer model '{u['model']}' needs the ultralytics package: {e}")
+                except FileNotFoundError as e:
+                    raise EngineError(INVALID_PARAMS, str(e))
+                if not masks:
+                    log.info("ADetailer unit %d: nothing detected", ui + 1)
+                    continue
+                pos = adm.unit_prompts(u["prompt"], gp.prompt, len(masks))
+                neg = adm.unit_prompts(u["negative_prompt"], gp.negative_prompt, len(masks))
+                if u["use_inpaint_width_height"]:
+                    w, h = int(u["inpaint_width"]) // 8 * 8, int(u["inpaint_height"]) // 8 * 8
+                else:
+                    w, h = gp.width, gp.height
+                steps = int(u["steps"]) if u["use_steps"] else gp.steps
+                cfg_scale = float(u["cfg_scale"]) if u["use_cfg_scale"] else gp.cfg_scale
+                sampler = u["sampler"] if u["use_sampler"] and u["sampler"] else gp.sampler_name
+                n, strength, actual = img2img_steps(steps, float(u["denoising_strength"]))
+                for k, m in enumerate(masks):
+                    ctx.check_interrupt()
+                    job = inpaint.prepare(im, m, w, h, 0, int(u["mask_blur"]), 1, bool(u["inpaint_only_masked"]),
+                                          int(u["inpaint_padding"]), False, seed)
+                    emb = self._adjust_embeds(sub, self._encode_scheduled(pos[k], neg[k], sub, 1, steps), ctx)
+                    res, _ = self._run("inpaint", sub, req, ctx, sampler=sampler, schedule=gp.scheduler,
+                                       cfg_scale=cfg_scale, embeds=emb, steps=n, w=w, h=h, seeds=[seed],
+                                       pass_="adetailer", image_idx=idx0 + j, images_total=total, image=[job.image],
+                                       mask=[job.mask], strength=strength, expected_steps=actual, pag=pag,
+                                       hook_seed=seed)
+                    redrawn = res[0]
+                    if u["color_correction"]:
+                        redrawn = adm.match_colors(redrawn, job.image)
+                    im = job.finalize(redrawn)
+            out.append(im)
+        return out
 
     def _img2imgalt(self, gp, req, ctx, alt, image, embeds, seeds, idx0, total, w, h, cn, pag):
         """img2imgalt.py: invert the init image to noise with DDIM, then sample from that noise."""

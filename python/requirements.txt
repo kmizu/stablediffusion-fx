@@ -18,3 +18,5 @@ onnxruntime==1.23.2  # WD14 tagger (Caption plugin, method wd14)
 #   pip install --no-deps "git+https://github.com/TencentARC/PhotoMaker.git"
 # optional extra preprocessors (openpose, lineart, hed, mlsd, normal_bae):
 # controlnet_aux==0.0.10
+# optional: ADetailer YOLO detectors (face_yolov8n.pt etc.; "opencv_face" works without it):
+#   pip install ultralytics==8.4.66

@@ -11,10 +11,47 @@ import sdfx.ui.vm.{PluginValuesVM, PluginsVM, Widget}
 /** Renders plugin [[Control]]s generically and binds them to a [[PluginValuesVM]]. */
 object PluginForm:
   def render(ctx: UiContext, form: PluginValuesVM): Node =
+    val v = new VBox(8)
+    if form.plugin.description.nonEmpty then
+      val d = W.label(form.plugin.description, "muted", "plugin-description")
+      d.setWrapText(true)
+      v.getChildren.add(d)
+    // controls before the first Section go straight into the panel, each Section becomes a collapsible group
+    val groups = PluginForm.groups(form.plugin.controls)
+    groups.foreach { (section, controls) =>
+      val grid = renderControls(ctx, form, controls)
+      section match
+        case None => v.getChildren.add(grid)
+        case Some(s) =>
+          val tp = new TitledPane(s.label, grid)
+          tp.setExpanded(s.expanded)
+          tp.setAnimated(false)
+          tp.getStyleClass.add("plugin-subsection")
+          v.getChildren.add(tp)
+    }
+    v
+
+  /** Splits controls at Section markers: (None, leading controls), (Some(section), its controls)... */
+  def groups(controls: Seq[Control]): Seq[(Option[Control.Section], Seq[Control])] =
+    val out = scala.collection.mutable.ArrayBuffer[(Option[Control.Section], Seq[Control])]()
+    var cur: Option[Control.Section] = None
+    val buf = scala.collection.mutable.ArrayBuffer[Control]()
+    def flush(): Unit =
+      if buf.nonEmpty || cur.nonEmpty then out += cur -> buf.toSeq
+      buf.clear()
+    controls.foreach {
+      case s: Control.Section => flush(); cur = Some(s)
+      case c                  => buf += c
+    }
+    flush()
+    out.toSeq
+
+  private def renderControls(ctx: UiContext, form: PluginValuesVM, controls: Seq[Control]): Node =
     val f = W.form()
-    form.plugin.controls.foreach { c =>
+    controls.foreach { c =>
       val widget = PluginValuesVM.widgetFor(c)
       widget match
+        case Widget.Section => ()
         case Widget.Label =>
           val l = W.label(c.label, "plugin-note")
           l.setWrapText(true)
@@ -24,15 +61,19 @@ object PluginForm:
           if !(c.key == "enabled" && form.plugin.kind == PluginKind.AlwaysOn) then
             f.full(W.check(c.label, boolProp(form.props(c.key))))
         case _ =>
-          f.add(c.label, control(ctx, c, widget, form.props(c.key)))
+          val node = control(ctx, c, widget, form.props(c.key))
+          bindEnabled(form, c.key, node)
+          f.add(c.label, node)
     }
-    val v = new VBox(8)
-    if form.plugin.description.nonEmpty then
-      val d = W.label(form.plugin.description, "muted", "plugin-description")
-      d.setWrapText(true)
-      v.getChildren.add(d)
-    v.getChildren.add(f.grid)
-    v
+    f.grid
+
+  /** Greys a control out while the checkbox named by `Plugin.enabledBy` is off. */
+  private def bindEnabled(form: PluginValuesVM, key: String, node: Node): Unit =
+    form.plugin.enabledBy.get(key).flatMap(form.props.get).foreach { gate =>
+      def update(v: String): Unit = node.setDisable(!Values(Map("v" -> v)).bool("v"))
+      update(gate.get)
+      gate.addListener((_, _, v) => update(v))
+    }
 
   private def control(ctx: UiContext, c: Control, widget: Widget, p: StringProperty): Node = (c, widget) match
     case (s: Control.Slider, _) =>

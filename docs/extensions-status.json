@@ -777,7 +777,7 @@
 "index": 129,
 "name": "Eye Mask",
 "url": "https://github.com/ilian6806/stable-diffusion-webui-eyemask.git",
-"status": "todo:adetailer"
+"status": "done:adetailer"
 },
 {
 "index": 130,
@@ -909,7 +909,7 @@
 "index": 151,
 "name": "ADetailer",
 "url": "https://github.com/Bing-su/adetailer.git",
-"status": "todo:adetailer"
+"status": "done:adetailer"
 },
 {
 "index": 152,
@@ -1167,7 +1167,7 @@
 "index": 194,
 "name": "Detection Detailer",
 "url": "https://github.com/Bing-su/dddetailer.git",
-"status": "todo:adetailer"
+"status": "done:adetailer"
 },
 {
 "index": 195,
@@ -1527,7 +1527,7 @@
 "index": 254,
 "name": "µ Detection Detailer",
 "url": "https://github.com/wkpark/uddetailer.git",
-"status": "todo:adetailer"
+"status": "done:adetailer"
 },
 {
 "index": 255,
