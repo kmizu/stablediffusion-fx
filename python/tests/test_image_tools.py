@@ -57,3 +57,31 @@ def test_run_dispatch_and_errors():
         it.run("nope", _img(), {})
     with pytest.raises(ValueError):
         it.remove_background(_img(), model="bogus")
+
+
+def test_pixel_art_accepts_full_generation_seed_range():
+    a, _ = it.pixel_art(_img(), seed=4294967295)
+    b, _ = it.pixel_art(_img(), seed=4294967295)
+    assert np.array_equal(np.asarray(a), np.asarray(b))
+
+
+def test_pixel_art_scale_back_preserves_nondivisible_dimensions():
+    out, _ = it.pixel_art(_img(w=65, h=49), pixel_size=8, upscale=True)
+    assert out.size == (65, 49)
+
+
+def test_image_tool_closes_source_file(tmp_path, monkeypatch):
+    from sdfx.base import BaseEngine
+    source = tmp_path / "source.png"
+    _img().save(source)
+    opened = []
+    original_open = Image.open
+
+    def tracked_open(*args, **kwargs):
+        im = original_open(*args, **kwargs)
+        opened.append(im)
+        return im
+
+    monkeypatch.setattr(Image, "open", tracked_open)
+    BaseEngine().image_tool({"tool": "pixel_art", "image_path": str(source), "output_dir": str(tmp_path)}, None)
+    assert opened and all(im.fp is None for im in opened)

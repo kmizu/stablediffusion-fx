@@ -46,7 +46,8 @@ def pixel_art(img, pixel_size: int = 8, colors: int = 16, dither: float = 0.0, o
         small = small + tile[..., None] * (255.0 / max(colors, 2)) * float(dither) * 2
     k = max(2, min(int(colors), 256))
     data = small.reshape(-1, 3).astype(np.float32)
-    cv2.setRNGSeed(int(seed))
+    # OpenCV takes a signed C int; generation seeds can span the full uint32 range (or a Scala Long).
+    cv2.setRNGSeed((int(seed) + 2**31) % 2**32 - 2**31)
     crit = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 20, 0.5)
     k = min(k, len(data))
     _, labels, centers = cv2.kmeans(data, k, None, crit, 3, cv2.KMEANS_PP_CENTERS)
@@ -57,7 +58,7 @@ def pixel_art(img, pixel_size: int = 8, colors: int = 16, dither: float = 0.0, o
         q[edges] = q[edges] * 0.35
     out = Image.fromarray(np.clip(q, 0, 255).astype(np.uint8), "RGB")
     if upscale:
-        out = out.resize((sw * ps, sh * ps), Image.NEAREST)
+        out = out.resize((w, h), Image.NEAREST)
     return out, {"palette": int(k)}
 
 

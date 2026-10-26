@@ -14,7 +14,7 @@ OUTS = os.path.join(HOME, "outputs")
 
 p = subprocess.Popen([JAVA, "-Dfile.encoding=UTF-8", "-Dsdfx.home=" + HOME, "-cp", JAR, "sdfx.mcp.McpMain", "--mcp",
                       "--allow-dir", OUTS], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                     stderr=open(os.path.join(os.path.dirname(__file__), "mcp-scripts-stderr.txt"), "w"),
+                     stderr=open(os.path.join(OUTS, "mcp-scripts-stderr.txt"), "w"),
                      text=True, encoding="utf-8")
 msgs, cv, n = [], threading.Condition(), [0]
 
@@ -62,17 +62,27 @@ def tool(name, args):
 
 rpc("initialize", {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "verify", "version": "1"}})
 rpc("notifications/initialized", notify=True)
-ok, text, sc = tool("get_status", {"wait_seconds": 0})
+ok, text, sc = tool("get_status", {})
 print("status:", text[:200], flush=True)
 
 base = {"prompt": "a cozy cabin in a snowy forest", "negative_prompt": "lowres", "steps": 12, "width": 512, "height": 512,
         "seed": 11, "sampler_name": "DPM++ 2M"}
+if ONLY and ONLY.intersection({"pixel_art", "color_enhance", "fsr_upscale", "person_mask", "remove_background",
+                               "depthmap2mask", "inpaint_background"}):
+    base.update(prompt="a woman wearing a red jacket, standing in a green park, full body", height=768)
 ok, text, sc = tool("txt2img", dict(base, return_images=False))
 init = sc["images"][0]["path"]
 print("txt2img:", ok, init, flush=True)
 
 i2i = dict(base, init_image=init, denoising_strength=0.5)
 cases = [
+    ("pixel_art", {"pixel_size": "8", "colors": "16", "dither": "0.5"}, i2i),
+    ("color_enhance", {"strength": "0.5"}, i2i),
+    ("fsr_upscale", {"scale": "2"}, i2i),
+    ("person_mask", {}, i2i),
+    ("remove_background", {"model": "isnet-anime", "save_mask": "true"}, i2i),
+    ("depthmap2mask", {"save_mask": "true"}, i2i),
+    ("inpaint_background", {"save_mask": "true"}, dict(i2i, prompt="a woman wearing a red jacket on a snowy mountain")),
     ("xyz_grid", {"x_type": "CFG Scale", "x_values": "4, 8", "y_type": "Steps", "y_values": "8, 12"}, base),
     ("prompt_matrix", {}, dict(base, prompt="a cozy cabin|snow|sunset")),
     ("prompts_from_file", {"prompts": "a red apple --steps 8\na green pear --seed 5"}, base),
@@ -107,3 +117,4 @@ for sid, values, params in cases:
 p.stdin.close()
 p.wait(120)
 print("SUMMARY", sum(1 for s in summary if s[1] and s[2] > 0), "/", len(summary))
+sys.exit(0 if summary and all(s[1] and s[2] > 0 for s in summary) else 1)

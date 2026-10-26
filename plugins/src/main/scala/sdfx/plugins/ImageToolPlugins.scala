@@ -162,6 +162,8 @@ class InpaintBackgroundPlugin extends MaskedImg2ImgScript:
     Check("save_mask", "Also save the mask")
   )
   def makeMask(img: BufferedImage, v: Values, ctx: PluginContext): BufferedImage =
-    ImageTools.run(ctx, "person_mask", img, "confidence" -> v.double("confidence", 0.3), "dilate" -> v.int("dilate", 8),
-      "invert" -> true).image
+    val r = ImageTools.run(ctx, "person_mask", img, "confidence" -> v.double("confidence", 0.3), "dilate" -> v.int("dilate", 8),
+      "invert" -> true)
+    try r.image
+    finally Support.deleteQuietly(r.outputs.values.toSeq*)
   def infotext(v: Values) = Seq("Inpaint background" -> "people kept")

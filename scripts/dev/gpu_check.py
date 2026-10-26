@@ -8,6 +8,7 @@ import time
 import urllib.request
 
 PY, OUT, CASE = sys.argv[1], sys.argv[2], sys.argv[3]
+PY, OUT = os.path.abspath(PY), os.path.abspath(OUT)
 SD15 = r"D:\stable-diffusion-webui-reForge\models\Stable-diffusion\animekawa_v10.safetensors"
 SDXL = r"D:\stable-diffusion-webui-reForge\models\Stable-diffusion\waiIllustriousSDXL_v170.safetensors"
 MODELS = os.environ.get("SDFX_MODELS", os.path.join(OUT, "models"))
@@ -122,7 +123,63 @@ def mask_png(size):
 
 t0 = time.time()
 r = None
-if CASE in ("depth_marigold", "normal_marigold", "recolor_luminance", "tile_resample", "blur_gaussian"):
+if CASE in ("image_sd15", "image_sdxl"):
+    from PIL import Image
+    import numpy as np
+    load(SD15 if CASE == "image_sd15" else SDXL)
+    size = dict(width=512, height=768) if CASE == "image_sd15" else dict(width=832, height=1216)
+    r = call("txt2img", req(gp(prompt="a woman wearing a red jacket, standing in a green park, full body, detailed", **size)))
+    assert r["type"] == "result", r
+    src = keep(r, CASE + "_source")
+    assert src, "generation returned no readable source image"
+    checks = {}
+    for tool, opts in (
+        ("pixel_art", {"pixel_size": 8, "colors": 16, "dither": 0.5}),
+        ("color_enhance", {"strength": 0.5}),
+        ("cas_upscale", {"scale": 2, "sharpness": 0.5}),
+        ("person_mask", {"dilate": 8, "invert": True}),
+        ("remove_background", {"model": "person_segmentation"}),
+        ("remove_background", {"model": "isnet-anime"}),
+        ("depth_mask", {"near": 0.5, "far": 1.0}),
+    ):
+        tag = tool + ("_" + opts["model"] if "model" in opts else "")
+        result = call("image_tool", dict(tool=tool, image_path=src, output_dir=OUT, **opts))
+        if result["type"] != "result":
+            checks[tag] = {"error": result}
+            print(tag, result, flush=True)
+            continue
+        payload = result["result"]
+        path = keep(result, CASE + "_" + tag)
+        with Image.open(path) as im:
+            arr = np.asarray(im)
+            checks[tag] = {"path": path, "size": list(im.size), "mode": im.mode,
+                           "std": float(arr.std()), "outputs": payload.get("outputs", {})}
+            if im.mode == "RGBA":
+                alpha = arr[..., 3]
+                checks[tag]["alpha_fraction"] = float((alpha > 127).mean())
+                if not 0.01 < checks[tag]["alpha_fraction"] < 0.99:
+                    checks[tag]["error"] = "cutout alpha is empty or opaque"
+            if tool in ("person_mask", "depth_mask"):
+                checks[tag]["mask_fraction"] = float((arr[..., 0] > 127).mean())
+                if not 0.01 < checks[tag]["mask_fraction"] < 0.99:
+                    checks[tag]["error"] = "mask is empty or full"
+            expected = (size["width"], size["height"])
+            if tool == "cas_upscale":
+                expected = tuple(v * 2 for v in expected)
+            if im.size != expected:
+                checks[tag]["error"] = f"wrong size: {im.size} != {expected}"
+        print(tag, checks[tag], flush=True)
+        if tool in ("person_mask", "depth_mask"):
+            edited = call("img2img", req(gp(prompt="a woman wearing a red jacket, standing on a snowy mountain", steps=20,
+                                             img2img=i2i(src, path, 0.8), **size)))
+            checks[tag]["inpaint"] = (keep(edited, CASE + "_" + tag + "_inpaint")
+                                       if edited["type"] == "result" else edited)
+    with open(os.path.join(OUT, CASE + ".json"), "w", encoding="utf-8", newline="\n") as report:
+        json.dump(checks, report, indent=2)
+    ok = all("error" not in value and ("inpaint" not in value or isinstance(value["inpaint"], str))
+             for value in checks.values())
+    r = {"type": "result" if ok else "error", "result": {"result": checks}, "message": str(checks)}
+elif CASE in ("depth_marigold", "normal_marigold", "recolor_luminance", "tile_resample", "blur_gaussian"):
     r = call("preprocess", {"preprocessor": CASE, "image_path": FACE, "output_dir": OUT, "args": {"down_sampling_rate": 4.0}})
 elif CASE == "gfpgan":
     model = fetch("https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.4.pth", "GFPGANv1.4.pth")
@@ -279,7 +336,7 @@ else:
 ok = r is not None and r.get("type") == "result"
 detail = (r.get("result", {}).get("caption") or r.get("result", {}).get("warnings") or r.get("result", {}).get("result") or "") \
     if ok else (r or {}).get("message")
-saved = keep(r, CASE) if ok and CASE not in ("wd14", "blip") and not CASE.startswith(("sched", "ext_", "ad_")) else None
+saved = keep(r, CASE) if ok and CASE not in ("wd14", "blip") and not CASE.startswith(("sched", "ext_", "ad_", "image_")) else None
 print(f"{CASE:18s} {'OK ' if ok else 'ERR'} {time.time() - t0:7.1f}s {str(detail)[:400]} {saved or ''}", flush=True)
 with open(os.path.join(OUT, "results.tsv"), "a", encoding="utf-8") as fh:
     row = [time.strftime("%H:%M:%S"), CASE, "OK" if ok else "ERR", f"{time.time() - t0:.1f}s",

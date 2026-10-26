@@ -127,16 +127,17 @@ class BaseEngine:
     def image_tool(self, params: dict, ctx: JobContext) -> dict:
         """Non-diffusion image tools (sdfx.image_tools): {tool, image_path, output_dir, ...tool params}."""
         from . import image_tools
-        from .images import load_rgb, next_output_path, save_png
+        from .images import next_output_path, save_png
         tool = str(params.get("tool", ""))
         if tool not in image_tools.TOOLS:
             raise EngineError(INVALID_PARAMS, f"unknown image tool '{tool}'")
         src = params.get("image_path")
         if not src:
             raise EngineError(INVALID_PARAMS, "image_path is required")
-        from PIL import Image
-        img = Image.open(src)
-        img = img.convert("RGBA") if img.mode in ("RGBA", "LA", "P") else load_rgb(src)
+        from PIL import Image, ImageOps
+        with Image.open(src) as source:
+            oriented = ImageOps.exif_transpose(source)
+            img = oriented.convert("RGBA" if oriented.mode in ("RGBA", "LA", "P") else "RGB")
         dev = "cuda" if getattr(self, "cuda", False) else "cpu"
         try:
             out, extra = image_tools.run(tool, img if tool != "remove_background" else img.convert("RGB"), params, dev)

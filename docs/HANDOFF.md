@@ -43,10 +43,13 @@ Done in this session, all GPU-verified unless marked:
 - LoRA Block Weight (`python/sdfx/lora_blocks.py`, `LoraBlockWeightPlugin.scala`). The `<lora:name:te:unet>` multipliers
   and the `lbw=`, `start=`, `stop=` and `step=` arguments are parsed in `LoraSyntax.parseTag`.
 - Checkpoint merger and converter (`python/sdfx/model_tools.py`, `ModelToolPlugins.scala`). Both are blocked over MCP.
-- **Not yet GPU-verified (last commit):** image tools in `python/sdfx/image_tools.py` and `ImageToolPlugins.scala`.
+- **GPU-verified by Codex on 2026-10-26:** image tools in `python/sdfx/image_tools.py` and `ImageToolPlugins.scala`.
   They cover remove background (rembg or person segmentation), person mask, pixel art, colour enhance, FSR-style CAS
-  upscale, depthmap2mask and inpaint background. Unit tests pass. rembg 2.0.69 was just installed into
-  `python/.venv-smoke`. **First task: run these on real images** (see "Verifying" below) and fix whatever looks wrong.
+  upscale, depthmap2mask and inpaint background. Real SD1.5 and SDXL images, both masked inpainting paths, and all
+  seven plugins through the real Java/MCP app were checked. See `docs/VERIFICATION.md` for scope and evidence.
+  Fixed full-range seed overflow and output dimensions in pixel art, an open input file in the engine, and a leaked
+  auxiliary mask in the Scala background-inpainting plugin. **Next task: prompt-embedding hooks** below; the 219 todo
+  entries remain unfinished. Completing this verification wave does not complete the extension-index goal.
 
 UI improvements made this session: `Control.Section` (collapsible groups inside a plugin form), `Plugin.enabledBy`
 (greys a control out while its checkbox is off), and the form layout in `W.Form`. Labels longer than 18 characters

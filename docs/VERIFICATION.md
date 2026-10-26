@@ -84,3 +84,61 @@ Every row below passed. "by design" notes are the documented fallbacks, also obs
 | Core: LDSR | E 109.0 s | 2x upscale (first run downloads the model) |
 | Core: Marigold | E (depth 11.9 s, normal 10.1 s) | |
 | Core: recolor / tile / blur preprocessors | E | |
+
+## Image-tool handoff verification (Codex, 2026-10-26)
+
+Tested with RTX 3090, `python/.venv-smoke`, the existing SD1.5 `animekawa_v10` and SDXL
+`waiIllustriousSDXL_v170` checkpoints. The source prompt was a woman in a red jacket in a park, seed 7,
+16 steps, DPM++ 2M. Source sizes were 512x768 and 832x1216 respectively. This verifies these tools;
+it does not establish completion or full upstream feature parity for the remaining extension index.
+
+| Tool / plugin | Real-engine evidence (both models) | App/MCP evidence (SD1.5) |
+|---|---|---|
+| pixel_art | 16-colour pixelated output, ordered dithering, original dimensions | 1 saved image |
+| color_enhance | stronger chroma at strength 0.5; visually compared with source | 1 saved image |
+| fsr_upscale | 1024x1536 / 1664x2432 Lanczos + CAS output | 1 saved image |
+| person_mask | inverse mask covers 78.89% / 87.73%; person protected in background inpaint | 1 saved image |
+| remove_background | person segmentation and rembg isnet-anime; nontrivial RGBA alpha | 2 saved images (cutout + mask) |
+| depthmap2mask | DPT nearest-range mask covers 38.49% / 43.87%; masked inpainting succeeds | 2 saved images (edited + mask) |
+| inpaint_background | person-mask inpainting changes park to mountains and retains the person | 2 saved images (edited + mask) |
+
+The non-neural tools run on CPU; diffusion, YOLO and DPT used CUDA. rembg uses the providers available in its
+ONNX Runtime installation; no claim of CUDA acceleration for rembg. Only the isnet-anime and person-segmentation
+background-removal choices were exercised, not every offered rembg model or alpha-matting option.
+
+Reproduce from the repository root (one model per engine process):
+
+```powershell
+python scripts/dev/gpu_check.py python/.venv-smoke/Scripts/python.exe outputs/verify-image-tools image_sd15
+python scripts/dev/gpu_check.py python/.venv-smoke/Scripts/python.exe outputs/verify-image-tools image_sdxl
+```
+
+Each case generates a source, runs seven tool configurations and two inpainting calls, checks sizes and rejects
+empty/full masks or alpha, then writes `outputs/verify-image-tools/image_sd15.json` or `image_sdxl.json` and
+`results.tsv`. The PNGs and review sheets in that directory were inspected visually. They are local, gitignored
+artifacts; rerun the commands to reproduce them in another checkout. Inspect RGBA on a contrasting background:
+discarding its alpha when making a thumbnail shows the original RGB background.
+
+The app path used the rebuilt `target/stablediffusion-fx.jar`, Java 21, and temporary settings pointing at the GPU
+venv and existing checkpoints, then:
+
+```powershell
+python scripts/dev/mcp_scripts.py "C:\Program Files\Java\jdk-21\bin\java.exe" pixel_art,color_enhance,fsr_upscale,person_mask,remove_background,depthmap2mask,inpaint_background
+```
+
+Result: 7/7 succeeded. Temporary `config/settings.json` was removed after the run. The script now exits nonzero
+on a failed/empty selection instead of relying on its printed summary.
+
+Regression fixes demonstrated with failing tests before the fixes, then passing tests:
+
+- A uint32 generation seed above INT_MAX failed at OpenCV `setRNGSeed`; normalize to a signed 32-bit seed.
+- Pixel art's "original size" option cropped 65x49 to 64x48; restore the exact source dimensions.
+- `BaseEngine.image_tool` opened an RGB source twice and left the first handle open; decode inside a context manager.
+- Background inpainting discarded its auxiliary person-mask path without deleting it; release auxiliary outputs.
+
+Independent review found no critical/important issue. A minor remaining test gap is an explicit EXIF-orientation
+fixture for the image-tool loader; the current closure fixture is an ordinary RGB PNG.
+
+Final automated checks for this wave: Scala **474 passed**; GPU Python venv **257 passed**; torch-free venv
+**221 passed, 15 skipped**. `ui/assembly` produced the runnable jar. `scripts/extensions_matrix.py` still reports
+**83 done / 219 todo / 51 not applicable**; no new target was promoted by this verification-only wave.
