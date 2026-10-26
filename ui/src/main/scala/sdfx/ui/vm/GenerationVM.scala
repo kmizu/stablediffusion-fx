@@ -68,6 +68,7 @@ final class GenerationVM(val mode: Mode, val shared: ModelVM = new ModelVM):
   val seed = new SimpleLongProperty(-1L)
   val subseed = new SimpleLongProperty(-1L)
   val subseedStrength = new SimpleDoubleProperty(0.0)
+  val variationEnabled = new SimpleBooleanProperty(true)
 
   // hires fix (txt2img only)
   val hiresEnabled = new SimpleBooleanProperty(false)
@@ -142,7 +143,7 @@ final class GenerationVM(val mode: Mode, val shared: ModelVM = new ModelVM):
       negativePrompt = negativePrompt.get,
       seed = seed.get,
       subseed = subseed.get,
-      subseedStrength = subseedStrength.get,
+      subseedStrength = if variationEnabled.get then subseedStrength.get else 0.0,
       samplerName = sampler.get,
       scheduler = scheduler.get,
       steps = steps.get,
@@ -161,12 +162,14 @@ final class GenerationVM(val mode: Mode, val shared: ModelVM = new ModelVM):
 
   /** Form state for persistence: like [[toParams]] but keeps disabled ControlNet units. */
   def snapshot: GenerationParams =
-    toParams.copy(controlnet = controlNet.map(_.toUnit), checkpoint = None, vae = None)
+    toParams.copy(subseed = subseed.get, subseedStrength = subseedStrength.get,
+      controlnet = controlNet.map(_.toUnit), checkpoint = None, vae = None)
 
   /** Loads params into the form. LoRAs given as structured refs are written back into the prompt as tags.
     * With `keepImages` the current init image / mask stay (restore parameters onto the img2img inputs).
     */
-  def load(p: GenerationParams, keepImages: Boolean = false, includeModel: Boolean = false): Unit =
+  def load(p: GenerationParams, keepImages: Boolean = false, includeModel: Boolean = false,
+      variationEnabledState: Boolean = true): Unit =
     val missingTags = p.loras.filterNot(l => p.prompt.contains(s"<lora:${l.name}:") || p.prompt.contains(s"<lora:${l.name}>"))
     val promptText =
       if missingTags.isEmpty then p.prompt
@@ -176,6 +179,7 @@ final class GenerationVM(val mode: Mode, val shared: ModelVM = new ModelVM):
     seed.set(p.seed)
     subseed.set(p.subseed)
     subseedStrength.set(p.subseedStrength)
+    variationEnabled.set(variationEnabledState)
     sampler.set(p.samplerName)
     scheduler.set(p.scheduler)
     steps.set(p.steps)
@@ -218,8 +222,10 @@ final class GenerationVM(val mode: Mode, val shared: ModelVM = new ModelVM):
   /** Restores the fields of an A1111 infotext on top of the current form (img2img inputs and ControlNet are kept). */
   def restoreInfotext(text: String): GenerationParams =
     val base = snapshot
-    val restored = Infotext.toParams(Infotext.parse(text), base).copy(extra = Map.empty, controlnet = base.controlnet)
-    load(restored, keepImages = true)
+    val parsed = Infotext.parse(text)
+    val restored = Infotext.toParams(parsed, base).copy(extra = Map.empty, controlnet = base.controlnet)
+    val hasVariation = parsed.fields.contains("Variation seed") || parsed.fields.contains("Variation seed strength")
+    load(restored, keepImages = true, variationEnabledState = hasVariation)
     restored
 
   /** Validation of the form; empty when the job can be submitted. Also updates [[problems]]. */

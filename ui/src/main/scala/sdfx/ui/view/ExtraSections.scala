@@ -49,7 +49,7 @@ object ExtraSections:
 
     val f = W.form()
       .add("Upscaler", W.combo(ctx.catalog.hiresUpscalers, vm.hiresUpscaler), "Latent upscalers stay in latent space; ESRGAN-type models upscale the decoded image")
-      .add("Upscale by", W.doubleSlider(vm.hiresScale, 1, 4, 0.05), "Scale factor of the second pass (ignored when Resize width/height are set)")
+      .add("Upscale by", W.doubleSlider(vm.hiresScale, 1, 5, 0.05), "Scale factor of the second pass (ignored when Resize width/height are set)")
       .add("Hires steps", W.intSlider(vm.hiresSteps, 0, 150), "Second pass steps (0 = same as sampling steps)")
       .add("Denoising", W.doubleSlider(vm.hiresDenoise, 0, 1, 0.01), "How much the second pass may change the image")
       .add("Resize W", W.intSlider(vm.hiresResizeX, 0, 4096, 8), "Explicit target width (0 = use Upscale by)")

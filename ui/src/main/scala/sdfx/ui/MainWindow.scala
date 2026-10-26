@@ -13,6 +13,8 @@ import sdfx.core.model.ExtendedStyle
 import sdfx.core.infotext.HardwareInfo
 import sdfx.core.plugins.api.Plugin
 import sdfx.engine.{AppServices, EngineState, JobEvent}
+import sdfx.core.presets.{LoadedPresets, PresetError}
+import sdfx.ui.presets.{NativePresetFields, NativePresetFileDialogs, NativePresetsController, NativePresetsSession}
 import sdfx.ui.view.*
 import sdfx.ui.vm.*
 
@@ -21,7 +23,8 @@ import scala.util.control.NonFatal
 
 /** Builds the main window and wires views, view models and services together. */
 final class MainWindow(val stage: Stage, val services: AppServices, initial: UiState, opts: CliOptions,
-    payloadClipboardWriter: String => Unit = RequestPayloadPane.systemClipboard):
+    payloadClipboardWriter: String => Unit = RequestPayloadPane.systemClipboard,
+    presetFileDialogs: NativePresetFileDialogs = NativePresetFileDialogs.system):
   val catalogVM = new CatalogVM
   val ctx = new UiContext(services, catalogVM, stage)
   val model = new ModelVM
@@ -41,6 +44,16 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
     loads = loads.filterNot(_._1 == id)
     refreshChip()
   private val exportGate = new SingleFlight
+  /** Native acceptance holds the real export admission gate without starting a job. */
+  private[ui] def withPresetMaskExportBusyForCheck(body: => Unit): Unit =
+    require(javafx.application.Platform.isFxApplicationThread,
+      "Preset export gate check must run on FX")
+    require(!exportGate.isBusy, "A real mask export is already in flight")
+    var release: () => Unit = () => ()
+    require(exportGate.run(finish => release = finish, e => throw e),
+      "Could not acquire the real mask export gate")
+    try body
+    finally release()
   // MCP applies run strictly in order on one thread; only the latest request updates the UI
   private val mcpExec = scala.concurrent.ExecutionContext.fromExecutorService(
     java.util.concurrent.Executors.newSingleThreadExecutor(r => {
@@ -64,12 +77,14 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
 
   // restore last form state (init images only when the file still exists)
   Mode.values.foreach { m =>
+    val variationGate = initial.variationEnabled.getOrElse(m.key, true)
+    vms(m).variationEnabled.set(variationGate)
     initial.params.get(m.key).foreach { p =>
       val fixed = p.copy(img2img = p.img2img.map(i => i.copy(
         initImage = if i.initImage.nonEmpty && Files.isRegularFile(Path.of(i.initImage)) then i.initImage else "",
         mask = None
       )))
-      try vms(m).load(fixed)
+      try vms(m).load(fixed, variationEnabledState = variationGate)
       catch case NonFatal(e) => System.err.println(s"[sdfx] cannot restore ${m.key} state: ${e.getMessage}")
     }
   }
@@ -92,7 +107,8 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
 
   val panels: Map[Mode, GenerationPanel] =
     Mode.values.map(m => m -> new GenerationPanel(ctx, vms(m), plugins(m), initial.expanded,
-      () => lastSeed, openPayload)).toMap
+      () => lastSeed, openPayload, openPresets)).toMap
+  ctx.commitPresetEditors = m => panels(m).commitPresetEditors()
   val preview = new PreviewPane(ctx, actions)
   val gallery = new GalleryView(ctx, galleryVM, actions, it => preview.show(it.path, it.parameters))
   val pngInfo = new PngInfoTab(ctx, actions)
@@ -174,6 +190,38 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
 
   private var payloadStage: Stage = null
   private var payloadPane: RequestPayloadPane = null
+  private var presetStage: Stage = null
+  private var presetPane: NativePresetsPane = null
+  private var presetSession: NativePresetsSession = null
+
+  def presetsInspectorStage: Option[Stage] = Option(presetStage)
+
+  def openPresets(mode: Mode): Unit =
+    if !disposed then
+      if presetPane == null then
+        val controllers = Mode.values.map { m =>
+          val fields = new NativePresetFields(vms(m), plugins(m), catalogVM,
+            panels(m).sections(s"${m.key}.variation").expandedProperty)
+          m -> new NativePresetsController(fields, () => exportGate.isBusy)
+        }.toMap
+        val directory = opts.configPresetsDir.map(Path.of(_))
+          .getOrElse(services.home.configDir.resolve("native-presets"))
+        presetSession = new NativePresetsSession(directory, controllers,
+          result => if presetPane != null then presetPane.acceptResult(result),
+          thunk => Fx.run(thunk()), opts.configPresetsDir.isEmpty)
+        presetPane = new NativePresetsPane(ctx, presetSession, controllers, presetFileDialogs)
+        presetStage = new Stage()
+        presetStage.initOwner(stage)
+        presetStage.setTitle("Native presets")
+        presetStage.setMinWidth(700)
+        presetStage.setMinHeight(500)
+        val presetScene = new Scene(presetPane.node, 1040, 740)
+        Theme.apply(presetScene, services.settings.theme)
+        presetStage.setScene(presetScene)
+        presetPane.reloadTools()
+      presetPane.openMode(mode)
+      presetStage.show()
+      presetStage.toFront()
 
   /** Stable native acceptance seam. Opening only reads the memory-only store and never starts inference. */
   def payloadInspectorStage: Option[Stage] = Option(payloadStage)
@@ -691,6 +739,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
       dividers = Map("main" -> (if mainSplit.getItems.contains(rightBox) then mainSplit.getDividerPositions.toSeq else Seq(comparisonDivider)), "right" -> rightSplit.getDividerPositions.toSeq),
       selectedTab = selected,
       params = Mode.values.map(m => m.key -> vms(m).snapshot).toMap,
+      variationEnabled = Mode.values.map(m => m.key -> vms(m).variationEnabled.get).toMap,
       pluginValues = Mode.values.map(m => m.key -> plugins(m).snapshot).toMap,
       selectedScript = Mode.values.map(m => m.key -> plugins(m).selectedScript.get).toMap,
       expanded = panels.values.flatMap(_.sections.map((k, p) => k -> p.isExpanded)).toMap,
@@ -731,6 +780,13 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
       payloadStage.close()
       payloadPane = null
       payloadStage = null
+    if presetPane != null then
+      presetPane.dispose()
+      presetSession.close()
+      presetStage.close()
+      presetPane = null
+      presetSession = null
+      presetStage = null
     systemInfo.dispose()
     stylesEditor.dispose()
     vramPoll.stop()

@@ -25,6 +25,7 @@ case class UiState(
     pluginValues: Map[String, Map[String, Map[String, String]]] = Map.empty,
     selectedScript: Map[String, String] = Map.empty,
     expanded: Map[String, Boolean] = Map.empty,
+    variationEnabled: Map[String, Boolean] = Map.empty,
     logVisible: Boolean = false,
     galleryQuery: String = "",
     lastSeed: Long = -1L,

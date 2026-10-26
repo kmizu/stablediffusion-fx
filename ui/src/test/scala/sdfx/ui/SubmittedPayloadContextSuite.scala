@@ -10,6 +10,22 @@ class SubmittedPayloadContextSuite extends munit.FunSuite:
     def name = s"Title $id"
     override def controls = Seq(Control.Check("enabled", "Enabled"), Control.Text("literal", "Literal", "<b>猫</b>"))
 
+  test("JobBuilder freezes disabled UI variation gate separately from effective params") {
+    val vm = new GenerationVM(Mode.Txt2Img)
+    val forms = new PluginsVM(Mode.Txt2Img, Nil, Nil, _ => Values.empty)
+    vm.subseed.set(99L)
+    vm.subseedStrength.set(0.4)
+    vm.variationEnabled.set(false)
+    val job = JobBuilder.build(vm, forms)
+    assertEquals(job.params.subseed, 99L)
+    assertEquals(job.params.subseedStrength, 0.0)
+    assertEquals(job.submittedContext.flatMap(_.uiVariationEnabled), Some(false))
+    vm.variationEnabled.set(true)
+    vm.subseedStrength.set(0.7)
+    assertEquals(job.submittedContext.flatMap(_.uiVariationEnabled), Some(false))
+    assertEquals(job.params.subseedStrength, 0.0)
+  }
+
   test("actual JobBuilder freezes selected script and all AlwaysOn forms including inactive values") {
     val script = new Form("script", PluginKind.Script)
     val active = new Form("active", PluginKind.AlwaysOn)

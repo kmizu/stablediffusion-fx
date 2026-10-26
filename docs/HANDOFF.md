@@ -20,16 +20,27 @@ server, 40 rewrites of the reForge built-ins. Repo: private GitHub `kmizu/stable
 
 | | Count |
 |---|---|
-| Index entries done | 101 |
-| Index entries todo | 201 (137 distinct targets) |
+| Index entries done | 103 |
+| Index entries todo | 199 (139 distinct targets) |
 | Not applicable (web-UI CSS/UX only, accounts, obsolete, external apps, server ops) | 51 |
+
+**Latest verified wave (2026-10-27):** index 30 `core:config-presets` and index 31 `core:preset-utilities` have
+separate native profiles. Config uses mode-specific collections, selected-field overlays and Reapply; Utilities
+uses a shared collection, Quick/Detailed save and a choice of current versus component-default apply. The
+complete MIT Config starter presets are included, while the unlicensed Utilities source supplies behaviour only.
+The corrected implementation passed **964 Scala tests**, **36 native pane checks**, **16 CPU** checks and **19 each**
+on real SD1.5 and SDXL models, with trained ControlNet. Python passed 867/1 skip and no-torch 397/82 skips; the
+assembled jar passed an isolated Java 21 launch. BuiltinsSuite 20/20 and NativePresetsCoverageSuite 4/4 passed
+after the precise two-entry ledger promotion. See [`VERIFICATION.md`](VERIFICATION.md) for the source pins,
+artifact hash, parity limits and review history, and
+[`native-presets-compatibility.md`](native-presets-compatibility.md) for interchange rules.
 
 `scripts/extensions_matrix.py` is the single ledger. Its `S` dict maps each index entry to `done:<plugin id>`,
 `todo:<target>` or `na:<reason>`, and the `IMPLEMENTED` set promotes `todo:<target>` to done. Several entries may
 share one target (for example every background remover maps to `remove_background`). To merge a target into another,
 edit its `S` entry (done for `pixelization -> pixel_art`, `mask2background -> inpaint_background`).
 
-**Latest verified wave (Codex,2026-10-27):** index253 `core:api-payload` is implemented. Each generation mode has a
+**Previous verified wave (Codex,2026-10-27):** index253 `core:api-payload` is implemented. Each generation mode has a
 collapsed entry to one shared native inspector, with exact submitted request bodies, separate submitted/model
 context and optional bounded image diagnostics. Script sub-generations have distinct identities and terminal
 states. History, tree traversal, raw previews and diagnostic delivery are bounded; explicit Copy preserves the
@@ -129,10 +140,21 @@ it compares existing real-model images without changing them. VAE Tools has Full
 TAESD/TAESDXL evidence, exact failed decoder-input recovery, quantized image formats and explicit download gates.
 Keep codec roundtrip, image reconstruction and approximate previews distinct. See their plans and VERIFICATION.
 
-**Next action:** audit the complete source scopes for `core:presets` and `core:prompt-tools`, then write their
-implementation plans. Read-only audits are complete under `outputs/next-core-presets-audit*` and
-`outputs/next-core-prompt-tools-audit*`; no implementation or promotion of those targets is implied. API payload
-release reports and its assembled jar are in `.worktrees/api-payload-integration/outputs` and `target`.
+**Next work:** the native presets plan for indices 30/31 is complete. Do not restart it as the old shared
+`core:presets` target: that name would also mark three unfinished entries done. The 353-entry goal still has
+**199 todo entries** (139 distinct targets). Indices 203 `controlnet_fastload`, 221 `scenario_loader`, 262
+`core:state-manager` and 146 `model_presets` remain separate work. Index 333 `core:nsfw-card-blur` has a source
+audit and draft design in an isolated local worktree; it is neither implemented nor promoted. The independent
+`core:prompt-tools` audit is under `outputs/next-core-prompt-tools-audit*`.
+
+For the completed presets wave, the five-entry source audit and manifest remain in main
+`outputs/next-core-presets-audit*`, with the full ID map at `outputs/native-config-presets-field-map.md`.
+The 132-project notice retains all 130 earlier rows; trained ControlNet assets are local under
+`outputs/model-cache/controlnet-acceptance-20261027` and are not distributed. Detailed source reviews, earlier
+failed checkpoints, final model reports, Java 21 screenshots and hashes are in [`VERIFICATION.md`](VERIFICATION.md).
+The earlier API payload release reports and assembled jar are in `.worktrees/api-payload-integration/outputs`
+and `target`.
+
 Neutral Prompt is now marked implemented after an explicit original-scope
 acceptance audit; see `docs/superpowers/plans/2026-10-26-neutral-prompt.md` and the closing VERIFICATION section.
 All operators, nesting/signed weights, CFG rescale, schedules, native form/formatter/replay and actual AppServices
@@ -144,7 +166,7 @@ composed Neutral prompts remain explicitly unsupported in `neutral_runtime.valid
 original Runtime task permits clear unsupported combinations; later agent-added notes making every combination
 a promotion prerequisite are superseded by the documented acceptance clarification. No original Neutral operator
 or model/UI/notice gate was omitted. Keep the seven guards until their own implementations are verified.
-The overall 353-entry goal remains active; 201 accepted entries are unfinished. Do not treat this promotion as
+The overall 353-entry goal remains active; 199 accepted entries are unfinished. Do not treat this promotion as
 completion of that goal or reclassify remaining entries to make it appear complete.
 
 ## Remaining targets, most-starred first
@@ -155,7 +177,7 @@ regional_prompter, openpose_editor, core:localization, wav2lip, text2video, inpa
 stable_sr, cn_animation, unprompted, llul, dataset_tag_editor, deoldify, dreamartist, qr_code, infinite_zoom, tipo,
 lcm, stylepile, clip_interrogator, prompt_generator, style_selector, aesthetic_gradients, latent_couple,
 outpaint_canvas, fabric, manga_maker, model_downloader, multi_subject_render, batch_face_swap, video_loopback,
-core:presets, model_organizer, model_keyword, shap_e, prompt_travel, lora_control,
+controlnet_fastload, scenario_loader, core:state-manager, model_organizer, model_keyword, shap_e, prompt_travel, lora_control,
 gif2gif, replacer, cd_tuner, riffusion, smart_process, haku_img, infinity_grid,
 core:panorama-viewer, loopback_scaler, daam, text2prompt, prompt_translate, prompt_gallery,
 refiner, incantations, old_photo_restoration, abysz_lab, aesthetic_score, steps_animation,
@@ -173,7 +195,8 @@ pnginfo_injection, masked_content_extras, metadata_utils, waifu2x, core:nsfw-car
 
 Suggested next steps, by value and fit with what exists:
 
-1. **Native tools**: core:presets and core:prompt-tools, preserving each source scope.
+1. **Native tools**: index 333 `core:nsfw-card-blur` has an audit/draft design; `core:prompt-tools` and the
+   remaining separate preset-audit targets still need implementation and source-scope verification.
 2. **Regional prompting**: regional_prompter and latent_couple, via attention-level region masks.
    tiled_diffusion can largely reuse the existing `multidiffusion` hook plus noise inversion and region prompts.
 3. **Small, cheap ones**: img2img/custom/conditioning hires fix variants, color_correction,

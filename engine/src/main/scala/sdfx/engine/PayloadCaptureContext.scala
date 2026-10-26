@@ -33,7 +33,9 @@ private[engine] object PayloadCaptureContext:
     configuration.map { value =>
       ujson.Obj("body_schema" -> "sdfx protocol v1 generation params; native null/default fields are retained",
         "submitted" -> ujson.Obj("origin" -> submitted.origin,
-          "source_mode" -> submitted.sourceMode.map(ujson.Str(_)).getOrElse(ujson.Null), "configuration" -> value))
+          "source_mode" -> submitted.sourceMode.map(ujson.Str(_)).getOrElse(ujson.Null),
+          "ui_variation_enabled" -> submitted.uiVariationEnabled.map(ujson.Bool(_)).getOrElse(ujson.Null),
+          "configuration" -> value))
     }
 
   def captured(submitted: SubmittedPayloadContext, p: GenerationParams, at: Long, model: Option[LoadedModel],
@@ -44,6 +46,7 @@ private[engine] object PayloadCaptureContext:
         "model" -> model.map(Json.toJs(_)).getOrElse(ujson.Null))
       context("requested_seed_options") = ujson.Obj("seed" -> Json.toJs(p.seed), "subseed" -> Json.toJs(p.subseed),
         "subseed_strength" -> p.subseedStrength, "extras_requested" -> (p.subseed != -1 || p.subseedStrength != 0),
+        "extras_requested_basis" -> "native_params_inference",
         "seed_resize" -> "not_in_native_schema")
       PayloadJsonBudget.write(context, limits)
     }

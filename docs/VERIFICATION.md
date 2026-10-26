@@ -1150,3 +1150,130 @@ Post-promotion registry consistency passed **20 tests** after regenerating the l
 [`2026-10-26-core-api-payload-decisions.md`](superpowers/plans/2026-10-26-core-api-payload-decisions.md).
 
 Result: **101 done /201 todo /51 not applicable**,137 distinct pending targets. The overall353-entry goal remains active.
+
+## Native Config Presets and Preset Utilities (2026-10-27)
+
+This wave implements separate native profiles for index 30 `core:config-presets` and index 31
+`core:preset-utilities` on canonical product source
+`d6248d4c71f5b00e1e6398871d5470ca22034715` in `.worktrees/core-config-presets`.
+The earlier `7b340bc7d0cf650d572baeb444136a203e5c0abc` is the CPU/model/assembly checkpoint below; the
+integrated I1/I2 correction changes only seven owned files, with source identity diff 0 from the reviewed fixes.
+Config keeps separate Txt2Img and Img2Img source collections (Inpaint applies to its own form from the latter),
+selected-field overlay and Reapply. Utilities has one shared collection, Quick/Detailed save and independently
+selected Stackable/current-versus-component-default apply. The UI owns one native pane; save, inspect, reload and
+apply edit form properties without launching generation. The source audit, manifest and complete read-only trees are
+in the main repository's `outputs/next-core-presets-audit*`; the corrected full ID inventory is
+`outputs/native-config-presets-field-map.md`. The binding and raw-value rules are in
+[`native-presets-compatibility.md`](native-presets-compatibility.md).
+
+Source 30 is pinned at `Zyin055/Config-Presets@e252e60288b1104a45ea12106d92a8d145364fa1` (MIT). Its complete
+first-use 14 Txt2Img and four Img2Img defaults, including each `None` entry, are embedded in source order with exact
+semantic scalar values; the original 4K preset retains 768x432 and hires scale 5. The MIT notice is archived as
+`licenses/Zyin055__Config-Presets.txt` (1,085 bytes, SHA-256
+`c19b98789c10ffe53568c46f4daae8a49024a02715cf2d4f05de04aa05d3a5f9`). Source 31 is pinned at
+`Gerschel/sd_web_ui_preset_utils@e301734567f37ac53c6225aec3a5c9858b357e7e`; its tracked tree has no licence.
+Its behaviour was independently implemented; no code, prose, assets or default JSON from it is bundled. The
+notice validation at `.worktrees/config-presets-notices/outputs/presets-notices-validation.json` records 132 projects,
+both new rows and all 130 earlier rows byte-for-byte unchanged; `presets-notices-review.md` approves that notice
+delta. This static notice review does not by itself approve the product.
+
+Independent source review covered the UI's full Task 5B scope and its six R1–R6 fixes (final reviewed
+`10b1b72`, integrated source eight-file hash `c85b313`), the core 5D metadata/diagnostic work (reviewed
+`5e9d2cb`, exact integrated hash `e5e4687`), and the manual helper's test-only fixture correction (`f4f9cc3`,
+independently approved; final helper in `7b340bc`). The full and fix-round UI reviews are
+`.worktrees/config-presets-pane/outputs/presets-pane-{full-review,rereview-round1}.md`. The earlier native run passed
+**32 checks** in 37 seconds at 05:39:11; report and 20 inspected PNGs are under
+`outputs/verify-native-presets-pane-review-round1-third/` in that worktree. The UI review verifies original 4K
+widget save/reload, actual invalid/hidden spinners, Quick/Detailed/Stackable, Cancel and pre-click overwrite/removal
+review, 210 paged omissions and nine warnings, separate tracked/checked/saved/available flags and Extra's source
+default false versus native initial true. It also exercises long Prompt/alias bounds, Additional component binding,
+corrupt/missing library and Restore, and Reload preset tools without engine restart.
+
+After the two whole-wave integration fixes, the combined Pane checkpoint `6d64075` passed **219 UI tests**
+(06:15:37) and **36 actual native checks** in 31 seconds (06:16:08). Its log is
+`.worktrees/config-presets-pane/outputs/presets-wave-fixes-native.log`; report and 20 screenshot paths are in
+`outputs/verify-native-presets-wave-fixes/native-presets-pane-report.json` in that worktree. All prior 32 workflows
+remain, with actual built-in Refiner/Flux selector and Reapply warnings, imported unknown keys surviving native
+Reload, the last of 210 opaque Apply warnings reachable after Select/Reapply/Reload, and numeric/label Config and
+Utilities source choices applying to real Img2Img and Inpaint controls. The scoped re-review read this log, report
+and helper assertions; it did not claim to reopen all 20 new screenshots.
+
+Canonical regression evidence in `.worktrees/core-config-presets/outputs` follows. The `7b340bc` checkpoint rows
+precede the two cross-integration fixes described below; corrected product source is `d6248d4`.
+
+| Gate | Result | Evidence |
+|---|---|---|
+| Full Scala at `7b340bc` | **956 passed**: core 410, UI 215, engine 154, MCP 45, plugins 132; 92 s, 05:44:28 | `presets-integrated-full-cpu.log` |
+| Assembly at `7b340bc` | **passed**, 2 s, 05:44:30; checkpoint jar SHA-256 `E643B96A04C8BA8A2B7401B58F7B41E35AB73B835D3E0E15871650F1CF289ED8` | same log; `target/stablediffusion-fx.jar` at that checkpoint |
+| Corrected canonical full Scala | **964 passed**: core 414, UI 219, engine 154, MCP 45, plugins 132; 88 s, 06:18:48 | `presets-final-source-regression.log` |
+| Corrected assembly | **passed**, 2 s, 06:18:51; verified jar SHA-256 `0520F97B4C0EF429C67993C2D3F0089AB291E55A9E60F99398CF4B4AC45AE33C` | same log; `target/stablediffusion-fx.jar` |
+| Python GPU venv with process-local `CUDA_VISIBLE_DEVICES=-1` | **867 passed, 1 skipped, 8 warnings**, 34.54 s | `presets-python-full-cpu-corrected.log` |
+| Python no-torch venv | **397 passed, 82 skipped**, 10.81 s | `presets-python-no-torch-corrected.log` |
+| Native CPU, final helper | **16 checks passed**, 30 s, 05:54:06; `passed_cpu_scope` | `presets-integrated-cpu-sd15-final.log`; `verify-native-presets-cpu-final/native-presets-report.json` |
+| Native SD1.5 `animekawa_v10` | **19 checks passed**, 34 s, 05:54:40; `passed_real_model_scope`; trained `sd15-canny` ControlNet active | same log; `verify-native-presets-sd15-final/native-presets-report.json` |
+| Native SDXL `waiIllustriousSDXL_v170` | **19 checks passed**, 61 s, 05:56:18; `passed_real_model_scope`; trained `sdxl-canny` ControlNet active | `presets-integrated-sdxl-final.log`; `verify-native-presets-sdxl-final/native-presets-report.json` |
+| Checkpoint jar on Java 21 | **passed**, isolated dry-run screenshot, exit 0; root inspected Ready status and collapsed Settings presets | `presets-java21-jar-smoke.log`; `verify-native-presets-java21/main.png` |
+| Corrected jar on Java 21.0.3 | **passed**, isolated dry-run screenshot, exit 0; root inspected the 1484x881 `main.png` and 610x3086 full panel | `presets-final-java21-jar-smoke.log`; `presets-final-java21-version.log`; `verify-native-presets-java21-final/` |
+| Post-promotion registry and native coverage | **20/20 BuiltinsSuite** in 3 s, 06:23:26; **4/4 NativePresetsCoverageSuite** in 6 s, 06:23:31 | `presets-postpromotion-checks.log` |
+
+The Java 21 smokes used `-Xmx2g`, `--dry-run --screenshot main.png --exit-after 6`, isolated homes and copied
+Python packages, without a venv or user state. The final run used Java 21.0.3+7-LTS-152 and the corrected jar.
+Root verified its `main.png` is byte-identical to the earlier personally inspected Ready/dry-run screen (SHA-256
+`0025abfb17ab131ad977db5e1bdd0069e8ff7a828ed3d0a31011bf39691649a0`). The old `E643B96A...` hash
+remains checkpoint history; `0520F97B...` is the current assembled artifact.
+
+The first whole-wave source-scope review at `outputs/presets-wave-integration-review.md` assessed the `7b340bc`
+checkpoint against published main and returned **CHANGES REQUIRED**, with two Important integration findings and no
+Critical finding. I1: a preset's retained opaque source fields (including the built-in SDXL Refiner enable and Flux
+distilled CFG keys) survive storage but are absent from Select/Reapply warnings after import or reload. I2: fixed
+Config/Utilities resize and masked-content values can become Text atoms while actual native Choice controls require
+Integer atoms, so valid source values fail Apply. These routes were not exercised by the native-capture parity checks
+above. Root accepted both findings for tests-first correction. I1 now adds one generic `opaque-unapplied` warning
+per retained source key without reading/remapping its raw value or changing typed apply atomicity. Focused pure
+tests passed 19/19 and controller tests 24/24 after failing RED cases. I2 now emits an Integer for actual
+Integer-backed choices or a pinned Text label for Text-backed choices, and checks declared membership rather than
+guessing a runtime position. Compatibility tests passed 47/47 and the actual NativePresetFields schema suite 3/3
+after failing RED cases. The combined native 36-check run above exercises both source paths. The companion
+`outputs/presets-wave-integration-rereview-round1.md` **APPROVES the source-first checkpoint**, closes I1/I2 and
+reports no new Important/Critical finding. It accepts the existing CPU/SD1.5/SDXL evidence for unchanged native
+capture/model paths; those older runs did not exercise source enum import. Corrected full regression, rebuilt jar and
+Java 21 smoke are recorded above.
+The reviewer also found a classification error in this document set's 421-ID appendix; the seven built-in Config
+common routes per mode are now marked Conditional adapter, with source scope and 421 rows preserved.
+
+The Python source is unchanged from `4701ccc` (root diff 0). The correct repository invocation is
+`python -m pytest` without a `tests` argument. Earlier wrong-invocation logs and the first partial SD1.5 helper
+failure are retained as diagnostics, not counted as product failures or passes: two queued jobs shared a display
+name, so the helper mapped the second to the first. The `f4f9cc3` fixture fix uses unique names plus selected and
+admitted Script IDs, without a product change. An earlier CPU 16-check pass predates that fixture correction;
+the final 30-second run above is authoritative.
+
+The CPU/SD1.5/SDXL native helper compares fixed-seed submitted bodies and decoded RGB for direct editing against
+native Save → Reload → Apply in Txt2Img, Img2Img, Inpaint, hires, variation, active AlwaysOn, XYZ child seeds and queued
+immutable plugin/script/Extra/ControlNet state. For Inpaint only, body parity is **mask-path-normalized** after the
+admitted mask path, PNG hash and decoded pixels are captured; distinct temporary paths mean literal raw bodies are
+not equal. The raw submitted bodies are retained in the local check artifacts. Txt2Img's Extra disabled state
+preserves a `.4` draft while submitting effective zero; Img2Img/Inpaint submit strength but currently warn that its
+image effect is unsupported. The trained SD1.5/SDXL ControlNet checks verify active model/image/weight, exact
+direct/applied body and RGB, a visible fixed-seed conditioning effect and queued freeze. Root visually inspected
+final base, ControlNet-disabled and ControlNet-active PNGs in both model families (six images): no black or invalid
+output, and active rectangle/triangle conditioning is visible. The low-step base images are parity fixtures, not
+image-quality examples. Offline preset operations observed no job, engine PID or seed work; internal RNG state was
+not directly exposed. The 4K source values and native widget
+geometry were checked without 4K inference; low-step hires parity used 128 base pixels ×5 =640 and is not an
+image-quality benchmark. Test helpers used process-local offline model flags and local pinned assets under main
+`outputs/model-cache/controlnet-acceptance-20261027`;
+the weights are not distributed here.
+
+**Ledger promotion and retained scope.**
+`outputs/presets-source-promotion.json` records 101/201/51 before and **103 done /199 todo /51 not applicable**
+after, with 139 distinct pending targets and all 353 index entries retained. Only the two target IDs for index 30
+`core:config-presets` and index 31 `core:preset-utilities` were added to `IMPLEMENTED`; the related S-map
+entries for 203 `controlnet_fastload`, 221 `scenario_loader` and 262 `core:state-manager` were separated and remain
+todo. Index 146 `model_presets` remains a distinct todo. `core:presets` was not added to `IMPLEMENTED`.
+`THIRD_PARTY_NOTICES.md` was regenerated with 132 projects and SHA-256
+`151f0df0135ba0cbcc9b7960ac416c5e56de9f5c2a05e0120223c3f1a838e3de`, byte-identical to the reviewed
+notice text. Post-promotion BuiltinsSuite and NativePresetsCoverageSuite passed as recorded above; the latter's
+earlier pre-promotion 2 fail/2 pass was the expected old-ledger mismatch. The native presets plan for indices 30/31
+is complete. The overall 353-entry goal remains unfinished, with 199 todo entries; the remaining sources require
+their own implementation and verification.

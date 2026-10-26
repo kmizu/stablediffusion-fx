@@ -1,9 +1,11 @@
 package sdfx.ui.view
 
 import javafx.geometry.Insets
-import javafx.scene.Node
+import javafx.scene.{Node, Parent}
 import javafx.scene.control.*
-import javafx.scene.layout.{GridPane, Priority, VBox}
+import javafx.scene.layout.{GridPane, HBox, Priority, VBox}
+import javafx.beans.property.LongProperty
+import scala.util.control.NonFatal
 import sdfx.ui.vm.{GenerationVM, Mode, PluginsVM}
 
 /** The scrollable parameter form of one generation tab. */
@@ -13,11 +15,88 @@ final class GenerationPanel(
     val plugins: PluginsVM,
     expanded: Map[String, Boolean],
     lastSeed: () => Long,
-    openPayload: Mode => Unit
+    openPayload: Mode => Unit,
+    openPresets: Mode => Unit
 ):
   val mode: Mode = vm.mode
   /** Titled panes by persistence key ("<mode>.<section>"). */
   val sections = scala.collection.mutable.LinkedHashMap.empty[String, TitledPane]
+  private val presetLongFields = scala.collection.mutable.LinkedHashMap.empty[String, (TextField, LongProperty)]
+  private def presetSpinner(field: String, row: HBox): Unit =
+    row.getChildren.toArray.collectFirst { case s: Spinner[?] =>
+      s.asInstanceOf[Spinner[Integer]]
+    }.foreach { spinner =>
+      spinner.setId(s"generation-$field-spinner-${mode.key}")
+    }
+
+  private def allSpinners(root: Node): Vector[Spinner[?]] =
+    val seen = scala.collection.mutable.HashSet.empty[Node]
+    val found = Vector.newBuilder[Spinner[?]]
+    def walk(node: Node): Unit =
+      if node != null && !seen(node) then
+        seen += node
+        node match
+          case spinner: Spinner[?] => found += spinner
+          case _ => ()
+        node match
+          case pane: TitledPane => walk(pane.getContent)
+          case pane: ScrollPane => walk(pane.getContent)
+          case pane: TabPane => pane.getTabs.forEach(tab => walk(tab.getContent))
+          case pane: Accordion => pane.getPanes.forEach(child => walk(child))
+          case pane: SplitPane => pane.getItems.forEach(child => walk(child))
+          case _ => ()
+        node match
+          case parent: Parent => parent.getChildrenUnmodifiable.forEach(child => walk(child))
+          case _ => ()
+    walk(root)
+    found.result()
+
+  /** Validate every destination numeric editor before committing any bound value. */
+  def commitPresetEditors(): Either[String, Unit] =
+    val spinners = allSpinners(content)
+    val numeric = spinners.zipWithIndex.foldLeft[Either[String, Vector[() => Unit]]](Right(Vector.empty)) {
+      (result, entry) => result.flatMap { accepted =>
+        val (spinner, index) = entry
+        val raw = spinner.getEditor.getText
+        val name = Option(spinner.getId).getOrElse(s"numeric editor ${index + 1}")
+        spinner.getValueFactory match
+          case factory: SpinnerValueFactory.IntegerSpinnerValueFactory =>
+            raw.trim.toIntOption match
+              case None => Left(s"Invalid $name number: '$raw'")
+              case Some(value) if value < factory.getMin || value > factory.getMax =>
+                Left(s"Invalid $name number: '$raw' is outside the editor range")
+              case Some(value) if factory.getAmountToStepBy > 0 &&
+                  (value.toLong - factory.getMin.toLong) % factory.getAmountToStepBy.toLong != 0 =>
+                Left(s"Invalid $name number: '$raw' is outside the editor step")
+              case Some(value) =>
+                val converted = try Option(factory.getConverter.fromString(raw))
+                  catch case NonFatal(_) => None
+                converted match
+                  case Some(parsed) if parsed.intValue == value =>
+                    Right(accepted :+ (() => factory.setValue(parsed)))
+                  case _ => Left(s"Invalid $name number: '$raw'")
+          case factory: SpinnerValueFactory.DoubleSpinnerValueFactory =>
+            val converted = try Option(factory.getConverter.fromString(raw))
+              catch case NonFatal(_) => None
+            converted match
+              case Some(parsed) if java.lang.Double.isFinite(parsed.doubleValue) &&
+                  parsed.doubleValue >= factory.getMin && parsed.doubleValue <= factory.getMax =>
+                Right(accepted :+ (() => factory.setValue(parsed)))
+              case Some(parsed) if java.lang.Double.isFinite(parsed.doubleValue) =>
+                Left(s"Invalid $name number: '$raw' is outside the editor range")
+              case _ => Left(s"Invalid $name number: '$raw'")
+          case _ => Right(accepted)
+      }
+    }
+    val all = presetLongFields.foldLeft(numeric) { case (result, (name, (field, property))) =>
+      result.flatMap { accepted =>
+        val raw = field.getText
+        raw.trim.toLongOption match
+          case None => Left(s"Invalid $name number: '$raw'")
+          case Some(value) => Right(accepted :+ (() => property.set(value)))
+      }
+    }
+    all.map(changes => changes.foreach(_()))
   private def isExpanded(key: String, default: Boolean) = expanded.getOrElse(s"${mode.key}.$key", default)
   private def track(key: String, p: TitledPane): TitledPane =
     sections(s"${mode.key}.$key") = p
@@ -81,9 +160,11 @@ final class GenerationPanel(
     row.getColumnConstraints.addAll(c, c2)
     row.add(sampler, 0, 0)
     row.add(sched, 1, 0)
+    val stepsRow = W.intSlider(vm.steps, 1, 150)
+    presetSpinner("steps", stepsRow)
     val f = W.form()
       .add("Sampler", row)
-      .add("Steps", W.intSlider(vm.steps, 1, 150), "Number of denoising steps (20–30 is typical)")
+      .add("Steps", stepsRow, "Number of denoising steps (20–30 is typical)")
       .add("CFG Scale", W.doubleSlider(vm.cfgScale, 1, 30, 0.5), "How strongly the prompt is followed (5–8 is typical)")
     W.card("Sampling", f.grid)
 
@@ -104,9 +185,11 @@ final class GenerationPanel(
       )
       presets.getItems.add(mi)
     }
+    val heightRow = W.intSlider(vm.height, 64, 2048, 8, 4096)
+    presetSpinner("height", heightRow)
     val f = W.form()
       .add("Width", W.hbox(6, W.hgrow(W.intSlider(vm.width, 64, 2048, 8, 4096)), swap), "Image width (multiple of 8)")
-      .add("Height", W.hbox(6, W.hgrow(W.intSlider(vm.height, 64, 2048, 8, 4096)), presets), "Image height (multiple of 8)")
+      .add("Height", W.hbox(6, W.hgrow(heightRow), presets), "Image height (multiple of 8)")
       .add(
         "Batch",
         W.hbox(
@@ -121,14 +204,21 @@ final class GenerationPanel(
 
   private def seed: Node =
     val field = W.longField(vm.seed)
+    presetLongFields("Seed") = (field, vm.seed)
     W.tip(field, "Seed (-1 = random)")
     val dice = W.iconButton("⚄", "Random seed (-1)")(vm.seed.set(-1))
     val recycle = W.iconButton("♻", "Reuse the seed of the last image")(if lastSeed() >= 0 then vm.seed.set(lastSeed()) else ctx.info("No image generated yet"))
     val sub = W.longField(vm.subseed)
+    presetLongFields("Variation seed") = (sub, vm.subseed)
+    val variationToggle = W.check("Enable variation", vm.variationEnabled)
+    variationToggle.setId(s"variation-enabled-${mode.key}")
     val variation = W.form()
+      .full(variationToggle)
       .add("Var. seed", W.hbox(6, W.hgrow(sub), W.iconButton("⚄", "Random variation seed (-1)")(vm.subseed.set(-1))), "Variation seed mixed into the main seed")
       .add("Strength", W.doubleSlider(vm.subseedStrength, 0, 1, 0.01), "0 = only the main seed, 1 = only the variation seed")
+      .full(W.label("Values are retained while variation is disabled and used again when enabled.", "hint"))
     val varPane = track("variation", W.section("Variation seed", variation.grid, isExpanded("variation", false)))
+    varPane.setId(s"variation-section-${mode.key}")
     varPane.getStyleClass.add("subsection")
     val f = W.form().add("Seed", W.hbox(6, W.hgrow(field), dice, recycle))
     W.card("Seed", f.grid, varPane)
@@ -144,6 +234,16 @@ final class GenerationPanel(
     pane.setId(s"payload-entry-${mode.key}")
     pane
 
+  private def presetsSection: TitledPane =
+    val open = W.button("Open native presets", "Save, apply, inspect and import preset data") {
+      openPresets(mode)
+    }
+    open.setId(s"presets-open-${mode.key}")
+    val pane = W.section("Settings presets", new VBox(7,
+      W.label("Config Presets and Preset Utilities", "hint"), open), false)
+    pane.setId(s"presets-entry-${mode.key}")
+    pane
+
   // ---- assembly ----------------------------------------------------------------------------------------
   val content: VBox =
     val v = new VBox(10)
@@ -153,6 +253,7 @@ final class GenerationPanel(
     v.getChildren.add(W.card("Prompt", prompts.view))
     imageSection.foreach(v.getChildren.add)
     v.getChildren.addAll(sampling, size, seed)
+    v.getChildren.add(track("presets", presetsSection))
     v.getChildren.add(track("apiPayload", payloadSection))
     if mode == Mode.Txt2Img then v.getChildren.add(track("hires", ExtraSections.hires(ctx, vm, isExpanded("hires", false))))
     v.getChildren.add(track("controlnet", ExtraSections.controlNet(ctx, vm, isExpanded("controlnet", false))))

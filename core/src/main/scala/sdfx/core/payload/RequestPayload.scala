@@ -7,7 +7,8 @@ final case class PayloadKey(jobId: String, sequence: Int)
 final case class SubmittedPayloadContext(
     origin: String,
     sourceMode: Option[String] = None,
-    configurationJson: Option[String] = None
+    configurationJson: Option[String] = None,
+    uiVariationEnabled: Option[Boolean] = None
 )
 
 enum PayloadState(val wireName: String):

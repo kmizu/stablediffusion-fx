@@ -72,6 +72,13 @@ BASE = [
     ("light-and-ray/sd-webui-vae-tools", "reimplemented", "Independent native latent encode/decode and failed VAE "
      "decode recovery -> `vae_tools`; no upstream code copied; "
      "[source 47fe6db](https://github.com/light-and-ray/sd-webui-vae-tools/tree/47fe6db4f3a8f12320c2fa040d0ba542d6325425)"),
+    ("Zyin055/Config-Presets", "data", "Original 14 txt2img and four img2img starter presets (including each "
+     "mode's `None` entry) -> `core:config-presets`; preset behaviour independently implemented with no upstream "
+     "code copied; [source e252e60](https://github.com/Zyin055/Config-Presets/tree/e252e60288b1104a45ea12106d92a8d145364fa1)"),
+    ("Gerschel/sd_web_ui_preset_utils", "reimplemented", "Shared preset schema and selective apply behaviour "
+     "-> `core:preset-utilities`; independently implemented from observed behaviour; no upstream code, prose, "
+     "assets, or default JSON copied; [source e301734](https://github.com/Gerschel/sd_web_ui_preset_utils/tree/e301734567f37ac53c6225aec3a5c9858b357e7e) "
+     "has no published license file in its tracked tree"),
     ("madebyollin/taesd", "dependency", "Optional separately downloaded TAESD/TAESDXL model weights for VAE Tools. "
      "Weights are not bundled; model repositories madebyollin/taesd and madebyollin/taesdxl on Hugging Face "
      "are revision-pinned by python/sdfx/vae_tools.py and download requires explicit enablement."),
@@ -120,16 +127,25 @@ BASE = [
     ("AUTOMATIC1111/stable-diffusion-webui-extensions", "data", "extension index snapshot (docs/extensions-index.json)"),
 ]
 
-# The extension and its separately copyrighted vendored viewer are pinned even though no
-# JavaScript/CSS is copied. Keep their original LICENSE bytes; do not normalize newlines.
+# Keep these source-pinned original LICENSE bytes; do not normalize newlines.
 # (commit, license path, SHA-256, SPDX)
 PINNED_LICENSES = {
+    "Zyin055/Config-Presets": (
+        "e252e60288b1104a45ea12106d92a8d145364fa1", "LICENSE",
+        "c19b98789c10ffe53568c46f4daae8a49024a02715cf2d4f05de04aa05d3a5f9", "MIT"),
     "huchenlei/sd-webui-api-payload-display": (
         "2d3332d94ffac0943bd35a1943924ed4650c6e63", "LICENSE",
         "990b5c560b655fb8623874940f1ac02cd21c3c76c714c997dff0ec3fa8c744fb", "MIT"),
     "summerstyle/jsonTreeViewer": (
         "6abfcc1202396af12e2806d129bcae0e75b37365", "LICENSE",
         "0e6f8814a1368da259cdca5d218c422fcb278b3579651c55079d774799ae7692", "MIT"),
+}
+
+# Audited source has no license file. Do not fetch another branch or invent a license text.
+# (commit, notice label)
+PINNED_UNLICENSED = {
+    "Gerschel/sd_web_ui_preset_utils": (
+        "e301734567f37ac53c6225aec3a5c9858b357e7e", "no license file published"),
 }
 
 
@@ -207,7 +223,9 @@ def main():
     for repo, how, what in entries:
         fname = repo.replace("/", "__") + ".txt"
         license_path = os.path.join(ROOT, "licenses", fname)
-        if args.use_archived_licenses:
+        if repo in PINNED_UNLICENSED:
+            _, lic = PINNED_UNLICENSED[repo]
+        elif args.use_archived_licenses:
             if repo in PINNED_LICENSES:
                 _, _, expected, spdx = PINNED_LICENSES[repo]
                 with open(license_path, "rb") as source:

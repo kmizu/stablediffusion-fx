@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 101, todo 201, na 51.
+Totals: done 103, todo 199, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-fx | Why not applicable |
 |---|---|---|---|---|---|
@@ -36,8 +36,8 @@ Totals: done 101, todo 201, na 51.
 | 27 | [Artists to study](https://github.com/camenduru/stable-diffusion-webui-artists-to-study.git) | 83 | todo | `inspiration` |  |
 | 28 | [Prompt Gallery](https://github.com/dr413677671/PromptGallery-stable-diffusion-webui.git) | 162 | todo | `prompt_gallery` |  |
 | 29 | [Infinity Grid Generator](https://github.com/mcmonkeyprojects/sd-infinity-grid-generator-script.git) | 189 | todo | `infinity_grid` |  |
-| 30 | [Config-Presets](https://github.com/Zyin055/Config-Presets.git) | 314 | todo | `core:presets` |  |
-| 31 | [Preset Utilities](https://github.com/Gerschel/sd_web_ui_preset_utils.git) | 248 | todo | `core:presets` |  |
+| 30 | [Config-Presets](https://github.com/Zyin055/Config-Presets.git) | 314 | done | `core:config-presets` |  |
+| 31 | [Preset Utilities](https://github.com/Gerschel/sd_web_ui_preset_utils.git) | 248 | done | `core:preset-utilities` |  |
 | 32 | [openOutpaint extension](https://github.com/zero01101/openOutpaint-webUI-extension.git) | 405 | todo | `outpaint_canvas` |  |
 | 33 | [quick-css](https://github.com/Gerschel/sd-web-ui-quickcss.git) | 71 | na | `webui-css` | styles / JavaScript tweaks of the Gradio web page; the JavaFX UI has its own theme and layout |
 | 34 | [Aspect Ratio selector](https://github.com/alemelis/sd-webui-ar.git) | 243 | done | `core:size-presets` |  |
@@ -209,7 +209,7 @@ Totals: done 101, todo 201, na 51.
 | 200 | [Refiner](https://github.com/wcde/sd-webui-refiner.git) | 155 | todo | `refiner` |  |
 | 201 | [sd-webui-deoldify](https://github.com/SpenserCai/sd-webui-deoldify) | 693 | todo | `deoldify` |  |
 | 202 | [sd-wav2lip-uhq](https://github.com/numz/sd-wav2lip-uhq) | 1422 | todo | `wav2lip` |  |
-| 203 | [Controlnet Fastload](https://github.com/pk5ls20/sd-webui-controlnet-fastload.git) | 36 | todo | `core:presets` |  |
+| 203 | [Controlnet Fastload](https://github.com/pk5ls20/sd-webui-controlnet-fastload.git) | 36 | todo | `controlnet_fastload` |  |
 | 204 | [LoRA Control](https://github.com/cheald/sd-webui-loractl.git) | 265 | todo | `lora_control` |  |
 | 205 | [Wildcards](https://github.com/AUTOMATIC1111/stable-diffusion-webui-wildcards.git) | 481 | done | `dynamic_prompts` |  |
 | 206 | [SD Ratio Lock](https://github.com/bit9labs/sd-ratio-lock.git) | 16 | done | `core:size-presets` |  |
@@ -227,7 +227,7 @@ Totals: done 101, todo 201, na 51.
 | 218 | [SD Masonry Gallery](https://github.com/bit9labs/sd-masonry.git) | 10 | done | `core:gallery` |  |
 | 219 | [sd-webui-depth-lib](https://github.com/wywywywy/sd-webui-depth-lib.git) | 53 | todo | `depth_library` |  |
 | 220 | [Stable Diffusion Webui Civitai Helper](https://github.com/zixaphir/Stable-Diffusion-Webui-Civitai-Helper.git) | 254 | todo | `model_downloader` |  |
-| 221 | [Scenario loader](https://github.com/Chaest/sd-webui-sc-loader.git) | 41 | todo | `core:presets` |  |
+| 221 | [Scenario loader](https://github.com/Chaest/sd-webui-sc-loader.git) | 41 | todo | `scenario_loader` |  |
 | 222 | [PromptsBrowser](https://github.com/AlpacaInTheNight/PromptsBrowser.git) | 48 | todo | `prompt_library` |  |
 | 223 | [Model Mixer](https://github.com/wkpark/sd-webui-model-mixer.git) | 115 | done | `model_merge` |  |
 | 224 | [Fast PNG Info](https://github.com/NoCrypt/sd-fast-pnginfo.git) | 44 | done | `core:png-info` |  |
@@ -268,7 +268,7 @@ Totals: done 101, todo 201, na 51.
 | 259 | [Kohaku-NAI](https://github.com/KohakuBlueleaf/Kohaku-NAI) | 93 | na | `account` | needs a third-party account / paid API key and posts data to that service |
 | 260 | [Replacer - fast inpaint](https://github.com/light-and-ray/sd-webui-replacer.git) | 242 | todo | `replacer` |  |
 | 261 | [Color Correction Extras](https://github.com/light-and-ray/sd-webui-color-correction-extras.git) | 21 | todo | `color_correction` |  |
-| 262 | [State Manager](https://github.com/SenshiSentou/sd-webui-state-manager.git) | 68 | todo | `core:presets` |  |
+| 262 | [State Manager](https://github.com/SenshiSentou/sd-webui-state-manager.git) | 68 | todo | `core:state-manager` |  |
 | 263 | [Agent Attention](https://github.com/v0xie/sd-webui-agentattention.git) | 44 | todo | `agent_attention` |  |
 | 264 | [Deepdanbooru object recognition](https://github.com/Jibaku789/sd-webui-deepdanbooru-object-recognition.git) | 37 | todo | `deepdanbooru` |  |
 | 265 | [Deepdanbooru Tag2Folder](https://github.com/Jibaku789/sd-webui-deepdanbooru-tag2folder) | 9 | todo | `deepdanbooru` |  |

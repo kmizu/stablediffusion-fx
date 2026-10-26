@@ -7,5 +7,6 @@ import sdfx.core.payload.SubmittedPayloadContext
 object JobBuilder:
   def build(vm: GenerationVM, plugins: PluginsVM, captureOptions: CaptureOptions = CaptureOptions()): Job =
     Job(Job.newId(), vm.toParams, plugins.scriptJob, plugins.alwaysOnJob, origin = "ui",
-      submittedContext = Some(SubmittedPayloadContext("ui", Some(vm.mode.key), Some(plugins.payloadConfigurationJson()))),
+      submittedContext = Some(SubmittedPayloadContext("ui", Some(vm.mode.key), Some(plugins.payloadConfigurationJson()),
+        Some(vm.variationEnabled.get))),
       captureOptions = Some(captureOptions))

@@ -9,6 +9,42 @@ import java.nio.file.{Files, Paths}
 
 class StateAndPluginsSuite extends munit.FunSuite:
 
+  test("legacy_state_without_gate_defaults_true") {
+    val old = UiState(params = Mode.values.map(m => m.key -> GenerationParams(subseed = 99L, subseedStrength = 0.4)).toMap)
+    val legacyJson = ujson.read(UiState.toJson(old)).obj
+    legacyJson.remove("variation_enabled")
+    val decoded = UiState.fromJson(ujson.write(ujson.Obj.from(legacyJson)))
+    Mode.values.foreach { mode =>
+      val vm = new GenerationVM(mode)
+      vm.load(decoded.params(mode.key), variationEnabledState = decoded.variationEnabled.getOrElse(mode.key, true))
+      assert(vm.variationEnabled.get)
+      assertEquals(vm.toParams.subseedStrength, 0.4)
+    }
+  }
+
+  test("disabled_restart_keeps_subseed_strength_and_gate") {
+    val originals = Mode.values.map { mode =>
+      val vm = new GenerationVM(mode)
+      vm.subseed.set(99L)
+      vm.subseedStrength.set(0.4)
+      vm.variationEnabled.set(false)
+      mode -> vm
+    }.toMap
+    val saved = UiState(
+      params = Mode.values.map(m => m.key -> originals(m).snapshot).toMap,
+      variationEnabled = Mode.values.map(m => m.key -> originals(m).variationEnabled.get).toMap
+    )
+    val restored = UiState.fromJson(UiState.toJson(saved))
+    Mode.values.foreach { mode =>
+      val vm = new GenerationVM(mode)
+      vm.load(restored.params(mode.key), variationEnabledState = restored.variationEnabled.getOrElse(mode.key, true))
+      assert(!vm.variationEnabled.get)
+      assertEquals(vm.subseed.get, 99L)
+      assertEquals(vm.subseedStrength.get, 0.4)
+      assertEquals(vm.toParams.subseedStrength, 0.0)
+    }
+  }
+
   test("UiState JSON round trip") {
     val s = UiState(
       window = WindowState(Some(10.5), Some(20), 1600, 1000, maximized = true),

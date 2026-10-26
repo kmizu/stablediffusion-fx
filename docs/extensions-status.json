@@ -183,13 +183,13 @@
 "index": 30,
 "name": "Config-Presets",
 "url": "https://github.com/Zyin055/Config-Presets.git",
-"status": "todo:core:presets"
+"status": "done:core:config-presets"
 },
 {
 "index": 31,
 "name": "Preset Utilities",
 "url": "https://github.com/Gerschel/sd_web_ui_preset_utils.git",
-"status": "todo:core:presets"
+"status": "done:core:preset-utilities"
 },
 {
 "index": 32,
@@ -1221,7 +1221,7 @@
 "index": 203,
 "name": "Controlnet Fastload",
 "url": "https://github.com/pk5ls20/sd-webui-controlnet-fastload.git",
-"status": "todo:core:presets"
+"status": "todo:controlnet_fastload"
 },
 {
 "index": 204,
@@ -1329,7 +1329,7 @@
 "index": 221,
 "name": "Scenario loader",
 "url": "https://github.com/Chaest/sd-webui-sc-loader.git",
-"status": "todo:core:presets"
+"status": "todo:scenario_loader"
 },
 {
 "index": 222,
@@ -1575,7 +1575,7 @@
 "index": 262,
 "name": "State Manager",
 "url": "https://github.com/SenshiSentou/sd-webui-state-manager.git",
-"status": "todo:core:presets"
+"status": "todo:core:state-manager"
 },
 {
 "index": 263,

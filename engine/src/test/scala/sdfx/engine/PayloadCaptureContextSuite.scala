@@ -29,6 +29,65 @@ class PayloadCaptureContextSuite extends munit.FunSuite:
   private def context(s: PayloadSnapshot): ujson.Value = ujson.read(s.contextJson.get)
   private def uiContext(mode: String) = Some(SubmittedPayloadContext("ui", Some(mode), Some("{\"ui_forms\":\"available\"}")))
 
+  test("disabled UI gate and native seed-options inference have separate provenance") {
+    withServices { s =>
+      val frozen = SubmittedPayloadContext("ui", Some("txt2img"), None, Some(false))
+      val job = Job(Job.newId(), base.copy(subseed = 99L, subseedStrength = 0.0), submittedContext = Some(frozen))
+      await(s.queue.submit(job))
+      val saved = captures(s, job.id).head
+      val diagnostic = context(saved)
+      assertEquals(diagnostic("submitted")("ui_variation_enabled").bool, false)
+      assertEquals(diagnostic("submitted")("configuration"), ujson.Null)
+      val requested = diagnostic("requested_seed_options")
+      assertEquals(requested("subseed_strength").num, 0.0)
+      assertEquals(requested("extras_requested").bool, true)
+      assertEquals(requested("extras_requested_basis").str, "native_params_inference")
+      assert(!saved.bodyJson.get.contains("ui_variation_enabled"))
+      assertEquals(ujson.read(saved.bodyJson.get)("params")("subseed_strength").num, 0.0)
+    }
+  }
+
+  test("script override changes native inference but never frozen UI gate") {
+    val overrideScript = new Plugin:
+      def id = "variation-override"
+      def name = "Variation override"
+      def kind = PluginKind.Script
+      override def run(p: GenerationParams, v: Values, ctx: PluginContext): JobOutput =
+        JobOutput(ctx.generate(p.copy(subseedStrength = 0.7)))
+    withServices { s =>
+      val job = Job(Job.newId(), base.copy(subseed = 99L, subseedStrength = 0.0),
+        script = Some(overrideScript -> Values.empty),
+        submittedContext = Some(SubmittedPayloadContext("ui", Some("txt2img"), None, Some(false))))
+      await(s.queue.submit(job))
+      val saved = captures(s, job.id).head
+      val diagnostic = context(saved)
+      assertEquals(diagnostic("submitted")("ui_variation_enabled").bool, false)
+      val requested = diagnostic("requested_seed_options")
+      assertEquals(requested("subseed_strength").num, 0.7)
+      assertEquals(requested("extras_requested").bool, true)
+      assertEquals(requested("extras_requested_basis").str, "native_params_inference")
+      assertEquals(ujson.read(saved.bodyJson.get)("params")("subseed_strength").num, 0.7)
+      assert(!saved.bodyJson.get.contains("ui_variation_enabled"))
+    }
+  }
+
+  test("MCP and direct origins keep UI gate unknown without changing legacy native inference") {
+    withServices { s =>
+      val mcp = Job(Job.newId(), base.copy(subseed = 99L, subseedStrength = 0.0), origin = "mcp")
+      await(s.queue.submit(mcp))
+      s.generator.generate(base.copy(subseed = 99L, subseedStrength = 0.0))
+      val found = captures(s, mcp.id) ++ s.payloads.snapshots.filter(_.key.jobId.startsWith("direct-"))
+      assertEquals(found.size, 2)
+      found.foreach { saved =>
+        val diagnostic = context(saved)
+        assertEquals(diagnostic("submitted")("ui_variation_enabled"), ujson.Null)
+        assertEquals(diagnostic("requested_seed_options")("extras_requested").bool, true)
+        assertEquals(diagnostic("requested_seed_options")("extras_requested_basis").str, "native_params_inference")
+        assert(!saved.bodyJson.get.contains("ui_variation_enabled"))
+      }
+    }
+  }
+
   private class LoopScript(failure: Option[String] = None) extends Plugin:
     def id = "payload-loop"
     def name = "Payload loop"

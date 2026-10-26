@@ -6,6 +6,47 @@ import sdfx.ui.vm.*
 
 class GenerationVMSuite extends munit.FunSuite:
 
+  test("disabled_gate_keeps_drafts_but_submits_zero_strength") {
+    Mode.values.foreach { mode =>
+      val vm = new GenerationVM(mode)
+      vm.subseed.set(99L)
+      vm.subseedStrength.set(0.4)
+      vm.variationEnabled.set(false)
+      assertEquals(vm.subseed.get, 99L)
+      assertEquals(vm.subseedStrength.get, 0.4)
+      assertEquals(vm.toParams.subseed, 99L)
+      assertEquals(vm.toParams.subseedStrength, 0.0)
+      assertEquals(vm.snapshot.subseed, 99L)
+      assertEquals(vm.snapshot.subseedStrength, 0.4)
+    }
+  }
+
+  test("gate_true_restores_original_effective_values") {
+    Mode.values.foreach { mode =>
+      val vm = new GenerationVM(mode)
+      assert(vm.variationEnabled.get)
+      vm.subseed.set(99L)
+      vm.subseedStrength.set(0.4)
+      vm.variationEnabled.set(false)
+      vm.variationEnabled.set(true)
+      assertEquals(vm.toParams.subseed, 99L)
+      assertEquals(vm.toParams.subseedStrength, 0.4)
+    }
+  }
+
+  test("load_params_reenables_by_default") {
+    Mode.values.foreach { mode =>
+      val vm = new GenerationVM(mode)
+      vm.variationEnabled.set(false)
+      vm.load(GenerationParams(subseed = 99L, subseedStrength = 0.4))
+      assert(vm.variationEnabled.get)
+      assertEquals(vm.toParams.subseedStrength, 0.4)
+      vm.load(GenerationParams(subseed = 99L, subseedStrength = 0.4), variationEnabledState = false)
+      assert(!vm.variationEnabled.get)
+      assertEquals(vm.snapshot.subseedStrength, 0.4)
+    }
+  }
+
   private def roundTrip(mode: Mode, p: GenerationParams): GenerationParams =
     val vm = new GenerationVM(mode)
     vm.load(p, includeModel = true)

@@ -11,7 +11,8 @@ final case class CliOptions(
     exitAfter: Option[Double] = None,
     autogen: Boolean = false,
     demoMask: Boolean = false,
-    tab: Option[String] = None
+    tab: Option[String] = None,
+    configPresetsDir: Option[String] = None
 )
 
 object CliOptions:
@@ -26,6 +27,7 @@ object CliOptions:
       case "--autogen" :: t            => go(t, o.copy(autogen = true))
       case "--demo-mask" :: t          => go(t, o.copy(demoMask = true))
       case "--tab" :: v :: t           => go(t, o.copy(tab = Some(v)))
+      case "--configpresets-dir" :: v :: t => go(t, o.copy(configPresetsDir = Some(v)))
       case _ :: t                      => go(t, o)
       case Nil                         => o
     go(args.toList, CliOptions())

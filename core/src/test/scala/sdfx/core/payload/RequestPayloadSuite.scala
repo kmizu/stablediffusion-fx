@@ -60,6 +60,8 @@ class RequestPayloadSuite extends munit.FunSuite:
     val pending = completed.copy(key = PayloadKey("job", 2), state = PayloadState.Submitted)
     assertEquals(pending.transition(PayloadState.Failed).state, PayloadState.Failed)
     assertEquals(SubmittedPayloadContext("mcp").configurationJson, None)
+    assertEquals(SubmittedPayloadContext("mcp").uiVariationEnabled, None)
+    assertEquals(SubmittedPayloadContext("ui", Some("txt2img"), None).uiVariationEnabled, None)
   }
 
   test("initial expansion exposes pending work and depth limits survive continuation") {

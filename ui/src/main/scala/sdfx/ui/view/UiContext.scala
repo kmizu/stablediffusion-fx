@@ -19,6 +19,9 @@ final class UiContext(val services: AppServices, val catalog: CatalogVM, val sta
   lazy val hardwareInfo = new sdfx.engine.HardwareInfoService(services)
   var openStylesEditor: () => Unit = () => ()
   var currentGeneration: () => GenerationParams = () => GenerationParams()
+  /** Commits the named mode's existing numeric editor drafts before preset capture/apply. */
+  var commitPresetEditors: Mode => Either[String, Unit] =
+    _ => Left("Preset destination editors are not attached")
   var applyPromptStyle: PromptStyle => Unit = _ => ()
   var applyExtendedStyle: ExtendedStyle => Unit = _ => ()
   /** Held through the entire model/VAE load and form commit; direct callbacks must share the same guard. */
