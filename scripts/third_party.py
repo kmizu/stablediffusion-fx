@@ -76,7 +76,7 @@ BASE = [
      "no upstream code or assets copied; "
      "[source ea22bc0](https://github.com/light-and-ray/sd-webui-prevent-interruption/tree/ea22bc0de11875f3889f09c8e6ed7b879f321d05)"),
     ("light-and-ray/sd-webui-hardware-info-in-metadata", "reimplemented", "Compact hardware, per-image batch timing, "
-     "remark, Extras provenance and informational paste notices -> `hardware_info`; independently implemented, "
+     "remark, Extras provenance and informational paste notices -> `core:hardware-info`; independently implemented, "
      "no upstream code copied; "
      "[source 784a0dd](https://github.com/light-and-ray/sd-webui-hardware-info-in-metadata/tree/784a0dd8521108815aff007d7a4807ac6f98d251)"),
     ("kohya-ss/sd-scripts", "ported", "ControlNet-LLLite module layout"),

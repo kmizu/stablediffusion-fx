@@ -2,7 +2,7 @@
 
 > **For agentic workers:** Use superpowers:executing-plans to implement this plan task-by-task. No subagents. Parent owns sbt/GPU/native acceptance; stop production work until parent plan review and observed RED.
 
-**Goal:** Independently implement index309 `hardware_info` in the standalone native app, including compact hardware facts, source batch timing, optional remark, Extras metadata and bounded pasted-image hardware-difference notices.
+**Goal:** Independently implement index309 `core:hardware-info` in the standalone native app, including compact hardware facts, source batch timing, optional remark, Extras metadata and bounded pasted-image hardware-difference notices.
 
 **Architecture:** Reuse System Info's actual hardware facts and native metadata settings, but emit the extension's own three infotext fields. Optional request settings and per-image typed result records carry provenance without changing GenerationParams or sampling. A small pure Python formatter/timer and a pure Scala infotext/paste-notice policy isolate the source contract from UI and device detection.
 
@@ -54,8 +54,11 @@ notice. GenerationResult.timingS is request-level and currently not written as T
 new parameters and explicit extra chunks; copying pixels is not automatic merging of arbitrary source chunks.
 
 This target is a native metadata feature, not a sampling hook. Do not invent a hook that changes conditioning
-or require hook registration for a nonexistent sampling transform. Keep target name `hardware_info`; parent
-decides final ledger mapping after acceptance. Existing raw System Info selections remain independent.
+or require hook registration for a nonexistent sampling transform. The provisional target `hardware_info` is
+superseded by parent ruling `core:hardware-info`: this is a global native settings/metadata feature, not a
+registered generation plugin. Post-promotion BuiltinsSuite exposed the old naming mismatch; changing the
+ledger namespace preserves all verified functionality without adding a dummy plugin or relaxing the test.
+Python module/request/result field names remain `hardware_info`. Existing raw System Info selections stay independent.
 
 ## File responsibilities and planned interfaces
 

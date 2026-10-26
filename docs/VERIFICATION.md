@@ -1022,7 +1022,7 @@ This wave is integrated and its final acceptance passed; indices309/320 are prom
   `outputs/verify-prevent-cpu`, `outputs/verify-prevent-sd15-retry`, `outputs/verify-prevent-sdxl`.
   The initial interrupted real run had no terminal report and is not counted. Root inspected actual lighthouse
   outputs. The final helper additionally waits for actual loaded preview pixels before taking the screenshot.
-- Index309, `hardware_info`: independent rewrite of light-and-ray/sd-webui-hardware-info-in-metadata at
+- Index309, `core:hardware-info`: independent rewrite of light-and-ray/sd-webui-hardware-info-in-metadata at
   784a0dd8521108815aff007d7a4807ac6f98d251 (no upstream code copied). Source compact normalization, per-image batch
   timing/reset, remark, Extras whole-operation timing and two informational paste notices are implemented.
   Native adaptations are explicit opt-in, actual active device, per-operation settings snapshots, and offline
@@ -1060,3 +1060,14 @@ Final integrated evidence:
   bytes were preserved. Code whitespace checks exclude those verbatim archives.
 
 Result: **100 done /202todo /51NA**,138 distinct pending targets. The overall353-entry objective remains active.
+
+### Post-promotion ledger consistency correction
+
+The preceding596-test run occurred before ledger promotion. A subsequent full regression in the isolated API
+payload worktree exposed one BuiltinsSuite failure: `hardware_info` was recorded as a normal plugin although
+its implementation is a global native System Info/settings feature. Its complete source behavior and model/UI
+acceptance remain valid. The ledger now uses `core:hardware-info`, consistent with other native core features;
+no dummy plugin was introduced and the registry assertion was not relaxed. Protocol/module names stay unchanged.
+The existing20-case BuiltinsSuite passed after regeneration (`.worktrees/hardware-ledger-fix/outputs/hardware-core-ledger-green.log`,
+2026-10-26 23:50:22). Totals remain100done/202todo/51NA. This is a ledger/documentation correction with no
+generation/runtime code change. Future promotion must rerun the ledger/registry check after regenerating status.

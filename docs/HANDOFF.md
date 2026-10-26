@@ -29,7 +29,7 @@ server, 40 rewrites of the reForge built-ins. Repo: private GitHub `kmizu/stable
 share one target (for example every background remover maps to `remove_background`). To merge a target into another,
 edit its `S` entry (done for `pixelization -> pixel_art`, `mask2background -> inpaint_background`).
 
-**Latest verified wave (Codex,2026-10-26):** index320 `core:prevent-interrupt` and index309 `hardware_info` are
+**Latest verified wave (Codex,2026-10-26):** index320 `core:prevent-interrupt` and index309 `core:hardware-info` are
 integrated. The footer protection is process-global/defaultOff and covers actual native/MCP running cancellation
 and explicit user restart without blocking shutdown/health recovery or pending-only clearing. Hardware metadata
 has native opt-in/remark controls, compact actual-device facts, per-image batch timing, Extras provenance and
@@ -120,8 +120,9 @@ it compares existing real-model images without changing them. VAE Tools has Full
 TAESD/TAESDXL evidence, exact failed decoder-input recovery, quantized image formats and explicit download gates.
 Keep codec roundtrip, image reconstruction and approximate previews distinct. See their plans and VERIFICATION.
 
-**Next action:** inspect `core:prevent-interrupt` source scope (index320) and implement its native equivalent;
-then return to the highest-value remaining targets. Preserve the normal real-model/UI/notice gates.
+**Next action:** finish the approved index253 `core:api-payload` plan. Local isolated implementation work is in
+`.worktrees/core-api-payload`, with context/tree/pane/path sub-worktrees and the plan's ignored SDD ledger there.
+These unfinished changes are not published or counted done; preserve real-model/UI/notice/regression gates.
 Neutral Prompt is now marked implemented after an explicit original-scope
 acceptance audit; see `docs/superpowers/plans/2026-10-26-neutral-prompt.md` and the closing VERIFICATION section.
 All operators, nesting/signed weights, CFG rescale, schedules, native form/formatter/replay and actual AppServices
@@ -133,7 +134,7 @@ composed Neutral prompts remain explicitly unsupported in `neutral_runtime.valid
 original Runtime task permits clear unsupported combinations; later agent-added notes making every combination
 a promotion prerequisite are superseded by the documented acceptance clarification. No original Neutral operator
 or model/UI/notice gate was omitted. Keep the seven guards until their own implementations are verified.
-The overall 353-entry goal remains active; 204 accepted entries are unfinished. Do not treat this promotion as
+The overall 353-entry goal remains active; 202 accepted entries are unfinished. Do not treat this promotion as
 completion of that goal or reclassify remaining entries to make it appear complete.
 
 ## Remaining targets, most-starred first
@@ -158,12 +159,11 @@ panorama_tools, chara_searcher, lua_scripting, deepdanbooru, gpu_temperature_gua
 old_sd_firstpasser, temporal, batch_interrogate, token_downsampling, embedding_inspector, demofusion,
 prompt_expansion, color_correction, video_extras, clip_io, face_manipulation, ditail,
 minecraft_schematic, img2img_workflow, ocr, controlnet_preprocess_extras, triposr, manga_inpainting,
-pnginfo_injection, masked_content_extras, metadata_utils, hardware_info, waifu2x, core:nsfw-card-blur,
-core:prevent-interrupt
+pnginfo_injection, masked_content_extras, metadata_utils, waifu2x, core:nsfw-card-blur
 
 Suggested next steps, by value and fit with what exists:
 
-1. **Native tools**: core:prevent-interrupt, then core:presets and core:prompt-tools, preserving each source scope.
+1. **Native tools**: finish core:api-payload, then core:presets and core:prompt-tools, preserving each source scope.
 2. **Regional prompting**: regional_prompter and latent_couple, via attention-level region masks.
    tiled_diffusion can largely reuse the existing `multidiffusion` hook plus noise inversion and region prompts.
 3. **Small, cheap ones**: img2img/custom/conditioning hires fix variants, color_correction,

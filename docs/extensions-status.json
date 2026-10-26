@@ -1857,7 +1857,7 @@
 "index": 309,
 "name": "Hardware Info in metadata",
 "url": "https://github.com/light-and-ray/sd-webui-hardware-info-in-metadata.git",
-"status": "done:hardware_info"
+"status": "done:core:hardware-info"
 },
 {
 "index": 310,

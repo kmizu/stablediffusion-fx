@@ -315,7 +315,7 @@ Totals: done 100, todo 202, na 51.
 | 306 | [Readme browser](https://github.com/light-and-ray/sd-webui-readme-browser.git) | 11 | na | `webui-ux` | Gradio page behaviour (tabs, buttons, dialogs); the desktop UI provides the equivalent natively |
 | 307 | [D2 Prompt Selector](https://github.com/da2el-ai/sd-d2-prompt-selector.git) | 6 | todo | `core:prompt-tools` |  |
 | 308 | [Untitled Merger](https://github.com/silveroxides/sd-webui-untitledmerger.git) | 22 | done | `model_merge` |  |
-| 309 | [Hardware Info in metadata](https://github.com/light-and-ray/sd-webui-hardware-info-in-metadata.git) | 6 | done | `hardware_info` |  |
+| 309 | [Hardware Info in metadata](https://github.com/light-and-ray/sd-webui-hardware-info-in-metadata.git) | 6 | done | `core:hardware-info` |  |
 | 310 | [PNGINFO Beautify](https://github.com/bluelovers/sd-webui-pnginfo-beautify.git) | 32 | done | `core:png-info` |  |
 | 311 | [InputAccordion Highlight](https://github.com/w-e-w/sd-webui-input-accordion-highlight.git) | 9 | na | `webui-css` | styles / JavaScript tweaks of the Gradio web page; the JavaFX UI has its own theme and layout |
 | 312 | [Metadata Utils](https://github.com/Tzigo/metadata_utils.git) | 8 | todo | `metadata_utils` |  |

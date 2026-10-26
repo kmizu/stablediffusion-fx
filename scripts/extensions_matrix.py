@@ -99,7 +99,7 @@ S = {
     297: "todo:hires_fix_tweaks", 298: "todo:manga_maker", 299: "todo:model_organizer", 300: "na:server-ops",
     301: "todo:demofusion", 302: "todo:incantations", 303: "todo:old_sd_firstpasser", 304: "todo:image_editor",
     305: "todo:triposr", 306: "na:webui-ux", 307: "todo:core:prompt-tools", 308: "todo:model_merge",
-    309: "todo:hardware_info", 310: "done:core:png-info", 311: "na:webui-css", 312: "todo:metadata_utils",
+    309: "todo:core:hardware-info", 310: "done:core:png-info", 311: "na:webui-css", 312: "todo:metadata_utils",
     313: "todo:prompt_expansion", 314: "todo:core:localization", 315: "na:external-app",
     316: "todo:segment_anything", 317: "done:core:size-presets", 318: "todo:scramble_prompts", 319: "todo:tweak_weights",
     320: "todo:core:prevent-interrupt", 321: "todo:waifu2x", 322: "todo:depth_anything", 323: "na:external-app",
@@ -130,7 +130,7 @@ IMPLEMENTED = {
     "composable_lora", "core:system-info",
     "core:styles-editor",
     "core:image-compare", "vae_tools",
-    "core:prevent-interrupt", "hardware_info",
+    "core:prevent-interrupt", "core:hardware-info",
 }
 
 
