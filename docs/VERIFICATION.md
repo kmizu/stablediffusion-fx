@@ -657,12 +657,12 @@ Current Python suite: **550 passed**, four existing torchsde endpoint warnings; 
 preparation, CFG/phi/PAG math and the real inverse loop at zero noise. JUnit reports:
 `outputs/verify-neutral-sampling-{tests,no-torch}.xml`. No new dependencies, weights or source licences.
 
-Before target promotion, audit ordinary CADS/CFG Schedule with native PAG batches: those older root hooks still
-assume two halves; the composed controller uses explicit groups. PhotoMaker, SAG, APG, Mahiro, Latent Modifier,
+At that stage, ordinary CADS/CFG Schedule still needed a native PAG batch repair; the composed controller already
+used explicit groups. PhotoMaker, SAG, APG, Mahiro, Latent Modifier,
 Dynamic Thresholding and Detail Daemon remain guarded. The extension ledger remains **86/216/51**, target todo.
 The next-task CPU probe (`outputs/neutral-ordinary-pag-probe.json`) confirms a three-group CFG Schedule mismatch
 (actual 11, expected 5), default CADS changing the negative context, and different CADS contexts in PAG's two
-positive copies. These ordinary-PAG issues remain to be fixed; the main matrices above exercise composed PAG.
+positive copies. Those ordinary-PAG issues are repaired in the next section; the main matrices above exercise composed PAG.
 
 Scala full regression initially exposed a test-only race in pending-queue cancellation. It now waits for the first
 JobStarted and holds that worker until pending/cancel/clear checks finish, with unconditional latch/listener cleanup.
@@ -674,3 +674,39 @@ python/.venv-smoke/Scripts/python.exe scripts/dev/gpu_check.py python/.venv-smok
 ```
 
 Set `SDFX_SAMPLING_FOCUS=metadata` and use the metadata output directories for the focused checks.
+
+## Ordinary CADS / CFG Schedule with PAG (2026-10-26)
+
+Repaired the two ordinary root hooks identified by the preceding CPU probe. Both now read the native pipeline's
+PAG activity lazily, after `__call__` initializes scale/layers. CFG Schedule handles `[u,c,p]` by moving c and p
+together: native guidance becomes `u + g_t*(c-u) + pag_scale*(c-p)`. Its constant-CFG case is an exact no-op,
+including fp16. CADS handles `[u,c,p]` or CFG-off `[p,p]`, perturbs each canonical positive context once and copies
+it for PAG. Default negative conditioning and NegPiP signs/padding survive. Inactive PAG retains the previous
+non-PAG draw layout; composed prompts still use their controller instead of these hooks.
+
+Independent read-only review checked installed diffusers 0.32.2's PAG staging/property and found no material issue.
+`test_sampling_pag.py`: **56 passed**, including batches 1/2, CFG/PAG off/on, tuple/object output, zero/constant CFG,
+real native PAGMixin activity after install, empty applied layers/scale zero, gamma1, metadata and draw identity.
+Full Python: **606 passed**, four existing torchsde warnings. Torch-free: **260 passed / 37 skipped**. Reports:
+`outputs/verify-ordinary-pag-{tests,no-torch}.xml`. No Scala/UI changes or fresh Scala build in this Python-only wave.
+
+Real GPU backend matrices: `outputs/verify-sampling-pag-{sd15,sdxl}/sampling_pag_{sd15,sdxl}.json`, **24 cases each**.
+They cover ordinary/no-op/composed PAG, variable/constant CFG, CADS/repeat, joint use, batch, CFG1, signed NegPiP,
+zero/adaptive PAG, Heun, hires, img2img, Alternative and disabled restoration. All returned no result warnings.
+Six within-run pairs per model are pixel-identical: PAG/constant CFG, ordinary/no-op CADS, ordinary/no-op CFG
+Schedule, repeated CADS, zero-PAG/non-PAG joint use, baseline/restored. Non-PAG CADS and variable CFG Schedule also
+match their previous-wave images exactly. Total **48 cases / 16 exact comparisons**; contact sheets inspected.
+Historical comparisons require the prior `outputs/verify-neutral-sampling-*` assets and are recorded when present.
+
+Visual limits remain: CADS materially changes style/content. On waiIllustriousSDXL_v170, joint CADS/high initial
+CFG can produce off-prompt objects, including in the PAG-disabled comparison. The repair establishes correct
+grouping/formulas and preservation properties; it does not establish universal prompt fidelity. Short-step hires
+can be soft. These are GPU-mode backend checks; other guidance modifiers and offload modes were not retested here.
+
+No new dependency, model or source licence. Remaining Neutral guards are PhotoMaker, SAG, APG/Mahiro, Latent
+Modifier, Dynamic Thresholding and Detail Daemon. The target stays todo and the ledger remains **86/216/51**.
+
+```text
+python/.venv-smoke/Scripts/python.exe scripts/dev/gpu_check.py python/.venv-smoke/Scripts/python.exe outputs/verify-sampling-pag-sd15 sampling_pag_sd15
+python/.venv-smoke/Scripts/python.exe scripts/dev/gpu_check.py python/.venv-smoke/Scripts/python.exe outputs/verify-sampling-pag-sdxl sampling_pag_sdxl
+```

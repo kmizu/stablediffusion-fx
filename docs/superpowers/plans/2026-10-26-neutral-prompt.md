@@ -308,3 +308,31 @@ independent review, full suites, docs/compatibility help, verified commit/push. 
 - Next-task CPU probe confirms ordinary three-group PAG errors: CFG Schedule output 11 versus expected 5,
   unexpected CADS negative noise and unequal positive copies (`outputs/neutral-ordinary-pag-probe.json`). Fix these
   before promotion. Final Scala regression: 483 passed and jar rebuilt; targeted queue suite 14 passed.
+
+### Ordinary PAG sampling repair (starting 2f8aced, clean)
+
+Pass a lazy native `do_perturbed_attention_guidance` predicate to CADS/CFG Schedule root hooks. The native
+property is authoritative for scale=0 and empty applied layers. CFG Schedule handles [u,c,p] for active PAG and
+[u,c] otherwise; shift c and p together so the raw PAG difference survives the effective-CFG rewrite. Constant
+CFG is an exact no-op. Preserve non-PAG variable-curve behavior. CADS perturbs canonical n/p once, then copies p
+for PAG, keeping default negative conditioning and NegPiP metadata intact. CFG-off PAG has [p,p]. Do not change
+the composed controller path or the existing non-PAG random draw layout.
+
+Tests first: batches 1/2, CFG/PAG off/on, gamma1/constant/inactive PAG, signed contexts, tuple/object outputs and
+native output formulas. Re-run SD1.5/SDXL ordinary/no-op/composed PAG matrices with restoration and visual QA;
+independent review, full suites, docs, verified commit/push. Overall target remains todo.
+
+### Ordinary PAG sampling repair — evidence
+
+- Native activity callbacks wired lazily; CFG handles three groups and preserves the raw PAG difference, CADS
+  perturbs canonical contexts before duplication. Constant CFG returns unchanged, including fp16. Original
+  non-PAG variable math/draw layout retained; no change to the composed controller path.
+- Independent read-only review approved code and installed native pipeline contract. Focused tests: 56 passed;
+  full Python 606 passed / four existing torchsde warnings; torch-free 260 passed / 37 skipped. JUnit reports:
+  `outputs/verify-ordinary-pag-{tests,no-torch}.xml`. No Scala/UI changes or repeated Scala build this wave.
+- SD1.5/SDXL: 24 real GPU cases each, no result warnings. All 16 comparisons are pixel-identical, including
+  native/no-op, repeats, constant CFG/zero PAG, restoration and previous-wave non-PAG images. Grids inspected; CADS
+  style/off-prompt/short-step hires limits recorded in VERIFICATION.md. Reports: `outputs/verify-sampling-pag-*`.
+- The pre-fix CPU counterexample is retained as historical evidence; its contracts now have permanent tests.
+  No new dependencies/notices. Remaining guarded integrations unchanged; next implement their branch-aware
+  guidance/postprocessing with explicit zero-noise/PAG contracts before promoting the target.

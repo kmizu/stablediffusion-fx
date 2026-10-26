@@ -90,11 +90,11 @@ Reference verification section for the actual model matrices, equality compariso
 CFG Schedule and CADS now also run per pass with composed prompts, including Alternative inversion; CADS keeps
 NegPiP signs/padding intact and shares negative random perturbations without replacing each leaf's conditioning.
 **Still todo:** PhotoMaker, SAG, APG/Mahiro/Latent Modifier/Dynamic Thresholding/Detail Daemon,
-explicitly guarded in `neutral_runtime.validate`. Before promotion, also audit the ordinary CADS/CFG Schedule
-root hooks with native PAG: their older layout logic assumes two halves, whereas composed prompts use explicit
-CFG/PAG groups. A CPU probe now confirms wrong CFG output (11 instead of 5 for a three-group example), plus
-unexpected negative noise and unequal PAG context copies. Fix these first; evidence is in
-`outputs/neutral-ordinary-pag-probe.json`. No ledger promotion yet. See VERIFICATION.md for
+explicitly guarded in `neutral_runtime.validate`. The ordinary CADS/CFG Schedule PAG batch repair is now connected:
+native CFG/PAG activity is read lazily, positive noise is shared by PAG copies, and CFG rewriting preserves the raw
+PAG difference. Constant CFG is an exact no-op. The old failing CPU probe is retained as pre-fix evidence in
+`outputs/neutral-ordinary-pag-probe.json`; `test_sampling_pag.py` covers the corrected contracts. No ledger promotion
+yet. See VERIFICATION.md for
 tested scope and finite synthetic checks. Continue prompt_fusion / composable_lora after this feature is finished.
 
 ## Remaining targets, most-starred first

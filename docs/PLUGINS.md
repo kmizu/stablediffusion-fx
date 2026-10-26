@@ -101,6 +101,8 @@ error while their branch-specific integration is unfinished.
 CFG Schedule now applies its current scale before Neutral rescale/output reconstruction; CADS perturbs each leaf's
 text once, before CFG/PAG copies and image-condition preparation, with seeded per-pass state. Both also work during
 Alternative inversion. Native CFG-off behavior ignores CFG Schedule. NegPiP signs and masked padding are retained.
+Ordinary CADS/CFG Schedule also handle native PAG groups: the positive noisy context is shared, and scheduled CFG
+preserves PAG's conditional/perturbed difference. Zero-scale PAG follows the ordinary non-PAG path.
 
 Every plugin has unit tests (Scala `plugins`, `engine`, `mcp`, `ui` suites; Python `tests/`) and runs end to end in
 dry-run mode. Real-model GPU runs:

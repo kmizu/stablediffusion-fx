@@ -123,7 +123,7 @@ def mask_png(size):
 
 t0 = time.time()
 r = None
-if CASE in ("neutral_sampling_sd15", "neutral_sampling_sdxl"):
+if CASE in ("neutral_sampling_sd15", "neutral_sampling_sdxl", "sampling_pag_sd15", "sampling_pag_sdxl"):
     from PIL import Image, ImageChops, ImageStat
     xl = CASE.endswith("sdxl")
     load(SDXL if xl else SD15)
@@ -168,7 +168,32 @@ if CASE in ("neutral_sampling_sd15", "neutral_sampling_sdxl"):
              ("cfg0", composed(cfg=0., phi=0.)),
              ("schedule_zero", composed(phi=0., hooks=dict(cfg_schedule=dict(start_cfg=0., end_cfg=0.)))),
              ("restored", {})]
-    focus = os.environ.get("SDFX_SAMPLING_FOCUS", "")
+    focus = "pag" if CASE.startswith("sampling_pag_") else os.environ.get("SDFX_SAMPLING_FOCUS", "")
+    if focus == "pag":
+        pag = dict(scale=2.)
+        pag_both = dict(both, pag=pag)
+        cases = [("baseline", {}), ("pag_base", dict(hooks=dict(pag=pag))),
+                 ("pag_constant", dict(hooks=dict(pag=pag, cfg_schedule=dict(start_cfg=6., end_cfg=6.)))),
+                 ("pag_schedule", dict(hooks=dict(pag=pag, cfg_schedule=cs))),
+                 ("pag_schedule_noop", composed(prompt=plain, phi=0., hooks=dict(pag=pag, cfg_schedule=cs))),
+                 ("pag_cads", dict(hooks=dict(pag=pag, cads=cads))),
+                 ("pag_cads_noop", composed(prompt=plain, phi=0., hooks=dict(pag=pag, cads=cads))),
+                 ("pag_cads_repeat", dict(hooks=dict(pag=pag, cads=cads))),
+                 ("pag_both", dict(hooks=pag_both)), ("pag_batch", dict(batch_size=2, hooks=pag_both)),
+                 ("pag_cfg1", dict(cfg_scale=1., hooks=dict(pag=pag, cads=cads))),
+                 ("pag_cfg1_batch", dict(cfg_scale=1., batch_size=2, hooks=dict(pag=pag, cads=cads))),
+                 ("pag_signed", dict(prompt=plain + ", (black hair:-1)", hooks=dict(pag_both, negpip={}))),
+                 ("compose_pag", composed(hooks=pag_both)),
+                 ("scale_zero", dict(hooks=dict(both, pag=dict(scale=0.)))),
+                 ("no_pag_both", dict(hooks=both)),
+                 ("adaptive", dict(hooks=dict(both, pag=dict(scale=2., adaptive_scale=1.)))),
+                 ("heun", dict(sampler_name="Heun", hooks=pag_both)),
+                 ("hires", dict(hires=hires, hooks=pag_both)),
+                 ("img2img", dict(img2img=i2i(init, denoise=.5), hooks=pag_both)),
+                 ("alternative", dict(img2img=i2i(init), hooks=dict(pag_both,
+                     img2imgalt=dict(randomness=.2, inversion_steps=6, decode_cfg_scale=6.)))),
+                 ("nonpag_cads", dict(hooks=dict(cads=cads))),
+                 ("nonpag_schedule", dict(hooks=dict(cfg_schedule=cs))), ("restored", {})]
     if focus == "metadata":
         signed = plain + ", (black hair:-1)"
         hooks = dict(cads=cads, negpip={})
@@ -192,6 +217,9 @@ if CASE in ("neutral_sampling_sd15", "neutral_sampling_sdxl"):
              ("compose", "schedule_constant"), ("compose", "cads_gamma1"), ("cads", "cads_repeat"), ("cfg0", "schedule_zero")]
     if focus == "metadata":
         pairs = [("baseline", "restored"), ("signed_native", "signed_noop"), ("signed_native", "signed_repeat")]
+    elif focus == "pag":
+        pairs = [("baseline", "restored"), ("pag_base", "pag_constant"), ("pag_cads", "pag_cads_noop"),
+                 ("pag_cads", "pag_cads_repeat"), ("pag_schedule", "pag_schedule_noop"), ("scale_zero", "no_pag_both")]
     for a, b in pairs:
         if a in paths and b in paths:
             with Image.open(paths[a]) as ia, Image.open(paths[b]) as ib:
@@ -199,6 +227,16 @@ if CASE in ("neutral_sampling_sd15", "neutral_sampling_sdxl"):
             report[a + "_vs_" + b] = diff
             if diff:
                 errors.append({a + "_vs_" + b: diff})
+    if focus == "pag":
+        for current, previous in [("nonpag_cads", "cads_native"), ("nonpag_schedule", "schedule_native")]:
+            previous_path = os.path.join("outputs", "verify-neutral-sampling-" + ("sdxl" if xl else "sd15"),
+                                         "neutral_sampling_" + ("sdxl" if xl else "sd15") + "_" + previous + ".png")
+            if current in paths and os.path.isfile(previous_path):
+                with Image.open(paths[current]) as ia, Image.open(previous_path) as ib:
+                    diff = sum(ImageStat.Stat(ImageChops.difference(ia.convert("RGB"), ib.convert("RGB"))).mean) / 3
+                report["legacy_" + current] = diff
+                if diff:
+                    errors.append({"legacy_" + current: diff})
     with open(os.path.join(OUT, CASE + ".json"), "w", encoding="utf-8") as fh:
         json.dump(dict(cases=report, errors=errors, focus=focus), fh, indent=2)
     r = {"type": "error" if errors else "result", "result": {"result": report}, "message": str(errors)}

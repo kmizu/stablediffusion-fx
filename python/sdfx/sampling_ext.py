@@ -278,24 +278,34 @@ class DetailDaemonHook:
 
 
 class CfgScheduleHook:
-    """Rescales the cond half so diffusers' `u + g * (c' - u)` equals `u + g_t * (c - u)`."""
+    """Rewrites native CFG groups to use g_t while preserving PAG's conditional/perturbed difference."""
 
-    def __init__(self, unet, scheduler, g: float, c: dict, cfg_active: Callable[[], bool]):
+    def __init__(self, unet, scheduler, g: float, c: dict, cfg_active: Callable[[], bool], *, pag_active=lambda: False):
         self.unet, self.g, self.c, self.cfg_active = unet, float(g), c, cfg_active
         self.prog = Progress(scheduler)
         self.handle = None
         self.seen: list = []
+        self.pag_active = pag_active
 
     def hook(self, module, args, kwargs, output):
         out = output[0] if isinstance(output, tuple) else getattr(output, "sample", output)
         t = args[1] if len(args) > 1 else kwargs.get("timestep")
-        if out is None or t is None or out.shape[0] % 2 or not self.cfg_active() or self.g <= 0:
+        if out is None or t is None or not self.cfg_active() or self.g <= 0:
+            return None
+        pag = self.pag_active()
+        groups = 3 if pag else 2
+        if out.shape[0] % groups:
             return None
         _, _, p = self.prog(t)
         gt = cfg_at(self.c, p)
         self.seen.append(round(gt, 4))
-        u, c = out.chunk(2)
-        new = __import__("torch").cat([u, u + (gt / self.g) * (c - u)])
+        if gt == self.g:
+            return None
+        parts = out.chunk(groups)
+        u, c = parts[:2]
+        guided = u + (gt / self.g) * (c - u)
+        # Native PAG later adds scale * (c-p); move both conditional groups by the same offset.
+        new = __import__("torch").cat([u, guided] + ([parts[2] + (guided - c)] if pag else []))
         if isinstance(output, tuple):
             return (new,) + tuple(output[1:])
         if hasattr(output, "sample"):
@@ -314,12 +324,15 @@ class CfgScheduleHook:
 
 
 class CadsHook:
-    def __init__(self, unet, scheduler, c: dict, seed: int, cfg_active: Callable[[], bool]):
+    """Perturbs canonical CFG contexts once before native PAG positive-context duplication."""
+
+    def __init__(self, unet, scheduler, c: dict, seed: int, cfg_active: Callable[[], bool], *, pag_active=lambda: False):
         import torch
         self.unet, self.c, self.cfg_active = unet, c, cfg_active
         self.prog = Progress(scheduler)
         self.gen = torch.Generator("cpu").manual_seed(int(seed) & 0xFFFFFFFF)
         self.handle = None
+        self.pag_active = pag_active
 
     def pre(self, module, args, kwargs):
         import torch
@@ -335,7 +348,19 @@ class CadsHook:
         b = ehs.shape[0]
         dim = getattr(getattr(self.unet, "config", None), "cross_attention_dim", None)
         marked = isinstance(dim, int) and ehs.shape[-1] == dim + 1
-        if self.cfg_active() and b % 2 == 0 and not c["apply_to_uncond"]:
+        if self.pag_active():
+            guided = self.cfg_active()
+            groups = 3 if guided else 2
+            if b % groups:
+                return None
+            parts = ehs.chunk(groups)
+            positive = parts[1] if guided else parts[0]
+            negative = parts[0] if guided else None
+            if guided and c["apply_to_uncond"]:
+                negative = cads_context(negative, g, c, self.gen, marked=marked)
+            positive = cads_context(positive, g, c, self.gen, marked=marked)
+            new = torch.cat(([negative] if guided else []) + [positive, positive])
+        elif self.cfg_active() and b % 2 == 0 and not c["apply_to_uncond"]:
             u, co = ehs.chunk(2)
             new = torch.cat([u, cads_context(co, g, c, self.gen, marked=marked)])
         else:
@@ -538,6 +563,9 @@ def install(engine, pipe, gp, kw: dict, ctx, cleanups: list, *, sched, cfg_scale
     def cfg_active():
         return bool(getattr(pipe, "do_classifier_free_guidance", cfg_scale > 1.0))
 
+    def pag_active():
+        return bool(getattr(pipe, "do_perturbed_attention_guidance", False))
+
     ac = getattr(sched, "alphas_cumprod", None)
     if ac is None:
         from .sigmas import default_alphas_cumprod
@@ -555,13 +583,13 @@ def install(engine, pipe, gp, kw: dict, ctx, cleanups: list, *, sched, cfg_scale
             ctx.warn("CFG schedule needs CFG scale > 1 (CFG is off); ignored")
         elif not composed:
             cleanups.append(CfgScheduleHook(unet, sched, cfg_scale, normalize(cs, CFG_SCHEDULE_DEFAULTS),
-                                            cfg_active).install().remove)
+                                            cfg_active, pag_active=pag_active).install().remove)
     ca = hook_config(hooks, "cads", CADS_DEFAULTS)
     if ca and not composed:
         c = normalize(ca, CADS_DEFAULTS)
         if c["tau1"] > c["tau2"]:
             c["tau1"], c["tau2"] = c["tau2"], c["tau1"]
-        cleanups.append(CadsHook(unet, sched, c, seed, cfg_active).install().remove)
+        cleanups.append(CadsHook(unet, sched, c, seed, cfg_active, pag_active=pag_active).install().remove)
 
     tl = hook_config(hooks, "tiling", TILING_DEFAULTS)
     lc = LatentCallbacks(engine.sdxl, steps, seed)
