@@ -28,7 +28,7 @@ BASE = [
     ("crowsonkb/k-diffusion", "ported", "Karras / exponential / polyexponential sigma schedules"),
     ("mcmonkeyprojects/sd-dynamic-thresholding", "ported", "Dynamic Thresholding (CFG-Fix) math"),
     ("tfernd/HyperTile", "ported", "HyperTile attention tiling"),
-    ("ljleb/sd-webui-neutral-prompt", "ported", "Neutral Prompt parser and denoised-x0 composition foundation (runtime integration pending)"),
+    ("ljleb/sd-webui-neutral-prompt", "ported", "Neutral Prompt parser, nested/signed prompt composition, denoised-x0 operators and CFG rescale"),
     ("kohya-ss/sd-scripts", "ported", "ControlNet-LLLite module layout"),
     ("lllyasviel/Fooocus", "ported", "Fooocus inpaint patch / head application"),
     ("threestudio-project/threestudio", "reimplemented", "Zero123 diffusers layout and sampling"),

@@ -80,6 +80,46 @@ def test_runtime_composes_branches_and_restores_forward_on_error():
     assert "forward" not in u.__dict__
 
 
+@pytest.mark.parametrize("phase", ["before", "between"])
+def test_protocol_interrupt_cleans_reference_bank_and_restores_forward(phase):
+    from diffusers.models.attention_processor import Attention
+    from sdfx.adapters import ReferenceOnlyHook
+    from sdfx.protocol import EngineError, INTERRUPTED
+    class UNet(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.attn1 = Attention(query_dim=4, heads=2, dim_head=2)
+            self.calls = 0
+        def forward(self, sample, timestep, encoder_hidden_states=None, **kw):
+            self.calls += 1
+            hs = sample.flatten(2).transpose(1, 2) + encoder_hidden_states.mean(1)[:, None]
+            return (self.attn1(hs).transpose(1, 2).reshape_as(sample),)
+    unet = UNet()
+    s = diffusers.DDIMScheduler()
+    s.set_timesteps(4)
+    ref = ReferenceOnlyHook(unet, torch.randn(1, 4, 3, 3), s, .5, .8).install(managed=True)
+    checks = 0
+    def interrupt():
+        nonlocal checks
+        checks += 1
+        if checks == (1 if phase == "before" else 3):
+            raise EngineError(INTERRUPTED, "cancelled by user")
+    branch = dict(prompt_embeds=torch.ones(1, 5, 4), negative_prompt_embeds=torch.zeros(1, 5, 4))
+    runtime = RuntimeHook(unet, s, Plan(parse("one AND two"), [branch, branch]), 6., 0.,
+                          branch_hooks=[ref], check_interrupt=interrupt).install()
+    try:
+        with pytest.raises(EngineError) as error:
+            unet(torch.randn(2, 4, 3, 3), s.timesteps[0])
+        assert error.value.code == INTERRUPTED
+        assert unet.calls == (0 if phase == "before" else 2)  # first branch's reference write/read completed
+        assert ref.mode == "off" and not ref.bank
+    finally:
+        runtime.remove()
+        ref.remove()
+    assert "forward" not in unet.__dict__
+    assert not unet.attn1._forward_pre_hooks and not unet.attn1._forward_hooks
+
+
 def test_engine_encodes_scheduled_leaves_and_preserves_the_noop_path():
     from sdfx.engine import Engine
     from sdfx.params import GenerationParams
@@ -159,6 +199,22 @@ def test_pending_branch_dependent_combinations_fail_explicitly():
     validate({}, controlnet=True)
     validate({}, pag=True)
     validate({"cads": {}, "cfg_schedule": {}})
+
+
+@pytest.mark.parametrize("name", ["photomaker", "sag", "apg", "mahiro", "latent_modifier", "dynamic_thresholding", "detail_daemon"])
+def test_unsupported_combinations_reject_before_pipeline_or_adapter_setup(monkeypatch, name):
+    from sdfx.engine import Engine
+    from sdfx.params import GenerationParams
+    from sdfx.protocol import EngineError, UNSUPPORTED
+    from sdfx import extensions
+    monkeypatch.setattr(extensions, "pre_run", lambda *a, **kw: pytest.fail("unsupported request reached pipeline setup"))
+    engine = Engine.__new__(Engine)
+    gp = GenerationParams(hooks={"neutral_prompt": {}, name: {}})
+    with pytest.raises(EngineError) as error:
+        engine._run("txt2img", gp, None, None, sampler="DPM++ 2M", schedule="Automatic", cfg_scale=6.,
+                    embeds={"_neutral": Plan(parse("a AND b"), [{}, {}])}, steps=4, w=64, h=64, seeds=[1],
+                    pass_="base", image_idx=0, images_total=1)
+    assert error.value.code == UNSUPPORTED and name in error.value.message
 
 
 def test_zero_snr_v_prediction_ddim_has_finite_native_coefficients():

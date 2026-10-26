@@ -441,7 +441,7 @@
 "index": 73,
 "name": "Neutral Prompt",
 "url": "https://github.com/ljleb/sd-webui-neutral-prompt.git",
-"status": "todo:neutral_prompt"
+"status": "done:neutral_prompt"
 },
 {
 "index": 74,

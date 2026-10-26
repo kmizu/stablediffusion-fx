@@ -898,6 +898,10 @@ class Engine(BaseEngine):
              expected_steps: int = 0, cn: Optional[tuple] = None, output_type: str = "pil", pag: Optional[dict] = None,
              hook_seed: int = 0):
         cn_models, cn_images, cn_kw = cn if cn else ([], [], {})
+        neutral_plan = embeds.get("_neutral")
+        if neutral_plan:
+            # Reject known incompatibilities before special pipelines can load extra adapter/encoder weights.
+            neutral_runtime.validate(gp.hooks, controlnet=bool(cn_models), pag=bool(pag))
         xplan = ext_mod.pre_run(self, task, gp, mask_present=mask is not None, controlnet=bool(cn_models), pag=bool(pag))
         for wmsg in xplan.warnings:
             ctx.warn(wmsg)
@@ -919,9 +923,7 @@ class Engine(BaseEngine):
         pipe.scheduler = sched
         kw: dict = dict(embeds)
         kw.pop("_negpip", None)
-        neutral_plan = kw.pop("_neutral", None)
-        if neutral_plan:
-            neutral_runtime.validate(gp.hooks, controlnet=bool(cn_models), pag=bool(pag))
+        kw.pop("_neutral", None)
         kw.update(num_inference_steps=steps, guidance_scale=cfg_scale, generator=self._generators(seeds, gp),
                   output_type=output_type, callback_on_step_end=self._callback(ctx, req, pass_, image_idx, images_total,
                                                                                expected_steps or steps))

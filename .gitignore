@@ -5,6 +5,7 @@ project/project/
 .metals/
 .bloop/
 .idea/
+.worktrees/
 python/.venv/
 **/__pycache__/
 .pytest_cache/

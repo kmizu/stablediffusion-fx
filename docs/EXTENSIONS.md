@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 86, todo 216, na 51.
+Totals: done 87, todo 215, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-fx | Why not applicable |
 |---|---|---|---|---|---|
@@ -79,7 +79,7 @@ Totals: done 86, todo 216, na 51.
 | 70 | [Depth Image I/O](https://github.com/AnonymousCervine/depth-image-io-for-SDWebui.git) | 73 | todo | `depth_image_io` |  |
 | 71 | [Ultimate SD Upscale](https://github.com/Coyote-A/ultimate-upscale-for-automatic1111.git) | 1764 | done | `ultimate_sd_upscale` |  |
 | 72 | [Prompt Fusion](https://github.com/ljleb/prompt-fusion-extension.git) | 265 | todo | `prompt_fusion` |  |
-| 73 | [Neutral Prompt](https://github.com/ljleb/sd-webui-neutral-prompt.git) | 184 | todo | `neutral_prompt` |  |
+| 73 | [Neutral Prompt](https://github.com/ljleb/sd-webui-neutral-prompt.git) | 184 | done | `neutral_prompt` |  |
 | 74 | [Dynamic Thresholding](https://github.com/mcmonkeyprojects/sd-dynamic-thresholding.git) | 1224 | done | `dynamic_thresholding` |  |
 | 75 | [anti-burn](https://github.com/klimaleksus/stable-diffusion-webui-anti-burn.git) | 164 | done | `anti_burn` |  |
 | 76 | [sd-webui-controlnet](https://github.com/Mikubill/sd-webui-controlnet.git) | 17822 | done | `core:controlnet` |  |

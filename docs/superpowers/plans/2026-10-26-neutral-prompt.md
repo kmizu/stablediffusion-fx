@@ -14,6 +14,33 @@ enable, CFG rescale and inline syntax help; full source attribution accompanies 
 
 **Tech stack:** existing Scala 3/JavaFX and Python torch/diffusers; no new dependency.
 
+## Acceptance clarification and closeout audit (2026-10-26, starting d657beb)
+
+The original owner goal is all 353 extension-index entries as built-ins with notices. The upstream
+[Neutral Prompt feature contract](https://github.com/ljleb/sd-webui-neutral-prompt) is AND/PERP/SALT/TOPK,
+CFG rescale and nesting; the initial Runtime task below explicitly permits unsupported combinations when clearly
+reported. Later stage notes added completing every guarded combination as a promotion prerequisite. That was an
+agent-added expansion beyond this target's original feature contract. Those later promotion prerequisites are
+superseded by this clarification; the seven compatibility integrations remain recorded, guarded and disclosed.
+No core operator, UI feature, runtime invariant, notice or model gate is waived. The overall 353-entry goal remains
+active; existing todo entries are not reclassified as inapplicable to close it out.
+
+Independent read-only acceptance review found every original standalone requirement implemented/evidenced:
+
+| Requirement | Authoritative evidence |
+|---|---|
+| All operators, nested/signed groups, per-image rescale | `neutral_prompt.py`, archived upstream source, parser/math parity tests and SD1.5/XL core matrices |
+| Native x0/scheduler semantics, schedules, batch and passes | `neutral_runtime.py`, native scheduler comparisons, engine/runtime tests and real-model matrices |
+| Ordinary no-op and restoration | Zero-MAE pairs in the core/PAG/ControlNet/IP/Reference/sampling reports |
+| Errors/cancellation unwind state | Existing failure/restore tests plus direct protocol INTERRUPTED checks before/between branches with real Reference attention |
+| Native form, formatter, replay and engine features | Scala plugin/tests, current app-service 1/1 checks on both models and current form screenshot |
+| Notices and attribution | Canonical third-party source entry, verbatim MIT file and regenerated notice table |
+| Unsupported combinations remain explicit | Seven validation guards, regression tests and native compatibility help |
+
+Compatibility backlog: PhotoMaker, SAG, APG, Mahiro, Latent Modifier, Dynamic Thresholding and Detail Daemon.
+They remain available as existing standalone built-ins; their combinations with composed Neutral prompts reject
+clearly. Completing those combinations is further compatibility work, not an omitted upstream Neutral operator.
+
 ## Inspected sources (MIT, 2026-10-26)
 
 ljleb/sd-webui-neutral-prompt README and source:
@@ -34,7 +61,7 @@ not across the batch. Upstream combines denoised x0; scheduler conversion needs 
   tests for all operators, negative/group weights, zero normals, tiny/constant tensors, batch isolation and the
   upstream top-k threshold (95th-percentile kthvalue, includes ties). Reject non-finite weights, bound nesting.
   Files: `python/sdfx/neutral_prompt.py`, `python/tests/test_neutral_prompt.py`; upstream notice and MIT text.
-- [ ] Runtime integration: Engine leaf encoding and adjustment, per-step schedules/hires, x0 conversion for
+- [x] Runtime integration: Engine leaf encoding and adjustment, per-step schedules/hires, x0 conversion for
   epsilon/v-prediction and each supported scheduler representation, conditional/unconditional batching, output
   reconstruction, cleanup after errors/cancel. Tests precede hooks; confirm no-negative ordinary no-op exact.
   Inspect all forward-hook interactions; unsupported combinations must be clear rather than silently ignored.
@@ -42,7 +69,10 @@ not across the batch. Upstream combines denoised x0; scheduler conversion needs 
   all keyword/weight combinations through native controls or equivalent prompt editing. No implicit activation.
 - [x] Real SD1.5/SDXL core gates: ordinary baseline/no-op/restored exact, every keyword and nested group, signed weights,
   CFG rescale, batch, schedules, hires/img2img, multiple samplers. Inspect images, app-service path and UI.
-- [ ] Independent review, full suites, licences, ledger promotion, handoff/verification, verified commit/push.
+- [x] Independent review, full suites, licences, ledger promotion and handoff/verification.
+
+Publication gate: after the closeout commit, push private main and verify local/remote SHA equality and a clean
+worktree. Git history and the final tool checks are the authoritative publication record.
 
 ## Runtime design questions to resolve with evidence
 

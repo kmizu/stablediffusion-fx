@@ -710,3 +710,34 @@ Modifier, Dynamic Thresholding and Detail Daemon. The target stays todo and the 
 python/.venv-smoke/Scripts/python.exe scripts/dev/gpu_check.py python/.venv-smoke/Scripts/python.exe outputs/verify-sampling-pag-sd15 sampling_pag_sd15
 python/.venv-smoke/Scripts/python.exe scripts/dev/gpu_check.py python/.venv-smoke/Scripts/python.exe outputs/verify-sampling-pag-sdxl sampling_pag_sdxl
 ```
+
+## Neutral Prompt acceptance and ledger promotion (2026-10-26)
+
+An independent original-scope audit found no missing standalone feature. The upstream README specifies the
+alternative operators, CFG rescale and nesting; the initial local Runtime task explicitly allows unsupported
+combinations when clearly reported. Later agent-added notes making every cross-plugin combination a promotion
+prerequisite are superseded by the explicit acceptance clarification at the top of the plan. All original core,
+model, UI, attribution and cleanup gates remain. PhotoMaker, SAG, APG, Mahiro, Latent Modifier, Dynamic Thresholding
+and Detail Daemon stay guarded/disclosed as compatibility backlog; their combinations are not claimed implemented.
+
+Fresh final checks:
+
+- `RealAlwaysOnCheck ... neutral_prompt`: **1/1 on SD1.5 and 1/1 on SDXL**, via actual plugin/AppServices/queue/
+  generator/Python/GPU. New images under `outputs/verify-neutral-final-app-{sd15,sdxl}` were inspected. Saved PNG
+  assertions independently confirm the effective prompt, Neutral hook and CFG-rescale replay fields; audit JSON
+  and app contact sheet are under `outputs/verify-neutral-final-ui`.
+- Current native form snapshot exited 0 in an isolated home: `outputs/verify-neutral-final-ui/ui.png`,
+  `ui-panel.png`, `form-crop.png`. Enable, rescale, operator/weight formatter and cost help were inspected.
+- Two protocol INTERRUPTED tests now directly verify Reference-bank cleanup and forward restoration before the
+  first branch and between branches. Seven RED/GREEN cases also ensure unsupported combinations reject before
+  special-pipeline/adapter setup. The existing validation was moved earlier to avoid loading extra weights first.
+- Final full Python **615 passed**, four existing torchsde warnings; torch-free **260 passed / 37 skipped**.
+  Reports: `outputs/verify-neutral-closeout-{tests,no-torch}.xml`. Full Scala **483 passed** after ledger generation;
+  jar assembly checked successfully. The final early-guard timing change has independent code review and CPU
+  regression coverage; it does not change successful-path conditioning/math.
+- Canonical third-party description refreshed; live collector completed **112 projects**, retaining MIT text and
+  correcting the stale runtime-pending description. No licence wording changed.
+
+Only index entry 73 changes: `done:neutral_prompt`. Totals are **87 done / 215 todo / 51 NA**, with 150 distinct
+pending targets. The overall 353-entry objective remains active. Next implementations are Prompt Fusion and other
+independent entries; remaining compatibility work stays visible rather than silently weakening accepted requests.

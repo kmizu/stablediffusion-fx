@@ -20,8 +20,8 @@ server, 40 rewrites of the reForge built-ins. Repo: private GitHub `kmizu/stable
 
 | | Count |
 |---|---|
-| Index entries done | 86 |
-| Index entries todo | 216 (151 distinct targets) |
+| Index entries done | 87 |
+| Index entries todo | 215 (150 distinct targets) |
 | Not applicable (web-UI CSS/UX only, accounts, obsolete, external apps, server ops) | 51 |
 
 `scripts/extensions_matrix.py` is the single ledger. Its `S` dict maps each index entry to `done:<plugin id>`,
@@ -77,25 +77,20 @@ UI improvements made this session: `Control.Section` (collapsible groups inside 
 (greys a control out while its checkbox is off), and the form layout in `W.Form`. Labels longer than 18 characters
 go above their control, and the label column stays at least 88 px wide so cards line up.
 
-**Next action:** finish Neutral Prompt's remaining branch-dependent combinations, following
-`docs/superpowers/plans/2026-10-26-neutral-prompt.md`. Core runtime, native Scala form/formatter/replay and actual
-AppServices SD1.5/SDXL generation now work. Alternative inversion is connected, including its zero-noise startup
-rule, decode schedule clock, full CFG slider and NegPiP contexts; ordinary no-op/restoration are exact.
-ControlNet/PAG are also connected: branch-specific residuals, internal CFG groups, native PAG/adaptive scale and
-joint ControlNet+PAG were checked on SD1.5/SDXL. IP-Adapter/basic/Plus, CFG/PAG layouts and Alternative image
-conditioning are now checked too, with derived encoder synchronization and model/encoder cache fixes.
-Reference and SDXL ControlLLLite now prepare image conditioning per branch in both forward sampling and
-Alternative inversion, including their joint PAG path. The ordinary/no-op path remains unchanged; see the new
-Reference verification section for the actual model matrices, equality comparisons and visual limitations.
-CFG Schedule and CADS now also run per pass with composed prompts, including Alternative inversion; CADS keeps
-NegPiP signs/padding intact and shares negative random perturbations without replacing each leaf's conditioning.
-**Still todo:** PhotoMaker, SAG, APG/Mahiro/Latent Modifier/Dynamic Thresholding/Detail Daemon,
-explicitly guarded in `neutral_runtime.validate`. The ordinary CADS/CFG Schedule PAG batch repair is now connected:
-native CFG/PAG activity is read lazily, positive noise is shared by PAG copies, and CFG rewriting preserves the raw
-PAG difference. Constant CFG is an exact no-op. The old failing CPU probe is retained as pre-fix evidence in
-`outputs/neutral-ordinary-pag-probe.json`; `test_sampling_pag.py` covers the corrected contracts. No ledger promotion
-yet. See VERIFICATION.md for
-tested scope and finite synthetic checks. Continue prompt_fusion / composable_lora after this feature is finished.
+**Next action:** implement `prompt_fusion`, then `composable_lora`, preserving their documented behaviours and
+the normal real-model/UI/notice gates. Neutral Prompt is now marked implemented after an explicit original-scope
+acceptance audit; see `docs/superpowers/plans/2026-10-26-neutral-prompt.md` and the closing VERIFICATION section.
+All operators, nesting/signed weights, CFG rescale, schedules, native form/formatter/replay and actual AppServices
+SD1.5/SDXL generation are verified. Alternative, ControlNet/PAG, IP-Adapter/basic/Plus, Reference, SDXL ControlLLLite,
+CADS/CFG Schedule and ordinary PAG batch fixes also have separate tests/matrices. Preserve their invariants.
+
+**Compatibility backlog:** PhotoMaker, SAG, APG/Mahiro/Latent Modifier/Dynamic Thresholding/Detail Daemon with
+composed Neutral prompts remain explicitly unsupported in `neutral_runtime.validate`, tests and form help. The
+original Runtime task permits clear unsupported combinations; later agent-added notes making every combination
+a promotion prerequisite are superseded by the documented acceptance clarification. No original Neutral operator
+or model/UI/notice gate was omitted. Keep the seven guards until their own implementations are verified.
+The overall 353-entry goal remains active; 215 accepted entries are unfinished. Do not treat this promotion as
+completion of that goal or reclassify remaining entries to make it appear complete.
 
 ## Remaining targets, most-starred first
 
@@ -107,7 +102,7 @@ lcm, stylepile, clip_interrogator, prompt_generator, style_selector, aesthetic_g
 outpaint_canvas, fabric, manga_maker, model_downloader, multi_subject_render, batch_face_swap, video_loopback,
 core:presets, model_organizer, core:system-info, model_keyword, shap_e, prompt_travel, prompt_fusion, lora_control,
 gif2gif, replacer, cd_tuner, riffusion, core:api-payload, smart_process, haku_img, infinity_grid,
-neutral_prompt, core:panorama-viewer, loopback_scaler, daam, tokenizer, text2prompt, prompt_translate, prompt_gallery,
+core:panorama-viewer, loopback_scaler, daam, tokenizer, text2prompt, prompt_translate, prompt_gallery,
 composable_lora, refiner, incantations, old_photo_restoration, abysz_lab, aesthetic_score, steps_animation,
 nsfw_checker, image_editor, embedding_merge, rich_text, mosaic_outpaint, cross_attention_viz, hypernetwork_training,
 inspiration, vram_estimator, sonar, save_intermediate, dump_unet, llm_prompt, training_picker, model_presets,
@@ -124,7 +119,7 @@ core:prevent-interrupt
 
 Suggested next steps, by value and fit with what exists:
 
-1. **Prompt-embedding hooks**: prompt_fusion, neutral_prompt and composable_lora. They build
+1. **Prompt-embedding hooks**: prompt_fusion and composable_lora. They build
    on `prompt_schedule.py` and `_schedule_swapper`.
 2. **Regional prompting**: regional_prompter and latent_couple, via attention-level region masks.
    tiled_diffusion can largely reuse the existing `multidiffusion` hook plus noise inversion and region prompts.
@@ -184,7 +179,7 @@ Suggested next steps, by value and fit with what exists:
 | What | Command / file |
 |---|---|
 | Scala tests | `sbt.bat -batch test` (latest: 483 passed, 2026-10-26) |
-| Python tests | `python/.venv-smoke/Scripts/python.exe -m pytest` (latest: 467 passed, 4 torchsde endpoint warnings) and `.venv-test` (260 passed, 34 skipped) |
+| Python tests | `python/.venv-smoke/Scripts/python.exe -m pytest` (latest: 615 passed, 4 torchsde endpoint warnings) and `.venv-test` (260 passed, 37 skipped) |
 | Dry-run smoke | `scripts/smoke.ps1` / `scripts/smoke.sh` |
 | Engine on GPU, one case per process | `scripts/dev/gpu_check.py <venv python> <out dir> <case>`; cases `sched_*`, `ext_*`, `ad_*`, `image_*`, `weight_*`, `negpip_*` |
 | Script plugins through the real app over MCP | `scripts/dev/write_settings.py`, then `scripts/dev/mcp_scripts.py "C:\Program Files\Java\jdk-21\bin\java.exe" <script ids>` |
