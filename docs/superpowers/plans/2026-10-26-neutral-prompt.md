@@ -210,3 +210,39 @@ own tests and real-model checks pass. Overall goal and ledger remain 86/216/51; 
 - Final full suites: Python 467 passed (four known torchsde warnings), torch-free 260 passed / 34 skipped;
   Scala 483 passed and jar built. IP tests 27 passed. No new dependencies/source licences; external model weights
   remain ignored verification assets. Ledger unchanged 86/216/51; finish Reference/LLLite and remaining modifiers.
+
+## Reference / ControlLLLite design (starting ef2d139, clean)
+
+Use explicit branch preparation/cleanup, not recursive calls through the composed UNet. Managed image hooks keep
+their attention/projection hooks, while Runtime invokes per-leaf preparation around its saved forward. ControlLLLite
+updates its step window first; Reference then writes a fresh bank using that leaf's conditioning and clears it after
+the leaf, including errors. Preserve the existing ordinary/no-op route when no composition is active.
+
+Reference fidelity follows explicit positive/negative group layout, including CFG off and PAG's 3/4 internal groups.
+At native PAG attention layers, reference conditioning applies only to ordinary groups; the perturbed identity path
+stays native. Native PAG processors ignore encoder_hidden_states, so merely passing extra context cannot implement
+this. Project current/reference keys/values separately before concatenation: this retains trained spatial length for
+ControlLLLite projection hooks. Use native-compatible SDPA normalization/output rules without replacing processor
+modules or changing parameter paths. Weight zero must be an exact no-op. Managed reference noising uses scheduler
+input noise level (including Heun stages and inverse DDIM), rather than guessing from the target timestep alone.
+
+Required tests: per-leaf bank conditioning and cleanup, LLLite window before bank write, style masks for all layouts,
+real PAG attention normal/perturbed behavior, projection input lengths, noise-level contract and no-op/restoration.
+Then SD1.5/SDXL Reference matrices and SDXL-only ControlLLLite with real weights, image inspection and full suites.
+
+### Preparatory wave: managed image hooks (not exposed yet)
+
+- Added optional ordered Runtime branch hooks with reverse cleanup, including failed preparation. Reference can
+  write using the saved forward and the current leaf conditioning, then clear its bank after that leaf. LLLite can
+  update its window without a recursive root call. Managed hooks are deliberately not wired by Engine/extensions
+  yet; the Reference/LLLite compatibility guards remain and the extension ledger is unchanged.
+- Added native-compatible reference SDPA with separate spatial Q/K/V calls. Combined-context normalization occurs
+  before splitting projections (essential for GroupNorm). Explicit positive group masks handle all internal CFG/PAG
+  layouts; native PAG identity outputs are preserved. Reference weight zero skips bank writing/injection exactly.
+- CPU tests use real diffusers Attention/PAG processors: 37 passed, including native output comparisons with boolean
+  and additive masks, LayerNorm/GroupNorm, spatial conditioning, PAG identity preservation, fidelity masks and cleanup.
+  Independent read-only review found no material correctness defect within this preparatory scope.
+- Full Python: 504 passed / four existing torchsde endpoint warnings. Torch-free: 260 passed / 35 skipped. JUnit
+  reports: `outputs/verify-reference-foundation{,-no-torch}.xml`. No Scala/UI changes, dependencies or new licences.
+- Not GPU-verified or product-enabled in this wave. Next: factor image-hook installation for forward and inverse
+  passes, connect managed hooks through Engine/extras, then run the SD1.5/SDXL matrices before lifting guards.

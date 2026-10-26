@@ -28,10 +28,9 @@ def validate(hooks, *, controlnet=False, pag=False):
         raise EngineError(UNSUPPORTED, "Neutral Prompt integration pending for: " + ", ".join(conflicts))
 
 
-def coefficients(scheduler, timestep):
-    """Return A,B where x0 = A * normalized UNet input + B * model prediction."""
+def noise_level(scheduler, timestep):
+    """Return native UNet-input alpha, noise and sigma, including intermediate solver stages."""
     name = type(scheduler).__name__
-    pred = scheduler.config.prediction_type
     if name in ("DDIMScheduler", "DDIMInverseScheduler", "LCMScheduler"):
         index = int(timestep)
         if name == "DDIMInverseScheduler":
@@ -60,6 +59,13 @@ def coefficients(scheduler, timestep):
         noise = 1.0 if math.isinf(sigma) else sigma * alpha
     else:
         raise EngineError(UNSUPPORTED, f"Neutral Prompt: unsupported scheduler {name}")
+    return alpha, noise, sigma
+
+
+def coefficients(scheduler, timestep):
+    """Return A,B where x0 = A * normalized UNet input + B * model prediction."""
+    alpha, noise, sigma = noise_level(scheduler, timestep)
+    pred = scheduler.config.prediction_type
     if pred == "epsilon":
         if alpha == 0:
             raise EngineError(UNSUPPORTED, "Neutral Prompt: epsilon prediction is undefined at zero SNR")
@@ -112,17 +118,19 @@ def zero_noise_guidance(z, unconditional, delta, cfg, phi):
 class RuntimeHook:
     """Evaluate each positive leaf against the same input, then present a CFG-compatible composed prediction.
 
-    Only the enclosing UNet call invokes root hooks; leaf evaluations use its saved forward method. Engine guards
-    combinations whose root hooks/residuals require branch-specific handling. Attention/module hooks still run.
+    Only the enclosing UNet call invokes root hooks; leaf evaluations use its saved forward method. Explicit
+    branch_hooks prepare branch-dependent image conditioning. Engine guards integrations not yet wired into that
+    lifecycle. Attention/module hooks still run.
     """
     def __init__(self, unet, scheduler, plan: Plan, cfg: float, phi: float, *, guided=None, pag=False, controlnet=None, image_embeds=None,
-                 check_interrupt=lambda: None):
+                 check_interrupt=lambda: None, branch_hooks=()):
         self.unet, self.scheduler, self.plan = unet, scheduler, plan
         self.cfg, self.phi = cfg, phi
         self.guided = cfg > 1 if guided is None else guided
         self.pag = pag
         self.controlnet = controlnet
         self.image_embeds = image_embeds
+        self.branch_hooks = sorted(branch_hooks, key=lambda h: h.priority)
         self.step = 1
         self.check_interrupt = check_interrupt
         self._missing = object()
@@ -182,7 +190,15 @@ class RuntimeHook:
                 down, mid = self.controlnet.residuals(kw, batch, layout)
                 kw["down_block_additional_residuals"] = down
                 kw["mid_block_additional_residual"] = mid
-            output = self.original(inputs, timestep, *args, **kw)
+            prepared = []
+            try:
+                for hook in self.branch_hooks:
+                    prepared.append(hook)
+                    hook.before_branch(self.original, inputs, timestep, kw, layout)
+                output = self.original(inputs, timestep, *args, **kw)
+            finally:
+                for hook in reversed(prepared):
+                    hook.after_branch()
             prediction = output[0] if isinstance(output, tuple) else output.sample
             if template is None:
                 template, unconditional = output, prediction[:batch]

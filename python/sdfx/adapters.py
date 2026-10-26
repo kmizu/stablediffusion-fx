@@ -73,6 +73,8 @@ def _load_state(path: str) -> dict:
 class ReferenceOnlyHook:
     """Reference-only: self-attention also attends to the reference image's hidden states at the same timestep."""
 
+    priority = 10
+
     def __init__(self, unet, ref_latents, scheduler, style_fidelity: float, weight: float):
         self.unet = unet
         self.ref = ref_latents
@@ -83,15 +85,19 @@ class ReferenceOnlyHook:
         self.bank: dict = {}
         self.handles = []
         self.noise = None
+        self.managed = False
+        self.layout = None
 
     def _attn_pre(self, module, args, kwargs):
         hs = args[0] if args else kwargs.get("hidden_states")
-        if hs is None or kwargs.get("encoder_hidden_states") is not None:
+        if self.w == 0 or hs is None or kwargs.get("encoder_hidden_states") is not None:
             return None
         if self.mode == "write":
             self.bank[id(module)] = hs.detach()
             return None
         if self.mode == "read" and id(module) in self.bank:
+            if self.managed:
+                return None
             import torch
             ref = self.bank[id(module)]
             if ref.shape[0] != hs.shape[0]:
@@ -105,7 +111,25 @@ class ReferenceOnlyHook:
         return None
 
     def _attn_post(self, module, args, kwargs, output):
-        if self.mode != "read" or self.sf <= 0 or id(module) not in self.bank:
+        if self.mode != "read" or id(module) not in self.bank:
+            return None
+        if self.managed:
+            import torch
+            from .reference_attention import attend
+            hs = args[0] if args else kwargs.get("hidden_states")
+            referenced = attend(module, hs, self.bank[id(module)], self.w,
+                                attention_mask=kwargs.get("attention_mask"), temb=kwargs.get("temb"))
+            positive = torch.tensor(self.layout, device=output.device).repeat_interleave(output.shape[0] // len(self.layout))
+            positive = positive.view(-1, *([1] * (output.ndim - 1)))
+            result = torch.where(positive, referenced * (1 - self.sf) + output * self.sf, referenced)
+            # Native PAG perturbs only self-attention's final group. Keep that identity path intact.
+            processor = type(module.processor).__name__
+            if processor.startswith("PAG"):
+                groups = 3 if "CFG" in processor else 2
+                n = output.shape[0] * (groups - 1) // groups
+                result = torch.cat([result[:n], output[n:]])
+            return result
+        if self.sf <= 0:
             return None
         # style fidelity: blend with the plain self-attention result for the cond half
         hs = args[0] if args else kwargs.get("hidden_states")
@@ -123,7 +147,7 @@ class ReferenceOnlyHook:
 
     def _unet_pre(self, module, args, kwargs):
         import torch
-        if self.mode != "off":
+        if self.w == 0 or self.mode != "off":
             return None
         sample = args[0] if args else kwargs["sample"]
         t = args[1] if len(args) > 1 else kwargs["timestep"]
@@ -157,20 +181,50 @@ class ReferenceOnlyHook:
             self.mode = "off"
         return None
 
-    def install(self):
+    def before_branch(self, forward, sample, timestep, kwargs, layout):
+        if self.w == 0:
+            return
+        import torch
+        from .neutral_runtime import noise_level
+        self.layout = layout
+        if self.noise is None or self.noise.shape != self.ref.shape:
+            g = torch.Generator(device="cpu").manual_seed(0)
+            self.noise = torch.randn(self.ref.shape, generator=g, dtype=torch.float32).to(self.ref.device, self.ref.dtype)
+        alpha, noise, _ = noise_level(self.sched, timestep)
+        noisy = self.ref * alpha + self.noise * noise
+        if sample.shape[0] % noisy.shape[0]:
+            raise EngineError(UNSUPPORTED, "Reference batch does not divide guidance batch")
+        ref_in = noisy.repeat(sample.shape[0] // noisy.shape[0], 1, 1, 1)
+        kw = {k: v for k, v in kwargs.items() if k not in
+              ("down_block_additional_residuals", "mid_block_additional_residual")}
+        self.bank.clear()
+        self.mode = "write"
+        with torch.no_grad():
+            forward(ref_in.to(sample.device, sample.dtype), timestep, **kw)
+        self.mode = "read"
+
+    def after_branch(self):
+        self.mode = "off"
+        self.bank.clear()
+        self.layout = None
+
+    def install(self, *, managed=False):
+        self.managed = managed
         for name, mod in self.unet.named_modules():
             if name.endswith("attn1") and hasattr(mod, "to_q"):
                 self.handles.append(mod.register_forward_pre_hook(self._attn_pre, with_kwargs=True))
                 self.handles.append(mod.register_forward_hook(self._attn_post, with_kwargs=True))
-        self.handles.append(self.unet.register_forward_pre_hook(self._unet_pre, with_kwargs=True))
-        self.handles.append(self.unet.register_forward_hook(self._unet_post, with_kwargs=True))
+        if not managed:
+            self.handles.append(self.unet.register_forward_pre_hook(self._unet_pre, with_kwargs=True))
+            self.handles.append(self.unet.register_forward_hook(self._unet_post, with_kwargs=True))
         return self
 
     def remove(self):
         for h in self.handles:
             h.remove()
         self.handles = []
-        self.bank = {}
+        self.after_branch()
+        self.noise = None
 
 
 # ----------------------------------------------------------------------------------------------------------- revision
@@ -346,6 +400,8 @@ class LLLiteModule:
 
 
 class ControlLLLiteHook:
+    priority = 0
+
     def __init__(self, unet, path: str, cond_image, strength: float, start: float, end: float):
         self.unet = unet
         self.path = path
@@ -363,7 +419,14 @@ class ControlLLLiteHook:
         for m in self.modules.values():
             m.active = on
 
-    def install(self):
+    def before_branch(self, forward, sample, timestep, kwargs, layout):
+        self._unet_pre(self.unet, (sample, timestep), kwargs)
+
+    def after_branch(self):
+        for module in self.modules.values():
+            module.active = False
+
+    def install(self, *, managed=False):
         import numpy as np
         import torch
         sd = _load_state(self.path)
@@ -394,7 +457,8 @@ class ControlLLLiteHook:
             found += 1
         if not found:
             raise EngineError(UNSUPPORTED, f"{os.path.basename(self.path)} is not a ControlNet-LLLite model for this UNet")
-        self.handles.append(self.unet.register_forward_pre_hook(self._unet_pre, with_kwargs=True))
+        if not managed:
+            self.handles.append(self.unet.register_forward_pre_hook(self._unet_pre, with_kwargs=True))
         return self
 
     def remove(self):
