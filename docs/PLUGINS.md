@@ -74,6 +74,11 @@ tweaks every generation (sends `params.hooks` to the engine). **Extras** = post-
 
 ## Verification status (RTX 3090, 2026-10-25)
 
+Extension-index addition (2026-10-26): `seamless_tile` — img2img Script, **Seamless tile inpainting**. Moves opposite
+edges to the centre, inpaints a band around their join, optionally shifts back. Choose Horizontal, Vertical or Both;
+mask width is the total band across the joined edges. Best with texture prompts and an inpainting checkpoint.
+Both directions can retain small seams. Implementation/real-model evidence is in [VERIFICATION.md](VERIFICATION.md).
+
 Every plugin has unit tests (Scala `plugins`, `engine`, `mcp`, `ui` suites; Python `tests/`) and runs end to end in
 dry-run mode. Real-model GPU runs:
 

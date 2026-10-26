@@ -20,8 +20,8 @@ server, 40 rewrites of the reForge built-ins. Repo: private GitHub `kmizu/stable
 
 | | Count |
 |---|---|
-| Index entries done | 83 |
-| Index entries todo | 219 (154 distinct targets) |
+| Index entries done | 84 |
+| Index entries todo | 218 (153 distinct targets) |
 | Not applicable (web-UI CSS/UX only, accounts, obsolete, external apps, server ops) | 51 |
 
 `scripts/extensions_matrix.py` is the single ledger. Its `S` dict maps each index entry to `done:<plugin id>`,
@@ -48,8 +48,13 @@ Done in this session, all GPU-verified unless marked:
   upscale, depthmap2mask and inpaint background. Real SD1.5 and SDXL images, both masked inpainting paths, and all
   seven plugins through the real Java/MCP app were checked. See `docs/VERIFICATION.md` for scope and evidence.
   Fixed full-range seed overflow and output dimensions in pixel art, an open input file in the engine, and a leaked
-  auxiliary mask in the Scala background-inpainting plugin. **Next task: prompt-embedding hooks** below; the 219 todo
+  auxiliary mask in the Scala background-inpainting plugin. **Next task: prompt-embedding hooks** below; the 218 todo
   entries remain unfinished. Completing this verification wave does not complete the extension-index goal.
+- **Seamless tile inpainting (Codex):** `SeamlessTilePlugin.scala`, id `seamless_tile`. Circularly offsets the input,
+  inpaints the central seam in horizontal/vertical/both directions, optionally restores the original arrangement.
+  SD1.5 and SDXL checked through the actual app/MCP; repeated tile previews and the form inspected. Neural seam
+  repair quality depends on the checkpoint and texture; an ordinary SD1.5 anime checkpoint failed to improve a stone
+  texture in some cases. See `docs/VERIFICATION.md`. No new dependency or Python engine hook.
 
 UI improvements made this session: `Control.Section` (collapsible groups inside a plugin form), `Plugin.enabledBy`
 (greys a control out while its checkbox is off), and the form layout in `W.Form`. Labels longer than 18 characters
@@ -72,7 +77,7 @@ inspiration, vram_estimator, sonar, save_intermediate, dump_unet, llm_prompt, tr
 lama_cleaner, kandinsky, hypernetworks, core:styles-editor, characteristic_guidance, hotshot_xl, live_portrait,
 booru_prompt, latent_upscale, depth_image_io, creaprompt, embedding_editor, semantic_guidance, custom_diffusion,
 core:image-compare, encrypt_image, inpaint_difference, depth_library, rpg_diffusion, custom_hires_fix,
-img2img_hires_fix, depth_anything, agent_attention, conditioning_highres_fix, hires_fix_tweaks, seamless_tile,
+img2img_hires_fix, depth_anything, agent_attention, conditioning_highres_fix, hires_fix_tweaks,
 panorama_tools, chara_searcher, lua_scripting, deepdanbooru, gpu_temperature_guard, corridor_crawler,
 old_sd_firstpasser, temporal, grid_numbers, batch_interrogate, token_downsampling, embedding_inspector, demofusion,
 prompt_expansion, weight_gradient, color_correction, video_extras, clip_io, face_manipulation, ditail,
@@ -86,7 +91,7 @@ Suggested next steps, by value and fit with what exists:
    on `prompt_schedule.py` and `_schedule_swapper`.
 2. **Regional prompting**: regional_prompter and latent_couple, via attention-level region masks.
    tiled_diffusion can largely reuse the existing `multidiffusion` hook plus noise inversion and region prompts.
-3. **Small, cheap ones**: tokenizer (engine `tokenize` request), seamless_tile, latent_upscale,
+3. **Small, cheap ones**: tokenizer (engine `tokenize` request), latent_upscale,
    img2img/custom/conditioning hires fix variants, grid_numbers, save_intermediate, color_correction, vae_tools,
    waifu2x, deepdanbooru (the WD14 tagger already exists in `extras.caption_image`), batch_interrogate,
    clip_interrogator, aesthetic_score, nsfw_checker.

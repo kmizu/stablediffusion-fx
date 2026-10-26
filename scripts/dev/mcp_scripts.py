@@ -67,6 +67,12 @@ print("status:", text[:200], flush=True)
 
 base = {"prompt": "a cozy cabin in a snowy forest", "negative_prompt": "lowres", "steps": 12, "width": 512, "height": 512,
         "seed": 11, "sampler_name": "DPM++ 2M"}
+if os.environ.get("SDFX_CHECKPOINT"):
+    base["checkpoint"] = os.environ["SDFX_CHECKPOINT"]
+if ONLY == {"seamless_tile"}:
+    base.update(prompt="overhead texture of irregular grey stone pavement, flat texture, no perspective", steps=20)
+    if os.environ.get("SDFX_TEST_PROMPT"):
+        base["prompt"] = os.environ["SDFX_TEST_PROMPT"]
 if ONLY and ONLY.intersection({"pixel_art", "color_enhance", "fsr_upscale", "person_mask", "remove_background",
                                "depthmap2mask", "inpaint_background"}):
     base.update(prompt="a woman wearing a red jacket, standing in a green park, full body", height=768)
@@ -76,6 +82,10 @@ print("txt2img:", ok, init, flush=True)
 
 i2i = dict(base, init_image=init, denoising_strength=0.5)
 cases = [
+    ("seamless_tile", {"direction": "Both", "mask_width": "96"}, dict(i2i, denoising_strength=0.85)),
+    ("seamless_tile", {"direction": "Horizontal", "mask_width": "96"}, dict(i2i, denoising_strength=0.85)),
+    ("seamless_tile", {"direction": "Vertical", "mask_width": "96"}, dict(i2i, denoising_strength=0.85)),
+    ("seamless_tile", {"direction": "Both", "mask_width": "96", "restore": "false"}, dict(i2i, denoising_strength=0.85)),
     ("pixel_art", {"pixel_size": "8", "colors": "16", "dither": "0.5"}, i2i),
     ("color_enhance", {"strength": "0.5"}, i2i),
     ("fsr_upscale", {"scale": "2"}, i2i),
@@ -106,6 +116,7 @@ cases = [
                              "seams_fix": "Half tile offset pass + intersections"}, dict(i2i, denoising_strength=0.3)),
 ]
 summary = []
+details = []
 for sid, values, params in cases:
     if ONLY and sid not in ONLY:
         continue
@@ -113,8 +124,11 @@ for sid, values, params in cases:
     ok, text, sc = tool("run_script", {"script_id": sid, "values": values, "params": params, "return_images": False})
     imgs = len(sc.get("images", []))
     summary.append((sid, ok, imgs))
+    details.append({"script_id": sid, "values": values, "ok": ok, "result": sc, "text": text})
     print(f"{sid:20s} {'OK ' if ok else 'ERR'} {time.time() - t0:6.1f}s images={imgs} {text[:160]}", flush=True)
 p.stdin.close()
 p.wait(120)
 print("SUMMARY", sum(1 for s in summary if s[1] and s[2] > 0), "/", len(summary))
+with open(os.path.join(OUTS, "mcp-script-results.json"), "w", encoding="utf-8", newline="\n") as report:
+    json.dump({"params": base, "source": init, "cases": details}, report, indent=2)
 sys.exit(0 if summary and all(s[1] and s[2] > 0 for s in summary) else 1)

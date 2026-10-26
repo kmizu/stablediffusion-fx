@@ -21,7 +21,7 @@ description of their behaviour only.
 | [lllyasviel/stable-diffusion-webui-forge](https://github.com/lllyasviel/stable-diffusion-webui-forge) | ported | AGPL-3.0 ([text](licenses/lllyasviel__stable-diffusion-webui-forge.txt)) | forge built-in extensions (FreeU, Dynamic Thresholding, HyperTile, SAG, Kohya HRFix, MultiDiffusion, Latent Modifier, Never OOM, IP-Adapter, ControlLLLite, PhotoMaker, Fooocus inpaint, SVD, Z123, preprocessors) |
 | [comfyanonymous/ComfyUI](https://github.com/comfyanonymous/ComfyUI) | ported | GPL-3.0 ([text](licenses/comfyanonymous__ComfyUI.txt)) | sigma schedules, APG / Mahiro / RescaleCFG guidance math, Deep Shrink, FreeU |
 | [crowsonkb/k-diffusion](https://github.com/crowsonkb/k-diffusion) | ported | MIT ([text](licenses/crowsonkb__k-diffusion.txt)) | Karras / exponential / polyexponential sigma schedules |
-| [mcmonkeyprojects/sd-dynamic-thresholding](https://github.com/mcmonkeyprojects/sd-dynamic-thresholding) | ported | no license file published | Dynamic Thresholding (CFG-Fix) math |
+| [mcmonkeyprojects/sd-dynamic-thresholding](https://github.com/mcmonkeyprojects/sd-dynamic-thresholding) | ported | MIT ([text](licenses/mcmonkeyprojects__sd-dynamic-thresholding.txt)) | Dynamic Thresholding (CFG-Fix) math |
 | [tfernd/HyperTile](https://github.com/tfernd/HyperTile) | ported | MIT ([text](licenses/tfernd__HyperTile.txt)) | HyperTile attention tiling |
 | [kohya-ss/sd-scripts](https://github.com/kohya-ss/sd-scripts) | ported | Apache-2.0 ([text](licenses/kohya-ss__sd-scripts.txt)) | ControlNet-LLLite module layout |
 | [lllyasviel/Fooocus](https://github.com/lllyasviel/Fooocus) | ported | GPL-3.0 ([text](licenses/lllyasviel__Fooocus.txt)) | Fooocus inpaint patch / head application |
@@ -87,6 +87,7 @@ description of their behaviour only.
 | [bit9labs/sd-masonry](https://github.com/bit9labs/sd-masonry) | reimplemented | AGPL-3.0 ([text](licenses/bit9labs__sd-masonry.txt)) | extension rewritten as SD Masonry Gallery -> `core:gallery` |
 | [bit9labs/sd-ratio-lock](https://github.com/bit9labs/sd-ratio-lock) | reimplemented | AGPL-3.0 ([text](licenses/bit9labs__sd-ratio-lock.txt)) | extension rewritten as SD Ratio Lock -> `core:size-presets` |
 | [bluelovers/sd-webui-pnginfo-beautify](https://github.com/bluelovers/sd-webui-pnginfo-beautify) | reimplemented | no license file published | extension rewritten as PNGINFO Beautify -> `core:png-info` |
+| [brick2face/seamless-tile-inpainting](https://github.com/brick2face/seamless-tile-inpainting) | reimplemented | AGPL-3.0 ([text](licenses/brick2face__seamless-tile-inpainting.txt)) | extension rewritten as seamless-tile-inpainting -> `seamless_tile` |
 | [dfaker/SD-latent-mirroring](https://github.com/dfaker/SD-latent-mirroring) | reimplemented | no license file published | extension rewritten as Latent Mirroring -> `latent_mirroring` |
 | [djbielejeski/a-person-mask-generator](https://github.com/djbielejeski/a-person-mask-generator) | reimplemented | MIT ([text](licenses/djbielejeski__a-person-mask-generator.txt)) | extension rewritten as A Person Mask Generator -> `person_mask` |
 | [gutris1/sd-simple-dimension-preset](https://github.com/gutris1/sd-simple-dimension-preset) | reimplemented | MIT ([text](licenses/gutris1__sd-simple-dimension-preset.txt)) | extension rewritten as SD Simple Dimension Preset -> `core:size-presets` |
@@ -123,4 +124,4 @@ description of their behaviour only.
 | [xhoxye/sd-webui-ar_xhox](https://github.com/xhoxye/sd-webui-ar_xhox) | reimplemented | no license file published | extension rewritten as Aspect Ratio Resolutions selector-xhox -> `core:size-presets` |
 | [yownas/seed_travel](https://github.com/yownas/seed_travel) | reimplemented | NOASSERTION ([text](licenses/yownas__seed_travel.txt)) | extension rewritten as seed travel -> `seed_travel` |
 | [yownas/shift-attention](https://github.com/yownas/shift-attention) | reimplemented | NOASSERTION ([text](licenses/yownas__shift-attention.txt)) | extension rewritten as shift-attention -> `shift_attention` |
-| [zanllp/sd-webui-infinite-image-browsing](https://github.com/zanllp/sd-webui-infinite-image-browsing) | reimplemented | no license file published | extension rewritten as Infinite image browsing -> `core:gallery` |
+| [zanllp/sd-webui-infinite-image-browsing](https://github.com/zanllp/sd-webui-infinite-image-browsing) | reimplemented | MIT ([text](licenses/zanllp__sd-webui-infinite-image-browsing.txt)) | extension rewritten as Infinite image browsing -> `core:gallery` |

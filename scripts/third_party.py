@@ -57,15 +57,24 @@ def repo_of(url: str):
 
 
 def gh_license(repo: str):
-    try:
-        out = subprocess.run(["gh", "api", f"repos/{repo}/license"], capture_output=True, text=True, timeout=60)
-    except FileNotFoundError:
-        sys.exit("the GitHub CLI `gh` is required")
-    if out.returncode != 0:
-        return None, None
-    j = json.loads(out.stdout)
-    text = base64.b64decode(j.get("content", "")).decode("utf-8", "replace")
-    return (j.get("license") or {}).get("spdx_id") or "NOASSERTION", text
+    error = ""
+    for _ in range(3):
+        try:
+            out = subprocess.run(["gh", "api", f"repos/{repo}/license"], capture_output=True, text=True, timeout=60)
+        except FileNotFoundError:
+            sys.exit("the GitHub CLI `gh` is required")
+        except subprocess.TimeoutExpired:
+            error = "GitHub request timed out"
+            continue
+        if out.returncode == 0:
+            j = json.loads(out.stdout)
+            text = base64.b64decode(j.get("content", "")).decode("utf-8", "replace")
+            return (j.get("license") or {}).get("spdx_id") or "NOASSERTION", text
+        if "HTTP 404" in out.stderr:
+            return None, None
+        error = out.stderr.strip() or f"gh exited {out.returncode}"
+    # Do not rewrite the notice table with a false 'no license' claim after a network/auth/API failure.
+    raise RuntimeError(f"could not retrieve license for {repo}: {error}")
 
 
 def main():
@@ -94,6 +103,8 @@ def main():
         if text:
             open(os.path.join(ROOT, "licenses", fname), "w", encoding="utf-8", newline="\n").write(text)
             lic = f"{spdx} ([text](licenses/{fname}))"
+        elif os.path.isfile(os.path.join(ROOT, "licenses", fname)):
+            lic = f"upstream file unavailable; archived license ([text](licenses/{fname}))"
         else:
             lic = "no license file published"
         rows.append(f"| [{repo}](https://github.com/{repo}) | {how} | {lic} | {what} |")

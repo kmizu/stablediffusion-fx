@@ -142,3 +142,62 @@ fixture for the image-tool loader; the current closure fixture is an ordinary RG
 Final automated checks for this wave: Scala **474 passed**; GPU Python venv **257 passed**; torch-free venv
 **221 passed, 15 skipped**. `ui/assembly` produced the runnable jar. `scripts/extensions_matrix.py` still reports
 **83 done / 219 todo / 51 not applicable**; no new target was promoted by this verification-only wave.
+
+## Seamless tile inpainting (Codex, 2026-10-26)
+
+`seamless_tile` is a Scala img2img Script reimplemented from the documented behavior of
+`brick2face/seamless-tile-inpainting`: circular half-image offset, central seam mask, transient inpainting, and
+optional inverse offset. Controls cover Horizontal, Vertical, Both, mask width, blur, and restoring the layout.
+There is no new Python hook or dependency. It does not enable circular padding or claim exact edge equality.
+
+Actual Java 21 jar/MCP runs used the RTX 3090 and both `animekawa_v10` (SD1.5) and `waiIllustriousSDXL_v170` (SDXL).
+Each model completed four cases: Both/Horizontal/Vertical restored, plus Both without restoring. Inputs were
+512x512, seed 11, 20 steps, DPM++ 2M, mask width 96, blur 4, denoising strength 0.85. Stone-pavement and SD1.5 grass
+textures were inspected as repeated 2x2 tiles. These are ordinary checkpoints, not dedicated inpainting models.
+
+| Model / texture | Opposite-edge mean absolute RGB difference (0..255) |
+|---|---|
+| SDXL stone | input x=43.96 / y=31.46; Horizontal x=4.26; Vertical y=7.30; Both x=7.27 / y=9.88 |
+| SD1.5 grass | input x=8.36 / y=5.55; Horizontal x=6.28; Vertical y=4.38; Both x=5.44 / y=6.82 |
+| SD1.5 stone | input x=6.57 / y=4.39; Horizontal x=44.20; Vertical y=64.99; Both x=10.07 / y=64.07 |
+
+The last row is a failed improvement, retained as a limitation rather than omitted: this anime checkpoint can
+introduce new high-frequency edges in stone textures. Seam quality is model/prompt dependent; the upstream workflow
+recommends an inpainting model. Both-direction joins can retain minor seams. Lower boundary difference alone does
+not prove a good texture; all repeated previews were inspected as well. No dedicated inpainting checkpoint was
+downloaded or validated in this wave.
+
+Local, gitignored evidence: `outputs/verify-seamless/{sd15,sdxl,sd15-grass}.json`, corresponding `.jpg` comparison
+sheets, `*-metrics.json` measurements, and individual full-resolution 2x2 PNGs. Reproduction:
+
+```powershell
+# Configure the real GPU venv/checkpoints with scripts/dev/write_settings.py, as for the previous app check.
+python scripts/dev/mcp_scripts.py "C:\Program Files\Java\jdk-21\bin\java.exe" seamless_tile
+# Copy outputs/mcp-script-results.json before starting the next run.
+# Set SDFX_CHECKPOINT=waiIllustriousSDXL_v170 for SDXL; SDFX_TEST_PROMPT overrides the texture prompt.
+python/.venv-smoke/Scripts/python.exe scripts/dev/tile_review.py outputs/verify-seamless/sd15.json
+```
+
+The JavaFX form was captured in a separate dry-run home (`outputs/verify-seamless/ui-home`) and inspected in
+`ui.png` / `ui-panel.png`; all four controls and the description fit. Existing user UI state was not changed.
+
+Six Scala tests cover directional offsets, odd-size inverse, central band bounds, registration, batching and actual
+seeds, request flags, original arrangement, no-init rejection, cancellation and failure cleanup, and preserving
+engine infotext. Missing implementation and a wrong batch seed were observed before fixes. Review then found that
+rebuilding infotext discarded model/VAE/LoRA facts and actual variation seeds; a failing regression confirmed it,
+and final saving now preserves the engine's existing infotext. The review's cleanup test gaps were also covered.
+The final rebuilt jar completed another 4/4 SD1.5 app run; all four saved PNGs retained `Model hash` and the seamless
+settings in their `parameters` text (`outputs/verify-seamless/sd15-final.json`).
+
+Final checks: **480 Scala tests passed**, Python GPU venv **261 passed**, torch-free venv **225 passed / 15 skipped**.
+`ui/assembly` succeeded after the metadata fix. Coverage is now **84 done / 218 todo / 51 not applicable**;
+the 218 entries correspond to 153 distinct unfinished targets.
+
+The required licence refresh exposed an existing collector defect: transient GitHub failures could replace known
+MIT/AGPL notices with "no license file published". `scripts/third_party.py` now retries failed requests, distinguishes
+actual HTTP 404, aborts a persistent retrieval error before rewriting the table, and keeps archived text linked
+when upstream removes a licence file. Four tests passed after first demonstrating the incorrect behavior.
+Independent collector review found no important issue; explicit timeout-retry and whole-file unchanged-on-error
+fixtures remain minor test gaps. The new tile plugin's upstream AGPL-3.0 text is bundled under `licenses/`.
+The final live refresh succeeded for 109 projects; the existing SuperMerger and close-confirmation licences were
+retained, and two previously mislabelled MIT notices were restored. No fetched licence text was removed.
