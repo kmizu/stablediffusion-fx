@@ -50,6 +50,15 @@ class BuiltinsSuite extends munit.FunSuite:
       }
     }
 
+  test("NegPiP is opt-in and preserves its replay key"):
+    val p = new NegPipPlugin
+    assert(!p.isActive(defaults(p)))
+    assert(p.isActive(defaults(p, "enabled" -> "true")))
+    val out = p.process(GenerationParams(), defaults(p, "enabled" -> "true"))
+    assertEquals(out.hooks("negpip"), ujson.Obj())
+    assertEquals(out.extra("NegPiP Active"), "True")
+    assert(StandardPlugins.alwaysOn.exists(_.id == "negpip"))
+
   test("APG / RescaleCFG / Kohya / MultiDiffusion hook fields match the engine contract"):
     val apg = hookOf(new ApgPlugin, defaults(new ApgPlugin, "enabled" -> "true"))
     assertEquals(apg.value.keySet.toSet, Set("momentum", "adaptive_momentum", "norm_threshold", "eta", "guidance_limiter",

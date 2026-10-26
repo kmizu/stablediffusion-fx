@@ -25,6 +25,7 @@ from . import hires as hires_mod
 from . import hooks as hooks_mod
 from . import adapters, extras, inpaint, lora_blocks, models, preview, prompt, prompt_schedule, schedulers, upscalers
 from . import weight_gradient
+from . import negpip
 from . import extensions as ext_mod
 from .base import LATENT_UPSCALERS, BaseEngine
 from .images import Image, load_mask, load_rgb, next_output_path, resize_image, save_png
@@ -196,7 +197,7 @@ class Engine(BaseEngine):
             f.append("taesd")
         f += ["apg", "mahiro", "rescale_cfg", "model_sampling", "kohya_hrfix", "multidiffusion", "latent_modifier",
               "soft_inpainting", "neveroom", "reference", "revision", "ip_adapter", "controllllite", "fooocus_inpaint",
-              "img2imgalt", "caption", "ldsr", "adetailer", "weight_gradient"]
+              "img2imgalt", "caption", "ldsr", "adetailer", "weight_gradient", "negpip"]
         f += list(ext_mod.sampling_ext.HOOKS)
         if hasattr(diffusers, "StableDiffusionSAGPipeline"):
             f.append("sag")
@@ -578,6 +579,11 @@ class Engine(BaseEngine):
 
     # -- prompts -------------------------------------------------------------
     def _encode(self, pos: str, neg: str, gp: GenerationParams, bs: int) -> dict:
+        if hooks_mod.hook_config(gp.hooks, "negpip", {}) is not None:
+            return negpip.encode(self, prompt.strip_extra_networks(pos), prompt.strip_extra_networks(neg), gp, bs)
+        return self._encode_plain(pos, neg, gp, bs)
+
+    def _encode_plain(self, pos: str, neg: str, gp: GenerationParams, bs: int) -> dict:
         pipe = self.pipe
         pos = prompt.strip_extra_networks(pos)
         neg = prompt.strip_extra_networks(neg)
@@ -628,7 +634,9 @@ class Engine(BaseEngine):
                 cache[key] = self._encode(key[0], key[1], gp, bs)
             variants.append((e, cache[key]))
         longest = max(v["prompt_embeds"].shape[1] for _, v in variants)
-        if any(v["prompt_embeds"].shape[1] != longest for _, v in variants):
+        if any(v.get("_negpip") for _, v in variants):
+            variants = negpip.align_variants(variants)
+        elif any(v["prompt_embeds"].shape[1] != longest for _, v in variants):
             with torch.no_grad():
                 empty = (prompt.encode_sdxl(self.pipe, "", gp.clip_skip)[0] if self.sdxl
                          else prompt.encode_sd15(self.pipe, "", gp.clip_skip, self.kind == "sd2"))
@@ -645,13 +653,15 @@ class Engine(BaseEngine):
 
     def _adjust_embeds(self, gp: GenerationParams, embeds: dict, ctx: JobContext) -> dict:
         sch = getattr(embeds, "schedule", None)
+        def apply(d):
+            return negpip.adjust(d, lambda plain: ext_mod.adjust_embeds(self, gp, plain, ctx))
         if not sch:
-            return ext_mod.adjust_embeds(self, gp, embeds, ctx)
+            return apply(embeds)
         done: dict = {}
         variants = []
         for e, v in sch:
             if id(v) not in done:
-                done[id(v)] = ext_mod.adjust_embeds(self, gp, v, ctx)
+                done[id(v)] = apply(v)
             variants.append((e, done[id(v)]))
         out = ScheduledEmbeds(variants[0][1])
         out.schedule = variants
@@ -881,6 +891,7 @@ class Engine(BaseEngine):
             pipe = self._get_pipe(task, cn_models or None, pag)
         pipe.scheduler = sched
         kw: dict = dict(embeds)
+        kw.pop("_negpip", None)
         kw.update(num_inference_steps=steps, guidance_scale=cfg_scale, generator=self._generators(seeds, gp),
                   output_type=output_type, callback_on_step_end=self._callback(ctx, req, pass_, image_idx, images_total,
                                                                                expected_steps or steps))
@@ -968,6 +979,8 @@ class Engine(BaseEngine):
                 hk2.install()
             ext_mod.install(self, pipe, task, gp, req, kw, ctx, cleanups, plan=xplan, w=w, h=h, sched=sched,
                             cfg_scale=cfg_scale, image=image, mask=mask, steps=steps, seed=hook_seed)
+            if embeds.get("_negpip"):
+                cleanups.append(negpip.install(pipe))
             ctx.check_interrupt()
             filtered = _filter_kwargs(pipe.__call__, kw)
             for k in ("eta", "pag_scale", "pag_adaptive_scale", "controlnet_conditioning_scale", "guidance_rescale",
@@ -1012,6 +1025,10 @@ class Engine(BaseEngine):
         if (gradient_enabled and hooks_mod.hook_config(gp.hooks, "photomaker", {}) is not None
                 and any(weight_gradient.has_gradient(text) for text in texts)):
             raise EngineError(UNSUPPORTED, "Weight Gradient syntax is not available with PhotoMaker's text-only encoder")
+        if (hooks_mod.hook_config(gp.hooks, "negpip", {}) is not None
+                and hooks_mod.hook_config(gp.hooks, "photomaker", {}) is not None
+                and any(negpip.extract(text)[1] for text in texts)):
+            raise EngineError(UNSUPPORTED, "NegPiP negative weights are not available with PhotoMaker's text-only encoder")
         self._load_embeddings(req, texts, ctx)
         pag = self._pag_config(gp, ctx)
 
@@ -1218,8 +1235,12 @@ class Engine(BaseEngine):
         self.pipe.scheduler = sched
         lat = ext_mod.encode_image(self, self.pipe, image)
         steps = int(c["inversion_steps"]) or gp.steps
-        inv = extras.invert_latents(self, self.pipe, lat, enc, steps, float(c["decode_cfg_scale"]), w, h,
-                                    ctx.check_interrupt)
+        remove_negpip = negpip.install(self.pipe) if enc.get("_negpip") else lambda: None
+        try:
+            inv = extras.invert_latents(self, self.pipe, lat, enc, steps, float(c["decode_cfg_scale"]), w, h,
+                                        ctx.check_interrupt)
+        finally:
+            remove_negpip()
         noise = inv.repeat(len(seeds), 1, 1, 1)
         r = float(c["randomness"])
         if r > 0:

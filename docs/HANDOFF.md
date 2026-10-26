@@ -20,8 +20,8 @@ server, 40 rewrites of the reForge built-ins. Repo: private GitHub `kmizu/stable
 
 | | Count |
 |---|---|
-| Index entries done | 85 |
-| Index entries todo | 217 (152 distinct targets) |
+| Index entries done | 86 |
+| Index entries todo | 216 (151 distinct targets) |
 | Not applicable (web-UI CSS/UX only, accounts, obsolete, external apps, server ops) | 51 |
 
 `scripts/extensions_matrix.py` is the single ledger. Its `S` dict maps each index entry to `done:<plugin id>`,
@@ -66,12 +66,18 @@ Done in this session, all GPU-verified unless marked:
   same-seed generation (matching settings, variation disabled). Decode CFG0/.5 now interpolates correctly, and latent
   inversion explicitly disables pixel-range clipping. Replay infotext now includes original prompts and effective
   decode steps. SD1.5/SDXL real-engine grids, actual app/MCP path and UI were checked. See VERIFICATION.md for limits.
+- **NegPiP (Codex):** `python/sdfx/negpip.py`, `NegPipPlugin.scala`, hook/id `negpip`. Separately encodes negative
+  terms at absolute weight, preserves attention keys, flips projected values, and masks added padding. Supports
+  positive/negative branches, editing, Weight Gradient crossings, batching, PAG, hires, img2img and Alternative.
+  SD1.5/SDXL GPU checks include exact no-negative/no-hook restoration; actual app-service path and UI inspected.
+  Excessive negative weights can destroy subjects/style. PhotoMaker with negative terms is unsupported. AGPL-3.0
+  upstream attribution is collected; no new dependency. See VERIFICATION.md for untested combinations.
 
 UI improvements made this session: `Control.Section` (collapsible groups inside a plugin form), `Plugin.enabledBy`
 (greys a control out while its checkbox is off), and the form layout in `W.Form`. Labels longer than 18 characters
 go above their control, and the label column stays at least 88 px wide so cards line up.
 
-**Next action:** continue the remaining prompt-embedding hooks below (negpip / prompt_fusion / neutral_prompt /
+**Next action:** continue the remaining prompt-embedding hooks below (prompt_fusion / neutral_prompt /
 composable_lora). The Alternative amplitude defect has been repaired; its remaining reconstruction limits are
 documented under Known issues rather than presented as exact inversion.
 
@@ -84,7 +90,7 @@ stable_sr, cn_animation, unprompted, llul, dataset_tag_editor, deoldify, dreamar
 lcm, stylepile, clip_interrogator, prompt_generator, style_selector, aesthetic_gradients, latent_couple,
 outpaint_canvas, fabric, manga_maker, model_downloader, multi_subject_render, batch_face_swap, video_loopback,
 core:presets, model_organizer, core:system-info, model_keyword, shap_e, prompt_travel, prompt_fusion, lora_control,
-negpip, gif2gif, replacer, cd_tuner, riffusion, core:api-payload, smart_process, haku_img, infinity_grid,
+gif2gif, replacer, cd_tuner, riffusion, core:api-payload, smart_process, haku_img, infinity_grid,
 neutral_prompt, core:panorama-viewer, loopback_scaler, daam, tokenizer, text2prompt, prompt_translate, prompt_gallery,
 composable_lora, refiner, incantations, old_photo_restoration, abysz_lab, aesthetic_score, steps_animation,
 nsfw_checker, image_editor, embedding_merge, rich_text, mosaic_outpaint, cross_attention_viz, hypernetwork_training,
@@ -102,7 +108,7 @@ core:prevent-interrupt
 
 Suggested next steps, by value and fit with what exists:
 
-1. **Prompt-embedding hooks**: negpip, prompt_fusion, neutral_prompt and composable_lora. They build
+1. **Prompt-embedding hooks**: prompt_fusion, neutral_prompt and composable_lora. They build
    on `prompt_schedule.py` and `_schedule_swapper`.
 2. **Regional prompting**: regional_prompter and latent_couple, via attention-level region masks.
    tiled_diffusion can largely reuse the existing `multidiffusion` hook plus noise inversion and region prompts.
@@ -161,10 +167,10 @@ Suggested next steps, by value and fit with what exists:
 
 | What | Command / file |
 |---|---|
-| Scala tests | `sbt.bat -batch test` (latest: 481 passed, 2026-10-26) |
-| Python tests | `python/.venv-smoke/Scripts/python.exe -m pytest` (latest: 314 passed) and `.venv-test` (247 passed, 17 skipped) |
+| Scala tests | `sbt.bat -batch test` (latest: 482 passed, 2026-10-26) |
+| Python tests | `python/.venv-smoke/Scripts/python.exe -m pytest` (latest: 323 passed) and `.venv-test` (250 passed, 23 skipped) |
 | Dry-run smoke | `scripts/smoke.ps1` / `scripts/smoke.sh` |
-| Engine on GPU, one case per process | `scripts/dev/gpu_check.py <venv python> <out dir> <case>`; cases `sched_*`, `ext_*`, `ad_*`, `image_*`, `weight_*` |
+| Engine on GPU, one case per process | `scripts/dev/gpu_check.py <venv python> <out dir> <case>`; cases `sched_*`, `ext_*`, `ad_*`, `image_*`, `weight_*`, `negpip_*` |
 | Script plugins through the real app over MCP | `scripts/dev/write_settings.py`, then `scripts/dev/mcp_scripts.py "C:\Program Files\Java\jdk-21\bin\java.exe" <script ids>` |
 | LoRA Block Weight / merger checks | `scripts/dev/lbw_check.py`, `scripts/dev/merge_check.py` |
 | UI screenshot | `java -jar target/stablediffusion-fx.jar --dry-run --home <dir> --screenshot out.png --exit-after 8` (also writes `out-panel.png`, the full form). Expand a plugin by putting `{"expanded": {"txt2img.plugin.<id>": true}}` in `<home>/config/ui-state.json` |
@@ -187,6 +193,9 @@ broken (pseudo-inverse colour directions were too large). The ridge-regularised 
 - **Weight Gradient clocks**: each sampling pass restarts the ramp and uses its actual logical inference steps
   (second-order callback stages do not advance twice). Existing A1111 prompt-editing hires offsets are unchanged.
   PhotoMaker uses separate text-only encoding; combining it with gradient tags raises an unsupported error.
+- **NegPiP strength/compatibility**: SD1.5/SDXL tested; SD2's CLIP route is implemented but not GPU-checked here.
+  Strong negative values can remove the subject or break the image. The wrapper preserves native attention
+  processors and parameter paths; real ControlNet/IP-Adapter weights together with offload remain unverified.
 
 - **LoRA residue in fp16**: once a LoRA has been loaded into the pipeline, the UNet output differs by about 0.002 in
   fp16 even after the LoRA is disabled or unloaded. Weights, hooks, flags and the memory layout were all verified

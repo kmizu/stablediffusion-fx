@@ -83,6 +83,11 @@ Both directions can retain small seams. Implementation/real-model evidence is in
 their weight over a sampling pass. Optional step range and return weight, seven easing curves, A1111 prompt editing,
 hires and img2img are supported. The form includes syntax help. PhotoMaker cannot be combined with these tags.
 
+`negpip` — AlwaysOn **NegPiP**. Negative weights such as `(black hair:-1)` suppress a concept in the positive
+prompt and boost it in the negative prompt. Keys stay positive while value projections reverse their contribution.
+Supports prompt editing, Weight Gradient, hires and img2img; negative weights with PhotoMaker are unsupported.
+Effects depend on the checkpoint, and excessive weights can damage the image. SD1.5/SDXL were GPU-checked.
+
 Every plugin has unit tests (Scala `plugins`, `engine`, `mcp`, `ui` suites; Python `tests/`) and runs end to end in
 dry-run mode. Real-model GPU runs:
 

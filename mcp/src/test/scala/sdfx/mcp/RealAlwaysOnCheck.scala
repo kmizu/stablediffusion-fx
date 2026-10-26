@@ -28,6 +28,7 @@ object RealAlwaysOnCheck:
     val hello = services.start()
     println(s"engine: ${hello.device}, model loaded: ${services.supervisor.loadedModel.map(_.name)}")
     val prompt = if only.contains("weight_gradient") then "portrait of a woman wearing {red scarf::0.2-1.4:e}, in a park"
+      else if only.contains("negpip") then "portrait of a woman, (black hair:-2), in a park"
       else "a cat sitting on a windowsill"
     val base = GenerationParams(prompt = prompt, negativePrompt = "lowres", seed = 21, steps = 12,
       width = 512, height = 512, samplerName = "DPM++ 2M")
@@ -64,6 +65,9 @@ object RealAlwaysOnCheck:
           if pl.id == "weight_gradient" then
             require(o.params.hooks.contains("weight_gradient"), "weight gradient hook missing")
             require(o.infotext.contains("Weight Gradient: True"), "weight gradient infotext missing")
+          if pl.id == "negpip" then
+            require(o.params.hooks.contains("negpip"), "NegPiP hook missing")
+            require(o.infotext.contains("NegPiP Active: True"), "NegPiP infotext missing")
           val img = ImageIO.read(o.path.toFile)
           val keys = o.params.extra.keys.filterNot(_ == "Version").take(3).mkString(";")
           okCount += 1

@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 85, todo 217, na 51.
+Totals: done 86, todo 216, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-fx | Why not applicable |
 |---|---|---|---|---|---|
@@ -238,7 +238,7 @@ Totals: done 85, todo 217, na 51.
 | 229 | [Ranbooru](https://github.com/Inzaniak/sd-webui-ranbooru.git) | 77 | todo | `booru_prompt` |  |
 | 230 | [CivBrowser](https://github.com/SignalFlagZ/sd-webui-civbrowser.git) | 117 | todo | `model_downloader` |  |
 | 231 | [NSFW Blurrer-NSFWJS](https://github.com/aria1th/sd-webui-nsfw-filter.git) | 21 | todo | `nsfw_checker` |  |
-| 232 | [NegPiP](https://github.com/hako-mikan/sd-webui-negpip.git) | 263 | todo | `negpip` |  |
+| 232 | [NegPiP](https://github.com/hako-mikan/sd-webui-negpip.git) | 263 | done | `negpip` |  |
 | 233 | [CD(Color/Detail) Tuner](https://github.com/hako-mikan/sd-webui-cd-tuner.git) | 226 | todo | `cd_tuner` |  |
 | 234 | [DevDark theme](https://github.com/devdarktheme/stable-diffusion-webui-devdark.git) | 22 | na | `webui-css` | styles / JavaScript tweaks of the Gradio web page; the JavaFX UI has its own theme and layout |
 | 235 | [auxiliary API](https://github.com/aria1th/webui-model-uploader.git) | 4 | na | `webui-api` | adds HTTP routes to the A1111 server for other tools; this app's integration surface is MCP |

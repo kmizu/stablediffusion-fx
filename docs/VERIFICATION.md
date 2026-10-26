@@ -322,3 +322,45 @@ The Scala replay test failed with missing `Decode prompt` before its fix, then B
 Full Python: **314 passed** in the GPU venv, **247 passed / 17 skipped** without torch. `ui/assembly` succeeded.
 Independent review found no important production defect; its stale docstring finding was corrected. No new
 dependency, source licence or extension target was added; the ledger remains **85 done / 217 todo / 51 na**.
+
+## NegPiP (Codex, 2026-10-26)
+
+`python/sdfx/negpip.py` and `NegPipPlugin.scala` implement the CLIP path of hako-mikan/sd-webui-negpip (AGPL-3.0;
+inspected source blob `33c9b138272bfb855612bdcec5488a72f03d384b`). Negative-weight segments are removed from the
+base prompt and independently encoded with their absolute weight. Content/EOS context is appended; attention keys
+remain positive, while the value projection output (including bias) is negated. SDXL pooled vectors come from the
+cleaned base prompt. Added padding is excluded from softmax. A private sign channel travels with CFG/PAG and
+scheduled tensors and is removed before native attention. Native processors/parameter paths stay intact; forward
+wrappers and temporary hooks are restored in finally, including inversion in img2img Alternative.
+
+Reproduce each real-model run separately:
+
+```text
+python/.venv-smoke/Scripts/python.exe scripts/dev/gpu_check.py python/.venv-smoke/Scripts/python.exe outputs/verify-negpip-sd15 negpip_sd15
+python/.venv-smoke/Scripts/python.exe scripts/dev/gpu_check.py python/.venv-smoke/Scripts/python.exe outputs/verify-negpip-sdxl negpip_sdxl
+```
+
+Both completed 15 variants (16 images including batch size 2): ordinary baseline, enabled without negative weights,
+ordinary signed weighting, NegPiP -1/-2, negative branch, editing onset, Weight Gradient crossing zero, batch, PAG,
+hires, CFG1, img2img, Alternative and restored baseline. All had no warnings. JSON reports and inspected grids
+are in those output folders. Enabled without negative weights and restored baseline both had **zero pixel MAE**
+against the ordinary baseline on both models. NegPiP differed from ordinary signed weighting and from its other
+strength. These are behavioral and isolation checks, not proof of a reliable concept classifier or exact upstream
+pixel parity. The SD1.5 -1 case visibly lightened black hair; -2 broke the subject. SDXL -1 changed style and -2
+removed the subject. This model-dependent strength limit is described in the form; no clamping/recolouring was added.
+
+`RealAlwaysOnCheck ... negpip` completed **1/1 on each model** through AppServices -> plugin -> queue -> generator ->
+real Python engine. It asserted hook and replay infotext; saved PNGs were inspected. This is the app-service path,
+not an MCP transport check. Logs: `outputs/negpip-app-{sd15,sdxl}.log`. The isolated dry-run UI exited 0 and its
+expanded form was inspected (`outputs/verify-negpip-ui/ui-panel.png`).
+
+Tests cover extraction/escaping/BREAK, branch isolation/token cropping/pooled vectors, schedule padding/crossings,
+post-projection bias, unequal CFG signs, fused projections, existing masks, no-op identity, modifier metadata and
+cleanup after processor exceptions. Missing-module RED preceded implementation; final full Python **323 passed**,
+torch-free **250 passed / 23 skipped**. Full Scala **482 passed**, including opt-in/replay and registry checks;
+`ui/assembly` succeeded. Independent review found
+no important defect; an extra CPU experiment used actual IPAdapterAttnProcessor2_0 with tuple context and verified
+finite results plus exact baseline restoration. SD2, actual ControlNet/IP-Adapter weights combined with offload,
+and newer upstream LLM architectures were not GPU-verified. PhotoMaker's text-only path rejects negative terms.
+
+No new dependency. The ledger is **86 done / 216 todo (151 targets) / 51 na**; the overall goal remains unfinished.

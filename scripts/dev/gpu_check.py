@@ -123,7 +123,53 @@ def mask_png(size):
 
 t0 = time.time()
 r = None
-if CASE in ("alt_quality_sd15", "alt_quality_sdxl"):
+if CASE in ("negpip_sd15", "negpip_sdxl"):
+    from PIL import Image, ImageChops, ImageStat
+    load(SD15 if CASE.endswith("sd15") else SDXL)
+    size = dict(width=512, height=768) if CASE.endswith("sd15") else dict(width=832, height=832)
+    plain = "portrait of a woman, black hair, in a park, detailed"
+    signed = "portrait of a woman, (black hair:-1), in a park, detailed"
+    common = dict(prompt=plain, steps=16, seed=11, **size)
+    variants = [
+        ("baseline", {}), ("noop", dict(hooks={"negpip": {}})),
+        ("ordinary_signed", dict(prompt=signed)),
+        ("positive_minus1", dict(prompt=signed, hooks={"negpip": {}})),
+        ("positive_minus2", dict(prompt=signed.replace(":-1", ":-2"), hooks={"negpip": {}})),
+        ("negative_branch", dict(negative_prompt="lowres, (red scarf:-2)", hooks={"negpip": {}})),
+        ("schedule", dict(prompt="portrait of a woman, [(black hair:-2):0.5], detailed", hooks={"negpip": {}})),
+        ("cross_zero", dict(prompt="portrait of a woman, {black hair::1--2}, detailed", hooks={"negpip": {}, "weight_gradient": {}})),
+        ("batch", dict(prompt=signed, batch_size=2, hooks={"negpip": {}})),
+        ("pag", dict(prompt=signed, hooks={"negpip": {}, "pag": {"scale": 2}})),
+        ("hires", dict(prompt=signed, hires=dict(gp()["hires"], enabled=True, scale=1.25, second_pass_steps=8), hooks={"negpip": {}})),
+        ("cfg1", dict(prompt=signed, cfg_scale=1, hooks={"negpip": {}})),
+        ("img2img", dict(prompt=signed, img2img=i2i(os.path.join(OUT, CASE + "_baseline.png"), denoise=0.5), hooks={"negpip": {}})),
+        ("alternative", dict(prompt=signed, img2img=i2i(os.path.join(OUT, CASE + "_baseline.png"), denoise=0.5),
+                             hooks={"negpip": {}, "img2imgalt": {"inversion_steps": 8}})),
+        ("restored", {})]
+    paths, report, errors = {}, {}, []
+    for tag, changes in variants:
+        result = call("img2img" if changes.get("img2img") else "txt2img", req(gp(**dict(common, **changes))))
+        path = keep(result, CASE + "_" + tag)
+        if path:
+            paths[tag] = path
+            report[tag] = {"path": path, "warnings": result["result"]["warnings"], "images": len(result["result"]["images"])}
+        else:
+            errors.append({tag: result})
+        print(tag, report.get(tag) or result, flush=True)
+    def mae(a, b):
+        with Image.open(paths[a]) as im1, Image.open(paths[b]) as im2:
+            return sum(ImageStat.Stat(ImageChops.difference(im1.convert("RGB"), im2.convert("RGB"))).mean) / 3
+    for a, b, equal in [("baseline", "noop", True), ("baseline", "restored", True),
+                         ("ordinary_signed", "positive_minus1", False), ("positive_minus1", "positive_minus2", False)]:
+        if a in paths and b in paths:
+            diff = mae(a, b)
+            report[a + "_vs_" + b] = diff
+            if (diff == 0) != equal:
+                errors.append({a + "_vs_" + b: diff})
+    with open(os.path.join(OUT, CASE + ".json"), "w", encoding="utf-8", newline="\n") as fh:
+        json.dump({"cases": report, "errors": errors}, fh, indent=2)
+    r = {"type": "error" if errors else "result", "result": {"result": report}, "message": str(errors)}
+elif CASE in ("alt_quality_sd15", "alt_quality_sdxl"):
     from PIL import Image, ImageChops, ImageStat
     import numpy as np
     import cv2
