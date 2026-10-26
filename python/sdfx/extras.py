@@ -403,11 +403,16 @@ def invert_latents(engine, pipe, latents, embeds: dict, steps: int, cfg: float, 
         added = {"text_embeds": torch.cat([npp, pp]) if guided else pp,
                  "time_ids": tid.repeat(2 if guided else 1, 1)}
     x = latents
+    ip_embeds = embeds.get("_ip_image_embeds")
+    if ip_embeds is not None:
+        from .neutral_ip import align
+        added = dict(added or {}, image_embeds=align(ip_embeds, 1, [False, True] if guided else [True], x.device, x.dtype))
     runtime = None
     if "_neutral" in embeds:
         from .neutral_runtime import RuntimeHook
         plan = embeds["_neutral"]
-        runtime = RuntimeHook(pipe.unet, inv, plan, cfg, plan.phi, guided=guided, check_interrupt=check_interrupt).install()
+        runtime = RuntimeHook(pipe.unet, inv, plan, cfg, plan.phi, guided=guided, image_embeds=ip_embeds,
+                              check_interrupt=check_interrupt).install()
     try:
         with torch.no_grad():
             for index, t in enumerate(inv.timesteps):

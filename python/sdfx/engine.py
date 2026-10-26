@@ -250,6 +250,7 @@ class Engine(BaseEngine):
     # -- model management --------------------------------------------------
     def _free(self):
         self.pipe = None
+        self.ip_state = adapters.IPAdapterState()
         self.orig_vae = None
         self._drop_hooks()
         self.derived.clear()
@@ -977,11 +978,6 @@ class Engine(BaseEngine):
         cleanups = []
         unet = pipe.unet
         self._activate(pipe)
-        if pag:
-            # diffusers PAG pipelines swap attention processors and restore them only after a successful call;
-            # an interrupt/OOM mid-call would leave the shared UNet with PAG processors.
-            saved_procs = dict(unet.attn_processors)
-            cleanups.append(lambda: unet.set_attn_processor(saved_procs))
         fu = hooks_mod.hook_config(gp.hooks, "freeu", hooks_mod.FREEU_DEFAULTS[self.sdxl])
         if fu:
             pipe.enable_freeu(s1=float(fu["s1"]), s2=float(fu["s2"]), b1=float(fu["b1"]), b2=float(fu["b2"]))
@@ -1008,7 +1004,17 @@ class Engine(BaseEngine):
                 hk2.install()
             ext_mod.install(self, pipe, task, gp, req, kw, ctx, cleanups, plan=xplan, w=w, h=h, sched=sched,
                             cfg_scale=cfg_scale, image=image, mask=mask, steps=steps, seed=hook_seed)
+            if pag:
+                # Capture after IP load/unload: restoring pre-install processors would discard IP weights while
+                # IPAdapterState still considers them loaded. Also restore native PAG changes on failure.
+                saved_procs = dict(unet.attn_processors)
+                cleanups.append(lambda: unet.set_attn_processor(saved_procs))
             if neutral_plan:
+                guided = cfg_scale > 1 and getattr(unet.config, "time_cond_proj_dim", None) is None
+                ip_embeds = None
+                if "ip_adapter_image" in kw:
+                    from .neutral_ip import prepare
+                    ip_embeds, kw["ip_adapter_image_embeds"] = prepare(pipe, kw.pop("ip_adapter_image"), len(seeds), guided)
                 neutral_cn = None
                 if cn_models:
                     from .neutral_controlnet import ControlNetFrame
@@ -1016,9 +1022,10 @@ class Engine(BaseEngine):
                     cleanups.append(neutral_cn.remove)
                 nh = neutral_runtime.RuntimeHook(unet, sched, neutral_plan, cfg_scale,
                         float(hooks_mod.hook_config(gp.hooks, "neutral_prompt", {"cfg_rescale": 0})["cfg_rescale"]),
-                        guided=cfg_scale > 1 and getattr(unet.config, "time_cond_proj_dim", None) is None,
+                        guided=guided,
                         pag=bool(pag),
                         controlnet=neutral_cn,
+                        image_embeds=ip_embeds,
                         check_interrupt=ctx.check_interrupt).install()
                 cleanups.append(nh.remove)
                 ext_mod._chain_callback(kw, nh.callback)
@@ -1290,6 +1297,14 @@ class Engine(BaseEngine):
         if inverse_plan:
             neutral_runtime.validate(gp.hooks, controlnet=bool(cn and cn[0]), pag=bool(pag))
         self._activate(self.pipe)
+        ip_image = None
+        if (hooks_mod.hook_config(gp.hooks, "ip_adapter", {}) is not None or
+                getattr(getattr(self, "ip_state", None), "loaded", None) is not None):
+            ip_image = ext_mod.configure_ip_adapter(self, self.pipe, gp, req)
+        if ip_image is not None:
+            from .neutral_ip import prepare
+            ip_embeds, _ = prepare(self.pipe, ip_image, 1, float(c["decode_cfg_scale"]) != 1)
+            enc = dict(enc, _ip_image_embeds=ip_embeds)
         sched, _ = self._scheduler(gp.sampler_name, gp.scheduler, ctx)
         self.pipe.scheduler = sched
         lat = ext_mod.encode_image(self, self.pipe, image)

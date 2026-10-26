@@ -164,3 +164,49 @@ PAG+ControlNet must either handle both layouts correctly or remain explicitly un
   Dynamic Thresholding/Detail Daemon. Target still todo; ledger remains 86/216/51.
 - Scale-zero live regression completed four cases on each model, including CFG1; no-active-PAG and restored
   composed results match the ordinary composed baseline exactly. Reports: `outputs/verify-neutral-pag-zero-*`.
+
+## Image conditioning design (starting c874033, clean)
+
+IP-Adapter: use native prepare_ip_adapter_image_embeds with CFG at batch 1 to obtain both image branches. Negative
+hidden-state features may be encoded from a blank image, not zeros; never fabricate them or duplicate positive
+features when pipeline CFG is off. Reuse those prepared features in the native pipeline to avoid a second encoder
+pass; separately expand canonical negative/positive features to Runtime's actual CFG/PAG groups. Multiple adapters
+and image-token dimensions remain lists/tensors with native shape. Recompute only text conditioning per leaf.
+
+Lifecycle fixes required before unguarding: derived pipelines are constructed before IP load, so synchronize the
+base image encoder/feature extractor into all derived pipelines. Rebuild offload placement when components change.
+PAG's failure-cleanup processor snapshot must occur after IP load/unload, otherwise cleanup discards loaded IP
+processors while IPAdapterState still says they are loaded. Test cached repeated PAG/IP generations and unload.
+
+Then inspect Reference/ControlLLLite root pre/post hooks: Runtime calls saved UNet forward for each leaf, so root
+hooks currently execute only around the outer call. Image bank/write passes and per-step activation must run for
+the actual leaf conditioning/layout, without recursively re-entering composition. Keep pending guards until their
+own tests and real-model checks pass. Overall goal and ledger remain 86/216/51; no target promotion in advance.
+
+## IP-Adapter result (continuation)
+
+- `neutral_ip.py` obtains native negative/positive features once at batch 1 with no gradients, including Plus
+  blank-image hidden states; supplies batch-1 features back to the native pipeline and canonical features to
+  Runtime's CFG/PAG layout. Negative features are never fabricated or replaced by the positive image.
+- Sampling and Alternative share configure_ip_adapter. Inversion now also receives image conditions for plain
+  or composed prompts over Decode CFG0/.5/1/2. Ordinary/no-op Alternative outputs match. This fixes an existing
+  missing-image-condition route for already-loaded adapters during repeated Alternative runs.
+- Derived image encoder/extractor synchronization, offload re-placement and post-IP PAG snapshots are connected.
+  Repeated PAG retains IP weights; unloading clears the shared UNet correctly. Missing paths preserve loaded
+  adapters; load failures invoke native cleanup, and finally synchronizes components/placement.
+- Cache key now includes image_encoder, and Engine._free clears IP state. Both regressions failed before fixes.
+  Review then found SD1.5 native unload retaining its feature extractor: new encoder registration now rebuilds
+  native-style CLIP crop/resize at encoder.config.image_size when no safety checker is active (the app's mode).
+  A real tiny CLIP encoder 16->32 regression failed before fix, then forwards correctly after it.
+- Independent review used real UNet/native IP projection/attention and Plus resampler; CFG/batch/PAG/phi reference
+  comparisons matched. Its encoder-cache and extractor-size findings are fixed and regression-tested.
+- SD1.5/SDXL: 21 cases each, basic/Plus, phi, CFG1/batch, repeated PAG, editing/Heun, hires/img2img, ControlNet,
+  Alternative and restore/unload. All no warnings; five baseline/repeat/no-op/restoration comparisons are pixel
+  identical on each model. Grids inspected. SDXL basic native IP itself shifts contrast/style on this checkpoint;
+  record as pairing quality, not a Neutral Prompt fix or aesthetic guarantee.
+- Six focused cases each check same-checkpoint reload while IP is loaded, repeated PAG, NegPiP and unload.
+  SD1.5 uses model_offload; SDXL uses GPU. All three comparison pairs match exactly per model. Full reports:
+  `outputs/verify-neutral-ip-*`, `outputs/verify-neutral-ip-reload-*`; adapter hashes/URLs in adapter-sources.json.
+- Final full suites: Python 467 passed (four known torchsde warnings), torch-free 260 passed / 34 skipped;
+  Scala 483 passed and jar built. IP tests 27 passed. No new dependencies/source licences; external model weights
+  remain ignored verification assets. Ledger unchanged 86/216/51; finish Reference/LLLite and remaining modifiers.

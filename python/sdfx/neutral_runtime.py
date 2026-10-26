@@ -21,7 +21,7 @@ class Plan:
 def validate(hooks, *, controlnet=False, pag=False):
     """Temporary explicit compatibility boundary while branch-dependent integrations are unfinished."""
     from .hooks import hook_config
-    blocked = ("photomaker", "ip_adapter", "reference", "controllllite", "cads", "sag", "cfg_schedule",
+    blocked = ("photomaker", "reference", "controllllite", "cads", "sag", "cfg_schedule",
                "apg", "mahiro", "latent_modifier", "dynamic_thresholding", "detail_daemon")
     conflicts = [name for name in blocked if hook_config(hooks, name, {}) is not None]
     if conflicts:
@@ -115,13 +115,14 @@ class RuntimeHook:
     Only the enclosing UNet call invokes root hooks; leaf evaluations use its saved forward method. Engine guards
     combinations whose root hooks/residuals require branch-specific handling. Attention/module hooks still run.
     """
-    def __init__(self, unet, scheduler, plan: Plan, cfg: float, phi: float, *, guided=None, pag=False, controlnet=None,
+    def __init__(self, unet, scheduler, plan: Plan, cfg: float, phi: float, *, guided=None, pag=False, controlnet=None, image_embeds=None,
                  check_interrupt=lambda: None):
         self.unet, self.scheduler, self.plan = unet, scheduler, plan
         self.cfg, self.phi = cfg, phi
         self.guided = cfg > 1 if guided is None else guided
         self.pag = pag
         self.controlnet = controlnet
+        self.image_embeds = image_embeds
         self.step = 1
         self.check_interrupt = check_interrupt
         self._missing = object()
@@ -163,6 +164,10 @@ class RuntimeHook:
         for key in ("timestep_cond", "class_labels", "added_cond_kwargs", "attention_mask", "encoder_attention_mask"):
             if key in common:
                 common[key] = expand(common[key])
+        if self.image_embeds is not None:
+            from .neutral_ip import align
+            common["added_cond_kwargs"] = dict(common.get("added_cond_kwargs") or {},
+                image_embeds=align(self.image_embeds, batch, layout, inputs.device, inputs.dtype))
         results, perturbed, template = [], [], None
         for branch in branches:
             self.check_interrupt()

@@ -149,6 +149,31 @@ def _chain_callback(kw: dict, fn: Callable):
     kw["callback_on_step_end"] = cb
 
 
+def configure_ip_adapter(engine, pipe, gp, req):
+    """Synchronize IP components for both sampling and Alternative inversion; return the reference image."""
+    ipa = cfg(gp, "ip_adapter", adapters.IP_ADAPTER_DEFAULTS)
+    ip_path = req.controlnet_paths.get(ipa.get("model"), ipa.get("model")) if ipa else None
+    encoder = (ipa or {}).get("image_encoder") or ""
+    ip_changed = engine.ip_state.loaded != ip_path or engine.ip_state.encoder != encoder
+    if ip_changed and engine._offload:
+        engine._drop_hooks()
+    try:
+        engine.ip_state.ensure(engine.pipe, ip_path, engine.sdxl, encoder)
+    finally:
+        if ip_changed or ipa:
+            synced = adapters.sync_ip_components(engine.pipe, [pipe, *engine.derived.values()])
+            if engine._offload and (ip_changed or synced):
+                engine._place(pipe)
+    if ipa:
+        if not ipa.get("image"):
+            raise EngineError(INVALID_PARAMS, "IP-Adapter needs an image")
+        from .images import load_rgb
+        c = adapters.normalize(ipa, adapters.IP_ADAPTER_DEFAULTS)
+        pipe.set_ip_adapter_scale(c["scale"])
+        return load_rgb(ipa["image"])
+    return None
+
+
 def install(engine, pipe, task: str, gp, req, kw: dict, ctx, cleanups: list, *, plan: RunPlan, w: int, h: int, sched,
             cfg_scale: float, image=None, mask=None, steps: int = 0, seed: int = 0) -> list:
     """Installs every requested hook, appending cleanup callables to `cleanups` as it goes (so a failure half way
@@ -213,16 +238,9 @@ def install(engine, pipe, task: str, gp, req, kw: dict, ctx, cleanups: list, *, 
         rh = adapters.ReferenceOnlyHook(unet, ref_lat, pipe.scheduler, c["style_fidelity"],
                                         c["attention_auto_machine_weight"]).install()
         cleanups.append(rh.remove)
-    ipa = cfg(gp, "ip_adapter", adapters.IP_ADAPTER_DEFAULTS)
-    ip_path = req.controlnet_paths.get(ipa.get("model"), ipa.get("model")) if ipa else None
-    engine.ip_state.ensure(engine.pipe, ip_path, engine.sdxl, (ipa or {}).get("image_encoder", ""))
-    if ipa:
-        if not ipa.get("image"):
-            raise EngineError(INVALID_PARAMS, "IP-Adapter needs an image")
-        from .images import load_rgb
-        c = adapters.normalize(ipa, adapters.IP_ADAPTER_DEFAULTS)
-        pipe.set_ip_adapter_scale(c["scale"])
-        kw["ip_adapter_image"] = load_rgb(ipa["image"])
+    ip_image = configure_ip_adapter(engine, pipe, gp, req)
+    if ip_image is not None:
+        kw["ip_adapter_image"] = ip_image
     ll = cfg(gp, "controllllite", adapters.LLLITE_DEFAULTS)
     if ll:
         if not engine.sdxl:

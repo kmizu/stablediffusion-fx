@@ -123,7 +123,86 @@ def mask_png(size):
 
 t0 = time.time()
 r = None
-if CASE in ("neutral_cn_sd15", "neutral_cn_sdxl"):
+if CASE in ("neutral_ip_sd15", "neutral_ip_sdxl", "neutral_ip_reload_sd15", "neutral_ip_reload_sdxl"):
+    from PIL import Image, ImageChops, ImageStat
+    from huggingface_hub import snapshot_download
+    xl = CASE.endswith("sdxl")
+    reload_check = CASE.startswith("neutral_ip_reload_")
+    if reload_check:
+        response = call("load_model", {"path": SDXL if xl else SD15, "dtype": "fp16", "vram_mode": "gpu" if xl else "model_offload"})
+        assert response["type"] == "result", response
+    else:
+        load(SDXL if xl else SD15)
+    size = dict(width=832, height=832) if xl else dict(width=512, height=768)
+    plain = "portrait of a woman, in a park, detailed"
+    common = dict(prompt=plain, steps=12, seed=11, **size)
+    reference = keep(call("txt2img", req(gp(**common))), CASE + "_input")
+    model = hf("h94/IP-Adapter", "sdxl_models/ip-adapter_sdxl.safetensors" if xl else "models/ip-adapter_sd15.safetensors")
+    plus = None if reload_check else hf("h94/IP-Adapter", "sdxl_models/ip-adapter-plus_sdxl_vit-h.safetensors" if xl else "models/ip-adapter-plus_sd15.safetensors")
+    encoder_h = None if reload_check else os.path.join(snapshot_download("h94/IP-Adapter", allow_patterns=["models/image_encoder/*"]), "models", "image_encoder")
+    image_hook = dict(model=model, image=reference, scale=0.6)
+    def composed(prompt=plain, phi=0, cfg=6, batch=1, hooks=None, **kw):
+        return dict(prompt=prompt, cfg_scale=cfg, batch_size=batch,
+                    hooks=dict({"neutral_prompt": {"cfg_rescale": phi}, "ip_adapter": image_hook}, **(hooks or {})), **kw)
+    text = plain + " AND_TOPK red scarf :0.5"
+    hint = call("preprocess", {"preprocessor": "canny", "image_path": reference, "output_dir": OUT, "args": {}})["result"]["path"]
+    cn_path = os.path.abspath("outputs/controlnet-models/sdxl-canny" if xl else "outputs/controlnet-models/sd15-canny/diffusion_pytorch_model.safetensors")
+    unit = dict(enabled=True, model="canny", image=hint, preprocessor="none", weight=0.5,
+                guidance_start=0., guidance_end=1., preprocessor_args={})
+    alt = dict(img2img=i2i(reference, denoise=0.5))
+    cases = [("baseline", dict(hooks={"ip_adapter": image_hook})), ("noop", composed()),
+        ("perp", composed(plain + " AND_PERP black hair :-0.5")),
+        ("salt", composed(plain + " AND_SALT red scarf :0.5")),
+        ("rescale", composed(text, phi=0.7)), ("cfg1", composed(text, cfg=1)),
+        ("batch", composed(text, cfg=1, batch=2)),
+        ("pag", composed(text, hooks={"pag": {"scale": 2}})),
+        ("pag_repeat", composed(text, hooks={"pag": {"scale": 2}})),
+        ("pag_cfg1", composed(text, cfg=1, hooks={"pag": {"scale": 2}})),
+        ("heun_edit", composed(plain + " AND_TOPK [red scarf:blue scarf:0.5] :0.5", sampler_name="Heun")),
+        ("hires", composed(text, hires=dict(gp()["hires"], enabled=True, scale=1.25, second_pass_steps=6))),
+        ("img2img", composed(text, img2img=i2i(reference, denoise=0.5))),
+        ("controlnet", composed(text, controlnet=[unit])),
+        ("alternative_baseline", dict(alt, hooks={"ip_adapter": image_hook, "img2imgalt": {"inversion_steps": 6, "decode_cfg_scale": 0.5}})),
+        ("alternative_noop", composed(hooks={"img2imgalt": {"inversion_steps": 6, "decode_cfg_scale": 0.5}}, **alt)),
+        ("alternative", composed(text, phi=0.3, hooks={"img2imgalt": {"inversion_steps": 6, "decode_cfg_scale": 0.5}}, **alt)),
+        ("plus", composed(text, hooks={"ip_adapter": dict(image_hook, model=plus, image_encoder=encoder_h)})),
+        ("plus_cfg1_pag", composed(text, cfg=1, hooks={"ip_adapter": dict(image_hook, model=plus, image_encoder=encoder_h), "pag": {"scale": 2}})),
+        ("restored", dict(hooks={"ip_adapter": image_hook})), ("unloaded", {})]
+    if reload_check:
+        cases = [("baseline", dict(hooks={"ip_adapter": image_hook})),
+            ("reload", dict(hooks={"ip_adapter": image_hook})),
+            ("pag", composed(text, hooks={"pag": {"scale": 2}})),
+            ("pag_repeat", composed(text, hooks={"pag": {"scale": 2}})),
+            ("negpip", composed(plain + " AND_TOPK (black hair:-1) :0.5", hooks={"negpip": {}})), ("unloaded", {})]
+    paths, report, errors = {"input": reference}, {}, []
+    for tag, changes in cases:
+        if reload_check and tag == "reload":
+            loaded = call("load_model", {"path": SDXL if xl else SD15, "dtype": "fp16", "vram_mode": "gpu" if xl else "model_offload"})
+            if loaded["type"] != "result":
+                errors.append({"reload_model": loaded})
+            print("checkpoint reloaded", loaded["type"], flush=True)
+        rq = req(gp(**dict(common, **changes))); rq["controlnet_paths"] = {"canny": cn_path}
+        result = call("img2img" if changes.get("img2img") else "txt2img", rq)
+        path = keep(result, CASE + "_" + tag)
+        if path:
+            paths[tag] = path
+            report[tag] = dict(path=path, warnings=result["result"]["warnings"], images=len(result["result"]["images"]))
+            if report[tag]["warnings"]:
+                errors.append({tag: report[tag]["warnings"]})
+        else:
+            errors.append({tag: result})
+        print(tag, report.get(tag) or str(result)[:500], flush=True)
+    comparisons = (("baseline","reload"),("input","unloaded"),("pag","pag_repeat")) if reload_check else (
+        ("baseline","noop"),("baseline","restored"),("input","unloaded"),("pag","pag_repeat"),("alternative_baseline","alternative_noop"))
+    for a,b in comparisons:
+        if a in paths and b in paths:
+            with Image.open(paths[a]) as im1, Image.open(paths[b]) as im2:
+                diff=sum(ImageStat.Stat(ImageChops.difference(im1.convert("RGB"),im2.convert("RGB"))).mean)/3
+            report[a+"_vs_"+b]=diff
+            if diff: errors.append({a+"_vs_"+b:diff})
+    with open(os.path.join(OUT,CASE+".json"),"w",encoding="utf-8") as fh: json.dump(dict(cases=report,errors=errors,model=model,plus=plus),fh,indent=2)
+    r={"type":"error" if errors else "result","result":{"result":report},"message":str(errors)}
+elif CASE in ("neutral_cn_sd15", "neutral_cn_sdxl"):
     from PIL import Image, ImageChops, ImageStat
     load(SD15 if CASE.endswith("sd15") else SDXL)
     size = dict(width=512, height=768) if CASE.endswith("sd15") else dict(width=832, height=832)

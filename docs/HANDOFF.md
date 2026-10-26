@@ -82,7 +82,9 @@ go above their control, and the label column stays at least 88 px wide so cards 
 AppServices SD1.5/SDXL generation now work. Alternative inversion is connected, including its zero-noise startup
 rule, decode schedule clock, full CFG slider and NegPiP contexts; ordinary no-op/restoration are exact.
 ControlNet/PAG are also connected: branch-specific residuals, internal CFG groups, native PAG/adaptive scale and
-joint ControlNet+PAG were checked on SD1.5/SDXL. **Still todo:** PhotoMaker, IP-Adapter/Reference/ControlLLLite, CADS/SAG and guidance/timestep
+joint ControlNet+PAG were checked on SD1.5/SDXL. IP-Adapter/basic/Plus, CFG/PAG layouts and Alternative image
+conditioning are now checked too, with derived encoder synchronization and model/encoder cache fixes.
+**Still todo:** PhotoMaker, Reference/ControlLLLite, CADS/SAG and guidance/timestep
 modifiers explicitly guarded in `neutral_runtime.validate`. No ledger promotion yet. See VERIFICATION.md for
 tested scope and finite synthetic checks. Continue prompt_fusion / composable_lora after this feature is finished.
 
@@ -173,7 +175,7 @@ Suggested next steps, by value and fit with what exists:
 | What | Command / file |
 |---|---|
 | Scala tests | `sbt.bat -batch test` (latest: 483 passed, 2026-10-26) |
-| Python tests | `python/.venv-smoke/Scripts/python.exe -m pytest` (latest: 440 passed, 4 torchsde endpoint warnings) and `.venv-test` (260 passed, 33 skipped) |
+| Python tests | `python/.venv-smoke/Scripts/python.exe -m pytest` (latest: 467 passed, 4 torchsde endpoint warnings) and `.venv-test` (260 passed, 34 skipped) |
 | Dry-run smoke | `scripts/smoke.ps1` / `scripts/smoke.sh` |
 | Engine on GPU, one case per process | `scripts/dev/gpu_check.py <venv python> <out dir> <case>`; cases `sched_*`, `ext_*`, `ad_*`, `image_*`, `weight_*`, `negpip_*` |
 | Script plugins through the real app over MCP | `scripts/dev/write_settings.py`, then `scripts/dev/mcp_scripts.py "C:\Program Files\Java\jdk-21\bin\java.exe" <script ids>` |
@@ -187,6 +189,11 @@ Look at the images, not only the numbers. Vectorscope and Diffusion CG were "wor
 broken (pseudo-inverse colour directions were too large). The ridge-regularised `rgb_to_latent_dir` fixed them.
 
 ## Known issues and decisions
+
+- **IP-Adapter pairing quality**: native basic SDXL IP-Adapter at scale .6 visibly shifts style/contrast on
+  waiIllustriousSDXL_v170, even without Neutral Prompt. No-op/restoration remain exact. The basic/Plus grids in
+  `outputs/verify-neutral-ip-*` record this limit; compatibility checks do not promise a fixed artistic result.
+  Model-offload reload was checked on SD1.5; SDXL reload was checked in GPU mode, not sequential offload.
 
 - **img2img Alternative reconstruction limits**: the strong unintended contrast was traced to empirical noise
   normalization and repaired. Same SDXL DPM++ CFG6 case: near-white 14.19% -> 4.51%, near-black 28.67% -> 14.16%.

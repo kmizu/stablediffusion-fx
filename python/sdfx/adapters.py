@@ -219,35 +219,69 @@ def apply_revision(embeds: dict, image_embeds, strength: float, ignore_prompt: b
 IP_ENCODERS = {False: ("h94/IP-Adapter", "models/image_encoder"), True: ("h94/IP-Adapter", "sdxl_models/image_encoder")}
 
 
+def sync_ip_components(base, derived):
+    """IP loading changes pipeline-owned encoders after derived pipes have already shared the UNet."""
+    changed = False
+    for pipe in derived:
+        if pipe is base:
+            continue
+        modules = {name: getattr(base, name, None) for name in ("image_encoder", "feature_extractor")
+                   if hasattr(pipe, name) and getattr(pipe, name) is not getattr(base, name, None)}
+        if modules:
+            pipe.register_modules(**modules)
+            changed = True
+    return changed
+
+
 class IPAdapterState:
     """Keeps one IP-Adapter loaded on the shared base pipeline; derived pipes share the UNet so they see it."""
 
     def __init__(self):
         self.loaded: Optional[str] = None
+        self.encoder = ""
 
     def ensure(self, pipe, path: Optional[str], sdxl: bool, encoder: str = ""):
-        if path == self.loaded:
+        encoder = encoder or ""
+        if path == self.loaded and encoder == self.encoder:
             return
+        if path is not None and not os.path.isfile(path):
+            raise EngineError(UNSUPPORTED, f"IP-Adapter file not found: {path}")
         if self.loaded is not None:
             try:
                 pipe.unload_ip_adapter()
             except Exception:
                 pass
             self.loaded = None
+            self.encoder = ""
         if path is None:
             return
-        if not os.path.isfile(path):
-            raise EngineError(UNSUPPORTED, f"IP-Adapter file not found: {path}")
         import torch
-        from transformers import CLIPVisionModelWithProjection  # type: ignore
-        if getattr(pipe, "image_encoder", None) is None:
-            repo, sub = (encoder, "") if encoder else IP_ENCODERS[sdxl]
-            enc = (CLIPVisionModelWithProjection.from_pretrained(repo, subfolder=sub or None, torch_dtype=pipe.unet.dtype)
-                   if not os.path.isdir(repo) else CLIPVisionModelWithProjection.from_pretrained(repo, torch_dtype=pipe.unet.dtype))
-            pipe.register_modules(image_encoder=enc.to(pipe.unet.device))
-        pipe.load_ip_adapter(os.path.dirname(path), subfolder="", weight_name=os.path.basename(path),
-                             image_encoder_folder=None)
+        from transformers import CLIPVisionModelWithProjection, CLIPImageProcessor  # type: ignore
+        try:
+            if getattr(pipe, "image_encoder", None) is None:
+                repo, sub = (encoder, "") if encoder else IP_ENCODERS[sdxl]
+                enc = (CLIPVisionModelWithProjection.from_pretrained(repo, subfolder=sub or None, torch_dtype=pipe.unet.dtype)
+                       if not os.path.isdir(repo) else CLIPVisionModelWithProjection.from_pretrained(repo, torch_dtype=pipe.unet.dtype))
+                modules = {"image_encoder": enc.to(pipe.unet.device)}
+                if getattr(pipe, "safety_checker", None) is None:
+                    # SD1.5 native unload retains its extractor, even with safety_checker=None. An override
+                    # encoder can require a different crop. The standalone app disables the safety checker.
+                    size = int(getattr(getattr(enc, "config", None), "image_size", 224))
+                    modules["feature_extractor"] = CLIPImageProcessor(size={"shortest_edge": size},
+                        crop_size={"height": size, "width": size})
+                pipe.register_modules(**modules)
+            pipe.load_ip_adapter(os.path.dirname(path), subfolder="", weight_name=os.path.basename(path),
+                                 image_encoder_folder=None)
+        except BaseException:
+            try:
+                pipe.unload_ip_adapter()
+            except Exception:
+                pass
+            self.loaded = None
+            self.encoder = ""
+            raise
         self.loaded = path
+        self.encoder = encoder
 
 
 # ------------------------------------------------------------------------------------------------------ controllllite

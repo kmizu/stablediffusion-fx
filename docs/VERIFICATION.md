@@ -517,3 +517,55 @@ help now lists ControlNet/PAG support. No new dependency/source licence; existin
 
 Still pending: PhotoMaker, IP-Adapter/Reference/ControlLLLite, CADS/SAG and guidance/timestep modifiers; explicit
 guards remain for these. `neutral_prompt` is still todo, total ledger **86 done / 216 todo / 51 na**.
+
+## Neutral Prompt with IP-Adapter (Codex, 2026-10-26; remaining image/modifier integrations still todo)
+
+`neutral_ip.py` obtains native positive/negative image features at batch 1 with gradients disabled, reuses them
+in the native pipeline, and supplies canonical image features to every internal CFG/PAG text branch. This covers
+Plus hidden-state negatives (blank-image encoding, not fabricated zeros). Multiple adapter tensor/token dimensions
+remain intact. Image encoding happens once per pass; text leaves reuse the resulting image condition.
+
+Derived pipelines now receive the shared base image encoder/feature extractor after adapter load/unload. Offload
+hooks are removed before components change, and placement rebuilt afterwards. PAG cleanup snapshots processors
+after IP setup, preserving loaded IP projections on success or error. Alternative also prepares/passes image
+conditions before inversion, for plain and composed prompts and the entire Decode CFG slider. It previously could
+miss required image conditions on repeated runs with an adapter already loaded.
+
+Lifecycle regressions first failed, then passed: missing paths preserve an existing adapter; failed loads request
+native cleanup; same-path image-encoder changes invalidate the cache; freeing/reloading a checkpoint clears the
+loaded-adapter record. Review additionally found SD1.5 native unload retaining an old crop. With the app's disabled
+safety checker, registering a new encoder now rebuilds the native-style CLIP extractor at its configured image
+size. A real tiny CLIP 16->32 forward failed before the fix and passes after it. This is not a claim about arbitrary
+non-CLIP encoder/normalization formats.
+
+```text
+python/.venv-smoke/Scripts/python.exe scripts/dev/gpu_check.py python/.venv-smoke/Scripts/python.exe outputs/verify-neutral-ip-sd15 neutral_ip_sd15
+python/.venv-smoke/Scripts/python.exe scripts/dev/gpu_check.py python/.venv-smoke/Scripts/python.exe outputs/verify-neutral-ip-sdxl neutral_ip_sdxl
+python/.venv-smoke/Scripts/python.exe scripts/dev/gpu_check.py python/.venv-smoke/Scripts/python.exe outputs/verify-neutral-ip-reload-sd15 neutral_ip_reload_sd15
+python/.venv-smoke/Scripts/python.exe scripts/dev/gpu_check.py python/.venv-smoke/Scripts/python.exe outputs/verify-neutral-ip-reload-sdxl neutral_ip_reload_sdxl
+```
+
+Main matrix: 21 cases each on SD1.5/SDXL, including basic/Plus, PERP/SALT/TOPK, rescale, CFG1/batch, repeated PAG,
+Heun editing, hires/img2img, ControlNet, Alternative and reload of basic after Plus. All completed with no warnings.
+Five comparison pairs are **zero pixel MAE** per model: native IP/no-op, native IP/restored, original no-IP/unloaded,
+PAG/repeated PAG, and ordinary Alternative/Neutral no-op Alternative. Grids/JSON reports were inspected. The SDXL
+basic-IP native baseline itself produces a strong style/contrast shift on waiIllustriousSDXL_v170 at scale .6;
+no-op equality isolates it from Neutral composition. It remains a checkpoint/adapter pairing-quality limitation.
+
+Focused lifecycle matrix: six cases each, including same-checkpoint reload with IP loaded, repeated PAG, NegPiP
+and unload. SD1.5 runs in **model_offload**, SDXL in **GPU** mode. Reload/baseline, repeated PAG and unloaded/no-IP
+all match exactly. SDXL/sequential offload was not tested here. Current-stage results are backend JSONL checks;
+the earlier app-service check still covers the unchanged plugin request/replay path, not every new combination.
+
+Models are external assets from `h94/IP-Adapter`: `models/ip-adapter_sd15.safetensors`,
+`models/ip-adapter-plus_sd15.safetensors`, `sdxl_models/ip-adapter_sdxl.safetensors`, and
+`sdxl_models/ip-adapter-plus_sdxl_vit-h.safetensors`. Basic uses the native H/G encoder defaults; Plus uses the
+H encoder under `models/image_encoder`. Bytes, URLs and SHA256s are retained in each main folder's
+`adapter-sources.json`. They are not bundled into the application.
+
+Independent review compared a real small UNet with native IP projection/processors across 16 CFG/batch/PAG/phi
+cases (maximum error 1.91e-6) and actual Plus resampling across four cases (maximum 9.54e-7). Its cache/extractor
+findings were fixed. All 27 IP tests pass. Final full Python **467 passed** (four known torchsde endpoint warnings),
+torch-free **260 passed / 34 skipped**; full Scala **483 passed**, jar built. No new dependencies/source licences.
+Remaining guarded combinations are PhotoMaker, Reference/ControlLLLite, CADS/SAG and guidance/timestep modifiers;
+target stays todo and the extension ledger remains **86/216/51**.

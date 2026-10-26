@@ -27,9 +27,9 @@ class NeutralPromptPlugin extends HookPlugin:
     Note("formatter_help", "Adds this text to the positive prompt when generating. " +
       "The saved image includes the full combined prompt; repeating the same settings does not append it twice."),
     Section("compatibility", "Compatibility", expanded = false),
-    Note("pending", "PhotoMaker, image adapters and guidance/timestep modifiers " +
+    Note("pending", "PhotoMaker, Reference, ControlLLLite and guidance/timestep modifiers " +
       "are still being integrated. Composed prompts report an error for these combinations. " +
-      "ControlNet and PAG can be combined. Prompt editing, Weight Gradient, NegPiP, hires, img2img and " +
+      "IP-Adapter (including Plus), ControlNet and PAG can be combined. Prompt editing, Weight Gradient, NegPiP, hires, img2img and " +
       "img2img Alternative are supported.")
   )
   override def enabledBy = Map("cfg_rescale" -> "enabled", "format_enabled" -> "enabled",

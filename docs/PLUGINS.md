@@ -92,7 +92,8 @@ Effects depend on the checkpoint, and excessive weights can damage the image. SD
 positive prompts with AND, AND_PERP, AND_SALT or AND_TOPK, signed `:weight` suffixes and nested `[groups]`.
 The form offers CFG rescale and an optional extra-prompt formatter; saved images contain the effective combined
 prompt. Hires, img2img/Alternative, editing, Weight Gradient and NegPiP are checked on SD1.5/SDXL. ControlNet and
-PAG, including their joint use, are checked with per-branch conditioning. PhotoMaker, image adapters and
+PAG, including their joint use, are checked with per-branch conditioning. IP-Adapter (basic/Plus) also supplies
+native positive/negative image features to every branch, including CFG off/PAG and Alternative. PhotoMaker, Reference/ControlLLLite and
 guidance/timestep modifiers currently report an explicit unsupported-combination
 error while their branch-specific integration is unfinished.
 
