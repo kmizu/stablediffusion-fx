@@ -87,8 +87,14 @@ conditioning are now checked too, with derived encoder synchronization and model
 Reference and SDXL ControlLLLite now prepare image conditioning per branch in both forward sampling and
 Alternative inversion, including their joint PAG path. The ordinary/no-op path remains unchanged; see the new
 Reference verification section for the actual model matrices, equality comparisons and visual limitations.
-**Still todo:** PhotoMaker, CADS/SAG and guidance/timestep
-modifiers explicitly guarded in `neutral_runtime.validate`. No ledger promotion yet. See VERIFICATION.md for
+CFG Schedule and CADS now also run per pass with composed prompts, including Alternative inversion; CADS keeps
+NegPiP signs/padding intact and shares negative random perturbations without replacing each leaf's conditioning.
+**Still todo:** PhotoMaker, SAG, APG/Mahiro/Latent Modifier/Dynamic Thresholding/Detail Daemon,
+explicitly guarded in `neutral_runtime.validate`. Before promotion, also audit the ordinary CADS/CFG Schedule
+root hooks with native PAG: their older layout logic assumes two halves, whereas composed prompts use explicit
+CFG/PAG groups. A CPU probe now confirms wrong CFG output (11 instead of 5 for a three-group example), plus
+unexpected negative noise and unequal PAG context copies. Fix these first; evidence is in
+`outputs/neutral-ordinary-pag-probe.json`. No ledger promotion yet. See VERIFICATION.md for
 tested scope and finite synthetic checks. Continue prompt_fusion / composable_lora after this feature is finished.
 
 ## Remaining targets, most-starred first

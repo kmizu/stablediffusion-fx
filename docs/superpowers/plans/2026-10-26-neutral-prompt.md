@@ -267,3 +267,44 @@ Then SD1.5/SDXL Reference matrices and SDXL-only ControlLLLite with real weights
   the ledger remains 86 done / 216 todo / 51 NA. Next: remaining PhotoMaker, CADS/SAG and guidance/timestep modifiers.
 - Final checks: Python 508 passed / four existing torchsde warnings; torch-free 260 passed / 35 skipped; Scala 483
   passed and jar rebuilt. JUnit reports: `outputs/verify-reference-integration{,-no-torch}.xml`.
+
+### CFG Schedule / CADS design (starting fe52290, clean)
+
+Implement `neutral_sampling.Controller` as per-pass conditioning/guidance state. Reuse sampling_ext's documented
+CFG curves, scheduler progress, CADS annealing/noise/rescale and normalization. CADS transforms each positive leaf
+once per UNet evaluation, before Runtime duplicates CFG/PAG groups or prepares ControlNet/Reference. Optional
+negative random draws are shared between leaves of the same feature shape, while retaining each leaf's own payload.
+Keep negative signs and padding
+metadata intact for NegPiP; do not perturb pooled embeddings (matching the existing CADS contract). Do not mutate
+encoded/scheduled tensors. Each pass/inverse gets a seeded generator; disabling/gamma=1 is an exact passthrough.
+
+CFG Schedule changes the scale used by composition and phi, while output reconstruction divides by the native
+pipeline's fixed CFG scale. Preserve the raw conditional/PAG difference. Respect the existing CFG-off ignore rule.
+Skip the corresponding legacy root hooks only for composition; ordinary/no-op paths must remain exact. Initialize
+the same controller against the inverse scheduler for Alternative. Tests precede the Runtime/Engine wiring.
+
+Gate: real native math/layout tests (CFG/PAG/phi, CFG off, zero CFG targets, inverse startup), CADS reproducibility,
+shared negatives, metadata preservation, scheduled contexts and no mutation; SD1.5/SDXL matrices and visual QA;
+independent review, full suites, docs/compatibility help, verified commit/push. Keep the overall target todo.
+
+### CFG Schedule / CADS implementation and evidence
+
+- Controller connected to forward and Alternative inverse Runtime; native root hooks retained for ordinary/no-op
+  paths. Runtime uses effective CFG inside phi/composition and reconstructs the native fixed-scale output, with
+  PAG's raw difference preserved. Both guards lifted. Native CFG-off behavior still ignores CFG Schedule.
+- Review exposed a shape-only whole-negative cache bug; changed to shared random draws applied to each leaf's
+  own payload/metadata. Follow-up RED/GREEN tests also fixed private-sign corruption in the ordinary CADS hook.
+  Shared `cads_context` preserves NegPiP signs/zero padding in both paths. Read-only review approved both fixes.
+- 42 focused tests pass. Full Python: 550 passed / four existing torchsde warnings. Torch-free: 260 passed / 36
+  skipped. Reports: `outputs/verify-neutral-sampling-{tests,no-torch}.xml`.
+- SD1.5/SDXL main matrices: 23 cases each. Metadata matrices: 5 each. Total 56, no result warnings; all 20 equality
+  pairs are pixel-identical. Contact sheets inspected; style/content/hires limits recorded in VERIFICATION.md.
+- A full Scala run exposed a preexisting pending-queue test race: it asserted the last three jobs were pending
+  before the worker had dequeued the first. Test-only JobStarted/release latches now make the precondition stable,
+  with unconditional release/listener cleanup. No product queue code changed; independent review approved it.
+- Compatibility help and handoff updated, no new dependencies/licences. Before promotion, audit the ordinary
+  CADS/CFG Schedule root hooks with native PAG layouts; they retain an older half-batch assumption. Remaining
+  guarded integrations: PhotoMaker, SAG, APG/Mahiro/Latent Modifier/Dynamic Thresholding/Detail Daemon.
+- Next-task CPU probe confirms ordinary three-group PAG errors: CFG Schedule output 11 versus expected 5,
+  unexpected CADS negative noise and unequal positive copies (`outputs/neutral-ordinary-pag-probe.json`). Fix these
+  before promotion. Final Scala regression: 483 passed and jar rebuilt; targeted queue suite 14 passed.

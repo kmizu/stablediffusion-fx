@@ -152,12 +152,13 @@ def test_feature_advertisement_matches_new_hook():
 def test_pending_branch_dependent_combinations_fail_explicitly():
     from sdfx.neutral_runtime import validate
     from sdfx.protocol import EngineError
-    for name in ("detail_daemon", "cads", "photomaker"):
+    for name in ("detail_daemon", "photomaker", "sag", "apg", "mahiro", "latent_modifier", "dynamic_thresholding"):
         with pytest.raises(EngineError, match=name):
             validate({name: {}})
         validate({name: {"enabled": False}})
     validate({}, controlnet=True)
     validate({}, pag=True)
+    validate({"cads": {}, "cfg_schedule": {}})
 
 
 def test_zero_snr_v_prediction_ddim_has_finite_native_coefficients():

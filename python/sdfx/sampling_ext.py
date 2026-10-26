@@ -116,11 +116,13 @@ def cads_gamma(progress: float, tau1: float, tau2: float) -> float:
     return (tau2 - t) / (tau2 - tau1)
 
 
-def cads_noise(y, gamma: float, noise_scale: float, psi: float, rescale: bool, gen):
+def cads_noise(y, gamma: float, noise_scale: float, psi: float, rescale: bool, gen, *, noise=None):
     import torch
     if gamma >= 1.0:
         return y
-    n = torch.randn(y.shape, generator=gen, device="cpu", dtype=torch.float32).to(y.device, y.dtype)
+    if noise is not None and noise.shape != y.shape:
+        raise ValueError("CADS supplied noise must match the conditioning shape")
+    n = (torch.randn(y.shape, generator=gen, device="cpu", dtype=torch.float32) if noise is None else noise).to(y.device, y.dtype)
     yh = math.sqrt(gamma) * y + noise_scale * math.sqrt(1 - gamma) * n
     if rescale:
         m0, s0 = y.mean(dim=(1, 2), keepdim=True), y.std(dim=(1, 2), keepdim=True)
@@ -128,6 +130,20 @@ def cads_noise(y, gamma: float, noise_scale: float, psi: float, rescale: bool, g
         yr = (yh - m1) / s1.clamp_min(1e-6) * s0 + m0
         yh = psi * yr + (1 - psi) * yh
     return yh
+
+
+def cads_context(value, gamma, config, generator, *, marked=False, noise=None):
+    """Perturb CLIP features while keeping private NegPiP signs and masked padding intact."""
+    if gamma >= 1:
+        return value
+    import torch
+    features = value[..., :-1] if marked else value
+    result = cads_noise(features, gamma, config["noise_scale"], config["mixing_factor"], config["rescale"], generator,
+                        noise=noise)
+    if marked:
+        signs = value[..., -1:]
+        result = torch.cat([torch.where(signs != 0, result, 0.), signs], dim=-1)
+    return result
 
 
 def cfg_at(c: dict, progress: float) -> float:
@@ -317,11 +333,13 @@ class CadsHook:
         if g >= 1.0:
             return None
         b = ehs.shape[0]
+        dim = getattr(getattr(self.unet, "config", None), "cross_attention_dim", None)
+        marked = isinstance(dim, int) and ehs.shape[-1] == dim + 1
         if self.cfg_active() and b % 2 == 0 and not c["apply_to_uncond"]:
             u, co = ehs.chunk(2)
-            new = torch.cat([u, cads_noise(co, g, c["noise_scale"], c["mixing_factor"], c["rescale"], self.gen)])
+            new = torch.cat([u, cads_context(co, g, c, self.gen, marked=marked)])
         else:
-            new = cads_noise(ehs, g, c["noise_scale"], c["mixing_factor"], c["rescale"], self.gen)
+            new = cads_context(ehs, g, c, self.gen, marked=marked)
         if len(args) > 2:
             args = tuple(args[:2]) + (new,) + tuple(args[3:])
         else:
@@ -512,7 +530,7 @@ class LatentCallbacks:
 # ---------------------------------------------------------------------------------------------------------------
 
 def install(engine, pipe, gp, kw: dict, ctx, cleanups: list, *, sched, cfg_scale: float, steps: int, seed: int,
-            chain: Callable) -> None:
+            chain: Callable, composed: bool = False) -> None:
     import torch
     hooks = gp.hooks or {}
     unet = pipe.unet
@@ -535,11 +553,11 @@ def install(engine, pipe, gp, kw: dict, ctx, cleanups: list, *, sched, cfg_scale
     if cs:
         if cfg_scale <= 1.0:
             ctx.warn("CFG schedule needs CFG scale > 1 (CFG is off); ignored")
-        else:
+        elif not composed:
             cleanups.append(CfgScheduleHook(unet, sched, cfg_scale, normalize(cs, CFG_SCHEDULE_DEFAULTS),
                                             cfg_active).install().remove)
     ca = hook_config(hooks, "cads", CADS_DEFAULTS)
-    if ca:
+    if ca and not composed:
         c = normalize(ca, CADS_DEFAULTS)
         if c["tau1"] > c["tau2"]:
             c["tau1"], c["tau2"] = c["tau2"], c["tau1"]

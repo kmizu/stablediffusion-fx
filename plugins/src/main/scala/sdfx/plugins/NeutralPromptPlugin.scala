@@ -28,9 +28,10 @@ class NeutralPromptPlugin extends HookPlugin:
     Note("formatter_help", "Adds this text to the positive prompt when generating. " +
       "The saved image includes the full combined prompt; repeating the same settings does not append it twice."),
     Section("compatibility", "Compatibility", expanded = false),
-    Note("pending", "PhotoMaker and guidance/timestep modifiers " +
-      "are still being integrated. Composed prompts report an error for these combinations. " +
-      "Reference, ControlLLLite (SDXL), IP-Adapter (including Plus), ControlNet and PAG are supported. " +
+    Note("pending", "Composed prompts currently report errors with PhotoMaker, SAG, APG, Mahiro, " +
+      "Latent Modifier, Dynamic Thresholding or Detail Daemon."),
+    Note("supported", "CADS, CFG Schedule, Reference, ControlLLLite (SDXL), IP-Adapter (including Plus), " +
+      "ControlNet and PAG are supported. " +
       "Prompt editing, Weight Gradient, NegPiP, hires, img2img and " +
       "img2img Alternative are supported.")
   )

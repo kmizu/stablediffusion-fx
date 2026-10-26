@@ -207,7 +207,7 @@ def install(engine, pipe, task: str, gp, req, kw: dict, ctx, cleanups: list, *, 
                                    guidance.normalize_apg(apg) if apg else None, bool(mah), post).install()
         cleanups.append(gh.remove)
     sampling_ext.install(engine, pipe, gp, kw, ctx, cleanups, sched=sched, cfg_scale=cfg_scale, steps=steps, seed=seed,
-                         chain=_chain_callback)
+                         chain=_chain_callback, composed=branch_hooks is not None)
     if plan.sag:
         kw["sag_scale"] = plan.sag["scale"]
         if plan.sag["blur_sigma"] != SAG_DEFAULTS["blur_sigma"]:

@@ -123,7 +123,86 @@ def mask_png(size):
 
 t0 = time.time()
 r = None
-if CASE in ("neutral_reference_sd15", "neutral_reference_sdxl"):
+if CASE in ("neutral_sampling_sd15", "neutral_sampling_sdxl"):
+    from PIL import Image, ImageChops, ImageStat
+    xl = CASE.endswith("sdxl")
+    load(SDXL if xl else SD15)
+    size = dict(width=832, height=832) if xl else dict(width=512, height=768)
+    plain = "portrait of a woman, in a park, detailed"
+    text = plain + " AND_TOPK red scarf :0.5"
+    common = dict(prompt=plain, steps=10, seed=11, **size)
+    source = call("txt2img", req(gp(**common)))
+    init = keep(source, CASE + "_input")
+    assert init, source
+    cads = dict(noise_scale=0.25)
+    cs = dict(start_cfg=9., end_cfg=2., curve="cosine")
+    both = dict(cads=cads, cfg_schedule=cs)
+    def composed(prompt=text, phi=.3, cfg=6., batch=1, hooks=None, **kw):
+        return dict(prompt=prompt, cfg_scale=cfg, batch_size=batch,
+                    hooks=dict(neutral_prompt=dict(cfg_rescale=phi), **(hooks or {})), **kw)
+    hires = dict(gp()["hires"], enabled=True, resize_x=1024 if xl else 640,
+                 resize_y=1024 if xl else 960, second_pass_steps=4)
+    cases = [("baseline", {}), ("cads_native", dict(hooks=dict(cads=cads))),
+             ("cads_noop", composed(prompt=plain, phi=0., hooks=dict(cads=cads))),
+             ("schedule_native", dict(hooks=dict(cfg_schedule=cs))),
+             ("schedule_noop", composed(prompt=plain, phi=0., hooks=dict(cfg_schedule=cs))),
+             ("compose", composed()),
+             ("schedule_constant", composed(hooks=dict(cfg_schedule=dict(start_cfg=6., end_cfg=6.)))),
+             ("cads_gamma1", composed(hooks=dict(cads=dict(tau1=1., tau2=1.)))),
+             ("cads", composed(hooks=dict(cads=cads))), ("cads_repeat", composed(hooks=dict(cads=cads))),
+             ("negative_noise", composed(hooks=dict(cads=dict(cads, apply_to_uncond=True)))),
+             ("combined", composed(hooks=both)),
+             ("pag", composed(hooks=dict(both, pag=dict(scale=2.)))),
+             ("cfg1_batch", composed(cfg=1., batch=2, hooks=dict(cads=dict(cads, apply_to_uncond=True)))),
+             ("heun_edit", composed(prompt=plain + " AND_SALT [red scarf:blue scarf:0.5] :0.5",
+                                      sampler_name="Heun", hooks=both)),
+             ("negpip", composed(prompt=plain + " AND_PERP (black hair:-1) :0.4",
+                                    hooks=dict(both, negpip={}))),
+             ("reference", composed(hooks=dict(both, reference=dict(image=init, style_fidelity=.5,
+                                                                       attention_auto_machine_weight=.5)))),
+             ("hires", composed(hooks=both, hires=hires)),
+             ("img2img", composed(hooks=both, img2img=i2i(init, denoise=.5))),
+             ("alternative", composed(hooks=dict(both, img2imgalt=dict(randomness=.2, inversion_steps=6,
+                                          override_prompt=plain + " AND_SALT blue scarf :0.4", decode_cfg_scale=6.)),
+                                        img2img=i2i(init))),
+             ("cfg0", composed(cfg=0., phi=0.)),
+             ("schedule_zero", composed(phi=0., hooks=dict(cfg_schedule=dict(start_cfg=0., end_cfg=0.)))),
+             ("restored", {})]
+    focus = os.environ.get("SDFX_SAMPLING_FOCUS", "")
+    if focus == "metadata":
+        signed = plain + ", (black hair:-1)"
+        hooks = dict(cads=cads, negpip={})
+        cases = [("baseline", {}), ("signed_native", dict(prompt=signed, hooks=hooks)),
+                 ("signed_noop", composed(prompt=signed, phi=0., hooks=hooks)),
+                 ("signed_repeat", dict(prompt=signed, hooks=hooks)), ("restored", {})]
+    paths, report, errors = {}, {}, []
+    for tag, changes in cases:
+        method = "img2img" if changes.get("img2img") else "txt2img"
+        result = call(method, req(gp(**dict(common, **changes))))
+        path = keep(result, CASE + "_" + tag)
+        if path:
+            paths[tag] = path
+            report[tag] = dict(path=path, warnings=result["result"]["warnings"], images=len(result["result"]["images"]))
+            if report[tag]["warnings"]:
+                errors.append({tag: report[tag]["warnings"]})
+        else:
+            errors.append({tag: result})
+        print(tag, report.get(tag) or result, flush=True)
+    pairs = [("baseline", "restored"), ("cads_native", "cads_noop"), ("schedule_native", "schedule_noop"),
+             ("compose", "schedule_constant"), ("compose", "cads_gamma1"), ("cads", "cads_repeat"), ("cfg0", "schedule_zero")]
+    if focus == "metadata":
+        pairs = [("baseline", "restored"), ("signed_native", "signed_noop"), ("signed_native", "signed_repeat")]
+    for a, b in pairs:
+        if a in paths and b in paths:
+            with Image.open(paths[a]) as ia, Image.open(paths[b]) as ib:
+                diff = sum(ImageStat.Stat(ImageChops.difference(ia.convert("RGB"), ib.convert("RGB"))).mean) / 3
+            report[a + "_vs_" + b] = diff
+            if diff:
+                errors.append({a + "_vs_" + b: diff})
+    with open(os.path.join(OUT, CASE + ".json"), "w", encoding="utf-8") as fh:
+        json.dump(dict(cases=report, errors=errors, focus=focus), fh, indent=2)
+    r = {"type": "error" if errors else "result", "result": {"result": report}, "message": str(errors)}
+elif CASE in ("neutral_reference_sd15", "neutral_reference_sdxl"):
     from PIL import Image, ImageChops, ImageStat
     xl = CASE.endswith("sdxl")
     load(SDXL if xl else SD15)

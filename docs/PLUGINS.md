@@ -95,9 +95,12 @@ prompt. Hires, img2img/Alternative, editing, Weight Gradient and NegPiP are chec
 PAG, including their joint use, are checked with per-branch conditioning. IP-Adapter (basic/Plus) also supplies
 native positive/negative image features to every branch, including CFG off/PAG and Alternative. Reference and
 SDXL ControlLLLite now prepare their image conditioning per branch, including Alternative inversion and PAG.
-Reference adds a reference-image model evaluation for each leaf. PhotoMaker and guidance/timestep modifiers
-currently report an explicit unsupported-combination
+Reference adds a reference-image model evaluation for each leaf. PhotoMaker, SAG, APG/Mahiro, Latent Modifier,
+Dynamic Thresholding and Detail Daemon currently report an explicit unsupported-combination
 error while their branch-specific integration is unfinished.
+CFG Schedule now applies its current scale before Neutral rescale/output reconstruction; CADS perturbs each leaf's
+text once, before CFG/PAG copies and image-condition preparation, with seeded per-pass state. Both also work during
+Alternative inversion. Native CFG-off behavior ignores CFG Schedule. NegPiP signs and masked padding are retained.
 
 Every plugin has unit tests (Scala `plugins`, `engine`, `mcp`, `ui` suites; Python `tests/`) and runs end to end in
 dry-run mode. Real-model GPU runs:

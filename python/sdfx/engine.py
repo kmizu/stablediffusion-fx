@@ -1012,6 +1012,7 @@ class Engine(BaseEngine):
                 saved_procs = dict(unet.attn_processors)
                 cleanups.append(lambda: unet.set_attn_processor(saved_procs))
             if neutral_plan:
+                from .neutral_sampling import Controller
                 guided = cfg_scale > 1 and getattr(unet.config, "time_cond_proj_dim", None) is None
                 ip_embeds = None
                 if "ip_adapter_image" in kw:
@@ -1029,6 +1030,7 @@ class Engine(BaseEngine):
                         controlnet=neutral_cn,
                         image_embeds=ip_embeds,
                         branch_hooks=branch_hooks,
+                        sampling=Controller(sched, gp.hooks, hook_seed),
                         check_interrupt=ctx.check_interrupt).install()
                 cleanups.append(nh.remove)
                 ext_mod._chain_callback(kw, nh.callback)
@@ -1322,7 +1324,11 @@ class Engine(BaseEngine):
                                    branch_hooks=branch_hooks)
             return branch_hooks
         try:
-            inverse_options = {"branch_setup": inverse_images} if inverse_plan else {}
+            inverse_options = {}
+            if inverse_plan:
+                from .neutral_sampling import Controller
+                inverse_options = dict(branch_setup=inverse_images,
+                    sampling_setup=lambda scheduler: Controller(scheduler, gp.hooks, seeds[0]))
             inv = extras.invert_latents(self, self.pipe, lat, enc, steps, float(c["decode_cfg_scale"]), w, h,
                                         ctx.check_interrupt, **inverse_options)
         finally:

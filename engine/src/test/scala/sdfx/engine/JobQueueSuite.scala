@@ -6,7 +6,7 @@ import sdfx.core.model.GenerationParams
 import sdfx.core.plugins.api.*
 import sdfx.engine.testplugins.{MarkerAlwaysOn, PartialGridScript, RepeatScript, ThrowingScript}
 
-import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.{ConcurrentLinkedQueue, CountDownLatch, TimeUnit}
 import scala.concurrent.duration.*
 import scala.jdk.CollectionConverters.*
 
@@ -53,8 +53,19 @@ class JobQueueSuite extends munit.FunSuite:
 
   test("cancel a pending job and clear the queue") {
     val (evs, remove) = recording()
+    val first = Job(Job.newId(), base)
+    val started = new CountDownLatch(1)
+    val release = new CountDownLatch(1)
+    val removeGate = queue.addListener {
+      case JobEvent.JobStarted(j) if j.id == first.id =>
+        started.countDown()
+        release.await(20, TimeUnit.SECONDS)
+        ()
+      case _ => ()
+    }
     try
-      val a = queue.submit(Job(Job.newId(), slow("0.05")))
+      val a = queue.submit(first)
+      assert(started.await(20, TimeUnit.SECONDS), "first job did not start")
       val b = Job(Job.newId(), base)
       val c = Job(Job.newId(), base)
       val d = Job(Job.newId(), base)
@@ -68,9 +79,13 @@ class JobQueueSuite extends munit.FunSuite:
       assertEquals(queue.clear(), 2)
       intercept[JobCancelledException](await(fc))
       intercept[JobCancelledException](await(fd))
+      release.countDown()
       assertEquals(await(a).images.size, 1)
       assert(evs.asScala.exists { case JobEvent.JobCancelled(id, _) => id == b.id; case _ => false })
-    finally remove()
+    finally
+      release.countDown()
+      removeGate()
+      remove()
   }
 
   test("script job: every sub-generation gets AlwaysOn processing, grids are separate") {

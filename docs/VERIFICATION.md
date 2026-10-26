@@ -613,7 +613,7 @@ dependency or source licence was added.
 Independent read-only review found no material wiring defects. Full Python **508 passed** (four existing torchsde
 endpoint warnings); torch-free **260 passed / 35 skipped**. Reference tests: **41 passed**, including native attention
 comparisons, real PAG processors, inverse hook setup/cleanup and partial installation failures. Full Scala **483
-passed**, jar rebuilt. JUnit reports: `outputs/verify-reference-integration{,-no-torch}.xml`. Remaining guards are
+passed**, jar rebuilt. JUnit reports: `outputs/verify-reference-integration{,-no-torch}.xml`. At that stage, guards were
 PhotoMaker, CADS/SAG, CFG Schedule/APG/Mahiro/Latent Modifier/Dynamic Thresholding/Detail Daemon. The target is
 still todo and the ledger remains **86/216/51**.
 
@@ -621,3 +621,56 @@ still todo and the ledger remains **86/216/51**.
 python/.venv-smoke/Scripts/python.exe scripts/dev/gpu_check.py python/.venv-smoke/Scripts/python.exe outputs/verify-neutral-reference-sd15 neutral_reference_sd15
 python/.venv-smoke/Scripts/python.exe scripts/dev/gpu_check.py python/.venv-smoke/Scripts/python.exe outputs/verify-neutral-reference-sdxl neutral_reference_sdxl
 ```
+
+## Neutral Prompt — CFG Schedule / CADS integration (2026-10-26)
+
+`neutral_sampling.Controller` owns fresh per-pass state, including Alternative inversion against the actual inverse
+scheduler. CFG Schedule uses the existing curve/progress contract, then composition/phi use that effective CFG.
+Runtime reconstructs the fixed-CFG pipeline output while retaining the raw PAG conditional/perturbed difference.
+The existing CFG-off ignore rule remains. CADS perturbs each positive leaf once before CFG/PAG copies and image
+conditioning. Same-shaped negative contexts share random draws; each leaf retains its own input and metadata.
+Pooled embeddings are left unchanged, as in the existing CADS implementation. Scheduled/encoded tensors are not
+mutated. The two legacy root hooks are skipped only when composition is active.
+
+Review found that sharing a whole transformed negative tensor could replace another leaf's signs/padding; it now
+shares only random noise. Additional RED/GREEN tests found the ordinary CADS root hook also perturbed NegPiP's
+private channel. Shared `cads_context` now preserves those signs and zero padding in both paths. Unmarked legacy
+noise math is unchanged. Independent read-only review approved these corrections.
+
+Backend matrices: `outputs/verify-neutral-sampling-{sd15,sdxl}/neutral_sampling_{sd15,sdxl}.json`, **23 cases each**.
+They cover native/no-op, constant/zero/varying CFG, phi, CADS positive/negative noise and repeats, PAG, CFG1/batch,
+editing/Heun, NegPiP, Reference, hires, img2img and Alternative. Each model has seven pixel-identical comparison
+pairs: native CADS/no-op, native CFG Schedule/no-op, composed/constant CFG, composed/CADS gamma1, repeated CADS,
+zero CFG/zero schedule, and disabled/restored. Metadata focus matrices add **five cases each** in
+`outputs/verify-neutral-sampling-metadata-{sd15,sdxl}`: signed ordinary CADS, Neutral no-op, repeat and restoration,
+with three exact pairs each. All **56 cases** returned no result warnings; all **20 comparison pairs** have zero
+pixel MAE. Main and metadata contact sheets were inspected.
+
+Visual limits: CADS can strongly change style/content; the native and composed SDXL cases can introduce manga
+panels and generated text. The short Alternative cases and four-step hires settings have their own strong/soft
+style changes. CFG0 intentionally loses positive guidance. Finite equality checks establish numerical no-op,
+repeatability and restoration properties, rather than a general quality improvement. These are GPU-mode backend
+checks; offload modes, GPU interruption and every cross-product of image adapters were not retested here.
+
+Current Python suite: **550 passed**, four existing torchsde endpoint warnings; torch-free **260 passed / 36 skipped**.
+`test_neutral_sampling.py`: **42 passed**, including exact native noise, metadata preservation, per-branch context
+preparation, CFG/phi/PAG math and the real inverse loop at zero noise. JUnit reports:
+`outputs/verify-neutral-sampling-{tests,no-torch}.xml`. No new dependencies, weights or source licences.
+
+Before target promotion, audit ordinary CADS/CFG Schedule with native PAG batches: those older root hooks still
+assume two halves; the composed controller uses explicit groups. PhotoMaker, SAG, APG, Mahiro, Latent Modifier,
+Dynamic Thresholding and Detail Daemon remain guarded. The extension ledger remains **86/216/51**, target todo.
+The next-task CPU probe (`outputs/neutral-ordinary-pag-probe.json`) confirms a three-group CFG Schedule mismatch
+(actual 11, expected 5), default CADS changing the negative context, and different CADS contexts in PAG's two
+positive copies. These ordinary-PAG issues remain to be fixed; the main matrices above exercise composed PAG.
+
+Scala full regression initially exposed a test-only race in pending-queue cancellation. It now waits for the first
+JobStarted and holds that worker until pending/cancel/clear checks finish, with unconditional latch/listener cleanup.
+Targeted queue tests: **14 passed**. Final full Scala: **483 passed**, jar rebuilt. No product queue code changed.
+
+```text
+python/.venv-smoke/Scripts/python.exe scripts/dev/gpu_check.py python/.venv-smoke/Scripts/python.exe outputs/verify-neutral-sampling-sd15 neutral_sampling_sd15
+python/.venv-smoke/Scripts/python.exe scripts/dev/gpu_check.py python/.venv-smoke/Scripts/python.exe outputs/verify-neutral-sampling-sdxl neutral_sampling_sdxl
+```
+
+Set `SDFX_SAMPLING_FOCUS=metadata` and use the metadata output directories for the focused checks.

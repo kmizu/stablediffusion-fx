@@ -21,7 +21,7 @@ class Plan:
 def validate(hooks, *, controlnet=False, pag=False):
     """Temporary explicit compatibility boundary while branch-dependent integrations are unfinished."""
     from .hooks import hook_config
-    blocked = ("photomaker", "cads", "sag", "cfg_schedule",
+    blocked = ("photomaker", "sag",
                "apg", "mahiro", "latent_modifier", "dynamic_thresholding", "detail_daemon")
     conflicts = [name for name in blocked if hook_config(hooks, name, {}) is not None]
     if conflicts:
@@ -123,7 +123,7 @@ class RuntimeHook:
     lifecycle. Attention/module hooks still run.
     """
     def __init__(self, unet, scheduler, plan: Plan, cfg: float, phi: float, *, guided=None, pag=False, controlnet=None, image_embeds=None,
-                 check_interrupt=lambda: None, branch_hooks=()):
+                 check_interrupt=lambda: None, branch_hooks=(), sampling=None):
         self.unet, self.scheduler, self.plan = unet, scheduler, plan
         self.cfg, self.phi = cfg, phi
         self.guided = cfg > 1 if guided is None else guided
@@ -131,6 +131,7 @@ class RuntimeHook:
         self.controlnet = controlnet
         self.image_embeds = image_embeds
         self.branch_hooks = sorted(branch_hooks, key=lambda h: h.priority)
+        self.sampling = sampling
         self.step = 1
         self.check_interrupt = check_interrupt
         self._missing = object()
@@ -145,6 +146,8 @@ class RuntimeHook:
         import torch
         self.check_interrupt()
         branches = [at(branch, self.step) for branch in self.plan.branches]
+        if self.sampling is not None:
+            branches = self.sampling.branches(branches, timestep)
         batch = branches[0]["prompt_embeds"].shape[0]
         # A PAG pipeline/config can be inactive (scale=0 or no applied layers). Its actual native batch is
         # authoritative; do not infer activation solely from a nonempty configuration dictionary.
@@ -224,9 +227,10 @@ class RuntimeHook:
                 guided = from_x0(z, x0, ab)
             return conditional, guided
 
-        raw_conditional, guided = compose_predictions(results, self.cfg, self.phi)
+        cfg = self.sampling.cfg(self.cfg, timestep, guided=self.guided) if self.sampling is not None else self.cfg
+        raw_conditional, guided = compose_predictions(results, cfg, self.phi)
         conditional = (unconditional.float() + (guided - unconditional.float()) / self.cfg
-                       if self.phi and self.cfg else raw_conditional)
+                       if (self.phi or cfg != self.cfg) and self.cfg else raw_conditional)
         if pag:
             raw_perturbed, _ = compose_predictions(perturbed, 1, 0)
             normal = conditional if self.guided else guided
