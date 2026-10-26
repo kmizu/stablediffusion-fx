@@ -388,3 +388,42 @@ After the final numerical edit, full Python **341 passed**, torch-free **260 pas
 files were unchanged in this foundation wave, so the previous 482 Scala tests and jar remain the last such checks;
 they do not validate a Neutral Prompt runtime. Notice collection completed for 112 projects, adding the MIT source
 and original licence text while preserving all prior notices. Ledger unchanged at **86 done / 216 todo / 51 na**.
+
+## Neutral Prompt runtime stage 1 (Codex, 2026-10-26; still todo)
+
+`neutral_runtime.py` and Engine leaf encoding/adjustment/install now connect the expression tree to real UNet
+predictions through raw `hooks.neutral_prompt`. Each leaf is evaluated on the same input/timestep with its own
+text/pooled conditioning and schedule. The negative prompt remains unconditional conditioning. Composition uses
+denoised-x0 differences; at rescale=0 it avoids subtracting/reconstructing a large common x0 baseline, which loses
+float32 precision near the end of sampling. Ordinary single prompts at rescale=0 bypass the runtime entirely.
+
+Per-stage CPU tests compare native x0 conversion for DDIM, Euler/ancestral/LMS, Heun, DPM2/ancestral, DPM++ SDE,
+DPM++ multi/single and UniPC, with epsilon/v/sample predictions where supported. LCM boundary output is checked
+separately. Zero-SNR v-prediction and infinite-sigma limits are finite; undefined zero-SNR epsilon fails clearly.
+Inverse DDIM uses the input's earlier noise level, reproduced failing against native before its correction.
+This does not implement Alternative: its initial zero-noise composition rule remains unresolved and guarded.
+Detail Daemon's per-row timestep change was another review finding; it is explicitly guarded pending integration.
+
+```text
+python/.venv-smoke/Scripts/python.exe scripts/dev/gpu_check.py python/.venv-smoke/Scripts/python.exe outputs/verify-neutral-runtime-sd15 neutral_sd15
+python/.venv-smoke/Scripts/python.exe scripts/dev/gpu_check.py python/.venv-smoke/Scripts/python.exe outputs/verify-neutral-runtime-sdxl neutral_sdxl
+```
+
+Each model completed 18 variants / 19 images: baseline/no-op/restored, AND/PERP/SALT/TOPK, nested negative group,
+CFG rescale .7, editing, batch 2, CFG1, hires/img2img, Euler, Heun editing, NegPiP and Weight Gradient leaves. All
+had no warnings. JSON reports and inspected grids are in the corresponding folders. No-op and restored baseline
+both have **zero pixel MAE** on each model. SD1.5/SDXL SALT/TOPK cases visibly added the red scarf; effects/style
+depend on model, operator and weight. No upstream pixel parity or reliable semantic isolation is claimed.
+
+Runtime tests cover branch encoding/schedules, ordinary no-op, trailing leaf weights, CFG0/.5/1, XL time IDs/pooled
+batch duplication, cleanup after exceptions, logical-stage callbacks, pending-combination rejection and large-shared-
+baseline precision. Independent review additionally checked 32 CFG/batch/rescale combinations against the reference
+composition and found the two issues described above. All 41 runtime tests pass. Final full Python **382 passed**
+(four known torchsde Brownian endpoint-rounding warnings); torch-free **260 passed / 32 skipped**. No Scala source
+or jar changed in this stage. Source/dependencies were already attributed; no additional licence refresh was needed.
+
+**Unfinished:** Scala plugin/form/formatter/replay and actual app-service/UI checks; ControlNet/PAG, PhotoMaker,
+IP-Adapter/Reference/ControlLLLite, CADS/SAG, CFG Schedule/APG/Mahiro/Latent Modifier/Dynamic Thresholding/Detail Daemon,
+and Alternative combinations. Active composed prompts reject these explicitly in `neutral_runtime.validate`
+rather than silently using first-leaf residuals/conditioning. Those restrictions are temporary unfinished work,
+not a narrower definition of success. Ledger remains **86 done / 216 todo / 51 na**, target `neutral_prompt` todo.

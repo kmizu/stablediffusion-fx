@@ -123,7 +123,53 @@ def mask_png(size):
 
 t0 = time.time()
 r = None
-if CASE in ("negpip_sd15", "negpip_sdxl"):
+if CASE in ("neutral_sd15", "neutral_sdxl"):
+    from PIL import Image, ImageChops, ImageStat
+    load(SD15 if CASE.endswith("sd15") else SDXL)
+    size = dict(width=512, height=768) if CASE.endswith("sd15") else dict(width=832, height=832)
+    plain = "portrait of a woman, in a park, detailed"
+    common = dict(prompt=plain, steps=16, seed=11, **size)
+    enabled = {"neutral_prompt": {}}
+    variants = [("baseline", {}), ("noop", dict(hooks=enabled)),
+        ("and", dict(prompt=plain + " :0.5 AND red scarf :0.5", hooks=enabled)),
+        ("perp", dict(prompt=plain + " AND_PERP black hair :-1", hooks=enabled)),
+        ("salt", dict(prompt=plain + " AND_SALT red scarf :0.7", hooks=enabled)),
+        ("topk", dict(prompt=plain + " AND_TOPK red scarf :0.7", hooks=enabled)),
+        ("nested", dict(prompt=plain + " AND_PERP [black hair AND_SALT red scarf :0.5] :-0.5", hooks=enabled)),
+        ("rescale", dict(hooks={"neutral_prompt": {"cfg_rescale": 0.7}})),
+        ("schedule", dict(prompt=plain + " AND_TOPK [red scarf:blue scarf:0.5] :0.7", hooks=enabled)),
+        ("batch", dict(prompt=plain + " AND_PERP black hair :-1", batch_size=2, hooks=enabled)),
+        ("cfg1", dict(prompt=plain + " AND_TOPK red scarf :0.7", cfg_scale=1, hooks=enabled)),
+        ("hires", dict(prompt=plain + " AND_TOPK red scarf :0.7", hires=dict(gp()["hires"], enabled=True, scale=1.25, second_pass_steps=8), hooks=enabled)),
+        ("img2img", dict(prompt=plain + " AND_TOPK red scarf :0.7", img2img=i2i(os.path.join(OUT, CASE + "_baseline.png"), denoise=0.5), hooks=enabled)),
+        ("euler", dict(prompt=plain + " AND_PERP black hair :-0.5", sampler_name="Euler", hooks=enabled)),
+        ("heun", dict(prompt=plain + " AND_TOPK [red scarf:blue scarf:0.5] :0.7", sampler_name="Heun", hooks=enabled)),
+        ("negpip", dict(prompt=plain + " AND_TOPK (black hair:-1) :0.7", hooks={"neutral_prompt": {}, "negpip": {}})),
+        ("gradient", dict(prompt=plain + " AND_TOPK {red scarf::0.1-1.5} :0.7", hooks={"neutral_prompt": {}, "weight_gradient": {}})),
+        ("restored", {})]
+    paths, report, errors = {}, {}, []
+    for tag, changes in variants:
+        result = call("img2img" if changes.get("img2img") else "txt2img", req(gp(**dict(common, **changes))))
+        path = keep(result, CASE + "_" + tag)
+        if path:
+            paths[tag] = path
+            report[tag] = {"path": path, "warnings": result["result"]["warnings"], "images": len(result["result"]["images"])}
+            if report[tag]["warnings"]:
+                errors.append({tag: report[tag]["warnings"]})
+        else:
+            errors.append({tag: result})
+        print(tag, report.get(tag) or result, flush=True)
+    for a, b in [("baseline", "noop"), ("baseline", "restored")]:
+        if a in paths and b in paths:
+            with Image.open(paths[a]) as im1, Image.open(paths[b]) as im2:
+                diff = sum(ImageStat.Stat(ImageChops.difference(im1.convert("RGB"), im2.convert("RGB"))).mean) / 3
+            report[a + "_vs_" + b] = diff
+            if diff:
+                errors.append({a + "_vs_" + b: diff})
+    with open(os.path.join(OUT, CASE + ".json"), "w", encoding="utf-8", newline="\n") as fh:
+        json.dump({"cases": report, "errors": errors}, fh, indent=2)
+    r = {"type": "error" if errors else "result", "result": {"result": report}, "message": str(errors)}
+elif CASE in ("negpip_sd15", "negpip_sdxl"):
     from PIL import Image, ImageChops, ImageStat
     load(SD15 if CASE.endswith("sd15") else SDXL)
     size = dict(width=512, height=768) if CASE.endswith("sd15") else dict(width=832, height=832)

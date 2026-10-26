@@ -66,3 +66,29 @@ also compared 169 syntax cases and 100 random trees, finding only the tiny-varia
 Full runtime, x0/scheduler conversion, plugin/form, real-model checks and ledger promotion remain required.
 Final foundation suites: 341 Python passed; 260 torch-free passed / 31 skipped. Live notice collection covered
 112 projects, adding this MIT source and verbatim licence only. No Scala/runtime code changed in this unit.
+
+## Runtime stage 1 (continuation, not target completion)
+
+- `neutral_runtime.py` Plan/RuntimeHook evaluates CLIP leaves independently, composes x0 deltas, and reconstructs
+  a CFG-compatible UNet result. Branch schedules advance by logical steps; every pass gets fresh state. Separate
+  contexts/pooled vectors support CFG off, batch >1 and SDXL. Hook/forward cleanup is tested after branch errors.
+- Engine encoding/adjustment/install is connected via raw `hooks.neutral_prompt`, with advertised engine/dry-run
+  capability. The Scala form is still absent, so this is not an app-complete plugin. No ledger promotion.
+- Native scheduler tests compare each stage of Euler/ancestral/LMS, Heun, DPM2/ancestral, DPM++ SDE, DPM++ multi/
+  single, UniPC and DDIM, including epsilon/v/sample where native support exists. LCM boundary output and inverse
+  DDIM input-noise conversion have separate tests. This proves conversion contracts, not real-model LCM/SD2 quality.
+- A low-noise round trip through a large shared x0 baseline loses float32 precision. Runtime with phi=0 composes
+  scaled prediction differences directly instead; a large-baseline regression preserves the composed conditional.
+- Review exposed missing Detail Daemon handling (per-row timesteps) and zero-SNR v-pred division by zero. Daemon
+  is now explicitly guarded pending real branch integration; ZSNR/inf-sigma v coefficients are calculated directly
+  and tests fail before the fix/pass after. Undefined zero-SNR epsilon produces a clear unsupported error.
+- Inverse DDIM uses the previous input noise level, not the target level; a native comparison reproduced the
+  original mismatch then passed after correction. Actual Alternative remains guarded; initial zero-noise inversion
+  can have B=0 and needs a considered composition rule before integration.
+- SD1.5 and SDXL each passed 18 GPU variants/19 images, no warnings, grids inspected. No-op and disable restoration
+  are pixel-identical to baseline. Reports: `outputs/verify-neutral-runtime-{sd15,sdxl}/neutral_{sd15,sdxl}.json`.
+- Remaining guards must be resolved with branch-specific evidence rather than called implemented by restriction:
+  ControlNet/PAG, PhotoMaker, IP-Adapter, Reference, ControlLLLite, CADS, SAG, CFG Schedule, APG/Mahiro/Latent Modifier,
+  Dynamic Thresholding, Detail Daemon and img2img Alternative. No current results prove those combinations.
+- Final Python full suite after all edits: 382 passed with four torchsde Brownian endpoint warnings; torch-free
+  260 passed / 32 skipped. Runtime test module: 41 passed. No Scala changes, ledger unchanged at 86/216/51.

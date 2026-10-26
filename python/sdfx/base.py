@@ -266,7 +266,11 @@ class BaseEngine:
             if u.preprocessor not in ("none", "") and u.preprocessor not in self.preprocessors():
                 ctx.warn(f"ControlNet preprocessor '{u.preprocessor}' is not available; using the image as-is")
         from .prompt import unsupported_syntax_warnings
-        for t in (gp.prompt, gp.negative_prompt):
+        for index, t in enumerate((gp.prompt, gp.negative_prompt)):
+            if index == 0 and "neutral_prompt" in (gp.hooks or {}):
+                from .hooks import hook_config
+                if hook_config(gp.hooks, "neutral_prompt", {}) is not None:
+                    continue
             for w in unsupported_syntax_warnings(t):
                 ctx.warn(w)
         if req.preview_method not in ("approx", "taesd", "none"):

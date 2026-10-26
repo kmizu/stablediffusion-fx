@@ -1,4 +1,4 @@
-"""Neutral Prompt expressions and denoised-x0 math (not yet connected to generation).
+"""Neutral Prompt expressions and denoised-x0 math.
 
 Adapted from ljleb/sd-webui-neutral-prompt, Copyright (c) 2023 ljleb, MIT licence;
 see licenses/ljleb__sd-webui-neutral-prompt.txt and THIRD_PARTY_NOTICES.md.
@@ -161,7 +161,6 @@ def compose(root: Node, predictions: list, unconditional, cfg: float, *, phi: fl
     Leaf weights apply in the parent, once. At a group, auxiliary siblings see the normal sibling sum before
     any auxiliary is added. Nested groups resolve before their parent's weight/operator is applied.
     """
-    import torch
     if not math.isfinite(cfg):
         raise ValueError("CFG must be finite")
     if len(predictions) != len(leaves(root)):
@@ -169,12 +168,24 @@ def compose(root: Node, predictions: list, unconditional, cfg: float, *, phi: fl
     if any(v.shape != unconditional.shape for v in predictions):
         raise ValueError("Neutral Prompt predictions must have the unconditional tensor's shape")
     _flat(unconditional)
-    predictions = iter(predictions)
     u = unconditional.float()
+    total = combine_deltas(root, [v.float() - u for v in predictions])
+    return rescale(u + cfg * total, u + total, phi)
+
+
+def combine_deltas(root: Node, values: list):
+    """Resolve the tree from x0 deltas directly, avoiding cancellation against a shared large x0 baseline."""
+    import torch
+    if len(values) != len(leaves(root)) or not values:
+        raise ValueError("Neutral Prompt delta count does not match leaf count")
+    u = torch.zeros_like(values[0], dtype=torch.float32)
+    if any(v.shape != u.shape for v in values):
+        raise ValueError("Neutral Prompt deltas must have equal shapes")
+    predictions = iter(values)
 
     def delta(node):
         if node.text is not None:
-            return next(predictions).float() - u
+            return next(predictions).float()
         children = [(child, delta(child)) for child in node.children]
         normal = torch.zeros_like(u)
         for child, value in children:
@@ -190,5 +201,4 @@ def compose(root: Node, predictions: list, unconditional, cfg: float, *, phi: fl
                 salient.append((value, child.weight))
         return normal + auxiliary + salient_blend(normal, salient)
 
-    total = delta(root)
-    return rescale(u + cfg * total, u + total, phi)
+    return delta(root)

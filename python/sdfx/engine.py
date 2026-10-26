@@ -6,6 +6,7 @@ when that fails.
 from __future__ import annotations
 
 import gc
+from dataclasses import replace
 from collections import OrderedDict
 import hashlib
 import inspect
@@ -26,6 +27,7 @@ from . import hooks as hooks_mod
 from . import adapters, extras, inpaint, lora_blocks, models, preview, prompt, prompt_schedule, schedulers, upscalers
 from . import weight_gradient
 from . import negpip
+from . import neutral_prompt, neutral_runtime
 from . import extensions as ext_mod
 from .base import LATENT_UPSCALERS, BaseEngine
 from .images import Image, load_mask, load_rgb, next_output_path, resize_image, save_png
@@ -197,7 +199,7 @@ class Engine(BaseEngine):
             f.append("taesd")
         f += ["apg", "mahiro", "rescale_cfg", "model_sampling", "kohya_hrfix", "multidiffusion", "latent_modifier",
               "soft_inpainting", "neveroom", "reference", "revision", "ip_adapter", "controllllite", "fooocus_inpaint",
-              "img2imgalt", "caption", "ldsr", "adetailer", "weight_gradient", "negpip"]
+              "img2imgalt", "caption", "ldsr", "adetailer", "weight_gradient", "negpip", "neutral_prompt"]
         f += list(ext_mod.sampling_ext.HOOKS)
         if hasattr(diffusers, "StableDiffusionSAGPipeline"):
             f.append("sag")
@@ -618,6 +620,24 @@ class Engine(BaseEngine):
                           hires_total: Optional[int] = None, gradient_total: Optional[int] = None) -> dict:
         """_encode plus A1111 prompt editing / alternation: returns the embeddings for step 1; when the prompt
         changes during sampling the result is a ScheduledEmbeds carrying [(end_step, embeds), ...] (equal lengths)."""
+        nc = hooks_mod.hook_config(gp.hooks, "neutral_prompt", {"cfg_rescale": 0})
+        if nc is not None:
+            try:
+                phi = float(nc["cfg_rescale"])
+                if not math.isfinite(phi) or not 0 <= phi <= 1:
+                    raise ValueError("Neutral Prompt CFG rescale must be between 0 and 1")
+                tree = neutral_prompt.parse(pos)
+            except ValueError as exc:
+                raise EngineError(INVALID_PARAMS, str(exc)) from exc
+            nodes = neutral_prompt.leaves(tree)
+            # Literal ordinary prompts bypass all wrappers and retain original encoding bytes/attention semantics.
+            active = phi != 0 or len(nodes) != 1 or any(n.weight != 1 or n.kind != "AND" for n in nodes) or nodes[0].text != pos
+            if active:
+                sub = replace(gp, hooks={k: v for k, v in gp.hooks.items() if k != "neutral_prompt"})
+                branches = [self._encode_scheduled(n.text, neg, sub, bs, steps, hires_total, gradient_total) for n in nodes]
+                out = dict(branches[0])
+                out["_neutral"] = neutral_runtime.Plan(tree, branches)
+                return out
         def schedule(text):
             text = prompt.strip_extra_networks(text)
             if hooks_mod.hook_config(gp.hooks, "weight_gradient", {}) is not None:
@@ -652,6 +672,12 @@ class Engine(BaseEngine):
         return out
 
     def _adjust_embeds(self, gp: GenerationParams, embeds: dict, ctx: JobContext) -> dict:
+        if "_neutral" in embeds:
+            plan = embeds["_neutral"]
+            branches = [self._adjust_embeds(gp, branch, ctx) for branch in plan.branches]
+            out = dict(branches[0])
+            out["_neutral"] = neutral_runtime.Plan(plan.tree, branches)
+            return out
         sch = getattr(embeds, "schedule", None)
         def apply(d):
             return negpip.adjust(d, lambda plain: ext_mod.adjust_embeds(self, gp, plain, ctx))
@@ -892,6 +918,9 @@ class Engine(BaseEngine):
         pipe.scheduler = sched
         kw: dict = dict(embeds)
         kw.pop("_negpip", None)
+        neutral_plan = kw.pop("_neutral", None)
+        if neutral_plan:
+            neutral_runtime.validate(gp.hooks, controlnet=bool(cn_models), pag=bool(pag))
         kw.update(num_inference_steps=steps, guidance_scale=cfg_scale, generator=self._generators(seeds, gp),
                   output_type=output_type, callback_on_step_end=self._callback(ctx, req, pass_, image_idx, images_total,
                                                                                expected_steps or steps))
@@ -979,7 +1008,14 @@ class Engine(BaseEngine):
                 hk2.install()
             ext_mod.install(self, pipe, task, gp, req, kw, ctx, cleanups, plan=xplan, w=w, h=h, sched=sched,
                             cfg_scale=cfg_scale, image=image, mask=mask, steps=steps, seed=hook_seed)
-            if embeds.get("_negpip"):
+            if neutral_plan:
+                nh = neutral_runtime.RuntimeHook(unet, sched, neutral_plan, cfg_scale,
+                        float(hooks_mod.hook_config(gp.hooks, "neutral_prompt", {"cfg_rescale": 0})["cfg_rescale"]),
+                        guided=cfg_scale > 1 and getattr(unet.config, "time_cond_proj_dim", None) is None,
+                        check_interrupt=ctx.check_interrupt).install()
+                cleanups.append(nh.remove)
+                ext_mod._chain_callback(kw, nh.callback)
+            if embeds.get("_negpip") or (neutral_plan and any(v.get("_negpip") for v in neutral_plan.branches)):
                 cleanups.append(negpip.install(pipe))
             ctx.check_interrupt()
             filtered = _filter_kwargs(pipe.__call__, kw)
@@ -1226,6 +1262,8 @@ class Engine(BaseEngine):
 
     def _img2imgalt(self, gp, req, ctx, alt, image, embeds, seeds, idx0, total, w, h, cn, pag):
         """img2imgalt.py: invert the init image to noise with DDIM, then sample from that noise."""
+        if "_neutral" in embeds:
+            raise EngineError(UNSUPPORTED, "Neutral Prompt integration pending for img2img Alternative")
         c = adapters.normalize(alt, extras.IMG2IMGALT_DEFAULTS)
         enc = embeds
         if c["override_prompt"] or c["override_negative"]:
