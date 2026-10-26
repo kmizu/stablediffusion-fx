@@ -61,15 +61,19 @@ Done in this session, all GPU-verified unless marked:
   constant tags match ordinary weights exactly, and disabling restores the baseline. Actual app-service pipeline
   and UI checked. PhotoMaker combination is explicitly unsupported. No upstream code was copied (no licence).
   See `docs/VERIFICATION.md` and the implementation plan for tested scope and decisions.
+- **img2img Alternative quality repair (Codex):** preserves the amplitude recovered by DDIM inversion instead of
+  forcing every result to empirical std 1. Noise blending preserves its two endpoints; Randomness=1 matches ordinary
+  same-seed generation (matching settings, variation disabled). Decode CFG0/.5 now interpolates correctly, and latent
+  inversion explicitly disables pixel-range clipping. Replay infotext now includes original prompts and effective
+  decode steps. SD1.5/SDXL real-engine grids, actual app/MCP path and UI were checked. See VERIFICATION.md for limits.
 
 UI improvements made this session: `Control.Section` (collapsible groups inside a plugin form), `Plugin.enabledBy`
 (greys a control out while its checkbox is off), and the form layout in `W.Form`. Labels longer than 18 characters
 go above their control, and the label column stays at least 88 px wide so cards line up.
 
-**Next action:** investigate the existing SDXL img2img Alternative oversaturation recorded under Known issues.
-Quality takes priority over increasing the count. Reproduce with `scripts/dev/gpu_check.py <GPU python>
-outputs/verify-weight-gradient/alternative weight_alt_sdxl`; the fixed-weight control also reproduces it, so don't
-attribute it to Weight Gradient without further evidence. Then continue the remaining prompt-embedding hooks below.
+**Next action:** continue the remaining prompt-embedding hooks below (negpip / prompt_fusion / neutral_prompt /
+composable_lora). The Alternative amplitude defect has been repaired; its remaining reconstruction limits are
+documented under Known issues rather than presented as exact inversion.
 
 ## Remaining targets, most-starred first
 
@@ -158,7 +162,7 @@ Suggested next steps, by value and fit with what exists:
 | What | Command / file |
 |---|---|
 | Scala tests | `sbt.bat -batch test` (latest: 481 passed, 2026-10-26) |
-| Python tests | `python/.venv-smoke/Scripts/python.exe -m pytest` (latest: 300 passed) and `.venv-test` (247 passed, 16 skipped) |
+| Python tests | `python/.venv-smoke/Scripts/python.exe -m pytest` (latest: 314 passed) and `.venv-test` (247 passed, 17 skipped) |
 | Dry-run smoke | `scripts/smoke.ps1` / `scripts/smoke.sh` |
 | Engine on GPU, one case per process | `scripts/dev/gpu_check.py <venv python> <out dir> <case>`; cases `sched_*`, `ext_*`, `ad_*`, `image_*`, `weight_*` |
 | Script plugins through the real app over MCP | `scripts/dev/write_settings.py`, then `scripts/dev/mcp_scripts.py "C:\Program Files\Java\jdk-21\bin\java.exe" <script ids>` |
@@ -173,11 +177,13 @@ broken (pseudo-inverse colour directions were too large). The ridge-regularised 
 
 ## Known issues and decisions
 
-- **SDXL img2img Alternative contrast**: the portrait inversion check in
-  `outputs/verify-weight-gradient/alternative/weight_alt_sdxl.json` is visibly oversaturated both with a gradient
-  and with an ordinary fixed weight. Reproduced with default inversion count as well as a six-step diagnostic;
-  disabling the new hook does not remove it. The existing inversion path needs separate quality investigation.
-  Do not describe the Alternative smoke's successful protocol response as proof of aesthetic quality.
+- **img2img Alternative reconstruction limits**: the strong unintended contrast was traced to empirical noise
+  normalization and repaired. Same SDXL DPM++ CFG6 case: near-white 14.19% -> 4.51%, near-black 28.67% -> 14.16%.
+  Reconstruction still depends on CFG/count/sampler: matched DDIM/CFG1 was close to source (1.06%/1.71% versus
+  1.11%/1.61%), not pixel-identical. It is a DDIM approximation, not the legacy k-diffusion Euler/sigma-adjustment
+  implementation. Changing settings can still change contrast/composition. No output recolouring was added.
+  Reports: `outputs/verify-alternative-final/alt_quality_{sd15,sdxl}.json`; diagnostics and test plan preserve the
+  rejected clipping/CFG hypotheses. Pixel-range clipping is guarded but was already off in this particular model.
 - **Weight Gradient clocks**: each sampling pass restarts the ramp and uses its actual logical inference steps
   (second-order callback stages do not advance twice). Existing A1111 prompt-editing hires offsets are unchanged.
   PhotoMaker uses separate text-only encoding; combining it with gradient tags raises an unsupported error.

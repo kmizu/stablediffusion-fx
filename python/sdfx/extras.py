@@ -385,31 +385,33 @@ def novel_view(engine, params: dict, ctx) -> dict:
 
 # ----------------------------------------------------------------------------------------------- img2img alternative
 def invert_latents(engine, pipe, latents, embeds: dict, steps: int, cfg: float, w: int, h: int, check_interrupt):
-    """DDIM inversion of encoded latents to noise (img2imgalt). Returns unit-variance latents for prepare_latents."""
+    """DDIM-invert scaled VAE latents, preserving the amplitude of the terminal noisy state."""
     import torch
     from diffusers import DDIMInverseScheduler  # type: ignore
     spacing = pipe.scheduler.config.get("timestep_spacing", "leading")
     inv = DDIMInverseScheduler.from_config(pipe.scheduler.config,
+                                           clip_sample=False,  # latent x0 is not a pixel image bounded by [-1, 1]
                                            timestep_spacing=spacing if spacing in ("leading", "trailing") else "leading")
     inv.set_timesteps(steps, device=latents.device)
     pe, ne = embeds["prompt_embeds"][:1], embeds["negative_prompt_embeds"][:1]
-    ehs = torch.cat([ne, pe]) if cfg > 1.0 else pe
+    guided = cfg != 1.0  # inversion also exposes meaningful unconditional/interpolated values in [0, 1)
+    ehs = torch.cat([ne, pe]) if guided else pe
     added = None
     if engine.sdxl:
         pp, npp = embeds["pooled_prompt_embeds"][:1], embeds["negative_pooled_prompt_embeds"][:1]
         tid = torch.tensor([[h, w, 0, 0, h, w]], device=latents.device, dtype=pe.dtype)
-        added = {"text_embeds": torch.cat([npp, pp]) if cfg > 1.0 else pp,
-                 "time_ids": tid.repeat(2 if cfg > 1.0 else 1, 1)}
+        added = {"text_embeds": torch.cat([npp, pp]) if guided else pp,
+                 "time_ids": tid.repeat(2 if guided else 1, 1)}
     x = latents
     with torch.no_grad():
         for t in inv.timesteps:
             check_interrupt()
-            xin = torch.cat([x, x]) if cfg > 1.0 else x
+            xin = torch.cat([x, x]) if guided else x
             kw = {"encoder_hidden_states": ehs}
             if added is not None:
                 kw["added_cond_kwargs"] = added
             eps = pipe.unet(xin, t, **kw).sample
-            if cfg > 1.0:
+            if guided:
                 u, c = eps.chunk(2)
                 eps = u + cfg * (c - u)
             x = inv.step(eps, t, x).prev_sample

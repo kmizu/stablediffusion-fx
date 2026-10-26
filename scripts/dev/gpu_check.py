@@ -123,7 +123,51 @@ def mask_png(size):
 
 t0 = time.time()
 r = None
-if CASE in ("weight_sd15", "weight_sdxl", "weight_alt_sd15", "weight_alt_sdxl"):
+if CASE in ("alt_quality_sd15", "alt_quality_sdxl"):
+    from PIL import Image, ImageChops, ImageStat
+    import numpy as np
+    import cv2
+    load(SD15 if CASE.endswith("sd15") else SDXL)
+    size = dict(width=512, height=768) if CASE.endswith("sd15") else dict(width=832, height=832)
+    common = dict(prompt="portrait of a woman wearing (red scarf:0.8), in a park, detailed", steps=16, seed=11, **size)
+    baseline = call("txt2img", req(gp(**common)))
+    src = keep(baseline, CASE + "_source")
+    report, errors = {}, []
+
+    def measure(path):
+        with Image.open(path) as im:
+            a = np.asarray(im.convert("RGB"), dtype=np.float32) / 255
+        lab = cv2.cvtColor(a, cv2.COLOR_RGB2LAB)
+        return {"lightness_std": float(lab[..., 0].std()), "mean_chroma": float(np.hypot(lab[..., 1], lab[..., 2]).mean()),
+                "high_clip": float((a >= 0.98).mean()), "low_clip": float((a <= 0.02).mean())}
+
+    if src:
+        report["source"] = dict(path=src, **measure(src))
+    else:
+        errors.append(baseline)
+    variants = [(s, c, d, 0) for s, c, d in (("DPM++ 2M", 6, 1), ("DPM++ 2M", 2, 1), ("DPM++ 2M", 1, 1),
+                 ("DPM++ 2M", 6, 6), ("Euler", 6, 1), ("Euler", 2, 1), ("Euler", 1, 1), ("Euler", 2, 2), ("DDIM", 1, 1))]
+    variants += [("DPM++ 2M", 6, 0, 0), ("DPM++ 2M", 6, 0.5, 0), ("DPM++ 2M", 6, 1, 1)]
+    for sampler, cfg, decode_cfg, randomness in variants:
+        tag = sampler.replace("+", "p").replace(" ", "_") + f"_cfg{cfg}_decode{decode_cfg}"
+        if randomness:
+            tag += f"_random{randomness}"
+        result = call("img2img", req(gp(**dict(common, sampler_name=sampler, cfg_scale=cfg,
+                      img2img=i2i(src, denoise=1), hooks={"img2imgalt": {"decode_cfg_scale": decode_cfg, "randomness": randomness}}))))
+        path = keep(result, CASE + "_" + tag)
+        if path:
+            report[tag] = dict(path=path, warnings=result["result"]["warnings"], **measure(path))
+            with Image.open(src) as a, Image.open(path) as b:
+                report[tag]["source_mae"] = sum(ImageStat.Stat(ImageChops.difference(a.convert("RGB"), b.convert("RGB"))).mean) / 3
+            if randomness == 1 and report[tag]["source_mae"] != 0:
+                errors.append({tag: "randomness=1 did not reproduce the ordinary same-seed baseline"})
+        else:
+            errors.append({tag: result})
+        print(tag, report.get(tag) or result, flush=True)
+    with open(os.path.join(OUT, CASE + ".json"), "w", encoding="utf-8", newline="\n") as fh:
+        json.dump({"cases": report, "errors": errors}, fh, indent=2)
+    r = {"type": "error" if errors else "result", "result": {"result": report}, "message": str(errors)}
+elif CASE in ("weight_sd15", "weight_sdxl", "weight_alt_sd15", "weight_alt_sdxl"):
     from PIL import Image, ImageChops, ImageStat
     load(SD15 if CASE.endswith("sd15") else SDXL)
     size = dict(width=512, height=768) if CASE.endswith("sd15") else dict(width=832, height=832)

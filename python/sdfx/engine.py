@@ -1224,8 +1224,9 @@ class Engine(BaseEngine):
         r = float(c["randomness"])
         if r > 0:
             rnd = self._noise(seeds, seeds, 0.0, w, h, gp).to(noise.device, noise.dtype)
-            noise = (1 - r) * noise + r * rnd
-        noise = noise / noise.float().std().clamp_min(1e-6).to(noise.dtype)
+            noise = ((1 - r) * noise + r * rnd) / math.sqrt((1 - r)**2 + r**2)
+        # DDIM's inverse state has meaningful amplitude. Empirical std normalization changes the recovered
+        # signal (and even changes a pure seeded Gaussian at randomness=1), causing excessive contrast.
         return self._run("txt2img", gp, req, ctx, sampler=gp.sampler_name, schedule=gp.scheduler, cfg_scale=gp.cfg_scale,
                          embeds=embeds, steps=gp.steps, w=w, h=h, seeds=seeds, pass_="base", image_idx=idx0,
                          images_total=total, latents=noise, cn=cn, pag=pag, hook_seed=seeds[0])

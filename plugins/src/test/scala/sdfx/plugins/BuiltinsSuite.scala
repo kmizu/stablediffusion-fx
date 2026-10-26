@@ -142,11 +142,20 @@ class BuiltinsSuite extends munit.FunSuite:
   test("img2img alternative test sets the img2imgalt hook"):
     val ctx = new FakeContext()
     val p = new Img2ImgAltPlugin
-    val gp = GenerationParams(img2img = Some(Img2ImgParams(initImage = ctx.initImage(64, 64))))
-    p.run(gp, defaults(p, "randomness" -> "0.3"), ctx)
+    val gp = GenerationParams(prompt = "edited prompt", negativePrompt = "edited negative", steps = 23,
+      img2img = Some(Img2ImgParams(initImage = ctx.initImage(64, 64))))
+    p.run(gp, defaults(p, "randomness" -> "0.3", "override_prompt" -> "original prompt",
+      "override_negative" -> "original negative"), ctx)
     val h = ctx.generated.head.hooks("img2imgalt").obj
     assertEquals(h("randomness").num, 0.3)
     assertEquals(h("inversion_steps").num, 50.0)
+    assertEquals(ctx.generated.head.extra("Decode prompt"), "original prompt")
+    assertEquals(ctx.generated.head.extra("Decode negative prompt"), "original negative")
+    assertEquals(ctx.generated.head.extra("Decode steps"), "50")
+    p.run(gp, defaults(p, "inversion_steps" -> "0"), ctx)
+    assertEquals(ctx.generated.last.extra("Decode prompt"), gp.prompt)
+    assertEquals(ctx.generated.last.extra("Decode negative prompt"), gp.negativePrompt)
+    assertEquals(ctx.generated.last.extra("Decode steps"), "23")
     intercept[IllegalArgumentException](p.run(GenerationParams(), defaults(p), ctx))
 
   test("custom code saves returned images and logs stdout"):

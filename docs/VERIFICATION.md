@@ -243,7 +243,8 @@ behavior from scheduling. The short six-step inversion Alternative diagnostic sh
 on SDXL; its default-inversion comparison is recorded separately rather than treated as an aesthetic success.
 The focused default-inversion run (`outputs/verify-weight-gradient/alternative/weight_alt_sdxl.json`) reproduced
 the same oversaturation with ordinary fixed weights and the new hook disabled. A side-by-side image was inspected;
-this remains an existing Alternative-path quality issue, not a claimed improvement by Weight Gradient.
+this was an existing Alternative-path quality issue, not a claimed improvement by Weight Gradient. The following
+repair section records the subsequent amplitude fix and its remaining limits.
 
 The real Scala AppServices path (Plugin.process -> JobQueue -> Generator -> engine -> GPU) completed 1/1 on each
 model with the hook active and `Weight Gradient: True` in output infotext, recorded in
@@ -266,3 +267,58 @@ replace, the real-model image checks.
 The refreshed extension ledger reports **85 done / 217 todo (152 targets) / 51 not applicable**. After promotion,
 BuiltinsSuite's 18 tests passed, including the check that every done entry names a registered plugin. Live notice
 collection completed for 110 projects and added the new reimplementation attribution without losing existing text.
+
+## img2img Alternative amplitude and replay repair (Codex, 2026-10-26)
+
+The quality follow-up used controlled sampler/CFG comparisons and direct latent probes. Reducing CFG alone did
+not resolve the observed excessive contrast. DDIMInverseScheduler's generic pixel clipping default was another
+real configuration bug (a valid latent 2.5 was reduced to about 0.962 instead of 2.405 after two zero-noise steps),
+but it was **not the cause in this loaded model**, whose scheduler already supplied `clip_sample=False`.
+
+The recovered SDXL inverse state had std 0.85673; `_img2imgalt` forced it to 1.0 after every blend. This amplified
+the recovered signal and also changed pure seeded random noise when Randomness=1. The repair preserves inverse
+amplitude and blends with `((1-r)*inverse + r*random) / sqrt((1-r)^2+r^2)`. It preserves both endpoints instead of
+estimating a new global normalization from the batch. No recolouring, CFG cap or sampler-default change was added.
+
+| Same SDXL portrait | Lightness std (LAB L) | Near-white RGB samples | Near-black RGB samples |
+|---|---:|---:|---:|
+| Source | 24.25 | 1.11% | 1.61% |
+| Before: DPM++ 2M, CFG6 / Decode CFG1 | 34.91 | 14.19% | 28.67% |
+| After: identical settings | 30.34 | 4.51% | 14.16% |
+| After: matched DDIM, CFG1 / Decode CFG1 | 24.64 | 1.06% | 1.71% |
+
+Metrics count RGB samples >=0.98 or <=0.02, not entire clipped pixels. Images and all grid cases were inspected;
+the matched reconstruction is close in colour/contrast, not pixel-identical. High CFG, different samplers and
+coarse inversion can still change contrast/composition. This remains a DDIM approximation; it does not implement
+the parent's legacy Euler/sigma-adjustment inversion option.
+
+Separate fixes make Decode CFG0 and 0.5 meaningful (unconditional/interpolated rather than treated as 1), keep SDXL
+pooled conditioning/time-id batch layout correct, and explicitly disable pixel-range clipping for all inverse
+configurations. The app now saves `Decode prompt`, `Decode negative prompt` and the effective `Decode steps`,
+including zero-means-sampling-steps fallback. Help text explains approximate inversion and randomness endpoints.
+
+Evidence and reproduction (all artifacts local/gitignored under `outputs/`):
+
+```powershell
+python scripts/dev/gpu_check.py python/.venv-smoke/Scripts/python.exe outputs/verify-alternative-final alt_quality_sdxl
+python scripts/dev/gpu_check.py python/.venv-smoke/Scripts/python.exe outputs/verify-alternative-final alt_quality_sd15
+```
+
+Each model completed a source plus 12 comparisons: DPM++/Euler/DDIM, Decode CFG0/.5/1/2/6 and Randomness=1.
+Both Randomness=1 outputs had **zero pixel MAE** from ordinary txt2img with the same seed and matching parameters,
+with variation strength zero. JSON reports are `verify-alternative-final/alt_quality_{sd15,sdxl}.json`; comparison
+images include `comparison.jpg`, `sd15-grid.jpg` and `sdxl-grid.jpg`. Original failing grids are retained under
+`verify-alternative-diagnosis`; runtime-only normalization/endpoint probes are under `verify-alternative-latents`.
+`scripts/dev/alt_latent_probe.py` explicitly forces normalized/raw variants to keep that comparison reproducible
+after the production fix.
+
+The rebuilt Java 21 jar -> MCP -> Scala Script -> Python engine path completed **1/1 per model** with the default
+50 decode steps. `verify-alternative-final/app-{sd15,sdxl}.json` records paths; both PNGs were inspected and contain
+the new replay keys/effective decode count. Temporary app settings were restored/removed. The updated form was
+captured in a separate dry-run home (`ui.png`/`ui-panel.png`) and inspected; the process exited 0.
+
+Analytic tests first showed six clipping/CFG failures and three amplitude/endpoint failures, then **14/14 passed**.
+The Scala replay test failed with missing `Decode prompt` before its fix, then BuiltinsSuite **18/18 passed**.
+Full Python: **314 passed** in the GPU venv, **247 passed / 17 skipped** without torch. `ui/assembly` succeeded.
+Independent review found no important production defect; its stale docstring finding was corrected. No new
+dependency, source licence or extension target was added; the ledger remains **85 done / 217 todo / 51 na**.

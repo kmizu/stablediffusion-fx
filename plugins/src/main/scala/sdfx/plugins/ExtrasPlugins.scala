@@ -173,8 +173,10 @@ class Img2ImgAltPlugin extends Plugin:
   def kind = PluginKind.Script
   override def tabs: Set[Tab] = Set(Tab.Img2Img)
   override def requiresEngineFeatures: Seq[String] = Seq("img2imgalt")
-  override def description = "Noise inversion: reconstructs the init image's noise so a changed prompt edits it (denoising 1.0)."
+  override def description = "DDIM noise inversion: estimates the init image's noise so a changed prompt edits it (denoising 1.0)."
   override def controls: Seq[Control] = Seq(
+    Note("inversion_help", "Inversion is approximate. Lower CFG and more decode steps can improve reconstruction. " +
+      "Randomness 0 keeps the recovered noise; 1 uses fresh seeded noise."),
     Text("override_prompt", "Original prompt (for inversion; empty = current prompt)"),
     Text("override_negative", "Original negative prompt"),
     Slider("decode_cfg_scale", "Decode CFG scale", 0, 15, 0.1, 1.0),
@@ -187,7 +189,11 @@ class Img2ImgAltPlugin extends Plugin:
       "decode_cfg_scale" -> v.double("decode_cfg_scale", 1.0), "inversion_steps" -> v.int("inversion_steps", 50),
       "randomness" -> v.double("randomness", 0.0))
     val p = p0.copy(hooks = p0.hooks.updated("img2imgalt", hook),
-      extra = p0.extra ++ Seq("Script" -> "img2img alternative test", "Decode CFG scale" -> Values.fmt(v.double("decode_cfg_scale", 1.0)),
+      extra = p0.extra ++ Seq("Script" -> "img2img alternative test",
+        "Decode prompt" -> Option(v.str("override_prompt")).filter(_.nonEmpty).getOrElse(p0.prompt),
+        "Decode negative prompt" -> Option(v.str("override_negative")).filter(_.nonEmpty).getOrElse(p0.negativePrompt),
+        "Decode steps" -> (if v.int("inversion_steps", 50) > 0 then v.int("inversion_steps", 50) else p0.steps).toString,
+        "Decode CFG scale" -> Values.fmt(v.double("decode_cfg_scale", 1.0)),
         "Randomness" -> Values.fmt(v.double("randomness", 0.0))))
     JobOutput(Support.step(ctx)(ctx.generate(p)).getOrElse(Nil))
 
