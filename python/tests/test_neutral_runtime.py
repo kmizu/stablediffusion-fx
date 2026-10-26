@@ -156,10 +156,8 @@ def test_pending_branch_dependent_combinations_fail_explicitly():
         with pytest.raises(EngineError, match=name):
             validate({name: {}})
         validate({name: {"enabled": False}})
-    with pytest.raises(EngineError, match="ControlNet"):
-        validate({}, controlnet=True)
-    with pytest.raises(EngineError, match="PAG"):
-        validate({}, pag=True)
+    validate({}, controlnet=True)
+    validate({}, pag=True)
 
 
 def test_zero_snr_v_prediction_ddim_has_finite_native_coefficients():
@@ -325,3 +323,88 @@ def test_ordinary_decode_override_keeps_legacy_adjustment_path(monkeypatch):
                           {"override_prompt": "a cat", "randomness": 0}, None, encoded(), [1], 0, 1, 16, 16, None, None)
     torch.testing.assert_close(seen[0], seen[1], rtol=0, atol=0)
     assert seen[1].mean() == 3
+
+
+@pytest.mark.parametrize("cfg", [1, 6])
+@pytest.mark.parametrize("phi", [0, 0.7])
+@pytest.mark.parametrize("batch", [1, 2])
+@pytest.mark.parametrize("keyword", ["AND_PERP", "AND_SALT", "AND_TOPK"])
+def test_pag_branch_composition_preserves_native_guidance_layout(cfg, phi, batch, keyword):
+    class UNet(torch.nn.Module):
+        def forward(self, sample, timestep, encoder_hidden_states=None, **kw):
+            groups = 3 if cfg > 1 else 4
+            assert sample.shape[0] == batch * groups
+            result = encoder_hidden_states[:, :4].reshape_as(sample).clone()
+            # Real PAG processors use the final third (CFG) or half (non-CFG) for the perturbed path.
+            result[-batch:] += torch.tensor([0.7, -0.4, 0.5, -0.3]).view(1, 4, 1, 1)
+            return (result,)
+    torch.manual_seed(61)
+    negative = torch.randn(batch, 4, 1)
+    positives = [torch.randn(batch, 4, 1), torch.randn(batch, 4, 1)]
+    branches = [dict(prompt_embeds=v, negative_prompt_embeds=negative) for v in positives]
+    tree = parse("base " + keyword + " extra :0.7")
+    unet = UNet()
+    scheduler = diffusers.DDIMScheduler(clip_sample=False)
+    scheduler.set_timesteps(4)
+    t = scheduler.timesteps[1]
+    z = torch.randn(batch, 4, 1, 1)
+    ab = coefficients(scheduler, t)
+    u = negative.reshape_as(z)
+    xs = [v.reshape_as(z) for v in positives]
+    perturb = torch.tensor([0.7, -0.4, 0.5, -0.3]).view(1, 4, 1, 1)
+    u0 = to_x0(z, u, ab)
+    ordinary = [to_x0(z, v, ab) for v in xs]
+    perturbed = [to_x0(z, v + perturb, ab) for v in xs]
+    target = from_x0(z, compose(tree, ordinary, u0, cfg, phi=phi), ab)
+    raw_c = from_x0(z, compose(tree, ordinary, u0, 1), ab)
+    raw_p = from_x0(z, compose(tree, perturbed, u0, 1), ab)
+    hook = RuntimeHook(unet, scheduler, Plan(tree, branches), cfg, phi, pag=True).install()
+    try:
+        out = unet(torch.cat([z] * (3 if cfg > 1 else 2)), t, encoder_hidden_states=torch.empty(0))[0]
+        if cfg > 1:
+            uncond, cond, pert = out.chunk(3)
+            actual = uncond + cfg * (cond - uncond) + 2.3 * (cond - pert)
+        else:
+            cond, pert = out.chunk(2)
+            actual = cond + 2.3 * (cond - pert)
+        torch.testing.assert_close(actual, target + 2.3 * (raw_c - raw_p), rtol=3e-5, atol=3e-5)
+    finally:
+        hook.remove()
+
+
+@pytest.mark.parametrize("cfg", [1, 6])
+def test_pag_config_with_native_pag_inactive_uses_ordinary_batch(cfg):
+    # Native PAG scale=0 or layers=[] leaves ordinary CFG/no-CFG groups despite a PAG pipeline/config.
+    class UNet(torch.nn.Module):
+        def forward(self, sample, timestep, encoder_hidden_states=None, **kwargs):
+            assert sample.shape[0] == 2
+            return (encoder_hidden_states[:, :4].reshape_as(sample),)
+    positive, negative = torch.ones(1, 4, 1) * 3, torch.ones(1, 4, 1)
+    branch = dict(prompt_embeds=positive, negative_prompt_embeds=negative)
+    scheduler = diffusers.DDIMScheduler(clip_sample=False)
+    scheduler.set_timesteps(4)
+    unet = UNet()
+    hook = RuntimeHook(unet, scheduler, Plan(parse("one :0.5 AND two :0.5"), [branch, branch]), cfg, 0, pag=True).install()
+    try:
+        result = unet(torch.zeros(2 if cfg > 1 else 1, 4, 1, 1), scheduler.timesteps[0], encoder_hidden_states=positive)[0]
+        assert result.shape[0] == (2 if cfg > 1 else 1)
+    finally:
+        hook.remove()
+
+
+@pytest.mark.parametrize("guided", [False, True])
+def test_real_pag_processors_keep_positive_results_when_negative_group_is_added(guided):
+    from diffusers.models.attention_processor import Attention
+    from diffusers.models.attention_processor import PAGIdentitySelfAttnProcessor2_0, PAGCFGIdentitySelfAttnProcessor2_0
+    torch.manual_seed(66)
+    attention = Attention(query_dim=4, heads=1, dim_head=4)
+    attention.set_processor(PAGCFGIdentitySelfAttnProcessor2_0() if guided else PAGIdentitySelfAttnProcessor2_0())
+    negative, positive = torch.randn(2, 9, 4), torch.randn(2, 9, 4)
+    if guided:
+        result = attention(torch.cat([negative, positive, positive]))
+        assert result.shape[0] == 6
+    else:
+        native = attention(torch.cat([positive, positive]))
+        expanded = attention(torch.cat([negative, positive, negative, positive]))
+        torch.testing.assert_close(expanded[2:4], native[:2])
+        torch.testing.assert_close(expanded[6:], native[2:])

@@ -81,7 +81,8 @@ go above their control, and the label column stays at least 88 px wide so cards 
 `docs/superpowers/plans/2026-10-26-neutral-prompt.md`. Core runtime, native Scala form/formatter/replay and actual
 AppServices SD1.5/SDXL generation now work. Alternative inversion is connected, including its zero-noise startup
 rule, decode schedule clock, full CFG slider and NegPiP contexts; ordinary no-op/restoration are exact.
-**Still todo:** ControlNet/PAG, PhotoMaker, IP-Adapter/Reference/ControlLLLite, CADS/SAG and guidance/timestep
+ControlNet/PAG are also connected: branch-specific residuals, internal CFG groups, native PAG/adaptive scale and
+joint ControlNet+PAG were checked on SD1.5/SDXL. **Still todo:** PhotoMaker, IP-Adapter/Reference/ControlLLLite, CADS/SAG and guidance/timestep
 modifiers explicitly guarded in `neutral_runtime.validate`. No ledger promotion yet. See VERIFICATION.md for
 tested scope and finite synthetic checks. Continue prompt_fusion / composable_lora after this feature is finished.
 
@@ -172,7 +173,7 @@ Suggested next steps, by value and fit with what exists:
 | What | Command / file |
 |---|---|
 | Scala tests | `sbt.bat -batch test` (latest: 483 passed, 2026-10-26) |
-| Python tests | `python/.venv-smoke/Scripts/python.exe -m pytest` (latest: 396 passed, 4 torchsde endpoint warnings) and `.venv-test` (260 passed, 32 skipped) |
+| Python tests | `python/.venv-smoke/Scripts/python.exe -m pytest` (latest: 440 passed, 4 torchsde endpoint warnings) and `.venv-test` (260 passed, 33 skipped) |
 | Dry-run smoke | `scripts/smoke.ps1` / `scripts/smoke.sh` |
 | Engine on GPU, one case per process | `scripts/dev/gpu_check.py <venv python> <out dir> <case>`; cases `sched_*`, `ext_*`, `ad_*`, `image_*`, `weight_*`, `negpip_*` |
 | Script plugins through the real app over MCP | `scripts/dev/write_settings.py`, then `scripts/dev/mcp_scripts.py "C:\Program Files\Java\jdk-21\bin\java.exe" <script ids>` |

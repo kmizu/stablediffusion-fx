@@ -1009,9 +1009,16 @@ class Engine(BaseEngine):
             ext_mod.install(self, pipe, task, gp, req, kw, ctx, cleanups, plan=xplan, w=w, h=h, sched=sched,
                             cfg_scale=cfg_scale, image=image, mask=mask, steps=steps, seed=hook_seed)
             if neutral_plan:
+                neutral_cn = None
+                if cn_models:
+                    from .neutral_controlnet import ControlNetFrame
+                    neutral_cn = ControlNetFrame(pipe.controlnet).install()
+                    cleanups.append(neutral_cn.remove)
                 nh = neutral_runtime.RuntimeHook(unet, sched, neutral_plan, cfg_scale,
                         float(hooks_mod.hook_config(gp.hooks, "neutral_prompt", {"cfg_rescale": 0})["cfg_rescale"]),
                         guided=cfg_scale > 1 and getattr(unet.config, "time_cond_proj_dim", None) is None,
+                        pag=bool(pag),
+                        controlnet=neutral_cn,
                         check_interrupt=ctx.check_interrupt).install()
                 cleanups.append(nh.remove)
                 ext_mod._chain_callback(kw, nh.callback)

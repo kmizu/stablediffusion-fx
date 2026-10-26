@@ -24,7 +24,6 @@ def validate(hooks, *, controlnet=False, pag=False):
     blocked = ("photomaker", "ip_adapter", "reference", "controllllite", "cads", "sag", "cfg_schedule",
                "apg", "mahiro", "latent_modifier", "dynamic_thresholding", "detail_daemon")
     conflicts = [name for name in blocked if hook_config(hooks, name, {}) is not None]
-    conflicts += (["ControlNet"] if controlnet else []) + (["PAG"] if pag else [])
     if conflicts:
         raise EngineError(UNSUPPORTED, "Neutral Prompt integration pending for: " + ", ".join(conflicts))
 
@@ -116,10 +115,13 @@ class RuntimeHook:
     Only the enclosing UNet call invokes root hooks; leaf evaluations use its saved forward method. Engine guards
     combinations whose root hooks/residuals require branch-specific handling. Attention/module hooks still run.
     """
-    def __init__(self, unet, scheduler, plan: Plan, cfg: float, phi: float, *, guided=None, check_interrupt=lambda: None):
+    def __init__(self, unet, scheduler, plan: Plan, cfg: float, phi: float, *, guided=None, pag=False, controlnet=None,
+                 check_interrupt=lambda: None):
         self.unet, self.scheduler, self.plan = unet, scheduler, plan
         self.cfg, self.phi = cfg, phi
         self.guided = cfg > 1 if guided is None else guided
+        self.pag = pag
+        self.controlnet = controlnet
         self.step = 1
         self.check_interrupt = check_interrupt
         self._missing = object()
@@ -135,52 +137,81 @@ class RuntimeHook:
         self.check_interrupt()
         branches = [at(branch, self.step) for branch in self.plan.branches]
         batch = branches[0]["prompt_embeds"].shape[0]
-        if sample.shape[0] != batch * (2 if self.guided else 1):
+        # A PAG pipeline/config can be inactive (scale=0 or no applied layers). Its actual native batch is
+        # authoritative; do not infer activation solely from a nonempty configuration dictionary.
+        pag = self.pag and sample.shape[0] == batch * (3 if self.guided else 2)
+        native_groups = 3 if self.guided and pag else 2 if self.guided or pag else 1
+        if sample.shape[0] != batch * native_groups:
             raise EngineError(UNSUPPORTED, "Neutral Prompt received an unsupported guidance batch")
-        inputs = sample if self.guided else torch.cat([sample, sample])
+        indices = list(range(native_groups)) if self.guided else [0, 0, 1, 1] if pag else [0, 0]
+        inputs = torch.cat([sample.chunk(native_groups)[i] for i in indices])
+        layout = [False, True, True] if self.guided and pag else [False, True, False, True] if pag else [False, True]
+
+        def expand(value):
+            if torch.is_tensor(value) and value.ndim:
+                if value.shape[0] == sample.shape[0]:
+                    return torch.cat([value.chunk(native_groups)[i] for i in indices])
+                if value.shape[0] == batch:
+                    return torch.cat([value] * len(indices))
+            if isinstance(value, dict):
+                return {k: expand(v) for k, v in value.items()}
+            if isinstance(value, list):
+                return [expand(v) for v in value]
+            return value
+
         common = dict(kwargs)
-        if not self.guided:
-            for key in ("timestep_cond", "class_labels"):
-                if torch.is_tensor(common.get(key)) and common[key].shape[0] == batch:
-                    common[key] = torch.cat([common[key], common[key]])
-        results, template = [], None
+        for key in ("timestep_cond", "class_labels", "added_cond_kwargs", "attention_mask", "encoder_attention_mask"):
+            if key in common:
+                common[key] = expand(common[key])
+        results, perturbed, template = [], [], None
         for branch in branches:
             self.check_interrupt()
             kw = dict(common)
-            kw["encoder_hidden_states"] = torch.cat([branch["negative_prompt_embeds"], branch["prompt_embeds"]]).to(inputs.device, inputs.dtype)
+            kw["encoder_hidden_states"] = torch.cat([branch["prompt_embeds" if positive else "negative_prompt_embeds"] for positive in layout]).to(inputs.device, inputs.dtype)
             added = dict(kw.get("added_cond_kwargs") or {})
-            if not self.guided:
-                added = {k: torch.cat([v, v]) if torch.is_tensor(v) and v.shape[0] == batch else v for k, v in added.items()}
             if "pooled_prompt_embeds" in branch:
-                added["text_embeds"] = torch.cat([branch["negative_pooled_prompt_embeds"], branch["pooled_prompt_embeds"]]).to(inputs.device, inputs.dtype)
+                added["text_embeds"] = torch.cat([branch["pooled_prompt_embeds" if positive else "negative_pooled_prompt_embeds"] for positive in layout]).to(inputs.device, inputs.dtype)
             if added:
                 kw["added_cond_kwargs"] = added
+            if self.controlnet is not None:
+                down, mid = self.controlnet.residuals(kw, batch, layout)
+                kw["down_block_additional_residuals"] = down
+                kw["mid_block_additional_residual"] = mid
             output = self.original(inputs, timestep, *args, **kw)
             prediction = output[0] if isinstance(output, tuple) else output.sample
             if template is None:
                 template, unconditional = output, prediction[:batch]
-            results.append(prediction[batch:])
+            results.append(prediction[batch:2 * batch])
+            if pag:
+                perturbed.append(prediction[-batch:])
         z = inputs[:batch, :unconditional.shape[1]]
         ab = coefficients(self.scheduler, timestep)
-        differences = [v.float() - unconditional.float() for v in results]
-        if ab[1] == 0:
-            delta = neutral_prompt.combine_deltas(self.plan.tree, differences, zero_noise_limit=True)
-            guided = zero_noise_guidance(z, unconditional, delta, self.cfg, self.phi)
-            conditional = unconditional.float() + delta
-            if self.phi and self.cfg:
-                conditional = unconditional.float() + (guided - unconditional.float()) / self.cfg
-        else:
+
+        def compose_predictions(values, cfg, phi):
+            differences = [v.float() - unconditional.float() for v in values]
+            if ab[1] == 0:
+                delta = neutral_prompt.combine_deltas(self.plan.tree, differences, zero_noise_limit=True)
+                return unconditional.float() + delta, zero_noise_guidance(z, unconditional, delta, cfg, phi)
             delta = neutral_prompt.combine_deltas(self.plan.tree, [ab[1] * v for v in differences])
             # Keep the common x0 baseline out of subtraction when rescale is off; late low-noise steps otherwise
             # amplify float32 cancellation when converting composed x0 back into model predictions.
             conditional = unconditional.float() + delta / ab[1]
-            guided = unconditional.float() + self.cfg * delta / ab[1]
-            if self.phi:
+            guided = unconditional.float() + cfg * delta / ab[1]
+            if phi:
                 x0u = to_x0(z, unconditional, ab)
-                x0 = neutral_prompt.rescale(x0u + self.cfg * delta, x0u + delta, self.phi)
+                x0 = neutral_prompt.rescale(x0u + cfg * delta, x0u + delta, phi)
                 guided = from_x0(z, x0, ab)
-                conditional = unconditional.float() + (guided - unconditional.float()) / self.cfg if self.cfg else conditional
-        if self.guided:
+            return conditional, guided
+
+        raw_conditional, guided = compose_predictions(results, self.cfg, self.phi)
+        conditional = (unconditional.float() + (guided - unconditional.float()) / self.cfg
+                       if self.phi and self.cfg else raw_conditional)
+        if pag:
+            raw_perturbed, _ = compose_predictions(perturbed, 1, 0)
+            normal = conditional if self.guided else guided
+            perturb = normal - (raw_conditional - raw_perturbed)
+            guided = torch.cat(([unconditional if self.cfg else guided] if self.guided else []) + [normal, perturb])
+        elif self.guided:
             guided = torch.cat([unconditional if self.cfg else guided, conditional])
         guided = guided.to(unconditional.dtype)
         if isinstance(template, tuple):

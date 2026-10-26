@@ -469,3 +469,51 @@ Final full Scala **483 passed**, Python **396 passed** (four known torchsde endp
 **260 passed / 32 skipped**. Jar built; runtime module 55 tests. Source/dependency licences were already collected.
 Still unfinished: ControlNet/PAG, PhotoMaker, IP-Adapter/Reference/ControlLLLite, CADS/SAG and guidance/timestep
 modifiers in `neutral_runtime.validate`. Their guards remain explicit; target stays todo and ledger **86/216/51**.
+
+## Neutral Prompt with PAG and ControlNet (Codex, 2026-10-26; remaining modifiers still todo)
+
+PAG now composes each leaf's ordinary and perturbed predictions separately relative to ordinary unconditional
+conditioning. Native PAG/adaptive scale is applied after composition. Neutral's phi modifies the CFG result while
+preserving the difference between unrescaled composed ordinary/perturbed results. Non-CFG PAG uses four internal
+groups (negative, positive, perturbed-negative, perturbed-positive) to satisfy the real PAG processor's half split;
+the pipeline receives its normal two groups. CFG PAG retains native three groups. Extra XL pooled/time IDs follow
+the same layout. Review caught scale=0 requesting PAG groups despite native PAG being inactive; the regression
+failed first, then passed after using actual native batch layout to detect activation.
+
+`neutral_controlnet.py` records native ControlNet input/scale/image state each step. Each leaf gets recomputed text/
+pooled/time-ID-conditioned residuals, replacing first-leaf residuals. Scale windows and multiple images/models stay
+native. Guess-mode conditional-only residuals get zero negative padding. PAG ordinary/perturbed positive groups
+share positive ControlNet residuals because PAG perturbs UNet attention. Capture is suspended while replaying and
+restored even after errors; hooks are removed on cleanup. Parameters/processors are not replaced.
+
+```text
+python/.venv-smoke/Scripts/python.exe scripts/dev/gpu_check.py python/.venv-smoke/Scripts/python.exe outputs/verify-neutral-pag-sd15 neutral_pag_sd15
+python/.venv-smoke/Scripts/python.exe scripts/dev/gpu_check.py python/.venv-smoke/Scripts/python.exe outputs/verify-neutral-pag-sdxl neutral_pag_sdxl
+python/.venv-smoke/Scripts/python.exe scripts/dev/gpu_check.py python/.venv-smoke/Scripts/python.exe outputs/verify-neutral-cn-sd15 neutral_cn_sd15
+python/.venv-smoke/Scripts/python.exe scripts/dev/gpu_check.py python/.venv-smoke/Scripts/python.exe outputs/verify-neutral-cn-sdxl neutral_cn_sdxl
+```
+
+PAG: 12 cases per model, including PERP/SALT/TOPK, phi .7, CFG1, batches, Heun editing, adaptive scale and NegPiP.
+ControlNet: 13 cases per model, including multiple-model/window scales, CFG1/batch, editing, phi, NegPiP and joint
+PAG (CFG on/off). All completed without warnings; no-op and after-disable restoration have **zero pixel MAE**
+against native PAG/ControlNet baselines. JSON reports and grids in these output folders were inspected. Semantic
+effects vary: canny constraints can retain source geometry strongly. No universal concept-isolation claim.
+The scale-zero regression also passed four live cases per model (`neutral_pag_zero_{sd15,sdxl}`), including CFG1;
+composed baseline/no-active-PAG and restored outputs are pixel-identical. Reports: `outputs/verify-neutral-pag-zero-*`.
+
+Models are external verification assets, not bundled: SD1.5 `comfyanonymous/ControlNet-v1-1_fp16_safetensors`,
+`control_v11p_sd15_canny_fp16.safetensors` (SHA256 `8932b66e15aae835b3490dbf989f56c253104cee08a88bf21283762f557c9f10`);
+SDXL `diffusers/controlnet-canny-sdxl-1.0`, `diffusion_pytorch_model.fp16.safetensors` (SHA256
+`b2e7d3921058a442cc80430d1ec8847f42599c705e2451c95e77cf4dcf8d6c25`). Source manifests/bytes are retained under
+`outputs/controlnet-models`. The first SD1.5 attempt incorrectly treated A1111 keys as a diffusers directory;
+correcting the test's single-file input resolved loading. No production loader change/random initialization.
+
+Independent review used real PAG processors in 24 CFG/batch/phi/operator cases and a small real ControlNetModel
+with deliberately nonzero residual layers; branch recomputation matched direct computation in ordinary/guess mode.
+Guess mode is CPU-verified, not an extra real-checkpoint GUI-mode claim; the existing app UI has no explicit guess
+toggle. Runtime/ControlNet tests **99 passed**. Full Python **440 passed**, torch-free **260 passed / 33 skipped**;
+four existing torchsde endpoint warnings remain. Full Scala **483 passed**, jar built. The form's compatibility
+help now lists ControlNet/PAG support. No new dependency/source licence; existing diffusers attribution covers it.
+
+Still pending: PhotoMaker, IP-Adapter/Reference/ControlLLLite, CADS/SAG and guidance/timestep modifiers; explicit
+guards remain for these. `neutral_prompt` is still todo, total ledger **86 done / 216 todo / 51 na**.

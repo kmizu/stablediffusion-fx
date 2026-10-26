@@ -123,7 +123,62 @@ def mask_png(size):
 
 t0 = time.time()
 r = None
-if CASE in ("neutral_sd15", "neutral_sdxl", "neutral_alt_sd15", "neutral_alt_sdxl"):
+if CASE in ("neutral_cn_sd15", "neutral_cn_sdxl"):
+    from PIL import Image, ImageChops, ImageStat
+    load(SD15 if CASE.endswith("sd15") else SDXL)
+    size = dict(width=512, height=768) if CASE.endswith("sd15") else dict(width=832, height=832)
+    plain = "portrait of a woman, in a park, detailed"
+    common = dict(prompt=plain, steps=12, seed=11, **size)
+    source = call("txt2img", req(gp(**common)))
+    init = keep(source, CASE + "_input")
+    edge = call("preprocess", {"preprocessor": "canny", "image_path": init, "output_dir": OUT, "args": {}})
+    cn = os.path.abspath("outputs/controlnet-models/" + ("sd15-canny" if CASE.endswith("sd15") else "sdxl-canny"))
+    if CASE.endswith("sd15"):
+        cn = os.path.join(cn, "diffusion_pytorch_model.safetensors")  # upstream A1111 keys require from_single_file
+    unit = dict(enabled=True, model="canny", image=edge["result"]["path"], preprocessor="none", weight=0.6,
+                guidance_start=0., guidance_end=1., preprocessor_args={})
+    common["controlnet"] = [unit]
+    def composed(prompt=plain, phi=0, cfg=6, batch=1, hooks=None, **kw):
+        return dict(prompt=prompt, cfg_scale=cfg, batch_size=batch,
+                    hooks=dict({"neutral_prompt": {"cfg_rescale": phi}}, **(hooks or {})), **kw)
+    text = plain + " AND_TOPK red scarf :0.5"
+    cases = [("baseline", {}), ("noop", composed()),
+        ("perp", composed(plain + " AND_PERP black hair :-0.5")),
+        ("salt", composed(plain + " AND_SALT red scarf :0.5")),
+        ("topk_rescale", composed(text, phi=0.7)),
+        ("cfg1", composed(text, cfg=1)),
+        ("cfg1_batch", composed(text, cfg=1, batch=2)),
+        ("heun_edit", composed(plain + " AND_TOPK [red scarf:blue scarf:0.5] :0.5", sampler_name="Heun")),
+        ("multi_window", composed(text, controlnet=[dict(unit, weight=0.3), dict(unit, weight=0.3, guidance_start=0.25, guidance_end=0.75)])),
+        ("pag", composed(text, hooks={"pag": {"scale": 2}})),
+        ("pag_cfg1", composed(text, cfg=1, hooks={"pag": {"scale": 2}})),
+        ("negpip", composed(plain + " AND_TOPK (black hair:-1) :0.5", hooks={"negpip": {}})),
+        ("restored", {})]
+    paths, report, errors = {}, {}, []
+    for tag, changes in cases:
+        rq = req(gp(**dict(common, **changes)))
+        rq["controlnet_paths"] = {"canny": cn}
+        result = call("txt2img", rq)
+        path = keep(result, CASE + "_" + tag)
+        if path:
+            paths[tag] = path
+            report[tag] = dict(path=path, warnings=result["result"]["warnings"], images=len(result["result"]["images"]))
+            if report[tag]["warnings"]:
+                errors.append({tag: report[tag]["warnings"]})
+        else:
+            errors.append({tag: result})
+        print(tag, report.get(tag) or result, flush=True)
+    for tag in ("noop", "restored"):
+        if "baseline" in paths and tag in paths:
+            with Image.open(paths["baseline"]) as a, Image.open(paths[tag]) as b:
+                diff = sum(ImageStat.Stat(ImageChops.difference(a.convert("RGB"), b.convert("RGB"))).mean) / 3
+            report["baseline_vs_" + tag] = diff
+            if diff:
+                errors.append({tag: diff})
+    with open(os.path.join(OUT, CASE + ".json"), "w", encoding="utf-8") as fh:
+        json.dump(dict(cases=report, errors=errors, controlnet=cn), fh, indent=2)
+    r = {"type": "error" if errors else "result", "result": {"result": report}, "message": str(errors)}
+elif CASE in ("neutral_sd15", "neutral_sdxl", "neutral_alt_sd15", "neutral_alt_sdxl", "neutral_pag_sd15", "neutral_pag_sdxl", "neutral_pag_zero_sd15", "neutral_pag_zero_sdxl"):
     from PIL import Image, ImageChops, ImageStat
     load(SD15 if CASE.endswith("sd15") else SDXL)
     size = dict(width=512, height=768) if CASE.endswith("sd15") else dict(width=832, height=832)
@@ -147,7 +202,31 @@ if CASE in ("neutral_sd15", "neutral_sdxl", "neutral_alt_sd15", "neutral_alt_sdx
         ("negpip", dict(prompt=plain + " AND_TOPK (black hair:-1) :0.7", hooks={"neutral_prompt": {}, "negpip": {}})),
         ("gradient", dict(prompt=plain + " AND_TOPK {red scarf::0.1-1.5} :0.7", hooks={"neutral_prompt": {}, "weight_gradient": {}})),
         ("restored", {})]
-    if CASE.startswith("neutral_alt_"):
+    if CASE.startswith("neutral_pag_"):
+        pag = {"scale": 2, "adaptive_scale": 0}
+        def pagged(prompt=plain, phi=0, cfg=6, batch=1, extra=None, adaptive=0, sampler="DPM++ 2M"):
+            hooks = {"neutral_prompt": {"cfg_rescale": phi}, "pag": dict(pag, adaptive_scale=adaptive)}
+            hooks.update(extra or {})
+            return dict(prompt=prompt, cfg_scale=cfg, batch_size=batch, sampler_name=sampler, hooks=hooks)
+        variants = [("baseline", dict(hooks={"pag": pag})), ("noop", pagged()),
+            ("perp", pagged(plain + " AND_PERP black hair :-0.5")),
+            ("salt", pagged(plain + " AND_SALT red scarf :0.5")),
+            ("topk_rescale", pagged(plain + " AND_TOPK red scarf :0.5", phi=0.7)),
+            ("cfg1", pagged(plain + " AND_TOPK red scarf :0.5", cfg=1)),
+            ("cfg1_batch", pagged(plain + " AND_TOPK red scarf :0.5", cfg=1, batch=2)),
+            ("batch", pagged(plain + " AND_TOPK red scarf :0.5", batch=2)),
+            ("heun_edit", pagged(plain + " AND_TOPK [red scarf:blue scarf:0.5] :0.5", sampler="Heun")),
+            ("adaptive", pagged(plain + " AND_TOPK red scarf :0.5", adaptive=0.003)),
+            ("negpip", pagged(plain + " AND_TOPK (black hair:-1) :0.5", extra={"negpip": {}})),
+            ("restored", dict(hooks={"pag": pag}))]
+        if CASE.startswith("neutral_pag_zero_"):
+            text = plain + " AND_TOPK red scarf :0.5"
+            ordinary = dict(prompt=text, hooks={"neutral_prompt": {"cfg_rescale": 0.7}})
+            variants = [("baseline", ordinary),
+                ("noop", dict(ordinary, hooks={"neutral_prompt": {"cfg_rescale": 0.7}, "pag": {"scale": 0}})),
+                ("cfg1", dict(prompt=text, cfg_scale=1, hooks={"neutral_prompt": {}, "pag": {"scale": 0}})),
+                ("restored", ordinary)]
+    elif CASE.startswith("neutral_alt_"):
         init = i2i(os.path.join(OUT, CASE + "_baseline.png"), denoise=0.5)
         alt = {"inversion_steps": 8, "decode_cfg_scale": 1}
         def alternative(prompt=plain, phi=0, decode=1, extra=None, count=8):

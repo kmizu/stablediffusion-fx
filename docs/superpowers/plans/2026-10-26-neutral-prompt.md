@@ -120,3 +120,47 @@ Final foundation suites: 341 Python passed; 260 torch-free passed / 31 skipped. 
 - Still finish remaining guards in validate(): ControlNet/PAG, PhotoMaker, IP-Adapter/Reference/ControlLLLite,
   CADS/SAG, CFG Schedule/APG/Mahiro/Latent Modifier/Dynamic Thresholding/Detail Daemon. Keep target todo until
   branch-specific handling/validation is complete. Ledger remains 86 done / 216 todo / 51 na.
+
+## Next integration design: PAG and ControlNet
+
+PAG: resolve ordinary and perturbed positive predictions through the same expression tree independently, both
+relative to the ordinary unconditional prediction. Preserve native pipeline PAG/adaptive scale after composition.
+Neutral CFG rescale adjusts the CFG result, while PAG retains the difference between unrescaled composed ordinary
+and perturbed predictions. With CFG, evaluate [negative, positive, perturbed-positive]. Without pipeline CFG,
+PAG's processor divides the batch in two: internally evaluate [negative, positive, perturbed-negative,
+perturbed-positive], then return the native two groups. Ignore the perturbed-negative output. Keep processor
+objects/cleanup unchanged; test all operators, CFG on/off, rescale, batch, editing and exception restoration.
+
+ControlNet: capture the native call frame for the current step, then recompute branch-specific residuals using
+each leaf's current conditioning/pooled vectors. Do not reuse first-leaf residuals. Preserve native scale windows,
+guess-mode conditional-only computation/zero unconditional residuals, multiple models and internal CFG expansion.
+PAG+ControlNet must either handle both layouts correctly or remain explicitly unfinished until it does.
+
+## PAG / ControlNet integration result
+
+- PAG batching/composition is connected. Ordinary and perturbed leaves resolve separately, preserving native
+  adaptive scale. Non-CFG uses four internal groups to retain an ordinary negative prediction while PAG's native
+  processor splits two halves. The pipeline still receives its ordinary 2/3 groups. Phi changes CFG but keeps
+  the unrescaled composed PAG difference. This ordering is an explicit design choice, covered by reference tests.
+- Review found scale=0/no-active-PAG still using an ordinary native batch. Runtime now derives active PAG from
+  that actual batch, not merely configuration presence. Failing inactive-layout regression then passes. Actual
+  PAG attention processors are CPU-tested; reviewer additionally compared 24 native-processor/pooled/time-ID cases.
+- `neutral_controlnet.py` captures the native ControlNet frame and recomputes each leaf's residuals with its text/
+  pooled/time-ID conditioning. It preserves native image preprocessing, scale windows and multiple models. Guess
+  mode evaluates the positive side and zero-pads negative residuals; PAG groups reuse the corresponding ordinary
+  negative/positive residuals (ControlNet itself is not perturbed). Failed replays restore capture state/hooks.
+- Frame unit tests prove stale first-leaf residuals are replaced; CPU real small ControlNetModel comparisons with
+  nonzero residual layers passed in independent review. Actual Guess-mode behavior is covered by CPU tests, not
+  claimed as a separate real-checkpoint GUI mode (the app's existing unit UI has no explicit guess toggle).
+- Real SD1.5/SDXL: PAG 12 variants per model; ControlNet 13 variants per model, including CFG1/batch, rescale,
+  editing/Heun, multiple models/windows, NegPiP and joint ControlNet+PAG with/without CFG. No warnings; no-op and
+  restored baselines are exact on both models. Inspected grids/reports are `outputs/verify-neutral-{pag,cn}-*`.
+- SD1.5 checkpoint is A1111 single-file format; the first test wrongly used a diffusers directory and failed to
+  load. Test input path corrected to from_single_file, then the full matrix passed. SDXL uses a diffusers directory.
+  Original model bytes, source URLs and SHA256s retained in `outputs/controlnet-models/*/source.json`; not bundled.
+- Full final suites: Scala 483 passed and jar built; Python 440 passed (four known torchsde endpoint warnings),
+  torch-free 260 passed / 33 skipped. Runtime 83 tests + ControlNet 16 tests pass. No new dependency/source licence.
+- Remaining guards: PhotoMaker, IP-Adapter/Reference/ControlLLLite, CADS/SAG, CFG Schedule/APG/Mahiro/Latent Modifier/
+  Dynamic Thresholding/Detail Daemon. Target still todo; ledger remains 86/216/51.
+- Scale-zero live regression completed four cases on each model, including CFG1; no-active-PAG and restored
+  composed results match the ordinary composed baseline exactly. Reports: `outputs/verify-neutral-pag-zero-*`.
