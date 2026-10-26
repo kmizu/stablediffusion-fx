@@ -262,6 +262,7 @@ final class Generator(
       previewEvery = s.previewEvery,
       previewMethod = s.previewMethod,
       systemInfoFields = s.systemInfoMetadataFields,
+      vaeRecoveryDir = home.outputs(s).toAbsolutePath.toString,
       lbwPresets = if sent.loras.exists(_.lbw.nonEmpty) then Generator.lbwPresets(home.configDir) else Map.empty
     )
     PreparedGeneration(recorded, req, if recorded.isImg2Img then GenerationMode.Img2Img else GenerationMode.Txt2Img, warnings.result())
@@ -370,7 +371,8 @@ final class Generator(
       vaeHash = result.vaeHash.orElse(loaded.flatMap(_.vaeHash)).map(_.take(10)),
       loraHashes = result.loraHashes.toSeq.sortBy(_._1),
       scheduler = result.scheduler,
-      extra = scala.collection.immutable.ListMap.from(result.systemInfo.toSeq.map(v => "System Info" -> v.render()))
+      extra = scala.collection.immutable.ListMap.from(result.systemInfo.toSeq.map(v => "System Info" -> v.render()) ++
+        Option.when(result.vaeRecovery.nonEmpty)("VAE recovery" -> ujson.Arr.from(result.vaeRecovery).render()))
     )
     (params, Infotext.write(params, facts))
 
@@ -391,6 +393,7 @@ final class Generator(
     val result = awaitActive(handle.result, activity)
     result.images.foreach(i => listener.onTempFile(Paths.get(i.path)))
     result.warnings.foreach(listener.onLog)
+    result.vaeRecovery.foreach(a => listener.onLog(s"VAE decode recovery: ${a("latent_path").str}"))
     result.composableLoraTrace.foreach(t => listener.onLog(s"Composable LoRA trace: ${t.path}"))
     result.intermediateArtifacts.filter(a => a.`type` == "manifest" || a.`type` == "video")
       .foreach(a => listener.onLog(s"Intermediate ${a.`type`}: ${a.path}"))

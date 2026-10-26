@@ -54,6 +54,23 @@ BASE = [
      "diagnostics, benchmark, local history, metadata and explicit legacy submission independently implemented; "
      "[source 006f08f](https://github.com/vladmandic/sd-extension-system-info/tree/006f08f499bbe69c484f0f1cc332bbf0e75526c2). "
      "Optional preinstalled NVIDIA driver diagnostics are queried when available; no driver utility is bundled."),
+    ("chrisgoringe/Styles-Editor", "reimplemented", "Native CSV editing, categories, notes, backups and AES-Crypt v2 "
+     "-> `core:styles-editor`; [source 025f17f](https://github.com/chrisgoringe/Styles-Editor/tree/025f17f747975a1fc914f67806e09dcb80e6eb69)"),
+    ("harukei-tech/sd-webui-extended-style-saver", "reimplemented", "Independent native UUID presets and six-setting "
+     "save/apply -> `core:styles-editor`; no upstream code copied; "
+     "[source 7750cc6](https://github.com/harukei-tech/sd-webui-extended-style-saver/tree/7750cc6b2dcba91951402a682819bcb4fcc43bea)"),
+    ("marcobellaccini/pyAesCrypt", "reimplemented", "AES-Crypt v2 protocol interoperability reference only; generated "
+     "test fixture and bidirectional external checks at13a188f8799306ad9034167bf0bc0489319db274. "
+     "No reference code or Python crypto dependency is bundled or imported by the product."),
+    ("Haoming02/sd-webui-image-comparison", "reimplemented", "Native paired image wipe/opacity/view transforms, "
+     "source buttons and metadata differences -> `core:image-compare`; "
+     "[source 4354eda](https://github.com/Haoming02/sd-webui-image-comparison/tree/4354edab87ca6634fe1f0b94d3e0dba65f6221f0)"),
+    ("light-and-ray/sd-webui-vae-tools", "reimplemented", "Independent native latent encode/decode and failed VAE "
+     "decode recovery -> `vae_tools`; no upstream code copied; "
+     "[source 47fe6db](https://github.com/light-and-ray/sd-webui-vae-tools/tree/47fe6db4f3a8f12320c2fa040d0ba542d6325425)"),
+    ("madebyollin/taesd", "dependency", "Optional separately downloaded TAESD/TAESDXL model weights for VAE Tools. "
+     "Weights are not bundled; model repositories madebyollin/taesd and madebyollin/taesdxl on Hugging Face "
+     "are revision-pinned by python/sdfx/vae_tools.py and download requires explicit enablement."),
     ("kohya-ss/sd-scripts", "ported", "ControlNet-LLLite module layout"),
     ("lllyasviel/Fooocus", "ported", "Fooocus inpaint patch / head application"),
     ("threestudio-project/threestudio", "reimplemented", "Zero123 diffusers layout and sampling"),

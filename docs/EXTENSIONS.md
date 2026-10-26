@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 94, todo 208, na 51.
+Totals: done 98, todo 204, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-fx | Why not applicable |
 |---|---|---|---|---|---|
@@ -169,7 +169,7 @@ Totals: done 94, todo 208, na 51.
 | 160 | [Quick Tab Switch](https://github.com/AJpon/a1111-sd-webui-quickswitch.git) | 10 | na | `webui-ux` | Gradio page behaviour (tabs, buttons, dialogs); the desktop UI provides the equivalent natively |
 | 161 | [Lua](https://github.com/yownas/sd-webui-lua.git) | 37 | todo | `lua_scripting` |  |
 | 162 | [Model Downloader](https://github.com/Iyashinouta/sd-model-downloader.git) | 50 | todo | `model_downloader` |  |
-| 163 | [Styles Editor](https://github.com/chrisgoringe/Styles-Editor.git) | 87 | todo | `core:styles-editor` |  |
+| 163 | [Styles Editor](https://github.com/chrisgoringe/Styles-Editor.git) | 87 | done | `core:styles-editor` |  |
 | 164 | [Clip I/O](https://github.com/Filexor/Clip_IO.git) | 19 | todo | `clip_io` |  |
 | 165 | [Inpaint Anything](https://github.com/Uminosachi/sd-webui-inpaint-anything.git) | 1298 | todo | `inpaint_anything` |  |
 | 166 | [QR Code Generator](https://github.com/missionfloyd/webui-qrcode-generator.git) | 47 | todo | `qr_code` |  |
@@ -254,7 +254,7 @@ Totals: done 94, todo 208, na 51.
 | 245 | [FaceChain](https://github.com/modelscope/facechain.git) | 9507 | todo | `facechain` |  |
 | 246 | [Stylez](https://github.com/javsezlol1/Stylez.git) | 123 | todo | `style_selector` |  |
 | 247 | [sd-webui-panorama-tools](https://github.com/Flyguygx/sd-webui-panorama-tools.git) | 41 | todo | `panorama_tools` |  |
-| 248 | [sd-webui-extended-style-saver](https://github.com/harukei-tech/sd-webui-extended-style-saver.git) | 9 | todo | `core:styles-editor` |  |
+| 248 | [sd-webui-extended-style-saver](https://github.com/harukei-tech/sd-webui-extended-style-saver.git) | 9 | done | `core:styles-editor` |  |
 | 249 | [Semantic Guidance](https://github.com/v0xie/sd-webui-semantic-guidance.git) | 68 | todo | `semantic_guidance` |  |
 | 250 | [SD Web UI Modal Info](https://github.com/luminouspear/sd-webui-modal-info.git) | 10 | done | `core:png-info` |  |
 | 251 | [A Person Mask Generator](https://github.com/djbielejeski/a-person-mask-generator.git) | 407 | done | `person_mask` |  |
@@ -292,7 +292,7 @@ Totals: done 94, todo 208, na 51.
 | 283 | [SimpleTaggerEditor](https://github.com/davidkingzyb/SimpleTaggerEditor.git) | 8 | todo | `dataset_tag_editor` |  |
 | 284 | [ReSharpen](https://github.com/Haoming02/sd-webui-resharpen.git) | 86 | done | `resharpen` |  |
 | 285 | [Clear Screen](https://github.com/Haoming02/sd-webui-clear-screen.git) | 8 | na | `webui-ux` | Gradio page behaviour (tabs, buttons, dialogs); the desktop UI provides the equivalent natively |
-| 286 | [SD Webui Image Comparison](https://github.com/Haoming02/sd-webui-image-comparison.git) | 66 | todo | `core:image-compare` |  |
+| 286 | [SD Webui Image Comparison](https://github.com/Haoming02/sd-webui-image-comparison.git) | 66 | done | `core:image-compare` |  |
 | 287 | [SD Webui Tabs Extension](https://github.com/Haoming02/sd-webui-tabs-extension.git) | 103 | na | `webui-ux` | Gradio page behaviour (tabs, buttons, dialogs); the desktop UI provides the equivalent natively |
 | 288 | [Mosaic Outpaint](https://github.com/Haoming02/sd-webui-mosaic-outpaint.git) | 118 | todo | `mosaic_outpaint` |  |
 | 289 | [SD Webui Boomer](https://github.com/Haoming02/sd-webui-boomer.git) | 56 | na | `webui-ux` | Gradio page behaviour (tabs, buttons, dialogs); the desktop UI provides the equivalent natively |
@@ -358,7 +358,7 @@ Totals: done 94, todo 208, na 51.
 | 349 | [SD Hub](https://github.com/gutris1/sd-hub.git) | 49 | todo | `model_downloader` |  |
 | 350 | [SD Simple Dimension Preset](https://github.com/gutris1/sd-simple-dimension-preset.git) | 28 | done | `core:size-presets` |  |
 | 351 | [Style Organizer](https://github.com/KazeKaze93/sd-webui-style-organizer.git) | 40 | todo | `style_selector` |  |
-| 352 | [VAE Tools (in extras tab)](https://github.com/light-and-ray/sd-webui-vae-tools.git) | 2 | todo | `vae_tools` |  |
+| 352 | [VAE Tools (in extras tab)](https://github.com/light-and-ray/sd-webui-vae-tools.git) | 2 | done | `vae_tools` |  |
 
 Reason codes for `na`:
 

@@ -187,6 +187,7 @@ class GenerationRequest:
     preview_method: str = "approx"
     lbw_presets: Dict[str, str] = field(default_factory=dict)   # LoRA Block Weight user presets (NAME -> weights)
     system_info_fields: List[str] = field(default_factory=list)  # explicit opt-in only
+    vae_recovery_dir: str = ""  # persistent recovery artifacts; never overwrite source inputs
 
 
 @dataclass

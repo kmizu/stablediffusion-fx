@@ -29,6 +29,7 @@ object Protocol:
     val Memory = "memory"
     val Tokenize = "tokenize"
     val SystemInfo = "system_info"
+    val VaeTools = "vae_tools"
     val SystemStatus = "system_status"
     val SystemBenchmark = "system_benchmark"
     val Shutdown = "shutdown"
@@ -75,7 +76,8 @@ case class GenerationRequest(
     previewEvery: Int = 2,
     previewMethod: String = "approx",
     lbwPresets: Map[String, String] = Map.empty,
-    systemInfoFields: Seq[String] = Nil
+    systemInfoFields: Seq[String] = Nil,
+    vaeRecoveryDir: String = ""
 ) derives RW
 
 case class GeneratedImage(path: String, seed: Long, subseed: Long = -1L, width: Int = 0, height: Int = 0) derives RW
@@ -98,7 +100,8 @@ case class GenerationResult(
     warnings: Seq[String] = Nil,
     intermediateArtifacts: Seq[IntermediateArtifact] = Nil,
     composableLoraTrace: Option[ComposableLoraTrace] = None,
-    systemInfo: Option[ujson.Value] = None
+    systemInfo: Option[ujson.Value] = None,
+    vaeRecovery: Seq[ujson.Value] = Nil
 ) derives RW
 
 case class UpscaleRequest(imagePath: String, upscaler: String, scale: Double, outputDir: String, upscalerPaths: Map[String, String] = Map.empty) derives RW

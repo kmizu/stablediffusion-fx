@@ -93,6 +93,13 @@ class GalleryIndexSuite extends munit.FunSuite with TempDir:
     assertEquals(new GalleryIndex(dir).rootDir, dir)
   }
 
+  tmp.test("VAE latent data and recovery previews stay out of final image gallery") { dir =>
+    val finalImage = png(dir.resolve("txt2img-images/finished.png"), Some("a cat"), T0)
+    png(dir.resolve("vae-tools/run-1/001-encoded.png"), None, T0 + 1)
+    png(dir.resolve("vae-recovery/caught-latent.png"), None, T0 + 2)
+    assertEquals(new GalleryIndex(dir).scan().map(_.path), Vector(finalImage))
+  }
+
   tmp.test("scan: newest first, recursive, PNG only, skips dot dirs (.tmp) and empty reservations") { dir =>
     val a = png(dir.resolve("txt2img-images/2026-01-01/00000-1.png"), Some("cat, cute"), T0)
     val b = png(dir.resolve("txt2img-images/2026-01-02/00000-2.png"), Some("dog"), T0 + 2000)

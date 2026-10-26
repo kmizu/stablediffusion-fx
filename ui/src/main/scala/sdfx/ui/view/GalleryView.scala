@@ -72,6 +72,7 @@ final class GalleryView(ctx: UiContext, vm: GalleryVM, actions: ImageActions, on
         setTooltip(null)
       else
         iv.setImage(thumb(item.path))
+        iv.setUserData(item.path)
         setGraphic(box)
         tip.setText(item.fileName + item.parameters.map(p => "\n\n" + p.take(400)).getOrElse(""))
         setTooltip(tip)
@@ -84,6 +85,8 @@ final class GalleryView(ctx: UiContext, vm: GalleryVM, actions: ImageActions, on
     new ContextMenu(
       mi("Send to img2img")(actions.sendTo(Mode.Img2Img, it.path, it.parameters)),
       mi("Send to Inpaint")(actions.sendTo(Mode.Inpaint, it.path, it.parameters)),
+      mi("Compare → A")(actions.compare(false, it.path)),
+      mi("Compare → B")(actions.compare(true, it.path)),
       mi("Restore parameters")(it.parameters.fold(ctx.info("This image has no generation parameters"))(actions.restore)),
       new SeparatorMenuItem(),
       mi("Copy image")(ImageActions.copyImage(it.path)),

@@ -908,3 +908,91 @@ remain in progress; none is counted as complete by this wave.
 Only indices78 and90 are promoted: **94 done /208todo /51NA**, 143 distinct pending targets. Styles Editor's two
 source entries remain pending while native data preservation/editing acceptance continues. The overall353-entry
 goal is active.
+
+### Native Styles Editor and Extended Style Saver (2026-10-26)
+
+Both source entries163/248 are independently implemented as `core:styles-editor`. The native editor covers
+CSV edits/autosave, unchanged-record bytes and foreign columns, duplicate/reorder/filter/replace/notes, category
+creation/moves/live merging, conflict rejection, changed-only600-second backups/24 retention and authenticated
+AES-Crypt v2 restore/export. Extended presets retain UUID-distinct same-name rows and apply exactly prompts,
+size, checkpoint and VAE while preserving sampler/steps/seed/ControlNet drafts. See the owned plan for source pins.
+
+- Targeted core37 passed, including category mirror restoration, reordered unsaved identity, foreign `text`
+  columns, duplicate normalized-header rejection and unnamed payload preservation. Eight JDK encrypted payloads
+  independently decrypted byte-for-byte with unchanged external pyAesCrypt; the committed external ciphertext
+  also decrypts correctly. Reference code/packages stayed in ignored outputs; there is no product crypto package.
+- Final real native runs both passed with clean process exit: `outputs/styles-native-models-clean.log`;
+  `outputs/verify-styles-{sd15,sdxl}/styles-editor-report.json`. Each exercises actual controls/dialogs/autosave,
+  live prompt-style dropdowns, clipboard keys, categories/encrypted backup recovery, extended filters/six-field
+  Apply and exact RGB equality between named styles and explicit expanded prompts. Both reports have no skips.
+  These four-step384 conditioning comparisons are not aesthetic-quality benchmarks. Whole1280x800 screenshots
+  were inspected; details remain scrollable and controls wrap at the minimum viewport.
+- An earlier manual-helper exit failed when an advertised clipboard format returned null. That attempt cannot
+  establish restoration of the user's original clipboard. Helpers now preflight every advertised format and skip
+  mutations if preservation is unavailable; independent cleanup always attempts clipboard/window/services/JavaFX
+  shutdown. Two regression tests pass. Final runs restore their captured clipboard successfully. No clipboard
+  contents are written to logs/artifacts. Tokenizer's manual helper shares the same protection.
+- Initial Styles integration passed Scala541 and assembly (`outputs/styles-scala-final.log`); the combined final
+  aggregate below supersedes this checkpoint. No Python product source was changed by Styles itself.
+  Attribution retains Apache-2.0 notices for Styles-Editor and the interoperability reference; the unlicensed
+  ExtendedStyleSaver behavior is independently implemented without copied code.
+- Independent final UI review found and repaired blank-VAE engine/UI mismatch, overlapping asynchronous preset
+  Apply and failed-autosave draft loss. Blank/whitespace VAE now means Automatic consistently. A single-flight
+  guard covers model/VAE loading and rejects reentrant native/direct Apply. Failed writes preserve exact proposed
+  CSV in a separate recovery file before navigation; if recovery also fails, details/navigation lock while Retry
+  Save remains available. A real file blocker plus external-edit conflict produced RED, then native GREEN compared
+  the entire retained CSV after retry. Peer review approved the follow-up. Real SD1.5/SDXL integrated runs in
+  `outputs/native-tools-scala-final.log` both passed nine checks with normal exits; the final UI-only double-failure
+  lock adds a tenth check in `outputs/verify-styles-final-cpu` and changes no model/generation path.
+
+Only indices163/248 are promoted: **96 done /206todo /51NA**,142 distinct pending targets. Image comparison and
+VAE Tools remain pending their own integrated acceptance. The overall353-entry goal remains active.
+
+### Native Image Comparison and VAE Tools (2026-10-26)
+
+- **Image Comparison (index286):** independently implemented from pinned MIT source4354eda. Core6/UI3 tests
+  and native helper pass on existing SD1.5/SDXL images. Actual keyboard/mouse wipe, direction/opacity/swap,
+  shared zoom/pan, source buttons/history, metadata diffs, safe export and CtrlAlt send were exercised. Every
+  source byte stays unchanged and exported pixels match. Delayed loads retain newer draft/Clear; image-pair
+  changes retain zoom/pan; live previews send their current pixels without stale file paths or metadata.
+  Independent reviewers approved these three repairs. Comparison starts no engine and does not claim new model
+  inference. Formats are limited by JVM image readers. Compact/expanded screenshots intentionally follow a bad-file
+  test: the error remains visible while the last pair is retained. Report: `outputs/verify-image-comparison`.
+- **VAE Tools (index352):** clean implementation of unlicensed source47fe6db, not copied code. Both real model
+  families pass19 Full/Approx NN report cases, then20 with revision-pinned optional pretrained TAESD/TAESDXL.
+  L grayscale PNG is an exact serialized tensor container. RGBA/CMYK quantize over[-10,10], TIFF retains CMYK
+  channels and JPEG100 adds loss. Sixteen-channel packing has codec coverage, not SD3 inference coverage.
+  Full/TAESD encode and decode; Approx NN/cheap previews use their documented smaller resolutions.
+- Real generation RGB is identical with the recovery catcher enabled/disabled; injected final decode failure
+  produces durable recovery data and an explicitly Broken approximate preview, then ordinary generation restores.
+  Raw safetensors stores the exact failed `vae_decoder_input` tensor/dtype. The RGBA recovery PNG is a quantized
+  diffusion-coordinate approximation. CPU tiny-VAE tests compare10000 fp16 and10000 fp32 values bit-for-bit;
+  standard scaling/inverse arithmetic occurs in fp32 before VAE casting. Batch errors remain per-item, hashing
+  streams after file bounds, and portable PNG metadata includes selected VAE/scaling provenance.
+- Both integrated native/AppServices/MCP model runs pass actual L/RGBA/CMYK JPEG controls, original-mode file
+  handling, batching, validation/recovery, tiling restoration, decoded-file preview identity/every pixel and
+  viewport scrolling. The earlier helper URL assertion was repaired to compare actual file identity and pixels
+  after JavaFX loading; no preview correctness check was removed. Production catch scoping and test JSON implicit
+  argument compile errors were fixed before acceptance. Integrated log: `outputs/native-tools-integrated-ui.log`;
+  reports/screenshots: `outputs/verify-vae-native-{sd15,sdxl}`.
+- Real Python matrices and TAESD reports: `.worktrees/vae-tools/outputs/verify-vae-{tools,taesd}-{sd15,sdxl}`.
+  Optional pretrained MIT weights were cached through the explicitly enabled download path, never bundled.
+  Local preexisting Approx NN files were hashed and safely loaded; there is no separate asset-license/digest
+  claim beyond upstream release provenance. Actual external-selected-VAE reconstruction quality was not measured.
+  Independent fix review ran7 CPU regressions and approved exact recovery, bounds and provenance repairs.
+- Integrated Python829 passed/1skipped (eight warnings plus interpreter-exit Swig warning); torch-free360 passed/
+  81skipped (including collection skips, recorded in JUnit). Logs: `outputs/native-tools-{python,notorch}.log`. Native tool outputs/recovery stay out of final
+  image gallery scans; no parent Web UI import/launch or model-source write is involved.
+- Final aggregate verification also exposed an existing engine-start failure ordering race: the start promise
+  could fail while the supervisor still reported Starting. A latch-controlled test reproduced it deterministically;
+  failure state/bookkeeping now publish before promise completion, with listeners outside the lock afterward.
+  Epoch/stopped/retry handling is retained. The original fatal-error test remains intact; no sleep was added.
+  The full protocol test now includes the additive recovery-directory key/default, and the MCP fake engine has
+  an explicit real-VAE refusal so the raw-file passthrough assertion remains strict.
+- Release check: focused deterministic startup regression passed, full Scala555 passed and assembly succeeded
+  (`outputs/native-tools-release-check.log`). The final Styles native CPU helper passes all10 checks on the
+  integrated source. The authenticated notice collector completed126 projects; Apache/MIT texts are retained
+  verbatim. Code whitespace checks exclude verbatim license archives and the hash-verified CRLF crypto fixture.
+
+Indices163/248/286/352 are the combined native wave: **98 done /204todo /51NA**,140 distinct pending targets.
+The overall353-entry goal remains unfinished.

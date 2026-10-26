@@ -26,6 +26,23 @@ class McpToolsSuite extends munit.FunSuite:
     services.shutdown()
     deleteTree(home.root)
 
+  test("VAE file inputs reach the engine without RGB decoding and retain their bytes") {
+    val path = home.outputs(services.settings).resolve("encoded-latent.safetensors")
+    Files.createDirectories(path.getParent)
+    val original = Array[Byte](1, 17, -3, 61, 0, 4)
+    Files.write(path, original)
+    val response = call("vae_tools", ujson.Obj("input_paths" -> ujson.Arr(path.toString), "operation" -> "decode"))
+    assert(response("isError").bool)
+    assert(textOf(response).contains("real loaded VAE"), textOf(response))
+    assert(java.util.Arrays.equals(Files.readAllBytes(path), original))
+    val outside = Files.createTempFile("vae-outside-", ".safetensors")
+    try
+      val denied = call("vae_tools", ujson.Obj("input_paths" -> ujson.Arr(outside.toString)))
+      assert(denied("isError").bool)
+      assert(textOf(denied).contains("allowed folders"), textOf(denied))
+    finally Files.deleteIfExists(outside)
+  }
+
   private def call(tool: String, args: ujson.Value, rec: ujson.Value => Unit = _ => (), id: ujson.Value = ujson.Null, token: Option[ujson.Value] = None): ujson.Value =
     val r = server.handle(callReq(tool, args, id, token), rec).getOrElse(fail("no response"))
     assert(!r.obj.contains("error"), s"JSON-RPC error: $r")
@@ -40,7 +57,7 @@ class McpToolsSuite extends munit.FunSuite:
     val ts = server.handle(request("tools/list"), _ => ()).get("result")("tools").arr
     val names = ts.map(_("name").str).toSet
     for n <- Seq("txt2img", "img2img", "txt2img_async", "img2img_async", "get_job", "list_models", "set_model", "list_loras",
-        "list_samplers", "list_recent", "get_image", "get_status", "interrupt", "list_scripts", "run_script")
+        "list_samplers", "list_recent", "get_image", "get_status", "interrupt", "list_scripts", "run_script", "vae_tools")
     do assert(names.contains(n), n)
     ts.foreach { t =>
       val s = t("inputSchema")

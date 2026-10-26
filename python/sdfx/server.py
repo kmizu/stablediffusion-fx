@@ -24,7 +24,7 @@ log = logging.getLogger("sdfx.server")
 QUEUED_TYPES = ("list_models", "list_files", "list_samplers", "load_model", "set_vae", "txt2img", "img2img",
                 "preprocess", "upscale", "unload", "memory", "restore_faces", "caption", "run_code", "img2vid",
                 "novel_view", "merge_models", "convert_model", "image_tool", "tokenize", "system_info",
-                "system_benchmark", "system_submission_preview", "system_submit")
+                "system_benchmark", "system_submission_preview", "system_submit", "vae_tools")
 
 
 def classify_exception(e: BaseException) -> tuple[str, str, str]:

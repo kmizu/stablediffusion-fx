@@ -147,6 +147,8 @@ def handle_work(rid, typ, params):
         if typ in ("txt2img", "img2img"):
             interrupted.clear()
             generate(rid, typ, params)
+        elif typ == "vae_tools":
+            error(rid, "unsupported", "VAE Tools requires a real loaded VAE; fake engine cannot encode or decode latents")
         elif typ == "load_model":
             time.sleep(float(params.get("delay", 0)) if isinstance(params.get("delay"), (int, float)) else 0)
             if "missing" in params["path"]:

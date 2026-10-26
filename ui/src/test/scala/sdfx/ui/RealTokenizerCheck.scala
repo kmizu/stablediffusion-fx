@@ -61,6 +61,8 @@ object RealTokenizerCheck:
     require(ready.await(30, TimeUnit.SECONDS), "JavaFX startup timed out")
     var window: MainWindow = null
     var clipboardBackup: Option[java.util.HashMap[DataFormat, Object]] = None
+    var primaryFailure: Throwable = null
+    var skips = Vector.empty[String]
     val text = "a cat, 日本語 café 🐈"
     val expectedIds = Seq(320, 2368, 267, 39121, 44353, 34002, 508, 15304, 2074, 486)
     var checks = Vector.empty[String]
@@ -127,14 +129,18 @@ object RealTokenizerCheck:
         results.getSelectionModel.selectFirst()
         window.root.applyCss()
         window.root.layout()
-        val clipboard = Clipboard.getSystemClipboard
-        val saved = new java.util.HashMap[DataFormat, Object]()
-        clipboard.getContentTypes.asScala.foreach(format => saved.put(format, clipboard.getContent(format)))
-        clipboardBackup = Some(saved)
-        find[Button]("tokenizer-tokenizer-copy-ids").fire()
-        require(clipboard.getString == expectedIds.mkString(", "), "Copy IDs handler failed")
+        NativeAcceptanceSafety.captureClipboard() match
+          case Right(saved) =>
+            clipboardBackup = Some(saved)
+            find[Button]("tokenizer-tokenizer-copy-ids").fire()
+            require(Clipboard.getSystemClipboard.getString == expectedIds.mkString(", "), "Copy IDs handler failed")
+            checked("native copy IDs button; clipboard restoration attempted on exit")
+          case Left(reason) =>
+            val skip = "native copy IDs button: " + reason + "; original clipboard left unchanged"
+            skips :+= skip
+            println("TOKENIZER SKIP: " + skip)
       }
-      checked("native stream tabs, token table, decoded Unicode, copy IDs button")
+      checked("native stream tabs, token table and decoded Unicode")
       inspect(expectedIds.mkString(", "), ids = true)
       fx {
         require(find[TabPane]("tokenizer-results").getTabs.size == streamCount)
@@ -269,22 +275,20 @@ object RealTokenizerCheck:
       }
       checked("native expanded Prompt Fusion and intermediate video forms")
       val report = ujson.Obj("success" -> true, "model" -> Json.toJs(loaded), "tokenization" -> Json.toJs(direct),
-        "checks" -> ujson.Arr.from(checks), "screenshot" -> screenshot.toString,
+        "checks" -> ujson.Arr.from(checks), "skips" -> ujson.Arr.from(skips), "screenshot" -> screenshot.toString,
         "home" -> home.root.toString, "clipboard_saved_to_disk" -> false)
       Files.writeString(output.resolve("tokenizer-ui-report.json"), ujson.write(report, indent = 2))
       println(s"Real tokenizer UI acceptance passed: ${loaded.kind}; report ${output.resolve("tokenizer-ui-report.json")}")
     catch
       case error: Throwable =>
+        primaryFailure = error
         if window != null then
           try snapshot(output.resolve("tokenizer-ui-failure.png")) catch case _: Throwable => ()
         throw error
     finally
-      try fx {
-        clipboardBackup.foreach(saved => Clipboard.getSystemClipboard.setContent(saved))
-        if window != null then
-          window.dispose()
-          window.stage.close()
-      }
-      finally
-        try services.shutdown()
-        finally Platform.exit()
+      NativeAcceptanceSafety.cleanup(primaryFailure)(
+        () => fx { clipboardBackup.foreach(NativeAcceptanceSafety.restore) },
+        () => { if window != null then fx { window.dispose() } },
+        () => { if window != null then fx { window.stage.close() } },
+        () => services.shutdown(),
+        () => Platform.exit())

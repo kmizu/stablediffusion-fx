@@ -45,9 +45,9 @@ final class EngineSupervisor(
 
   /** Requests that make the engine "busy" (everything that may take long). */
   val heavyTypes: Set[String] = Set(Protocol.Types.Txt2Img, Protocol.Types.Img2Img, Protocol.Types.Upscale,
-    Protocol.Types.Preprocess, Protocol.Types.LoadModel, Protocol.Types.SetVae, Protocol.Types.SystemBenchmark)
+    Protocol.Types.Preprocess, Protocol.Types.LoadModel, Protocol.Types.SetVae, Protocol.Types.SystemBenchmark, Protocol.Types.VaeTools)
   private val generationTypes: Set[String] = Set(Protocol.Types.Txt2Img, Protocol.Types.Img2Img, Protocol.Types.Upscale, Protocol.Types.Preprocess,
-    Protocol.Types.SystemBenchmark)
+    Protocol.Types.SystemBenchmark, Protocol.Types.VaeTools)
   private val loadTypes: Set[String] = Set(Protocol.Types.LoadModel, Protocol.Types.SetVae)
 
   private val lock = new Object
@@ -145,26 +145,37 @@ final class EngineSupervisor(
     launchP.foreach { p =>
       val myEpoch = epoch
       notifyState(EngineState.Starting)
-      p.future.onComplete { r =>
-        val (current, again) = lock.synchronized {
+      def complete(r: Try[EngineProcess]): Unit =
+        val message = r match
+          case Failure(e) =>
+            try Option(e.getMessage).getOrElse(e.getClass.getName)
+            catch case _: Throwable => e.getClass.getName
+          case Success(_) => ""
+        // Await callers can resume as soon as the promise fails. Publish the terminal
+        // state and finish this attempt's bookkeeping before exposing that completion.
+        val (changedState, again) = lock.synchronized {
           val cur = epoch == myEpoch && startFuture.contains(p.future)
+          val next: Option[EngineState] = r match
+            case Failure(_) if cur => Some(if stopped then EngineState.Stopped else EngineState.Crashed(message))
+            case _ => None
+          val changed = next.filter(_ != _state)
+          next.foreach(s => _state = s)
           if cur then startFuture = None
           val a = cur && restartRequested && !stopped && !gaveUp
           if cur then restartRequested = false
-          (cur, a)
+          (changed, a)
         }
-        r match
-          case Success(_) => ()
-          case Failure(e) if current => setState(if stopped then EngineState.Stopped else EngineState.Crashed(e.getMessage))
-          case Failure(_) => ()
+        p.tryComplete(r)
+        // Listeners may call stop/restart: never invoke them under the lock or while
+        // this attempt's promise is unfinished, or they could wait on themselves.
+        changedState.foreach(notifyState)
         if again then
           log("[sdfx] engine died while starting; trying again")
           ensureStarted().failed.foreach(e => log(s"[sdfx] restart failed: ${e.getMessage}"))
-      }
       Future {
         // Throwable, not Try: a fatal Error (e.g. NoClassDefFoundError) must still complete the start future.
-        try p.trySuccess(launchNow(myEpoch))
-        catch case t: Throwable => p.tryFailure(t)
+        val result = try Success(launchNow(myEpoch)) catch case t: Throwable => Failure(t)
+        complete(result)
       }
     }
     f

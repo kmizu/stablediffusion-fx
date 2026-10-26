@@ -483,3 +483,9 @@
     -fx-padding: 8 0 4 10;
 }
 .form-label-stacked { -fx-padding: 2 0 0 0; }
+
+/* Literal text, never HTML: changed terms remain distinguishable in both themes. */
+.comparison-diff { -fx-fill: #e45b64; -fx-text-fill: #e45b64; -fx-font-weight: bold; }
+.comparison-term { -fx-fill: -sdfx-text; }
+#comparison-canvas:focused { -fx-border-color: -sdfx-accent; -fx-border-width: 2; }
+#comparison-tool .text-flow { -fx-line-spacing: 3; }

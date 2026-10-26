@@ -93,11 +93,13 @@ class ProtocolSuite extends munit.FunSuite:
       upscalerPaths = Map("4x-UltraSharp" -> "D:/up/4x.pth"),
       previewEvery = 3,
       previewMethod = "full",
-      systemInfoFields = Seq("version.app", "platform.python")
+      systemInfoFields = Seq("version.app", "platform.python"),
+      vaeRecoveryDir = "D:/out"
     )
     val js = Json.toJs(req)
     assertEquals(js.obj.keys.toSet, Set("params", "output_dir", "lora_paths", "embedding_paths", "controlnet_paths",
-      "upscaler_paths", "preview_every", "preview_method", "lbw_presets", "system_info_fields"))
+      "upscaler_paths", "preview_every", "preview_method", "lbw_presets", "system_info_fields", "vae_recovery_dir"))
+    assertEquals(js("vae_recovery_dir").str, "D:/out")
     assertEquals(js("system_info_fields").arr.map(_.str).toSeq, Seq("version.app", "platform.python"))
     assertEquals(js("params")("negative_prompt").str, "n")
     assertEquals(js("params")("cfg_scale").num, 6.0)
@@ -110,6 +112,10 @@ class ProtocolSuite extends munit.FunSuite:
   test("GenerationRequest minimal") {
     val r = Json.fromJs[GenerationRequest](ujson.read("""{"params":{},"output_dir":"o"}"""))
     assertEquals(r, GenerationRequest(GenerationParams(), "o"))
+    assertEquals(r.vaeRecoveryDir, "")
+    val serialized = Json.toJs(r)
+    assertEquals(serialized("vae_recovery_dir").str, "")
+    assertEquals(Json.fromJs[GenerationRequest](serialized), r)
   }
 
   test("GenerationResult: snake keys, defaults when reading engine output") {

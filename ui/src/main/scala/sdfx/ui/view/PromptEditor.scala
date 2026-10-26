@@ -91,7 +91,14 @@ final class PromptEditor(ctx: UiContext, prompt: StringProperty, negative: Strin
       setText(if empty || s == null then "Styles" else s.name)
 
   private def applyStyle(): Unit =
-    Option(styleBox.getValue) match
+    val selected = Option(styleBox.getValue).flatMap { chosen =>
+      val current = ctx.styles.toArray(Array.empty[PromptStyle]).toSeq
+      current.find(_ == chosen).orElse {
+        val byName = current.filter(_.name == chosen.name)
+        if byName.size == 1 then byName.headOption else None
+      }
+    }
+    selected match
       case Some(s) =>
         val (p, n) = s.applyTo(prompt.get, negative.get)
         prompt.set(p)
@@ -107,8 +114,13 @@ final class PromptEditor(ctx: UiContext, prompt: StringProperty, negative: Strin
     d.getDialogPane.getStylesheets.setAll(ctx.stage.getScene.getStylesheets)
     d.showAndWait().ifPresent(name =>
       if name.trim.nonEmpty then
-        ctx.saveStyle(PromptStyle(name.trim, prompt.get, negative.get))
-        ctx.success(s"Style '${name.trim}' saved")
+        val exists = ctx.styles.toArray(Array.empty[PromptStyle]).exists(_.name == name.trim)
+        val overwrite = if !exists then false else
+          val confirm = new Alert(Alert.AlertType.CONFIRMATION, s"Replace the prompts in style '${name.trim}'?", ButtonType.CANCEL, ButtonType.OK)
+          confirm.initOwner(ctx.stage)
+          confirm.setHeaderText("Overwrite existing style")
+          confirm.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK
+        if !exists || overwrite then ctx.saveStyle(PromptStyle(name.trim, prompt.get, negative.get), overwrite)
     )
 
   val toolbar: javafx.scene.layout.HBox = W.hbox(
@@ -117,7 +129,8 @@ final class PromptEditor(ctx: UiContext, prompt: StringProperty, negative: Strin
     W.spacer(),
     styleBox,
     W.iconButton("⤓", "Apply the selected style to the prompts")(applyStyle()),
-    W.iconButton("✎", "Save the current prompts as a style")(saveStyle())
+    W.iconButton("✎", "Save the current prompts as a style")(saveStyle()),
+    W.button("Styles…", "Edit styles, categories, extended presets and backups")(ctx.openStylesEditor())
   )
   private def loraButtonAnchor = toolbar.getChildren.get(0)
 

@@ -160,6 +160,7 @@ final class ImageDropZone(ctx: UiContext, path: StringProperty, hint: String, he
     info.setText("")
 
   private def refresh(p: String): Unit =
+    view.setUserData(Option(p).filter(_.nonEmpty).flatMap(s => scala.util.Try(Paths.get(s)).toOption).orNull)
     ImageFiles.load(p) match
       case None => showPlaceholder(s"⤓\n$hint\nDrop · Ctrl+V · click to open")
       case Some(img) =>

@@ -9,6 +9,7 @@ import javafx.scene.layout.{BorderPane, StackPane, VBox}
 import javafx.stage.{Screen, Stage}
 import javafx.util.Duration
 import sdfx.core.gallery.GalleryItem
+import sdfx.core.model.ExtendedStyle
 import sdfx.core.plugins.api.Plugin
 import sdfx.engine.{AppServices, EngineState, JobEvent}
 import sdfx.ui.view.*
@@ -73,10 +74,18 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   model.vae.set(services.settings.lastVae.filter(_.nonEmpty).getOrElse("Automatic"))
   model.checkpoint.set(services.settings.lastModel.getOrElse(""))
 
+  val comparisonHistory = new ComparisonHistory
+
   // ---- views -------------------------------------------------------------------------------------------
   private val actions: ImageActions = new ImageActions:
     def sendTo(mode: Mode, path: Path, infotext: Option[String]): Unit = MainWindow.this.sendTo(mode, path, infotext)
     def restore(infotext: String): Unit = MainWindow.this.restore(infotext)
+    override def compare(sideB: Boolean, path: Path): Unit =
+      comparison.send(sideB, path)
+      tabs.getSelectionModel.select(comparisonTab)
+    override def compareCurrent(): Unit =
+      comparison.compareSource(activeMode.key)
+      tabs.getSelectionModel.select(comparisonTab)
     def delete(path: Path): Unit = MainWindow.this.delete(path)
 
   val panels: Map[Mode, GenerationPanel] =
@@ -85,8 +94,18 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   val gallery = new GalleryView(ctx, galleryVM, actions, it => preview.show(it.path, it.parameters))
   val pngInfo = new PngInfoTab(ctx, actions)
   val extras = new ExtrasTab(ctx, initial.extrasUpscaler, initial.extrasScale)
+  private def comparisonSource(kind: String): Option[(Path, Path)] =
+    kind match
+      case "txt2img" => comparisonHistory.pair
+      case "extras" => extras.comparisonPair
+      case other => Mode.values.find(_.key == other).flatMap { m =>
+        for a <- Option(vms(m).initImage.get).filter(_.nonEmpty); b <- comparisonHistory.latest(m) yield java.nio.file.Paths.get(a) -> b
+      }
+  val comparison = new ImageComparisonTab(ctx, comparisonSource, () => preview.currentPath)
   val tokenizer = new TokenizerTab(ctx, () => vms(activeMode).prompt.get)
   val systemInfo = new SystemInfoTab(ctx)
+  val stylesEditor = new StylesEditorTab(ctx)
+  val vaeTools = new VaeToolsTab(ctx)
   val statusBar = new StatusBar(progress, () => generate(false), () => generate(true), () => interrupt(), () => clearQueue())
   val topBar = new TopBar(ctx, model, loadCheckpoint, setVae, () => refreshCatalog(), () => restartEngine(), () => openSettings())
 
@@ -102,11 +121,27 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   tokenizerTab.setId("tokenizer-tab")
   private val systemInfoTab = new Tab("System Info", systemInfo.node)
   systemInfoTab.setId("system-info-tab")
-  tabs.getTabs.addAll(pngTab, extrasTab, tokenizerTab, systemInfoTab)
+  private val vaeToolsTab = new Tab("VAE Tools", vaeTools.node)
+  vaeToolsTab.setId("vae-tools-tab")
+  private val stylesTab = new Tab("Styles", stylesEditor.view)
+  stylesTab.setId("styles-editor-tab")
+  private val comparisonTab = new Tab("Comparison", comparison.node)
+  comparisonTab.setId("comparison-tab")
+  tabs.getTabs.addAll(pngTab, extrasTab, tokenizerTab, systemInfoTab, stylesTab, comparisonTab, vaeToolsTab)
+  private var comparisonDivider = initial.dividers.get("main").flatMap(_.headOption).getOrElse(.42)
   private var lastMode: Mode = Mode.Txt2Img
-  tabs.getSelectionModel.selectedItemProperty.addListener((_, _, t) =>
+  tabs.getSelectionModel.selectedItemProperty.addListener((_, previous, t) =>
     modeOf(t).foreach(lastMode = _)
     systemInfo.setActive(t eq systemInfoTab)
+    if (previous eq stylesTab) && (t ne stylesTab) then stylesEditor.leave()
+    refreshComparisonOptions()
+    if t eq comparisonTab then
+      if mainSplit.getItems.contains(rightBox) then
+        if mainSplit.getWidth > 0 then comparisonDivider = mainSplit.getDividerPositions.headOption.getOrElse(comparisonDivider)
+        mainSplit.getItems.remove(rightBox)
+    else if !mainSplit.getItems.contains(rightBox) then
+      mainSplit.getItems.add(rightBox)
+      mainSplit.setDividerPositions(comparisonDivider)
   )
   private def modeOf(t: Tab): Option[Mode] = modeTabs.collectFirst { case (m, tab) if tab eq t => m }
   def activeMode: Mode = Option(tabs.getSelectionModel.getSelectedItem).flatMap(modeOf).getOrElse(lastMode)
@@ -132,9 +167,92 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   val scene = new Scene(root, initial.window.width, initial.window.height)
   Theme.apply(scene, services.settings.theme)
 
+  private def refreshComparisonOptions(): Unit =
+    preview.comparisonButton(if activeMode == Mode.Txt2Img then services.settings.comparisonTxtButton else services.settings.comparisonSendButtons)
+    extras.refreshComparisonOptions()
+
   // ---- wiring ------------------------------------------------------------------------------------------
   ctx.sendToTab = (m, p, t) => sendTo(m, p, t)
   ctx.showImage = p => preview.show(p)
+  ctx.openStylesEditor = () => { stylesEditor.reload(); tabs.getSelectionModel.select(stylesTab) }
+  ctx.currentGeneration = () => vms(activeMode).toParams
+  ctx.applyPromptStyle = style =>
+    val mode = activeMode
+    val vm = vms(mode)
+    val (positive, negative) = style.applyTo(vm.prompt.get, vm.negativePrompt.get)
+    vm.prompt.set(positive)
+    vm.negativePrompt.set(negative)
+    select(mode)
+  ctx.applyExtendedStyle = style =>
+    val mode = activeMode
+    val vm = vms(mode)
+    val candidate = style.restore(vm.toParams)
+    val issues = candidate.validate
+    val targetVae = style.effectiveVae
+    if ctx.extendedStyleApplying.get then ctx.info("An extended style is already being applied")
+    else if issues.nonEmpty then ctx.error(issues.mkString("; "))
+    else if style.checkpoint.nonEmpty && services.catalog.findCheckpoint(style.checkpoint).isEmpty then
+      ctx.error(s"Extended style checkpoint not found: ${style.checkpoint}")
+    else if targetVae != "Automatic" && targetVae != "None" && services.catalog.findVae(targetVae).isEmpty then
+      ctx.error(s"Extended style VAE not found: $targetVae")
+    else
+      ctx.extendedStyleApplying.set(true)
+      val id = beginLoad(s"Style ${style.name}")
+      val currentCheckpoint = model.checkpoint.get
+      val currentVae = model.vae.get
+      Fx.async {
+        if style.checkpoint.nonEmpty && currentCheckpoint != style.checkpoint then services.loadCheckpoint(style.checkpoint)
+        if ExtendedStyle.normalizeVae(currentVae) != targetVae || currentCheckpoint != style.checkpoint then services.setVae(Some(targetVae))
+      } { _ =>
+        try
+          endLoad(id)
+          // Update only documented settings; unrelated settings and disabled drafts remain intact.
+          vm.prompt.set(style.prompt)
+          vm.negativePrompt.set(style.negativePrompt)
+          vm.width.set(style.width)
+          vm.height.set(style.height)
+          if style.checkpoint.nonEmpty then model.checkpoint.set(style.checkpoint)
+          model.vae.set(targetVae)
+          select(mode)
+          ctx.success(s"Applied extended style '${style.name}'")
+        finally ctx.extendedStyleApplying.set(false)
+      } { e =>
+        try
+          endLoad(id)
+          services.supervisor.loadedModel.foreach(m => model.checkpoint.set(m.name))
+          ctx.error(s"Cannot apply extended style: ${Fx.message(e)}")
+        finally ctx.extendedStyleApplying.set(false)
+      }
+  ctx.comparePair = (a, b) => { comparison.compare(a, b); tabs.getSelectionModel.select(comparisonTab) }
+  comparison.onOptionsChanged = () => refreshComparisonOptions()
+  refreshComparisonOptions()
+  scene.addEventFilter(javafx.scene.input.MouseEvent.MOUSE_CLICKED, (event: javafx.scene.input.MouseEvent) =>
+    if services.settings.comparisonMouseSend && event.isControlDown && event.isAltDown &&
+        (event.getButton == javafx.scene.input.MouseButton.PRIMARY || event.getButton == javafx.scene.input.MouseButton.SECONDARY) then
+      var node = event.getTarget match
+        case n: javafx.scene.Node => n
+        case _ => null
+      var image: javafx.scene.image.Image = null
+      var path: Option[Path] = None
+      while node != null && path.isEmpty do
+        node match
+          case iv: javafx.scene.image.ImageView if image == null => image = iv.getImage
+          case z: ZoomImageView if image == null => image = z.image
+          case _ => ()
+        node.getUserData match
+          case p: Path => path = Some(p)
+          case _ => ()
+        node = node.getParent
+      if image != null && !image.isError then
+        val sideB = event.getButton == javafx.scene.input.MouseButton.SECONDARY
+        def send(p: Path): Unit =
+          comparison.send(sideB, p)
+          if services.settings.comparisonMouseAuto then tabs.getSelectionModel.select(comparisonTab)
+        path match
+          case Some(p) => send(p)
+          case None => Fx.async(ImageFiles.saveFxImage(ctx, image, "comparison-"))(send)(e => ctx.error(Fx.message(e)))
+        event.consume()
+  )
   ctx.loadStyles()
 
   services.catalog.addListener(snap => Fx.run(catalogVM.update(snap, services.catalog.choices)))
@@ -160,6 +278,9 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
     progress.accept(e)
     val img = e.image
     lastSeed = img.seed
+    if !e.grid then
+      val mode = if !img.params.isImg2Img then Mode.Txt2Img else if img.params.isInpaint then Mode.Inpaint else Mode.Img2Img
+      comparisonHistory.recordResult(e.jobId, img.path, mode)
     galleryVM.addNewest(GalleryItem(img.path, System.currentTimeMillis(), size, Some(img.infotext)))
     // selecting shows it (one decode); a gallery filter may hide it, then show directly
     if !gallery.select(img.path) then preview.show(img.path, Some(img.infotext))
@@ -473,7 +594,9 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
     // Divider positions are re-applied while the window settles (the first heights can be pre-layout ones),
     // then left alone so user drags stick.
     def applyDividers(): Unit =
-      mainSplit.setDividerPositions(initial.dividers.get("main").flatMap(_.headOption).getOrElse(0.42))
+      val divider = initial.dividers.get("main").flatMap(_.headOption).getOrElse(0.42)
+      if mainSplit.getItems.contains(rightBox) then mainSplit.setDividerPositions(divider)
+      else comparisonDivider = divider
       val hh = rightSplit.getHeight
       if hh > 200 then rightSplit.setDividerPositions(initial.dividers.get("right").flatMap(_.headOption).getOrElse((hh - 160) / hh))
     var settling = true
@@ -489,6 +612,9 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
       if t == "extras" then tabs.getSelectionModel.select(extrasTab)
       if t == "tokenizer" then tabs.getSelectionModel.select(tokenizerTab)
       if t == "systeminfo" then tabs.getSelectionModel.select(systemInfoTab)
+      if t == "styles" then tabs.getSelectionModel.select(stylesTab)
+      if t == "comparison" then tabs.getSelectionModel.select(comparisonTab)
+      if t == "vae_tools" then tabs.getSelectionModel.select(vaeToolsTab)
     }
     statusBar.logToggle.setSelected(initial.logVisible)
     reloadGallery()
@@ -502,6 +628,9 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
       case Some(t) if t eq extrasTab => "extras"
       case Some(t) if t eq tokenizerTab => "tokenizer"
       case Some(t) if t eq systemInfoTab => "systeminfo"
+      case Some(t) if t eq stylesTab => "styles"
+      case Some(t) if t eq comparisonTab => "comparison"
+      case Some(t) if t eq vaeToolsTab => "vae_tools"
       case Some(t)                   => modeOf(t).map(_.key).getOrElse("txt2img")
       case None                      => "txt2img"
     UiState(
@@ -512,7 +641,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
         stage.getHeight,
         stage.isMaximized
       ),
-      dividers = Map("main" -> mainSplit.getDividerPositions.toSeq, "right" -> rightSplit.getDividerPositions.toSeq),
+      dividers = Map("main" -> (if mainSplit.getItems.contains(rightBox) then mainSplit.getDividerPositions.toSeq else Seq(comparisonDivider)), "right" -> rightSplit.getDividerPositions.toSeq),
       selectedTab = selected,
       params = Mode.values.map(m => m.key -> vms(m).snapshot).toMap,
       pluginValues = Mode.values.map(m => m.key -> plugins(m).snapshot).toMap,
@@ -528,7 +657,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   /** Images the form state still points at (kept by temp sweeps). */
   private def referencedImages: Set[String] =
     (Mode.values.toSeq.flatMap(m => vms(m).initImage.get +: vms(m).controlNet.map(_.image.get)) ++
-      Seq(pngInfo.image.get, extras.image.get)).filter(s => s != null && s.nonEmpty).toSet
+      Seq(pngInfo.image.get, extras.image.get)).filter(s => s != null && s.nonEmpty).toSet ++ comparison.sourcePaths
 
   /** Deletes stale UI temp files (masks of finished jobs, unreferenced pasted images). */
   def sweepTemps(): Unit =
@@ -549,6 +678,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
 
   def dispose(): Unit =
     systemInfo.dispose()
+    stylesEditor.dispose()
     vramPoll.stop()
     mcpExec.execute(() => mcp.close())
     mcpExec.shutdown()

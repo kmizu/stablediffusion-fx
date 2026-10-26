@@ -90,6 +90,8 @@ final class ExtrasTab(ctx: UiContext, initialUpscaler: String, initialScale: Dou
   val scale = new SimpleDoubleProperty(initialScale)
   private val drop = new ImageDropZone(ctx, image, "Image to upscale", 280)
   private val result = new SimpleStringProperty("")
+  def comparisonPair: Option[(Path, Path)] =
+    for a <- Option(image.get).filter(_.nonEmpty); b <- Option(result.get).filter(_.nonEmpty) yield Paths.get(a) -> Paths.get(b)
   private val resultView = new ZoomImageView()
   resultView.setPrefHeight(320)
   resultView.setMinHeight(240)
@@ -98,6 +100,12 @@ final class ExtrasTab(ctx: UiContext, initialUpscaler: String, initialScale: Dou
   private val spinner = new ProgressIndicator()
   spinner.setVisible(false)
   spinner.setPrefSize(22, 22)
+
+  def showResult(path: Path): Unit =
+    result.set(path.toString)
+    resultView.setUserData(path)
+    ImageFiles.load(path.toString).foreach(resultView.setImage)
+    resultInfo.setText(path.toString)
 
   private val run: Button = W.button("⤢ Upscale", "Upscale the image with the selected upscaler", Seq("accent-button"))(upscale())
   private def upscale(): Unit =
@@ -113,9 +121,7 @@ final class ExtrasTab(ctx: UiContext, initialUpscaler: String, initialScale: Dou
         Fx.async(ctx.services.generator.upscaleImage(Paths.get(s), u, sc)) { out =>
           run.setDisable(false)
           spinner.setVisible(false)
-          result.set(out.toString)
-          ImageFiles.load(out.toString).foreach(resultView.setImage)
-          resultInfo.setText(out.toString)
+          showResult(out)
           ctx.success("Upscaled")
         } { e =>
           run.setDisable(false)
@@ -135,8 +141,17 @@ final class ExtrasTab(ctx: UiContext, initialUpscaler: String, initialScale: Dou
     .add("Upscaler", upscalerBox, "ESRGAN / RealESRGAN models from models/upscalers")
     .add("Scale", W.doubleSlider(scale, 1, 8, 0.25), "Resize factor")
 
+  private val compareButton = W.button("Send to Comparison", "Compare upscale input and output") {
+    comparisonPair.fold(ctx.info("Upscale an image first"))((a, b) => ctx.comparePair(a, b))
+  }
+  def refreshComparisonOptions(): Unit =
+    val option = ctx.services.settings.comparisonSendButtons
+    compareButton.setText(if option == "Icon" then "⇄" else "Send to Comparison")
+    compareButton.setVisible(option != "Off")
+    compareButton.setManaged(option != "Off")
+  refreshComparisonOptions()
   private val resultButtons = W.hbox(
-    6,
+    6, compareButton,
     W.button("⇢ img2img", "Use the result as img2img init image")(Option(result.get).filter(_.nonEmpty).foreach(p => ctx.sendToTab(Mode.Img2Img, Paths.get(p), None))),
     W.button("⇢ Inpaint", "Use the result for inpainting")(Option(result.get).filter(_.nonEmpty).foreach(p => ctx.sendToTab(Mode.Inpaint, Paths.get(p), None))),
     W.iconButton("⧉", "Copy the result")(Option(result.get).filter(_.nonEmpty).foreach(p => ImageActions.copyImage(Paths.get(p)))),

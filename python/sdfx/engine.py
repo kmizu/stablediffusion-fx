@@ -187,7 +187,7 @@ class Engine(BaseEngine):
         return h
 
     def features(self) -> list[str]:
-        f = ["freeu", "dynamic_thresholding", "hypertile", "system_info"]
+        f = ["freeu", "dynamic_thresholding", "hypertile", "system_info", "vae_tools"]
         if hasattr(diffusers, "StableDiffusionXLPAGPipeline"):
             f.append("pag")
         if hasattr(diffusers, "ControlNetModel"):
@@ -825,6 +825,13 @@ class Engine(BaseEngine):
                             ctx.preview(b64, step)
                     except Exception as e:  # never fail a generation because of a preview
                         log.debug("preview failed: %s", e)
+                        if method == 'taesd':
+                            try:
+                                b64 = preview.latent_preview_b64(lat[:1, :4].float().cpu().numpy(), self.sdxl)
+                                if b64:
+                                    ctx.preview(b64, step)
+                            except Exception as fallback_error:
+                                log.debug('cheap preview also failed: %s', fallback_error)
             return kw
         return cb
 
@@ -1095,7 +1102,12 @@ class Engine(BaseEngine):
             if "eta" in filtered and not _accepts(sched.step, "eta"):
                 ctx.warn(f"eta is ignored by sampler '{sampler}'")
             kw = filtered
-            with torch.inference_mode():
+            from contextlib import nullcontext
+            from .vae_tools import catch_decode
+            recovery = nullcontext()
+            if output_type == 'pil' and getattr(pipe, 'vae', None) is not None and req is not None and not getattr(self, '_benchmark_no_save', False):
+                recovery = catch_decode(self, pipe.vae, req.vae_recovery_dir or req.output_dir, ctx)
+            with torch.inference_mode(), recovery:
                 out = pipe(**kw)
         finally:
             for c in reversed(cleanups):
@@ -1111,8 +1123,11 @@ class Engine(BaseEngine):
     def _generate(self, params: dict, ctx: JobContext, mode: str) -> dict:
         self._intermediate_recorder = None
         self._composable_job = None
+        self._vae_recovery = []
         try:
             result = self._generate_recorded(params, ctx, mode)
+            if self._vae_recovery:
+                result['vae_recovery'] = self._vae_recovery
             if self._composable_job is not None:
                 self._composable_job.finish(result, params.get("output_dir", ""))
             if params.get('system_info_fields'):
@@ -1254,7 +1269,7 @@ class Engine(BaseEngine):
                     task2 = "inpaint" if is_inpaint_model else "img2img"
                     if task2 == "inpaint" and latent_hr:
                         ctx.warn("latent hires upscale is not supported for inpainting models; decoding first")
-                        src = self._decode(src)
+                        src = self._decode(src, ctx, req.vae_recovery_dir or req.output_dir)
                     hr_cn = (cn[0], cn[1], cn[2]) if cn[0] else None
                     imgs, _ = self._run(task2, gp, req, ctx, sampler=hp.sampler_name or gp.sampler_name,
                                         schedule=hp.scheduler or gp.scheduler,
@@ -1459,10 +1474,13 @@ class Engine(BaseEngine):
                          embeds=embeds, steps=gp.steps, w=w, h=h, seeds=seeds, pass_="base", image_idx=idx0,
                          images_total=total, latents=noise, image=image, cn=cn, pag=pag, hook_seed=seeds[0])
 
-    def _decode(self, latents):
+    def _decode(self, latents, ctx=None, recovery_dir=None):
+        from contextlib import nullcontext
+        from .vae_tools import catch_decode
         pipe = self.pipe
         vae = pipe.vae
-        with torch.inference_mode():
+        recovery = catch_decode(self, vae, recovery_dir, ctx) if ctx is not None and recovery_dir else nullcontext()
+        with torch.inference_mode(), recovery:
             original_dtype = vae.dtype
             needs_upcast = original_dtype == torch.float16 and getattr(vae.config, "force_upcast", False)
             try:

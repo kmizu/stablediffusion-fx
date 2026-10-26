@@ -55,7 +55,11 @@ case class Settings(
     hfOffline: Boolean = false,
     theme: String = "dark",
     allowCustomCode: Boolean = false,
-    systemInfoMetadataFields: Seq[String] = Nil
+    systemInfoMetadataFields: Seq[String] = Nil,
+    comparisonSendButtons: String = "Off",
+    comparisonTxtButton: String = "Off",
+    comparisonMouseSend: Boolean = false,
+    comparisonMouseAuto: Boolean = false
 ) derives RW
 
 object Settings:

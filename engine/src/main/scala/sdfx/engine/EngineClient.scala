@@ -53,6 +53,8 @@ final class EngineClient(val supervisor: EngineSupervisor):
   def memory(): Future[MemoryInfo] = call[MemoryInfo](Protocol.Types.Memory)
 
   def systemStatus(): Future[ujson.Value] = raw(Protocol.Types.SystemStatus)
+  def vaeTools(params: ujson.Obj, listener: EngineEvent => Unit = _ => ()): Future[ujson.Value] =
+    raw(Protocol.Types.VaeTools, params, listener)
   def systemInfo(dirs: ujson.Obj = ujson.Obj(), hashes: Boolean = false): Future[ujson.Value] =
     raw(Protocol.Types.SystemInfo, ujson.Obj("dirs" -> dirs, "hashes" -> hashes))
   def systemBenchmark(params: ujson.Obj, listener: EngineEvent => Unit = _ => ()): Future[ujson.Value] =

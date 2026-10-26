@@ -27,7 +27,7 @@ final class GalleryIndex(root: Path):
         s.iterator().asScala
           .filter(p => Files.isRegularFile(p) && p.getFileName.toString.toLowerCase.endsWith(".png"))
           .filterNot(p => root.relativize(p).iterator().asScala.exists(_.toString.startsWith(".")))
-          .filterNot(p => root.relativize(p).getName(0).toString == "intermediates")
+          .filterNot(p => Set("intermediates", "vae-tools", "vae-recovery")(root.relativize(p).getName(0).toString))
           .toVector
       }
       val items = files.flatMap(item)

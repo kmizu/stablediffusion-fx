@@ -713,6 +713,31 @@ final class McpTools(
     o
 
   val all: Seq[McpTool] = Seq(
+    tool("vae_tools", "VAE encode / decode",
+      "Use the loaded checkpoint/VAE to encode, decode or round-trip original local files. L/RGBA PNG, CMYK TIFF/JPEG and tensor.safetensors retain their bytes and channels. Returns saved paths and quantization/provenance report. Optional weights download requires allow_download=true.",
+      Schema.obj(Seq(
+        "input_paths" -> Schema.arr(Schema.str("Unchanged local input file inside allowed directories."), maxItems = Some(64)),
+        "operation" -> Schema.str("Operation", Seq("encode", "decode", "encode+decode"), Some("encode")),
+        "representation" -> Schema.str("Latent representation", Seq("L", "RGBA", "CMYK"), Some("L")),
+        "approximation" -> Schema.str("Decoder/encoder", Seq("Full", "Approx NN", "Approx cheap", "TAESD"), Some("Full")),
+        "seed" -> Schema.int("Posterior sampling seed", Some(0), Some(0xffffffffL), Some(0)),
+        "tiled" -> Schema.bool("Use native VAE tiling for this operation", Some(false)),
+        "cmyk_format" -> Schema.str("CMYK output codec", Seq("TIFF", "JPEG100"), Some("TIFF")),
+        "allow_download" -> Schema.bool("Explicitly allow optional TAESD / official Approx NN weight download", Some(false)),
+        "approx_nn_path" -> Schema.str("Optional local tensor-only Approx NN checkpoint inside allowed directories")
+      ), Seq("input_paths")))((a, ctx) => {
+        val args = Args(a, Seq("input_paths", "operation", "representation", "approximation", "seed", "tiled", "cmyk_format", "allow_download", "approx_nn_path"))
+        val names = args.strList("input_paths").getOrElse(throw ToolError("input_paths is required"))
+        if names.isEmpty || names.size > 64 then throw ToolError("input_paths must contain 1 to 64 files")
+        val paths = names.map(p => pathPolicy.resolve(p, "input_paths", outputsDir.toAbsolutePath))
+        val weights = args.str("approx_nn_path").filter(_.nonEmpty).map(p => pathPolicy.resolve(p, "approx_nn_path", outputsDir.toAbsolutePath).toString).getOrElse("")
+        ready(ctx)
+        val result = Await.result(new VaeToolsService(services).run(paths,
+          args.str("operation").getOrElse("encode"), args.str("representation").getOrElse("L"), args.str("approximation").getOrElse("Full"),
+          outputsDir, args.long("seed", 0, 0xffffffffL).getOrElse(0L), args.bool("tiled").getOrElse(false),
+          args.str("cmyk_format").getOrElse("TIFF"), args.bool("allow_download").getOrElse(false), weights), 30.minutes)
+        ToolResult.json(result)
+      }),
     tool("txt2img", "Text to image",
       "Generate image(s) from a text prompt and wait for the result. Returns downscaled previews, the saved file paths, seeds and infotext. Long jobs: consider txt2img_async.",
       genSchema(false), Some(imagesOutputSchema))((a, ctx) => generationTool(false, a, ctx)),

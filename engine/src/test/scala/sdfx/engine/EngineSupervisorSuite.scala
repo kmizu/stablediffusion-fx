@@ -4,7 +4,9 @@ import sdfx.core.model.GenerationParams
 import sdfx.core.protocol.*
 
 import java.nio.file.Files
-import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.{ConcurrentLinkedQueue, CountDownLatch, TimeUnit}
+import java.util.concurrent.atomic.AtomicReference
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.*
 import scala.jdk.CollectionConverters.*
 
@@ -202,6 +204,37 @@ class EngineSupervisorSuite extends munit.FunSuite:
     assert((System.nanoTime() - t0).nanos < 10.seconds)
     assert(sup.state.isInstanceOf[EngineState.Crashed], sup.state.toString)
     sup.close()
+  }
+
+  test("start failure state is published before callers can observe the failure") {
+    val readingFailure = new CountDownLatch(1)
+    val releaseFailure = new CountDownLatch(1)
+    val observedFailure = new CountDownLatch(1)
+    val observedState = new AtomicReference[EngineState]()
+    val controlled = new RuntimeException("controlled launch failure"):
+      override def getMessage: String =
+        readingFailure.countDown()
+        if !releaseFailure.await(10, TimeUnit.SECONDS) then throw new IllegalStateException("Failure publication gate was not released")
+        super.getMessage
+    val sup = new EngineSupervisor(() => throw controlled, _ => ())
+    try
+      val failed = sup.startAsync()
+      failed.onComplete { _ =>
+        observedState.set(sup.state)
+        observedFailure.countDown()
+      }(using ExecutionContext.parasitic)
+      assert(readingFailure.await(10, TimeUnit.SECONDS), "Launch failure never reached state publication")
+      // Hold the exact publication step, rather than hope the caller wins a scheduler race.
+      // A start result must remain pending until its failure state can be constructed/published.
+      assert(!observedFailure.await(1, TimeUnit.SECONDS), "Start failure escaped while Crashed state publication was blocked")
+      releaseFailure.countDown()
+      intercept[RuntimeException](await(failed))
+      assert(observedFailure.await(10, TimeUnit.SECONDS))
+      assert(observedState.get.isInstanceOf[EngineState.Crashed], observedState.get.toString)
+      assert(sup.state.isInstanceOf[EngineState.Crashed], sup.state.toString)
+    finally
+      releaseFailure.countDown()
+      sup.close()
   }
 
   test("model reload timeout after a restart reports Crashed instead of Ready") {

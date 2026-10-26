@@ -134,6 +134,17 @@ class BaseEngine:
         from .tokenizer_tool import inspect
         return inspect(self.pipe, params, ctx)
 
+    def vae_tools(self, params: dict, ctx: JobContext) -> dict:
+        if self.dry_run:
+            raise EngineError(UNSUPPORTED, 'VAE Tools requires a real loaded VAE; dry-run cannot encode or decode latents')
+        if self.model is None or getattr(self, 'pipe', None) is None:
+            raise EngineError(NO_MODEL, 'load a checkpoint before using VAE Tools')
+        from .vae_tools import run
+        try:
+            return run(self, params, ctx)
+        except (ValueError, TypeError, OSError) as exc:
+            raise EngineError(INVALID_PARAMS, f'VAE Tools: {exc}') from exc
+
     def image_tool(self, params: dict, ctx: JobContext) -> dict:
         """Non-diffusion image tools (sdfx.image_tools): {tool, image_path, output_dir, ...tool params}."""
         from . import image_tools

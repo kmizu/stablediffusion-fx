@@ -128,6 +128,8 @@ IMPLEMENTED = {
     "prompt_fusion", "tokenizer", "save_intermediate",
     "grid_numbers", "latent_upscale",
     "composable_lora", "core:system-info",
+    "core:styles-editor",
+    "core:image-compare", "vae_tools",
 }
 
 

@@ -164,3 +164,18 @@ Per-plugin evidence of the final real-model runs (which run, duration, result): 
   Quick/turbo is a short workload; larger presets stop on errors and can be interrupted. Optional legacy submission
   requires a separate payload preview and Submit action; no data is sent by refresh, benchmark or export. UDP
   transmission cannot confirm server receipt. The optional preinstalled driver utility is never installed/bundled.
+- **Styles** edits prompt styles and categories with autosave, notes, search/regex, literal replacement and
+  reorder. Unchanged CSV records and foreign columns retain their bytes; conflicting external changes require
+  Reload. Category edits update generation styles immediately. Changed styles have ten-minute backups (latest24),
+  manual backup/import/export and optional AES-Crypt v2 backup encryption. Active CSV files remain plaintext.
+  Extended presets separately save positive/negative prompts, size, checkpoint and VAE with UUID identities;
+  Apply loads model then VAE and leaves unrelated generation settings intact. Passwords are never saved.
+- **Comparison** shows two images with a directional wipe, B opacity, shared zoom/pan, swap and reset. Send from
+  img2img/Inpaint/Extras or compare the current and previous txt2img jobs. Optional Ctrl+Alt mouse sends use the
+  pixels actually displayed. Metadata differences are token/field based. Export writes a new PNG and refuses
+  source aliases; loading errors retain the displayed pair. Formats follow the installed JVM image readers.
+- **VAE Tools** encodes/decodes original files through the selected checkpoint VAE or optional TAESD. L PNG is an
+  exact tensor container; RGBA/CMYK are quantized and JPEG adds loss. Full/TAESD encode; Approx NN and cheap decode
+  are optional previews. Downloads require explicit enablement. Generation VAE failures retain exact decoder-input
+  safetensors and a quantized recovery PNG, and clearly mark the approximate image Broken. Recovery artifacts stay
+  separate from final gallery scans. Tiling and precision changes restore their previous state after each request.

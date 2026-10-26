@@ -22,6 +22,7 @@ class AlwaysOnSuite extends munit.FunSuite:
     StandardPlugins.alwaysOn.foreach {
       case h: HookPlugin => assertEquals(h.requiresEngineFeatures, Seq(h.hook), h.id)
       case t: TokenizerPlugin => assertEquals(t.requiresEngineFeatures, Seq("tokenizer"))
+      case t: VaeToolsPlugin => assertEquals(t.requiresEngineFeatures, Seq("vae_tools"))
       case other         => assertEquals(other.requiresEngineFeatures, Nil, other.id)
     }
   }

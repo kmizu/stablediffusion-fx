@@ -981,7 +981,7 @@
 "index": 163,
 "name": "Styles Editor",
 "url": "https://github.com/chrisgoringe/Styles-Editor.git",
-"status": "todo:core:styles-editor"
+"status": "done:core:styles-editor"
 },
 {
 "index": 164,
@@ -1491,7 +1491,7 @@
 "index": 248,
 "name": "sd-webui-extended-style-saver",
 "url": "https://github.com/harukei-tech/sd-webui-extended-style-saver.git",
-"status": "todo:core:styles-editor"
+"status": "done:core:styles-editor"
 },
 {
 "index": 249,
@@ -1719,7 +1719,7 @@
 "index": 286,
 "name": "SD Webui Image Comparison",
 "url": "https://github.com/Haoming02/sd-webui-image-comparison.git",
-"status": "todo:core:image-compare"
+"status": "done:core:image-compare"
 },
 {
 "index": 287,
@@ -2115,6 +2115,6 @@
 "index": 352,
 "name": "VAE Tools (in extras tab)",
 "url": "https://github.com/light-and-ray/sd-webui-vae-tools.git",
-"status": "todo:vae_tools"
+"status": "done:vae_tools"
 }
 ]

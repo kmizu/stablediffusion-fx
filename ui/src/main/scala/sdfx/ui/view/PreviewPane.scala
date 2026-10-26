@@ -18,6 +18,8 @@ import scala.util.control.NonFatal
 trait ImageActions:
   def sendTo(mode: Mode, path: Path, infotext: Option[String]): Unit
   def restore(infotext: String): Unit
+  def compare(sideB: Boolean, path: Path): Unit = ()
+  def compareCurrent(): Unit = ()
   def delete(path: Path): Unit
 
 object ImageActions:
@@ -75,8 +77,14 @@ final class PreviewPane(ctx: UiContext, actions: ImageActions):
       case Some((p, t)) => f(p, t)
       case None         => ctx.info("No image selected")
 
+  private val compareButton = W.button("Send to Comparison", "Compare current mode input/output or previous txt2img result")(actions.compareCurrent())
+  compareButton.setId("preview-send-comparison")
+  def comparisonButton(option: String): Unit =
+    compareButton.setText(if option == "Icon" then "⇄" else "Send to Comparison")
+    compareButton.setManaged(option != "Off")
+    compareButton.setVisible(option != "Off")
   private val buttons = W.hbox(
-    6,
+    6, compareButton,
     W.button("⇢ img2img", "Send this image and its parameters to img2img")(withCurrent((p, t) => actions.sendTo(Mode.Img2Img, p, t))),
     W.button("⇢ Inpaint", "Send this image and its parameters to Inpaint")(withCurrent((p, t) => actions.sendTo(Mode.Inpaint, p, t))),
     W.button("↺ Restore", "Restore the generation parameters of this image into the current tab")(withCurrent((_, t) =>
@@ -91,7 +99,10 @@ final class PreviewPane(ctx: UiContext, actions: ImageActions):
   )
   buttons.getStyleClass.add("preview-actions")
 
-  private val infoBox = new VBox(6, W.hbox(8, fileLabel), info, buttons)
+  private val compareActions = new javafx.scene.layout.FlowPane(6, 4,
+    W.button("Compare → A", "Use this image as comparison A")(withCurrent((p, _) => actions.compare(false, p))),
+    W.button("Compare → B", "Use this image as comparison B")(withCurrent((p, _) => actions.compare(true, p))))
+  private val infoBox = new VBox(6, W.hbox(8, fileLabel), info, buttons, compareActions)
   infoBox.getStyleClass.add("info-box")
   infoBox.setPadding(new Insets(8, 10, 8, 10))
   VBox.setVgrow(info, Priority.ALWAYS)
@@ -111,6 +122,7 @@ final class PreviewPane(ctx: UiContext, actions: ImageActions):
 
   /** Shows a saved image; parameters are read from the PNG unless given. */
   def show(path: Path, infotext: Option[String] = None): Unit =
+    zoom.setUserData(path)
     shownGeneration += 1
     liveNext = None
     liveBadge.setVisible(false)
@@ -140,6 +152,7 @@ final class PreviewPane(ctx: UiContext, actions: ImageActions):
       Fx.async(new Image(new ByteArrayInputStream(Base64.getDecoder.decode(b64)))) { img =>
         liveBusy = false
         if gen == shownGeneration && !img.isError then
+          zoom.setUserData(null) // visible live pixels no longer belong to the last saved file
           zoom.setImage(img)
           empty.setVisible(false)
           liveBadge.setVisible(true)
@@ -161,6 +174,7 @@ final class PreviewPane(ctx: UiContext, actions: ImageActions):
   def clear(): Unit =
     shownGeneration += 1
     current = None
+    zoom.setUserData(null)
     zoom.setImage(null)
     empty.setVisible(true)
     liveBadge.setVisible(false)

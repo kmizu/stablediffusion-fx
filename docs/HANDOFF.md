@@ -20,8 +20,8 @@ server, 40 rewrites of the reForge built-ins. Repo: private GitHub `kmizu/stable
 
 | | Count |
 |---|---|
-| Index entries done | 94 |
-| Index entries todo | 208 (143 distinct targets) |
+| Index entries done | 98 |
+| Index entries todo | 204 (140 distinct targets) |
 | Not applicable (web-UI CSS/UX only, accounts, obsolete, external apps, server ops) | 51 |
 
 `scripts/extensions_matrix.py` is the single ledger. Its `S` dict maps each index entry to `done:<plugin id>`,
@@ -98,11 +98,20 @@ images; trace JSON persists outside `.tmp`. System Info has live diagnostics, na
 metadata selection and preview/submit separation. No cloud submission was sent during acceptance. See both plans
 and VERIFICATION for exact scope, paths and limits.
 
-**Next action:** finish `core:styles-editor` in `.worktrees/core-styles-editor`, branch
-`agent/core-styles-editor-20261026`, covering both index163 and248 source extensions. CSV/category preservation,
-unsaved-draft identities, backups/AES-Crypt interoperability and full native editing workflows are being verified;
-do not promote until actual model/UI/source gates pass. Preserve documented behaviours and
-the normal real-model/UI/notice gates. Neutral Prompt is now marked implemented after an explicit original-scope
+**Fourth native wave:** `core:styles-editor` covers indices163 and248 after SD1.5/SDXL native editing,
+data-preservation, category/backup/AES interoperability and exact named-style conditioning checks. The manual
+helper's clipboard cleanup failure was fixed before clean final acceptance; it now skips clipboard mutations
+when any advertised format cannot be preserved, and always attempts all resource cleanup. See VERIFICATION.
+
+**Native comparison/VAE wave:** `core:image-compare` and `vae_tools` are accepted after independent source/fix
+reviews, actual native SD1.5/SDXL image workflows and integrated app/MCP runs. Comparison needs no inference;
+it compares existing real-model images without changing them. VAE Tools has Full/Approx NN and pretrained
+TAESD/TAESDXL evidence, exact failed decoder-input recovery, quantized image formats and explicit download gates.
+Keep codec roundtrip, image reconstruction and approximate previews distinct. See their plans and VERIFICATION.
+
+**Next action:** inspect `core:prevent-interrupt` source scope (index320) and implement its native equivalent;
+then return to the highest-value remaining targets. Preserve the normal real-model/UI/notice gates.
+Neutral Prompt is now marked implemented after an explicit original-scope
 acceptance audit; see `docs/superpowers/plans/2026-10-26-neutral-prompt.md` and the closing VERIFICATION section.
 All operators, nesting/signed weights, CFG rescale, schedules, native form/formatter/replay and actual AppServices
 SD1.5/SDXL generation are verified. Alternative, ControlNet/PAG, IP-Adapter/basic/Plus, Reference, SDXL ControlLLLite,
@@ -113,7 +122,7 @@ composed Neutral prompts remain explicitly unsupported in `neutral_runtime.valid
 original Runtime task permits clear unsupported combinations; later agent-added notes making every combination
 a promotion prerequisite are superseded by the documented acceptance clarification. No original Neutral operator
 or model/UI/notice gate was omitted. Keep the seven guards until their own implementations are verified.
-The overall 353-entry goal remains active; 208 accepted entries are unfinished. Do not treat this promotion as
+The overall 353-entry goal remains active; 204 accepted entries are unfinished. Do not treat this promotion as
 completion of that goal or reclassify remaining entries to make it appear complete.
 
 ## Remaining targets, most-starred first
@@ -130,23 +139,23 @@ core:panorama-viewer, loopback_scaler, daam, text2prompt, prompt_translate, prom
 refiner, incantations, old_photo_restoration, abysz_lab, aesthetic_score, steps_animation,
 nsfw_checker, image_editor, embedding_merge, rich_text, mosaic_outpaint, cross_attention_viz, hypernetwork_training,
 inspiration, vram_estimator, sonar, dump_unet, llm_prompt, training_picker, model_presets,
-lama_cleaner, kandinsky, hypernetworks, core:styles-editor, characteristic_guidance, hotshot_xl, live_portrait,
+lama_cleaner, kandinsky, hypernetworks, characteristic_guidance, hotshot_xl, live_portrait,
 booru_prompt, depth_image_io, creaprompt, embedding_editor, semantic_guidance, custom_diffusion,
-core:image-compare, encrypt_image, inpaint_difference, depth_library, rpg_diffusion, custom_hires_fix,
+encrypt_image, inpaint_difference, depth_library, rpg_diffusion, custom_hires_fix,
 img2img_hires_fix, depth_anything, agent_attention, conditioning_highres_fix, hires_fix_tweaks,
 panorama_tools, chara_searcher, lua_scripting, deepdanbooru, gpu_temperature_guard, corridor_crawler,
 old_sd_firstpasser, temporal, batch_interrogate, token_downsampling, embedding_inspector, demofusion,
 prompt_expansion, color_correction, video_extras, clip_io, face_manipulation, ditail,
 minecraft_schematic, img2img_workflow, ocr, controlnet_preprocess_extras, triposr, manga_inpainting,
-pnginfo_injection, masked_content_extras, metadata_utils, hardware_info, waifu2x, core:nsfw-card-blur, vae_tools,
+pnginfo_injection, masked_content_extras, metadata_utils, hardware_info, waifu2x, core:nsfw-card-blur,
 core:prevent-interrupt
 
 Suggested next steps, by value and fit with what exists:
 
-1. **Native tools**: finish core:styles-editor; then core:image-compare and vae_tools, preserving their source scope.
+1. **Native tools**: core:prevent-interrupt, then core:presets and core:prompt-tools, preserving each source scope.
 2. **Regional prompting**: regional_prompter and latent_couple, via attention-level region masks.
    tiled_diffusion can largely reuse the existing `multidiffusion` hook plus noise inversion and region prompts.
-3. **Small, cheap ones**: img2img/custom/conditioning hires fix variants, color_correction, vae_tools,
+3. **Small, cheap ones**: img2img/custom/conditioning hires fix variants, color_correction,
    waifu2x, deepdanbooru (the WD14 tagger already exists in `extras.caption_image`), batch_interrogate,
    clip_interrogator, aesthetic_score, nsfw_checker.
 4. **Big ones**: animatediff, segment_anything, inpaint_anything, deforum, text2video, face_swap (insightface is
