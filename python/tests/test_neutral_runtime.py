@@ -152,7 +152,7 @@ def test_feature_advertisement_matches_new_hook():
 def test_pending_branch_dependent_combinations_fail_explicitly():
     from sdfx.neutral_runtime import validate
     from sdfx.protocol import EngineError
-    for name in ("detail_daemon", "cads", "photomaker", "img2imgalt"):
+    for name in ("detail_daemon", "cads", "photomaker"):
         with pytest.raises(EngineError, match=name):
             validate({name: {}})
         validate({name: {"enabled": False}})
@@ -228,3 +228,100 @@ def test_lcm_coefficients_match_native_boundary_condition_output(prediction):
         result = scheduler.step(v, t, x)
         torch.testing.assert_close(out * ours + skip * x, result.denoised, rtol=3e-5, atol=3e-5)
         x = result.prev_sample
+
+
+@pytest.mark.parametrize("phi", [0, 0.7, 1])
+def test_zero_noise_guidance_is_continuous_limit_of_x0_rescale(phi):
+    from sdfx.neutral_runtime import zero_noise_guidance
+    from sdfx.neutral_prompt import combine_deltas
+    z = torch.tensor([[1., 3, -2, 0]])
+    u = torch.tensor([[0.2, 0.3, -0.1, 0.4]])
+    d = torch.tensor([[1., -0.5, 0.7, 2]])
+    cfg = 4
+    got = zero_noise_guidance(z, u, d, cfg, phi)
+    b = -1e-6
+    zz, uu, dd = z.double(), u.double(), d.double()
+    x0u = zz + b * uu
+    g, c = x0u + b * cfg * dd, x0u + b * dd
+    gm, cm = g.mean(1, keepdim=True), c.mean(1, keepdim=True)
+    reference = (1-phi)*g + phi * (cm + (g-gm)/g.std(1, keepdim=True)*c.std(1, keepdim=True))
+    torch.testing.assert_close(got.double(), (reference-zz)/b, rtol=2e-5, atol=2e-5)
+
+
+def test_zero_noise_saliency_limit_uses_centered_absolute_activations():
+    from sdfx.neutral_prompt import combine_deltas
+    root = parse("base AND_SALT extra :0.7")
+    normal = torch.tensor([[4., 1, 1, 1]])
+    other = torch.tensor([[0., 2, 0, 0]])
+    got = combine_deltas(root, [normal, other], zero_noise_limit=True)
+    # Maps at infinitesimal noise are uniform + |B|*(abs(v)-mean(abs(v)))/N.
+    maps = torch.stack([normal.abs()-normal.abs().mean(1, keepdim=True), other.abs()-other.abs().mean(1, keepdim=True)])
+    win = maps.argmax(0)
+    expected = normal + 0.7*(win==1)*(other-normal)
+    torch.testing.assert_close(got, expected)
+
+
+def test_zero_noise_saliency_ties_use_higher_order_normalization_terms():
+    from sdfx.neutral_prompt import combine_deltas
+    root = parse("base AND_SALT extra")
+    normal = torch.tensor([[3., 1, 0, 0]])
+    other = torch.tensor([[-3., 0.5, 0.5, 0]])
+    got = combine_deltas(root, [normal, other], zero_noise_limit=True)
+    torch.testing.assert_close(got, torch.tensor([[-3., 1, 0.5, 0]]))
+
+
+@pytest.mark.parametrize("cfg", [0, 0.5, 1, 2])
+@pytest.mark.parametrize("phi", [0, 0.7])
+def test_actual_inverse_loop_composes_and_rescales_from_zero_noise(cfg, phi):
+    from sdfx.extras import invert_latents
+    class UNet(torch.nn.Module):
+        def forward(self, sample, timestep, encoder_hidden_states=None, **kw):
+            v = encoder_hidden_states[:, 0, 0]
+            return SimpleNamespace(sample=torch.ones_like(sample) * v[:, None, None, None])
+    unet = UNet()
+    scheduler = diffusers.DDIMScheduler(clip_sample=False, set_alpha_to_one=True)
+    pipe = SimpleNamespace(unet=unet, scheduler=scheduler)
+    def embeds(value):
+        return dict(prompt_embeds=torch.full((1, 77, 1), value), negative_prompt_embeds=torch.ones(1, 77, 1))
+    branches = [embeds(3.), embeds(5.)]
+    composed = dict(branches[0], _neutral=Plan(parse("one :0.5 AND two :0.5"), branches, phi=phi))
+    torch.manual_seed(71)
+    z = torch.randn(1, 4, 2, 2)
+    ours = invert_latents(SimpleNamespace(sdxl=False), pipe, z.clone(), composed, 3, cfg, 16, 16, lambda: None)
+    target = 1 + cfg * 3 + phi * (1 - cfg) * 3
+    native = invert_latents(SimpleNamespace(sdxl=False), pipe, z.clone(), embeds(target), 3, 1, 16, 16, lambda: None)
+    torch.testing.assert_close(ours, native, atol=3e-5, rtol=3e-5)
+    assert "forward" not in unet.__dict__
+
+
+def test_ordinary_decode_override_keeps_legacy_adjustment_path(monkeypatch):
+    from sdfx.engine import Engine
+    from sdfx.params import GenerationParams
+    from sdfx import extras, extensions
+    engine = Engine.__new__(Engine)
+    engine.pipe = SimpleNamespace(scheduler=None)
+    engine._activate = lambda *a: None
+    engine._scheduler = lambda *a: (SimpleNamespace(config={}), None)
+    def encoded(*a, **kw):
+        return dict(prompt_embeds=torch.full((1, 77, 1), 3.), negative_prompt_embeds=torch.zeros(1, 77, 1))
+    engine._encode = encoded
+    engine._encode_scheduled = encoded
+    def adjust(gp, embeds, ctx):
+        return {k: torch.zeros_like(v) for k, v in embeds.items()}
+    engine._adjust_embeds = adjust  # Revision(ignore_prompt=True) can zero conditioning
+    engine._run = lambda *a, **kw: ([], None)
+    latent = torch.zeros(1, 4, 2, 2)
+    monkeypatch.setattr(extensions, "encode_image", lambda *a: latent)
+    seen = []
+    def invert(engine, pipe, x, embeds, *a):
+        seen.append(embeds["prompt_embeds"].clone())
+        return latent
+    monkeypatch.setattr(extras, "invert_latents", invert)
+    for enabled in (False, True):
+        hooks = {"revision": {"ignore_prompt": True}}
+        if enabled:
+            hooks["neutral_prompt"] = {}
+        engine._img2imgalt(GenerationParams(hooks=hooks), None, SimpleNamespace(check_interrupt=lambda: None),
+                          {"override_prompt": "a cat", "randomness": 0}, None, encoded(), [1], 0, 1, 16, 16, None, None)
+    torch.testing.assert_close(seen[0], seen[1], rtol=0, atol=0)
+    assert seen[1].mean() == 3

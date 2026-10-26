@@ -427,3 +427,45 @@ IP-Adapter/Reference/ControlLLLite, CADS/SAG, CFG Schedule/APG/Mahiro/Latent Mod
 and Alternative combinations. Active composed prompts reject these explicitly in `neutral_runtime.validate`
 rather than silently using first-leaf residuals/conditioning. Those restrictions are temporary unfinished work,
 not a narrower definition of success. Ledger remains **86 done / 216 todo / 51 na**, target `neutral_prompt` todo.
+
+## Neutral Prompt UI and Alternative (Codex, 2026-10-26; remaining combinations still todo)
+
+The registered Scala plugin now exposes enable, CFG rescale, syntax/nesting/cost help and an optional formatter
+with all four keywords and signed weights. Saved PNGs contain the effective combined prompt plus `Neutral Prompt`
+and `CFG Rescale phi`. Reprocessing saved settings does not append an existing formatter suffix twice, including
+when the original main prompt is empty. Missing-class RED preceded the plugin; the empty-prompt replay regression
+failed before its fix. The rebuilt expanded form was visually inspected; screenshot process exited 0:
+`outputs/verify-neutral-ui/ui-panel.png` and `form-crop.png`.
+
+Actual `RealAlwaysOnCheck ... neutral_prompt` passed **1/1 per SD1.5/SDXL** through plugin -> AppServices -> queue ->
+generator -> Python/GPU. Assertions check formatted prompt, hook and both replay keys; saved images inspected
+(`outputs/verify-neutral-app-{sd15,sdxl}`). This is app-service verification, not an MCP transport test.
+
+Alternative now encodes each composed decode leaf at the inversion step count, with a separate batch-1 schedule.
+Generation retains its own schedule/batch. Wrapper cleanup covers exceptions. Ordinary decode overrides keep the
+legacy encoding route when Neutral performs no composition: review found and fixed an accidental embedding-
+adjustment change on that no-op path, with a weights-free Revision-like regression.
+
+DDIM inversion can start at exactly zero noise, where direct division by the x0 prediction coefficient is undefined.
+The chosen startup rule extends the positive-noise composition: PERP/TOPK preserve their homogeneous noise deltas;
+SALT uses centered absolute activations and higher centered moments when the first term ties. Equal multisets or
+float64-indistinguishable moments retain original ordering. Rescale's limit projects the delta onto constant and
+centered-image components; constant images use noise-space rescale. Numerical-limit tests and the actual inverse
+loop with constant analytic predictions cover CFG0/.5/1/2 and phi0/.7. This is an explicit app design for its DDIM
+approximation, not a claim of exact upstream img2img Alternative parity. Review's SALT tie counterexample now passes.
+
+```text
+python/.venv-smoke/Scripts/python.exe scripts/dev/gpu_check.py python/.venv-smoke/Scripts/python.exe outputs/verify-neutral-alt-sd15 neutral_alt_sd15
+python/.venv-smoke/Scripts/python.exe scripts/dev/gpu_check.py python/.venv-smoke/Scripts/python.exe outputs/verify-neutral-alt-sdxl neutral_alt_sdxl
+```
+
+Each completed 12 variants without warnings, covering four operators, decode CFG0/.5/1, rescale, editing, NegPiP and
+50 decode steps. JSON reports/grids in these folders were inspected. Both models have **zero pixel MAE** for
+baseline/no-op, baseline/restored and ordinary Alternative/Neutral-enabled no-op. The startup limit is validated
+analytically/native, separately from those particular model configurations. Scarf effects/style vary by operator
+and model; these finite checks do not prove reliable semantic isolation.
+
+Final full Scala **483 passed**, Python **396 passed** (four known torchsde endpoint-rounding warnings), torch-free
+**260 passed / 32 skipped**. Jar built; runtime module 55 tests. Source/dependency licences were already collected.
+Still unfinished: ControlNet/PAG, PhotoMaker, IP-Adapter/Reference/ControlLLLite, CADS/SAG and guidance/timestep
+modifiers in `neutral_runtime.validate`. Their guards remain explicit; target stays todo and ledger **86/216/51**.

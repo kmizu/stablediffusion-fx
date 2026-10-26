@@ -117,12 +117,38 @@ def perpendicular(normal, vector):
     return (v - n * projection).reshape_as(vector)
 
 
-def salient_blend(normal, vectors):
+def _zero_noise_winner(maps):
+    """Compare softmax Taylor terms; equal first terms need the centered distribution's higher moments."""
+    import torch
+    centered = [v.double() - v.double().mean(1, keepdim=True) for v in maps]
+    winner = torch.stack(centered).argmax(0)
+    for candidate in range(1, len(centered)):
+        for previous in range(candidate):
+            ties = (winner == previous) & (centered[candidate] == centered[previous])
+            for batch in ties.any(1).nonzero().flatten().tolist():
+                left, right = centered[previous][batch], centered[candidate][batch]
+                if torch.equal(left.sort().values, right.sort().values):
+                    continue  # equal centered multisets give identical normalizers at every noise level
+                scale = torch.maximum(left.abs().max(), right.abs().max())
+                left, right = left / scale, right / scale
+                # For two finite N-point distributions, moments through 2N-1 distinguish unequal multisets.
+                # Float64-indistinguishable moments retain the earlier branch, just like ordinary argmax ties.
+                for order in range(2, 2 * left.numel()):
+                    lm, rm = left.pow(order).mean(), right.pow(order).mean()
+                    if lm != rm:
+                        if rm < lm:
+                            winner[batch][ties[batch]] = candidate
+                        break
+    return winner
+
+
+def salient_blend(normal, vectors, *, zero_noise_limit=False):
     """Return the auxiliary delta: the winning vector replaces normal, weighted after map selection."""
     import torch
     all_vectors = [normal] + [v for v, _ in vectors]
-    maps = [torch.softmax(_flat(v), dim=1) for v in [x.abs() for x in all_vectors]]
-    winner = torch.stack(maps).argmax(0).reshape_as(normal)
+    maps = [_flat(v.abs()) for v in all_vectors]
+    winner = (_zero_noise_winner(maps) if zero_noise_limit else
+              torch.stack([torch.softmax(v, dim=1) for v in maps]).argmax(0)).reshape_as(normal)
     result = torch.zeros_like(normal, dtype=torch.float32)
     for index, (vector, weight) in enumerate(vectors, 1):
         result += weight * (winner == index) * (vector.float() - normal.float())
@@ -173,7 +199,7 @@ def compose(root: Node, predictions: list, unconditional, cfg: float, *, phi: fl
     return rescale(u + cfg * total, u + total, phi)
 
 
-def combine_deltas(root: Node, values: list):
+def combine_deltas(root: Node, values: list, *, zero_noise_limit=False):
     """Resolve the tree from x0 deltas directly, avoiding cancellation against a shared large x0 baseline."""
     import torch
     if len(values) != len(leaves(root)) or not values:
@@ -199,6 +225,6 @@ def combine_deltas(root: Node, values: list):
                 auxiliary += child.weight * topk(value)
             elif child.kind == "AND_SALT":
                 salient.append((value, child.weight))
-        return normal + auxiliary + salient_blend(normal, salient)
+        return normal + auxiliary + salient_blend(normal, salient, zero_noise_limit=zero_noise_limit)
 
     return delta(root)

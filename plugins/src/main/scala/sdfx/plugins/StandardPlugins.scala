@@ -22,6 +22,7 @@ object StandardPlugins:
     // prompt processing (extension index)
     new RandomizePlugin, new PromptFormatPlugin, new PromptFilterPlugin, new NegativePromptWeightPlugin,
     new NovelAIPromptPlugin, new StyleVariablesPlugin(), new LoraBlockWeightPlugin, new WeightGradientPlugin, new NegPipPlugin,
+    new NeutralPromptPlugin,
     // sampling (extension index)
     new DetailDaemonPlugin, new VectorscopeCcPlugin, new LatentMirroringPlugin, new AsymmetricTilingPlugin,
     new AntiBurnPlugin, new ReSharpenPlugin, new ColorGradingPlugin, new CfgSchedulePlugin, new CadsPlugin

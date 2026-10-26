@@ -88,6 +88,13 @@ prompt and boost it in the negative prompt. Keys stay positive while value proje
 Supports prompt editing, Weight Gradient, hires and img2img; negative weights with PhotoMaker are unsupported.
 Effects depend on the checkpoint, and excessive weights can damage the image. SD1.5/SDXL were GPU-checked.
 
+`neutral_prompt` — AlwaysOn **Neutral Prompt** (integration in progress; extension ledger still todo). Compose
+positive prompts with AND, AND_PERP, AND_SALT or AND_TOPK, signed `:weight` suffixes and nested `[groups]`.
+The form offers CFG rescale and an optional extra-prompt formatter; saved images contain the effective combined
+prompt. Hires, img2img/Alternative, editing, Weight Gradient and NegPiP are checked on SD1.5/SDXL. ControlNet/PAG,
+PhotoMaker, image adapters and guidance/timestep modifiers currently report an explicit unsupported-combination
+error while their branch-specific integration is unfinished.
+
 Every plugin has unit tests (Scala `plugins`, `engine`, `mcp`, `ui` suites; Python `tests/`) and runs end to end in
 dry-run mode. Real-model GPU runs:
 

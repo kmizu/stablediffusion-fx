@@ -59,6 +59,29 @@ class BuiltinsSuite extends munit.FunSuite:
     assertEquals(out.extra("NegPiP Active"), "True")
     assert(StandardPlugins.alwaysOn.exists(_.id == "negpip"))
 
+  test("Neutral Prompt formatter is opt-in, records effective prompt and does not duplicate on replay"):
+    val p = new NeutralPromptPlugin
+    val base = GenerationParams(prompt = "a portrait", negativePrompt = "lowres")
+    assert(!p.isActive(defaults(p)))
+    val ordinary = p.process(base, defaults(p, "enabled" -> "true"))
+    assertEquals(ordinary.prompt, base.prompt)
+    assertEquals(ordinary.hooks("neutral_prompt")("cfg_rescale").num, 0.0)
+    for keyword <- Seq("AND", "AND_PERP", "AND_SALT", "AND_TOPK") do
+      val values = defaults(p, "enabled" -> "true", "format_enabled" -> "true", "extra_prompt" -> "red scarf",
+        "prompt_type" -> keyword, "prompt_weight" -> "-0.7", "cfg_rescale" -> "0.5")
+      val out = p.process(base, values)
+      assertEquals(out.prompt, s"a portrait\n$keyword red scarf :-0.7")
+      assertEquals(out.negativePrompt, "lowres")
+      assertEquals(p.process(out, values).prompt, out.prompt)
+      assertEquals(out.extra("CFG Rescale phi"), "0.5")
+      assertEquals(out.extra("Neutral Prompt"), "True")
+      assertEquals(out.hooks("neutral_prompt").obj.keySet.toSet, Set("cfg_rescale"))
+    intercept[IllegalArgumentException](p.process(base, defaults(p, "cfg_rescale" -> "NaN")))
+    val emptyValues = defaults(p, "enabled" -> "true", "format_enabled" -> "true", "extra_prompt" -> "red scarf")
+    val empty = p.process(base.copy(prompt = ""), emptyValues)
+    assertEquals(p.process(empty, emptyValues).prompt, empty.prompt)
+    assert(StandardPlugins.alwaysOn.exists(_.id == "neutral_prompt"))
+
   test("APG / RescaleCFG / Kohya / MultiDiffusion hook fields match the engine contract"):
     val apg = hookOf(new ApgPlugin, defaults(new ApgPlugin, "enabled" -> "true"))
     assertEquals(apg.value.keySet.toSet, Set("momentum", "adaptive_momentum", "norm_threshold", "eta", "guidance_limiter",

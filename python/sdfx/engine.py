@@ -636,7 +636,7 @@ class Engine(BaseEngine):
                 sub = replace(gp, hooks={k: v for k, v in gp.hooks.items() if k != "neutral_prompt"})
                 branches = [self._encode_scheduled(n.text, neg, sub, bs, steps, hires_total, gradient_total) for n in nodes]
                 out = dict(branches[0])
-                out["_neutral"] = neutral_runtime.Plan(tree, branches)
+                out["_neutral"] = neutral_runtime.Plan(tree, branches, phi)
                 return out
         def schedule(text):
             text = prompt.strip_extra_networks(text)
@@ -676,7 +676,7 @@ class Engine(BaseEngine):
             plan = embeds["_neutral"]
             branches = [self._adjust_embeds(gp, branch, ctx) for branch in plan.branches]
             out = dict(branches[0])
-            out["_neutral"] = neutral_runtime.Plan(plan.tree, branches)
+            out["_neutral"] = neutral_runtime.Plan(plan.tree, branches, plan.phi)
             return out
         sch = getattr(embeds, "schedule", None)
         def apply(d):
@@ -1262,18 +1262,32 @@ class Engine(BaseEngine):
 
     def _img2imgalt(self, gp, req, ctx, alt, image, embeds, seeds, idx0, total, w, h, cn, pag):
         """img2imgalt.py: invert the init image to noise with DDIM, then sample from that noise."""
-        if "_neutral" in embeds:
-            raise EngineError(UNSUPPORTED, "Neutral Prompt integration pending for img2img Alternative")
         c = adapters.normalize(alt, extras.IMG2IMGALT_DEFAULTS)
+        steps = int(c["inversion_steps"]) or gp.steps
         enc = embeds
         if c["override_prompt"] or c["override_negative"]:
-            enc = self._encode(c["override_prompt"] or gp.prompt, c["override_negative"] or gp.negative_prompt, gp, 1)
+            if hooks_mod.hook_config(gp.hooks, "neutral_prompt", {}) is not None:
+                candidate = self._encode_scheduled(c["override_prompt"] or gp.prompt, c["override_negative"] or gp.negative_prompt,
+                                                   gp, 1, steps, gradient_total=steps)
+                if "_neutral" in candidate:
+                    enc = self._adjust_embeds(gp, candidate, ctx)
+                else:
+                    # Keep the legacy override route byte-for-byte when enabling Neutral does no composition.
+                    enc = self._encode(c["override_prompt"] or gp.prompt, c["override_negative"] or gp.negative_prompt, gp, 1)
+            else:
+                enc = self._encode(c["override_prompt"] or gp.prompt, c["override_negative"] or gp.negative_prompt, gp, 1)
+        elif "_neutral" in enc:
+            enc = self._adjust_embeds(gp, self._encode_scheduled(gp.prompt, gp.negative_prompt, gp, 1, steps,
+                                                               gradient_total=steps), ctx)
+        inverse_plan = enc.get("_neutral")
+        if inverse_plan:
+            neutral_runtime.validate(gp.hooks, controlnet=bool(cn and cn[0]), pag=bool(pag))
         self._activate(self.pipe)
         sched, _ = self._scheduler(gp.sampler_name, gp.scheduler, ctx)
         self.pipe.scheduler = sched
         lat = ext_mod.encode_image(self, self.pipe, image)
-        steps = int(c["inversion_steps"]) or gp.steps
-        remove_negpip = negpip.install(self.pipe) if enc.get("_negpip") else lambda: None
+        use_negpip = enc.get("_negpip") or (inverse_plan and any(v.get("_negpip") for v in inverse_plan.branches))
+        remove_negpip = negpip.install(self.pipe) if use_negpip else lambda: None
         try:
             inv = extras.invert_latents(self, self.pipe, lat, enc, steps, float(c["decode_cfg_scale"]), w, h,
                                         ctx.check_interrupt)

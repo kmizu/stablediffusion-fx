@@ -123,7 +123,7 @@ def mask_png(size):
 
 t0 = time.time()
 r = None
-if CASE in ("neutral_sd15", "neutral_sdxl"):
+if CASE in ("neutral_sd15", "neutral_sdxl", "neutral_alt_sd15", "neutral_alt_sdxl"):
     from PIL import Image, ImageChops, ImageStat
     load(SD15 if CASE.endswith("sd15") else SDXL)
     size = dict(width=512, height=768) if CASE.endswith("sd15") else dict(width=832, height=832)
@@ -147,6 +147,24 @@ if CASE in ("neutral_sd15", "neutral_sdxl"):
         ("negpip", dict(prompt=plain + " AND_TOPK (black hair:-1) :0.7", hooks={"neutral_prompt": {}, "negpip": {}})),
         ("gradient", dict(prompt=plain + " AND_TOPK {red scarf::0.1-1.5} :0.7", hooks={"neutral_prompt": {}, "weight_gradient": {}})),
         ("restored", {})]
+    if CASE.startswith("neutral_alt_"):
+        init = i2i(os.path.join(OUT, CASE + "_baseline.png"), denoise=0.5)
+        alt = {"inversion_steps": 8, "decode_cfg_scale": 1}
+        def alternative(prompt=plain, phi=0, decode=1, extra=None, count=8):
+            hooks = {"neutral_prompt": {"cfg_rescale": phi}, "img2imgalt": dict(alt, decode_cfg_scale=decode, inversion_steps=count)}
+            hooks.update(extra or {})
+            return dict(prompt=prompt, img2img=init, hooks=hooks)
+        variants = [("baseline", {}), ("noop", dict(hooks=enabled)),
+            ("alt_baseline", dict(img2img=init, hooks={"img2imgalt": alt})),
+            ("alt_noop", alternative()),
+            ("alt_perp", alternative(plain + " AND_PERP black hair :-0.5")),
+            ("alt_salt", alternative(plain + " AND_SALT red scarf :0.5")),
+            ("alt_topk_rescale", alternative(plain + " AND_TOPK red scarf :0.5", phi=0.7)),
+            ("alt_and_decode0", alternative(plain + " :0.7 AND red scarf :0.3", decode=0, phi=0.4)),
+            ("alt_schedule_decodehalf", alternative(plain + " AND_TOPK [red scarf:blue scarf:0.5] :0.5", decode=0.5)),
+            ("alt_negpip", alternative(plain + " AND_TOPK (black hair:-1) :0.5", extra={"negpip": {}})),
+            ("alt_default50", alternative(plain + " AND_TOPK red scarf :0.5", count=50)),
+            ("restored", {})]
     paths, report, errors = {}, {}, []
     for tag, changes in variants:
         result = call("img2img" if changes.get("img2img") else "txt2img", req(gp(**dict(common, **changes))))
@@ -159,7 +177,7 @@ if CASE in ("neutral_sd15", "neutral_sdxl"):
         else:
             errors.append({tag: result})
         print(tag, report.get(tag) or result, flush=True)
-    for a, b in [("baseline", "noop"), ("baseline", "restored")]:
+    for a, b in [("baseline", "noop"), ("baseline", "restored")] + ([("alt_baseline", "alt_noop")] if CASE.startswith("neutral_alt_") else []):
         if a in paths and b in paths:
             with Image.open(paths[a]) as im1, Image.open(paths[b]) as im2:
                 diff = sum(ImageStat.Stat(ImageChops.difference(im1.convert("RGB"), im2.convert("RGB"))).mean) / 3

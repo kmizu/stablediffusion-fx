@@ -38,9 +38,9 @@ not across the batch. Upstream combines denoised x0; scheduler conversion needs 
   epsilon/v-prediction and each supported scheduler representation, conditional/unconditional batching, output
   reconstruction, cleanup after errors/cancel. Tests precede hooks; confirm no-negative ordinary no-op exact.
   Inspect all forward-hook interactions; unsupported combinations must be clear rather than silently ignored.
-- [ ] Scala plugin, registration, help, replay metadata and supported-features advertisement. Formatter must offer
+- [x] Scala plugin, registration, help, replay metadata and supported-features advertisement. Formatter must offer
   all keyword/weight combinations through native controls or equivalent prompt editing. No implicit activation.
-- [ ] Real SD1.5/SDXL gates: ordinary baseline/no-op/restored exact, every keyword and nested group, signed weights,
+- [x] Real SD1.5/SDXL core gates: ordinary baseline/no-op/restored exact, every keyword and nested group, signed weights,
   CFG rescale, batch, schedules, hires/img2img, multiple samplers. Inspect images, app-service path and UI.
 - [ ] Independent review, full suites, licences, ledger promotion, handoff/verification, verified commit/push.
 
@@ -92,3 +92,31 @@ Final foundation suites: 341 Python passed; 260 torch-free passed / 31 skipped. 
   Dynamic Thresholding, Detail Daemon and img2img Alternative. No current results prove those combinations.
 - Final Python full suite after all edits: 382 passed with four torchsde Brownian endpoint warnings; torch-free
   260 passed / 32 skipped. Runtime test module: 41 passed. No Scala changes, ledger unchanged at 86/216/51.
+
+## UI and Alternative stage (continuation, still no target promotion)
+
+- `NeutralPromptPlugin` adds enable/CFG rescale, all-four-operator extra-prompt formatter, signed weights, nesting
+  help and replay keys. Actual effective prompt is saved. Replay is idempotent, including an empty main prompt.
+  The form shows cost/compatibility and groups additional inputs; UI screenshot inspected after rebuilding.
+- `RealAlwaysOnCheck ... neutral_prompt` passed 1/1 each on SD1.5 and SDXL. It asserts effective formatter text,
+  hook presence, Neutral Prompt and CFG Rescale phi infotext. Saved PNGs inspected; this is AppServices, not MCP
+  transport. `outputs/neutral-app.log` records both; form: `outputs/verify-neutral-ui/form-crop.png`.
+- Alternative re-encodes active composed decode prompts at decode step count and batch 1, preserving generation
+  branches/batch separately. Override ordinary no-op retains the legacy unadjusted route, including Revision-like
+  modifiers (review regression). Each inverse step advances its own branch schedule and restores wrappers in finally.
+- At exactly zero inverse noise, composition uses its positive-noise continuation. PERP/TOPK are homogeneous;
+  SALT compares centered absolute scores and, on ties, higher centered distribution moments. Equal centered
+  multisets retain original order; float64-indistinguishable moments also retain that order. Rescale uses the
+  constant/centered-image projection limit, or noise-space rescale when the input image is constant. This is the
+  app's explicit DDIM startup design, not an upstream claim of pixel parity. Phi/CFG numerical-limit tests pass.
+- Review identified empty-prompt formatter replay duplication, no-op override adjustment drift and SALT first-order
+  ties. Each has a regression; all fixed. The scalar DDIM inverse test covers CFG0/.5/1/2 with phi0/.7 from zero noise.
+- Actual Alternative: 12 variants per SD1.5/SDXL, including four operators, decode CFG0/.5/1, phi, editing, NegPiP
+  and default 50 decode steps. No warnings; ordinary/no-op/restored and Alternative plain/no-op exactly match.
+  Reports/grids: `outputs/verify-neutral-alt-{sd15,sdxl}`. These model configs do not prove every zero-noise limit;
+  the latter is separately covered by native/analytic tests.
+- Final full suites: Scala 483 passed; Python 396 passed (four existing torchsde endpoint warnings), torch-free
+  260 passed / 32 skipped. Runtime module now 55 tests. Jar built, UI exited 0. No new source/dependency licence.
+- Still finish remaining guards in validate(): ControlNet/PAG, PhotoMaker, IP-Adapter/Reference/ControlLLLite,
+  CADS/SAG, CFG Schedule/APG/Mahiro/Latent Modifier/Dynamic Thresholding/Detail Daemon. Keep target todo until
+  branch-specific handling/validation is complete. Ledger remains 86 done / 216 todo / 51 na.

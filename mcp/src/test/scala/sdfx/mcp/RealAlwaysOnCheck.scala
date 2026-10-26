@@ -47,6 +47,8 @@ object RealAlwaysOnCheck:
       "face_restore" -> Map("model" -> "GFPGANv1.4"),
       "random_resolutions" -> Map("resolutions" -> "640x384, 384x640, 576x448"),
       "neveroom" -> Map("vae_tiling" -> "true", "unet_offload" -> "true"),
+      "neutral_prompt" -> Map("cfg_rescale" -> "0.3", "format_enabled" -> "true", "extra_prompt" -> "red scarf",
+        "prompt_type" -> "AND_TOPK", "prompt_weight" -> "0.7"),
       "hypertile" -> Map.empty, "latent_modifier" -> Map("sharpness_multiplier" -> "0.3", "combat_cfg_drift" -> "0.3"))
     // model-file plugins (ip_adapter, controllllite, fooocus_inpaint, photomaker) are verified at engine level
     val skip = Set("ip_adapter", "controllllite", "fooocus_inpaint", "photomaker")
@@ -68,6 +70,11 @@ object RealAlwaysOnCheck:
           if pl.id == "negpip" then
             require(o.params.hooks.contains("negpip"), "NegPiP hook missing")
             require(o.infotext.contains("NegPiP Active: True"), "NegPiP infotext missing")
+          if pl.id == "neutral_prompt" then
+            require(o.params.prompt.contains("AND_TOPK red scarf :0.7"), "Neutral Prompt formatter missing")
+            require(o.params.hooks.contains("neutral_prompt"), "Neutral Prompt hook missing")
+            require(o.infotext.contains("CFG Rescale phi: 0.3"), "Neutral Prompt rescale infotext missing")
+            require(o.infotext.contains("Neutral Prompt: True"), "Neutral Prompt infotext missing")
           val img = ImageIO.read(o.path.toFile)
           val keys = o.params.extra.keys.filterNot(_ == "Version").take(3).mkString(";")
           okCount += 1

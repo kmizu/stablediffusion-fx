@@ -15,13 +15,14 @@ from .protocol import EngineError, UNSUPPORTED
 class Plan:
     tree: neutral_prompt.Node
     branches: list[dict]
+    phi: float = 0
 
 
 def validate(hooks, *, controlnet=False, pag=False):
     """Temporary explicit compatibility boundary while branch-dependent integrations are unfinished."""
     from .hooks import hook_config
     blocked = ("photomaker", "ip_adapter", "reference", "controllllite", "cads", "sag", "cfg_schedule",
-               "apg", "mahiro", "latent_modifier", "dynamic_thresholding", "img2imgalt", "detail_daemon")
+               "apg", "mahiro", "latent_modifier", "dynamic_thresholding", "detail_daemon")
     conflicts = [name for name in blocked if hook_config(hooks, name, {}) is not None]
     conflicts += (["ControlNet"] if controlnet else []) + (["PAG"] if pag else [])
     if conflicts:
@@ -90,6 +91,25 @@ def at(branch, step):
     return branch
 
 
+def zero_noise_guidance(z, unconditional, delta, cfg, phi):
+    """Continuous positive-noise limit of x0 guidance/rescale when DDIM inversion starts at alpha=1.
+
+    Mean/std rescale becomes a projection on the shared image's constant/centered components. If that image
+    is constant, its variance comes entirely from the prediction, so noise-space rescale is the exact limit.
+    """
+    import torch
+    u, d = unconditional.float(), delta.float()
+    guided = u + cfg * d
+    if not phi or cfg == 1:
+        return guided
+    center = z.float() - z.float().flatten(1).mean(1).view(-1, *([1] * (z.ndim - 1)))
+    mean = d.flatten(1).mean(1).view(-1, *([1] * (d.ndim - 1)))
+    projection = mean + d - neutral_prompt.perpendicular(center, d)
+    varied = (center.flatten(1).abs().amax(1) > 0).view(-1, *([1] * (z.ndim - 1)))
+    return torch.where(varied, guided + phi * (1 - cfg) * projection,
+                       neutral_prompt.rescale(guided, u + d, phi))
+
+
 class RuntimeHook:
     """Evaluate each positive leaf against the same input, then present a CFG-compatible composed prediction.
 
@@ -142,20 +162,26 @@ class RuntimeHook:
             results.append(prediction[batch:])
         z = inputs[:batch, :unconditional.shape[1]]
         ab = coefficients(self.scheduler, timestep)
+        differences = [v.float() - unconditional.float() for v in results]
         if ab[1] == 0:
-            raise EngineError(UNSUPPORTED, "Neutral Prompt cannot compose a zero-noise model evaluation")
-        delta = neutral_prompt.combine_deltas(self.plan.tree, [ab[1] * (v.float() - unconditional.float()) for v in results])
-        # Keep the common x0 baseline out of subtraction when rescale is off; late low-noise steps otherwise
-        # amplify float32 cancellation when converting composed x0 back into model predictions.
-        conditional = unconditional.float() + delta / ab[1]
-        guided = unconditional.float() + self.cfg * delta / ab[1]
-        if self.phi:
-            x0u = to_x0(z, unconditional, ab)
-            x0 = neutral_prompt.rescale(x0u + self.cfg * delta, x0u + delta, self.phi)
-            guided = from_x0(z, x0, ab)
-            conditional = unconditional.float() + (guided - unconditional.float()) / self.cfg if self.cfg else conditional
+            delta = neutral_prompt.combine_deltas(self.plan.tree, differences, zero_noise_limit=True)
+            guided = zero_noise_guidance(z, unconditional, delta, self.cfg, self.phi)
+            conditional = unconditional.float() + delta
+            if self.phi and self.cfg:
+                conditional = unconditional.float() + (guided - unconditional.float()) / self.cfg
+        else:
+            delta = neutral_prompt.combine_deltas(self.plan.tree, [ab[1] * v for v in differences])
+            # Keep the common x0 baseline out of subtraction when rescale is off; late low-noise steps otherwise
+            # amplify float32 cancellation when converting composed x0 back into model predictions.
+            conditional = unconditional.float() + delta / ab[1]
+            guided = unconditional.float() + self.cfg * delta / ab[1]
+            if self.phi:
+                x0u = to_x0(z, unconditional, ab)
+                x0 = neutral_prompt.rescale(x0u + self.cfg * delta, x0u + delta, self.phi)
+                guided = from_x0(z, x0, ab)
+                conditional = unconditional.float() + (guided - unconditional.float()) / self.cfg if self.cfg else conditional
         if self.guided:
-            guided = torch.cat([unconditional, conditional])
+            guided = torch.cat([unconditional if self.cfg else guided, conditional])
         guided = guided.to(unconditional.dtype)
         if isinstance(template, tuple):
             return (guided,) + template[1:]

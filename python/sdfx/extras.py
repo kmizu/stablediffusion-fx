@@ -403,18 +403,29 @@ def invert_latents(engine, pipe, latents, embeds: dict, steps: int, cfg: float, 
         added = {"text_embeds": torch.cat([npp, pp]) if guided else pp,
                  "time_ids": tid.repeat(2 if guided else 1, 1)}
     x = latents
-    with torch.no_grad():
-        for t in inv.timesteps:
-            check_interrupt()
-            xin = torch.cat([x, x]) if guided else x
-            kw = {"encoder_hidden_states": ehs}
-            if added is not None:
-                kw["added_cond_kwargs"] = added
-            eps = pipe.unet(xin, t, **kw).sample
-            if guided:
-                u, c = eps.chunk(2)
-                eps = u + cfg * (c - u)
-            x = inv.step(eps, t, x).prev_sample
+    runtime = None
+    if "_neutral" in embeds:
+        from .neutral_runtime import RuntimeHook
+        plan = embeds["_neutral"]
+        runtime = RuntimeHook(pipe.unet, inv, plan, cfg, plan.phi, guided=guided, check_interrupt=check_interrupt).install()
+    try:
+        with torch.no_grad():
+            for index, t in enumerate(inv.timesteps):
+                check_interrupt()
+                if runtime:
+                    runtime.step = index + 1
+                xin = torch.cat([x, x]) if guided else x
+                kw = {"encoder_hidden_states": ehs}
+                if added is not None:
+                    kw["added_cond_kwargs"] = added
+                eps = pipe.unet(xin, t, **kw).sample
+                if guided:
+                    u, c = eps.chunk(2)
+                    eps = u + cfg * (c - u)
+                x = inv.step(eps, t, x).prev_sample
+    finally:
+        if runtime:
+            runtime.remove()
     return x
 
 
