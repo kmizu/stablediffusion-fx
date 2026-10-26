@@ -72,7 +72,7 @@ class FakeEngine(BaseEngine):
         return ["freeu", "dynamic_thresholding", "hypertile", "pag", "controlnet", "apg", "mahiro", "rescale_cfg",
                 "model_sampling", "kohya_hrfix", "multidiffusion", "latent_modifier", "soft_inpainting", "sag", "neveroom",
                 "reference", "revision", "ip_adapter", "controllllite", "fooocus_inpaint", "photomaker", "img2imgalt",
-                "face_restore", "caption", "img2vid", "novel_view", "ldsr", "marigold", "adetailer", "weight_gradient", "negpip", "neutral_prompt", "prompt_fusion", "save_intermediate"] + list(sampling_ext.HOOKS) + (
+                "face_restore", "caption", "img2vid", "novel_view", "ldsr", "marigold", "adetailer", "weight_gradient", "negpip", "neutral_prompt", "prompt_fusion", "save_intermediate", "latent_upscale"] + list(sampling_ext.HOOKS) + (
                     ["custom_code"] if os.environ.get("SDFX_ALLOW_CODE") == "1" else [])
 
     def preprocessors(self) -> list[str]:
@@ -171,7 +171,11 @@ class FakeEngine(BaseEngine):
         out_w, out_h = gp.hires.target_size(w, h) if hires else (w, h)
 
         if mode == "img2img":
-            base_steps = img2img_steps(gp.steps, gp.img2img.denoising_strength)[2]
+            from .hooks import hook_config
+            from .latent_upscale import full_steps
+            latent = hook_config(gp.hooks, "latent_upscale", {})
+            base_steps = (full_steps(gp.steps, gp.img2img.denoising_strength)[2] if latent is not None else
+                          img2img_steps(gp.steps, gp.img2img.denoising_strength)[2])
         else:
             base_steps = gp.steps
         hr_steps = hires_steps(gp.hires.second_pass_steps or gp.steps, gp.hires.denoising_strength)[2] if hires else 0

@@ -252,13 +252,18 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   def sendTo(mode: Mode, path: Path, infotext: Option[String]): Unit =
     val vm = vms(mode)
     vm.initImage.set(path.toString)
-    infotext.foreach(t => vm.restoreInfotext(t))
+    infotext.foreach { t =>
+      vm.restoreInfotext(t)
+      restorePlugins(mode, t)
+    }
     select(mode)
     ctx.info(s"Sent to ${mode.label}")
 
   def restore(infotext: String): Unit =
-    val mode = activeMode
+    val parsed = sdfx.core.infotext.Infotext.parse(infotext)
+    val mode = if activeMode == Mode.Txt2Img && sdfx.plugins.LatentUpscalePlugin.replay(parsed.fields).nonEmpty then Mode.Img2Img else activeMode
     vms(mode).restoreInfotext(infotext)
+    restorePlugins(mode, infotext)
     select(mode)
     val parsedModel = sdfx.core.infotext.Infotext.parse(infotext).get("Model").filter(_.nonEmpty)
     parsedModel.flatMap(services.catalog.findCheckpoint).filter(_.name != model.checkpoint.get) match
@@ -267,6 +272,11 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
         ctx.info(s"Parameters restored · switching checkpoint to ${e.name}")
       case None =>
         ctx.success(s"Parameters restored into ${mode.label}")
+
+  private def restorePlugins(mode: Mode, infotext: String): Unit =
+    plugins(mode).restoreInfotext(infotext)
+    if mode != Mode.Txt2Img then
+      plugins(mode).restoreLatentUpscale(sdfx.core.infotext.Infotext.parse(infotext).fields)
 
   def delete(path: Path): Unit =
     val a = new Alert(Alert.AlertType.CONFIRMATION, s"Delete ${path.getFileName}?\nThe file is removed from disk.", ButtonType.CANCEL, ButtonType.OK)

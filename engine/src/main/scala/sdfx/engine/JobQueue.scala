@@ -1,6 +1,9 @@
 package sdfx.engine
 
 import sdfx.core.model.GenerationParams
+import sdfx.core.image.{Grid, GridNumbers}
+import sdfx.core.infotext.{ImageFacts, Infotext}
+import sdfx.core.png.PngMetadata
 import sdfx.core.plugins.api.*
 import sdfx.core.protocol.*
 
@@ -57,7 +60,18 @@ object JobRunner:
     val ctx = generator.forJob(listener, job.alwaysOn, job.limits)
     job.script match
       case Some((plugin, values)) => plugin.run(job.params, values, ctx)
-      case None                   => JobOutput(ctx.generate(job.params))
+      case None =>
+        val images = ctx.generate(job.params)
+        val grids =
+          if images.size > 1 && !ctx.isInterrupted && GridNumbers.enabled(images.head.params.extra) then
+            val tiles = images.map(o => GridNumbers.render(PngMetadata.readImage(o.path), o.path.getFileName.toString, o.params.extra))
+            val mapping = ujson.Arr.from(images.map(o => ujson.Obj("filename" -> o.path.getFileName.toString,
+              "seed" -> o.seed, "number" -> GridNumbers.number(o.path.getFileName.toString).map(ujson.Str(_)).getOrElse(ujson.Null))))
+            val p = images.head.params.copy(seed = images.head.seed,
+              extra = images.head.params.extra.updated(GridNumbers.SourcesKey, mapping.render()))
+            Seq(ctx.saveImage(Grid.plain(tiles), "grids", p, Infotext.write(p, ImageFacts(seed = p.seed))))
+          else Nil
+        JobOutput(images, grids)
 
   def isInterruption(e: Throwable): Boolean = e match
     case ee: EngineError => ee.isInterrupted

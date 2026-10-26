@@ -41,6 +41,12 @@ BASE = [
      "-> `save_intermediate`; standalone python/sdfx/save_intermediate.py from upstream behaviour "
      "at [a1d7cec](https://github.com/AlUlkesh/sd_save_intermediate_images/tree/a1d7cecff893280d709767794d5654e8cbc6746f) "
      "(upstream Unlicense)"),
+    ("feynlee/latent-upscale", "reimplemented", "Source-resolution VAE encoding, latent interpolation and full-step "
+     "img2img scheduling -> `latent_upscale`; "
+     "[source b9f75f4](https://github.com/feynlee/latent-upscale/tree/b9f75f44de15170a38b195692cff28246846da7d)"),
+    ("AlUlkesh/sd_grid_add_image_number", "reimplemented", "Filename numbers and XYZ axis labels on grid tiles "
+     "-> `grid_numbers`; standalone Java2D renderer; "
+     "[source 693a8a7](https://github.com/AlUlkesh/sd_grid_add_image_number/tree/693a8a710e1872d3ba9b63a41f69ee705f4ad54c)"),
     ("kohya-ss/sd-scripts", "ported", "ControlNet-LLLite module layout"),
     ("lllyasviel/Fooocus", "ported", "Fooocus inpaint patch / head application"),
     ("threestudio-project/threestudio", "reimplemented", "Zero123 diffusers layout and sampling"),

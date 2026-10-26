@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 90, todo 212, na 51.
+Totals: done 92, todo 210, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-fx | Why not applicable |
 |---|---|---|---|---|---|
@@ -94,7 +94,7 @@ Totals: done 90, todo 212, na 51.
 | 85 | [DH Patch](https://github.com/d8ahazard/sd_auto_fix.git) | 12 | na | `obsolete` | superseded: the feature is in the base app (A1111 >= 1.5) or the extension is deprecated |
 | 86 | [Riffusion](https://github.com/enlyth/sd-webui-riffusion.git) | 202 | todo | `riffusion` |  |
 | 87 | [Save Intermediate Images](https://github.com/AlUlkesh/sd_save_intermediate_images.git) | 112 | done | `save_intermediate` |  |
-| 88 | [Add image number to grid](https://github.com/AlUlkesh/sd_grid_add_image_number.git) | 26 | todo | `grid_numbers` |  |
+| 88 | [Add image number to grid](https://github.com/AlUlkesh/sd_grid_add_image_number.git) | 26 | done | `grid_numbers` |  |
 | 89 | [Multiple Hypernetworks](https://github.com/antis0007/sd-webui-multiple-hypernetworks.git) | 95 | todo | `hypernetworks` |  |
 | 90 | [System Info](https://github.com/vladmandic/sd-extension-system-info.git) | 307 | todo | `core:system-info` |  |
 | 91 | [OpenPose Editor](https://github.com/fkunn1326/openpose-editor.git) | 1759 | todo | `openpose_editor` |  |
@@ -195,7 +195,7 @@ Totals: done 90, todo 212, na 51.
 | 186 | [GPU temperature protection](https://github.com/w-e-w/stable-diffusion-webui-GPU-temperature-protection.git) | 36 | todo | `gpu_temperature_guard` |  |
 | 187 | [zoom-image](https://github.com/viyiviyi/stable-diffusion-webui-zoomimage.git) | 23 | done | `core:zoom` |  |
 | 188 | [Shutdown button](https://github.com/EnsignMK/sd_shutdown_button.git) | 18 | na | `server-ops` | operating a shared web server (tunnels, TLS, multi-instance, kill buttons) |
-| 189 | [Latent Upscale](https://github.com/feynlee/latent-upscale.git) | 76 | todo | `latent_upscale` |  |
+| 189 | [Latent Upscale](https://github.com/feynlee/latent-upscale.git) | 76 | done | `latent_upscale` |  |
 | 190 | [sd-history-slider](https://github.com/LucasMali/sd-history-slider) | 19 | done | `core:gallery` |  |
 | 191 | [prompts filter](https://github.com/viyiviyi/prompts-filter.git) | 10 | done | `prompt_filter` |  |
 | 192 | [sd-webui-animatediff](https://github.com/continue-revolution/sd-webui-animatediff.git) | 3424 | todo | `animatediff` |  |

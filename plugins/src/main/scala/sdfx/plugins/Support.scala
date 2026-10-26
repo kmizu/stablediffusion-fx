@@ -1,6 +1,7 @@
 package sdfx.plugins
 
 import sdfx.core.infotext.{ImageFacts, Infotext}
+import sdfx.core.image.GridNumbers
 import sdfx.core.model.GenerationParams
 import sdfx.core.plugins.api.{OutputImage, PluginContext}
 import sdfx.core.protocol.EngineError
@@ -36,7 +37,21 @@ object Support:
     if p.img2img.isEmpty then throw new IllegalArgumentException(s"$plugin needs an img2img init image")
 
   /** Image of a cell: the first output, like A1111 (`processed.images[0]`); other batch images stay sub images. */
-  def cellImage(outs: Seq[OutputImage]): Option[BufferedImage] = outs.headOption.map(o => readImage(o.path))
+  def gridTile(o: OutputImage): BufferedImage = GridNumbers.render(readImage(o.path), o.path.getFileName.toString, o.params.extra)
+  def cellImage(outs: Seq[OutputImage]): Option[BufferedImage] = outs.headOption.map(gridTile)
+
+  /** Keep native display controls and the exact saved-source correspondence on derived grid PNGs. */
+  def gridParams(base: GenerationParams, outs: Seq[OutputImage]): GenerationParams =
+    val settings = outs.headOption.toSeq.flatMap(_.params.extra.filter((k, _) => GridNumbers.settingKeys.contains(k))).toMap
+    val extras = base.extra ++ settings
+    if !GridNumbers.enabled(extras) then base
+    else
+      val sources = ujson.Arr.from(outs.map { o =>
+        ujson.Obj("filename" -> o.path.getFileName.toString, "seed" -> o.seed,
+          "number" -> GridNumbers.number(o.path.getFileName.toString).map(ujson.Str(_)).getOrElse(ujson.Null),
+          "axes" -> ujson.Obj.from(Seq("X", "Y", "Z").flatMap(a => o.params.extra.get(s"Grid $a info").map(a -> ujson.Str(_)))))
+      })
+      base.copy(extra = extras.updated(GridNumbers.SourcesKey, sources.render()))
 
   /** True for the error the host throws when the job is interrupted (or any error once the job is interrupted). */
   def isInterruption(e: Throwable, ctx: PluginContext): Boolean = e match

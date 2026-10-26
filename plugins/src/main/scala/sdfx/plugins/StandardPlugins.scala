@@ -27,7 +27,7 @@ object StandardPlugins:
     // sampling (extension index)
     new DetailDaemonPlugin, new VectorscopeCcPlugin, new LatentMirroringPlugin, new AsymmetricTilingPlugin,
     new AntiBurnPlugin, new ReSharpenPlugin, new ColorGradingPlugin, new CfgSchedulePlugin, new CadsPlugin,
-    new SaveIntermediatePlugin
+    new SaveIntermediatePlugin, new GridNumbersPlugin
   )
 
   def scripts(extraAxes: () => Seq[XyzAxis]): Seq[Plugin] = Seq(
@@ -39,6 +39,7 @@ object StandardPlugins:
     new OutpaintPlugin,
     new OutpaintMk2Plugin,
     new Img2ImgAltPlugin,
+    new LatentUpscalePlugin,
     new SvdPlugin,
     new Zero123Plugin,
     new CustomCodePlugin,

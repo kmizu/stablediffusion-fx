@@ -51,6 +51,32 @@ class JobQueueSuite extends munit.FunSuite:
     finally remove()
   }
 
+  test("numbered ordinary batch grids preserve final images, filename mapping and replay; disabled creates none") {
+    val p = base.copy(width = 128, height = 128, batchSize = 2, nIter = 2)
+    val ordinary = await(queue.submit(Job(p)))
+    assertEquals(ordinary.images.size, 4)
+    assertEquals(ordinary.grids.size, 0)
+    val options = Map("Grid image numbers" -> "True", "Grid XYZ info" -> "False")
+    val numbered = await(queue.submit(Job(p.copy(extra = options))))
+    assertEquals(numbered.images.size, 4)
+    assertEquals(numbered.grids.size, 1)
+    ordinary.images.zip(numbered.images).foreach { (a, b) =>
+      val x = sdfx.core.png.PngMetadata.readImage(a.path)
+      val y = sdfx.core.png.PngMetadata.readImage(b.path)
+      assert(x.getRGB(0, 0, 128, 128, null, 0, 128).sameElements(y.getRGB(0, 0, 128, 128, null, 0, 128)))
+    }
+    val grid = numbered.grids.head
+    val text = sdfx.core.png.PngMetadata.readParameters(grid.path).get
+    val parsed = Infotext.parse(text)
+    val sourceNames = ujson.read(parsed.get("Grid source images").get).arr.map(_("filename").str).toSeq
+    assertEquals(sourceNames, numbered.images.map(_.path.getFileName.toString))
+    assertEquals(parsed.get("Grid image numbers"), Some("True"))
+    val replay = await(queue.submit(Job(Infotext.toParams(parsed).copy(batchSize = 2, nIter = 2))))
+    assertEquals(replay.grids.size, 1)
+    assertEquals(await(queue.submit(Job(p.copy(extra = Map("Grid image numbers" -> "False"))))).grids.size, 0)
+    assertEquals(await(queue.submit(Job(p.copy(batchSize = 1, nIter = 1, extra = options)))).grids.size, 0)
+  }
+
   test("cancel a pending job and clear the queue") {
     val (evs, remove) = recording()
     val first = Job(Job.newId(), base)

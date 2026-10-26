@@ -36,7 +36,7 @@ private[plugins] object Sequence:
       val img =
         if labels then Grid.labeled(cells.map(_._1), c, cells.map(_._2).take(c), Nil, None)
         else Grid.plain(cells.map(_._1), c)
-      val gp = base.copy(seed = done.head._2.head.seed, extra = base.extra + ("Script" -> script))
+      val gp = Support.gridParams(base.copy(seed = done.head._2.head.seed, extra = base.extra + ("Script" -> script)), done.flatMap(_._2.headOption))
       Seq(ctx.saveImage(img, "grids", gp, Support.infotext(gp, gp.seed)))
 
   /** Saves an animated GIF next to the first saved image (`<name>.gif`) and returns its path. */

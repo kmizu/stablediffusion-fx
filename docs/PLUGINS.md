@@ -139,3 +139,14 @@ Per-plugin evidence of the final real-model runs (which run, duration, result): 
   GIF, WebM and MP4 (H264/HEVC/AV1 subject to the executable's encoders), optional interpolation and executable
   Windows recipes. Encoding failures retain PNGs and final images with an explicit export error in the manifest.
   Interpolation uses at least one second per selected source frame (including endpoint holds).
+
+- **Grid image numbers** annotates grid tiles with the numeric prefix of their actual saved filenames. Optional
+  X/Y/Z information uses the effective axis labels/values; text fits or is omitted on tiny cells. Source images
+  remain unchanged. Enabled ordinary batches also save a grid; script grids keep their existing layouts.
+  Both options restore from PNG parameters, including explicit false values.
+- **Latent Upscale** is an img2img/Inpaint script. It VAE-encodes before target resizing, interpolates latents using
+  seven 2-D methods, and performs the full requested denoising-step count. Choose one of six noise schedules;
+  Automatic retains the main schedule. Full-resolution masking retains native crop/overlay preparation. It needs
+  no learned upscaler or extra download. Strength must be positive and large enough for the 10,000-entry schedule
+  bound. Upstream linear/trilinear are invalid for 4-D image latents and are rejected explicitly. Unsupported sampler
+  schedules report the native fallback. PNG Restore and Send to img2img/Inpaint restore the actual script controls.

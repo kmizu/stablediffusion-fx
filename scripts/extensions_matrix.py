@@ -126,6 +126,7 @@ IMPLEMENTED = {
     "seamless_tile",
     "weight_gradient", "negpip", "neutral_prompt",
     "prompt_fusion", "tokenizer", "save_intermediate",
+    "grid_numbers", "latent_upscale",
 }
 
 

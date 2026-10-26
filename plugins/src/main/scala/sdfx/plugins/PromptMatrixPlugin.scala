@@ -77,6 +77,6 @@ class PromptMatrixPlugin extends Plugin:
     val colLabels = if variable.isEmpty then Nil else (0 until cols).map(c => label(0 until colBits, c))
     val rowLabels = if rows > 1 then (0 until rows).map(r => label(colBits until variable.size, r)) else Nil
     val grid = Grid.labeled(cells, cols, colLabels, rowLabels)
-    val gp = p0.copy(seed = images.head.seed, extra = p0.extra + ("Script" -> "Prompt matrix"))
+    val gp = Support.gridParams(p0.copy(seed = images.head.seed, extra = p0.extra + ("Script" -> "Prompt matrix")), images)
     val saved = ctx.saveImage(grid, "grids", gp, Support.infotext(gp, images.head.seed))
     JobOutput(images, Seq(saved))

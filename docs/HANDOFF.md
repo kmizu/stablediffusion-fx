@@ -20,8 +20,8 @@ server, 40 rewrites of the reForge built-ins. Repo: private GitHub `kmizu/stable
 
 | | Count |
 |---|---|
-| Index entries done | 90 |
-| Index entries todo | 212 (147 distinct targets) |
+| Index entries done | 92 |
+| Index entries todo | 210 (145 distinct targets) |
 | Not applicable (web-UI CSS/UX only, accounts, obsolete, external apps, server ops) | 51 |
 
 `scripts/extensions_matrix.py` is the single ledger. Its `S` dict maps each index entry to `done:<plugin id>`,
@@ -85,7 +85,14 @@ root `outputs/intermediates` is excluded from gallery scans. Both model families
 queue/replay paths are verified; optional ffmpeg codecs/recipes have independent actual encoding checks. See
 the three implementation plans and the final section of `docs/VERIFICATION.md` for exact limits and artifacts.
 
-**Next action:** implement `composable_lora`, preserving its documented behaviours and
+**Second parallel wave:** `grid_numbers` and `latent_upscale` are accepted after real SD1.5/SDXL, native app/replay,
+actual PNG Restore/Send-to, rendered forms and aggregate checks. Grid annotations preserve source images and record
+only visible tiles. Latent Upscale encodes before resizing and executes the full requested denoising count.
+See the closing VERIFICATION section and their plans. Composable LoRA is still in progress in
+`.worktrees/composable-lora`, branch `agent/composable-lora-20261026`; its formats/controllers and layer mapping
+must finish review and all normal model/UI gates before promotion. Do not include it in this wave's done count.
+
+**Next action:** finish `composable_lora`, preserving its documented behaviours and
 the normal real-model/UI/notice gates. Neutral Prompt is now marked implemented after an explicit original-scope
 acceptance audit; see `docs/superpowers/plans/2026-10-26-neutral-prompt.md` and the closing VERIFICATION section.
 All operators, nesting/signed weights, CFG rescale, schedules, native form/formatter/replay and actual AppServices
@@ -97,7 +104,7 @@ composed Neutral prompts remain explicitly unsupported in `neutral_runtime.valid
 original Runtime task permits clear unsupported combinations; later agent-added notes making every combination
 a promotion prerequisite are superseded by the documented acceptance clarification. No original Neutral operator
 or model/UI/notice gate was omitted. Keep the seven guards until their own implementations are verified.
-The overall 353-entry goal remains active; 212 accepted entries are unfinished. Do not treat this promotion as
+The overall 353-entry goal remains active; 210 accepted entries are unfinished. Do not treat this promotion as
 completion of that goal or reclassify remaining entries to make it appear complete.
 
 ## Remaining targets, most-starred first
@@ -115,11 +122,11 @@ composable_lora, refiner, incantations, old_photo_restoration, abysz_lab, aesthe
 nsfw_checker, image_editor, embedding_merge, rich_text, mosaic_outpaint, cross_attention_viz, hypernetwork_training,
 inspiration, vram_estimator, sonar, dump_unet, llm_prompt, training_picker, model_presets,
 lama_cleaner, kandinsky, hypernetworks, core:styles-editor, characteristic_guidance, hotshot_xl, live_portrait,
-booru_prompt, latent_upscale, depth_image_io, creaprompt, embedding_editor, semantic_guidance, custom_diffusion,
+booru_prompt, depth_image_io, creaprompt, embedding_editor, semantic_guidance, custom_diffusion,
 core:image-compare, encrypt_image, inpaint_difference, depth_library, rpg_diffusion, custom_hires_fix,
 img2img_hires_fix, depth_anything, agent_attention, conditioning_highres_fix, hires_fix_tweaks,
 panorama_tools, chara_searcher, lua_scripting, deepdanbooru, gpu_temperature_guard, corridor_crawler,
-old_sd_firstpasser, temporal, grid_numbers, batch_interrogate, token_downsampling, embedding_inspector, demofusion,
+old_sd_firstpasser, temporal, batch_interrogate, token_downsampling, embedding_inspector, demofusion,
 prompt_expansion, color_correction, video_extras, clip_io, face_manipulation, ditail,
 minecraft_schematic, img2img_workflow, ocr, controlnet_preprocess_extras, triposr, manga_inpainting,
 pnginfo_injection, masked_content_extras, metadata_utils, hardware_info, waifu2x, core:nsfw-card-blur, vae_tools,
@@ -131,8 +138,7 @@ Suggested next steps, by value and fit with what exists:
    on `prompt_schedule.py` and `_schedule_swapper`.
 2. **Regional prompting**: regional_prompter and latent_couple, via attention-level region masks.
    tiled_diffusion can largely reuse the existing `multidiffusion` hook plus noise inversion and region prompts.
-3. **Small, cheap ones**: latent_upscale,
-   img2img/custom/conditioning hires fix variants, grid_numbers, color_correction, vae_tools,
+3. **Small, cheap ones**: img2img/custom/conditioning hires fix variants, color_correction, vae_tools,
    waifu2x, deepdanbooru (the WD14 tagger already exists in `extras.caption_image`), batch_interrogate,
    clip_interrogator, aesthetic_score, nsfw_checker.
 4. **Big ones**: animatediff, segment_anything, inpaint_anything, deforum, text2video, face_swap (insightface is

@@ -173,10 +173,57 @@ object RealTokenizerCheck:
       checked("minimum and expanded viewport, scrolling and native screenshots")
       fx {
         find[TabPane]("main-tabs").getSelectionModel.selectFirst()
+        val header = "a cat\nSteps: 7, Sampler: Euler, CFG scale: 3, Seed: 321, Size: 512x512"
+        window.restore(header + ", Grid image numbers: False, Grid XYZ info: True")
+        val txtGrid = window.plugins(Mode.Txt2Img).form("grid_numbers").get
+        require(txtGrid.values.bool("enabled") && !txtGrid.values.bool("image_numbers") && txtGrid.values.bool("xyz_info"))
+        val source = output.resolve("native-replay-source.png")
+        ImageIO.write(new java.awt.image.BufferedImage(64, 64, java.awt.image.BufferedImage.TYPE_INT_RGB), "png", source.toFile)
+        val replay = header + ", Grid image numbers: True, Grid XYZ info: False, Latent upscale method: bilinear, Latent upscale scheduler: karras"
+        def resetImageMode(mode: Mode): Unit =
+          val forms = window.plugins(mode)
+          forms.selectedScript.set("")
+          forms.form("latent_upscale").get.props("method").set("nearest-exact")
+          forms.form("latent_upscale").get.props("scheduler").set("simple")
+          val grid = forms.form("grid_numbers").get
+          grid.props("enabled").set("false")
+          grid.props("image_numbers").set("false")
+          grid.props("xyz_info").set("true")
+        resetImageMode(Mode.Img2Img)
+        window.sendTo(Mode.Img2Img, source, Some(replay))
+        def verifyImageMode(mode: Mode): Unit =
+          val forms = window.plugins(mode)
+          require(window.activeMode == mode)
+          require(forms.selectedScript.get == "latent_upscale")
+          require(forms.form("latent_upscale").get.values.str("method") == "bilinear")
+          require(forms.form("latent_upscale").get.values.str("scheduler") == "karras")
+          require(forms.form("grid_numbers").get.values.bool("enabled"))
+          require(forms.form("grid_numbers").get.values.bool("image_numbers"))
+          require(!forms.form("grid_numbers").get.values.bool("xyz_info"))
+        verifyImageMode(Mode.Img2Img)
+        resetImageMode(Mode.Inpaint)
+        window.sendTo(Mode.Inpaint, source, Some(replay))
+        verifyImageMode(Mode.Inpaint)
+        resetImageMode(Mode.Inpaint)
+        window.restore(replay)
+        verifyImageMode(Mode.Inpaint)
+        find[TabPane]("main-tabs").getSelectionModel.selectFirst()
+        resetImageMode(Mode.Img2Img)
+        window.restore(replay)
+        verifyImageMode(Mode.Img2Img)
+        window.root.applyCss()
+        window.root.layout()
+        val script = window.panels(Mode.Img2Img).content.lookup(".script-section")
+        require(script != null)
+        require(ImageIO.write(SwingFXUtils.fromFXImage(script.getParent.snapshot(null, null), null), "png", output.resolve("latent_upscale-form.png").toFile))
+      }
+      checked("actual Restore and Send to paths restore grid flags and latent script in img2img/inpaint")
+      fx {
+        find[TabPane]("main-tabs").getSelectionModel.selectFirst()
         val form = window.panels(Mode.Txt2Img).content
         window.root.applyCss()
         window.root.layout()
-        Seq("prompt_fusion", "save_intermediate").foreach { id =>
+        Seq("prompt_fusion", "save_intermediate", "grid_numbers").foreach { id =>
           val vm = window.plugins(Mode.Txt2Img).alwaysOnForms.find(_.plugin.id == id).get
           vm.props("enabled").set("true")
           if id == "save_intermediate" then vm.props("mode").set("Video")

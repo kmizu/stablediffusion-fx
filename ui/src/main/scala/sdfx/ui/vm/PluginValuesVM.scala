@@ -1,6 +1,8 @@
 package sdfx.ui.vm
 
 import javafx.beans.property.{SimpleStringProperty, StringProperty}
+import sdfx.core.image.GridNumbers
+import sdfx.core.infotext.Infotext
 import sdfx.core.plugins.api.*
 
 /** How a declarative [[Control]] is rendered by the generic plugin form. */
@@ -53,10 +55,37 @@ final class PluginsVM(val mode: Mode, scripts: Seq[Plugin], alwaysOnPlugins: Seq
 
   def form(id: String): Option[PluginValuesVM] = (scriptForms ++ alwaysOnForms).find(_.plugin.id == id)
 
+  /** Replay only this script's own settings; ordinary infotext leaves other script choices alone. */
+  def restoreLatentUpscale(fields: Map[String, String]): Unit =
+    sdfx.plugins.LatentUpscalePlugin.replay(fields) match
+      case Some(values) => form("latent_upscale").foreach { f =>
+        f.load(values)
+        selectedScript.set("latent_upscale")
+      }
+      case None => if selectedScript.get == "latent_upscale" then selectedScript.set("")
+
   def scriptJob: Option[(Plugin, Values)] =
     scriptForms.find(_.plugin.id == selectedScript.get).map(f => f.plugin -> f.values)
 
   def alwaysOnJob: Seq[(Plugin, Values)] = alwaysOnForms.filter(_.isActive).map(f => f.plugin -> f.values)
+
+  /** Restore native display controls from PNG parameters. GenerationVM deliberately clears extra fields;
+    * the form must own restored values so both its checkboxes and the next queued job agree.
+    */
+  def restoreInfotext(text: String): Unit =
+    val fields = Infotext.parse(text).fields
+    def flag(key: String): Option[Boolean] = fields.get(key).flatMap { v =>
+      v.trim.toLowerCase(java.util.Locale.ROOT) match
+        case "true" => Some(true)
+        case "false" => Some(false)
+        case _ => None
+    }
+    val numbers = flag(GridNumbers.NumbersKey)
+    val xyz = flag(GridNumbers.XyzKey)
+    if numbers.isDefined || xyz.isDefined then
+      form("grid_numbers").foreach(_.load(Values(Map(
+        "enabled" -> "true", "image_numbers" -> numbers.getOrElse(true).toString,
+        "xyz_info" -> xyz.getOrElse(false).toString))))
 
   /** plugin id -> values, for persistence. */
   def snapshot: Map[String, Map[String, String]] = (scriptForms ++ alwaysOnForms).map(f => f.plugin.id -> f.values.map).toMap

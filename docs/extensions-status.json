@@ -531,7 +531,7 @@
 "index": 88,
 "name": "Add image number to grid",
 "url": "https://github.com/AlUlkesh/sd_grid_add_image_number.git",
-"status": "todo:grid_numbers"
+"status": "done:grid_numbers"
 },
 {
 "index": 89,
@@ -1137,7 +1137,7 @@
 "index": 189,
 "name": "Latent Upscale",
 "url": "https://github.com/feynlee/latent-upscale.git",
-"status": "todo:latent_upscale"
+"status": "done:latent_upscale"
 },
 {
 "index": 190,

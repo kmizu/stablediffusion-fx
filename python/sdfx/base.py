@@ -226,6 +226,16 @@ class BaseEngine:
         problems = gp.validate()
         if problems:
             raise EngineError(INVALID_PARAMS, "; ".join(problems))
+        from .hooks import hook_config
+        latent = hook_config(gp.hooks, "latent_upscale", {})
+        if latent is not None:
+            from . import latent_upscale
+            latent_upscale.normalize(latent)
+            if mode != "img2img" or gp.img2img is None:
+                raise EngineError(INVALID_PARAMS, "Latent Upscale needs an img2img input image")
+            latent_upscale.full_steps(gp.steps, gp.img2img.denoising_strength)
+            if hook_config(gp.hooks, "img2imgalt", {}) is not None:
+                raise EngineError(UNSUPPORTED, "Latent Upscale cannot be combined with img2img Alternative inversion")
         if mode == "img2img":
             if gp.img2img is None:
                 raise EngineError(INVALID_PARAMS, "img2img params are required for img2img")

@@ -1,6 +1,6 @@
 package sdfx.plugins
 
-import sdfx.core.image.Grid
+import sdfx.core.image.{Grid, GridNumbers}
 import sdfx.core.model.{GenerationParams, LoraRef}
 import sdfx.core.plugins.api.*
 import sdfx.core.plugins.api.Control.*
@@ -199,7 +199,15 @@ class XyzGridPlugin(extraAxes: () => Seq[XyzAxis] = () => Nil) extends Plugin:
       ctx.status(s"X/Y/Z plot ${done + 1}/${cells.size}", done, cells.size)
       Support.step(ctx)(ctx.generate(p)) match
         case Some(outs) =>
-          results(c) = (outs, p)
+          // Attach axis captions to the returned descriptors, not the already-saved source PNGs. The grid's
+          // source mapping persists these captions. Loop order can change for model-switch cost; cell indices do not.
+          val axisInfo = Seq(("X", rx, c.x), ("Y", ry, c.y), ("Z", rz, c.z))
+            .filter(_._2.axis.name != "Nothing").map { (name, r, index) =>
+              val value = if r.axis.kind == ValueKind.Permutations then XyzValues.csv(r.values(index)).mkString(", ") else r.values(index)
+              s"Grid $name info" -> s"${r.axis.name}: $value"
+            }.toMap
+          val labeled = outs.map(o => if GridNumbers.enabled(o.params.extra) then o.copy(params = o.params.copy(extra = o.params.extra ++ axisInfo)) else o)
+          results(c) = (labeled, p)
           done += 1
         case None => running = false
     ctx.status("X/Y/Z plot", done, cells.size)
@@ -219,8 +227,10 @@ class XyzGridPlugin(extraAxes: () => Seq[XyzAxis] = () => Nil) extends Plugin:
         Seq(("X", rx), ("Y", ry), ("Z", rz)).filter(_._2.axis.name != "Nothing").flatMap { (n, r) =>
           Seq(s"$n Type" -> r.axis.name, s"$n Values" -> XyzValues.toCsv(r.values))
         }
-    def save(img: BufferedImage, p: GenerationParams, seed: Long): OutputImage =
-      val gp = p.copy(extra = p.extra ++ xyzExtra)
+    def sources(z: Int): Seq[OutputImage] =
+      (for y <- 0 until ny; x <- 0 until nx yield results.get(Cell(x, y, z)).flatMap(_._1.headOption)).flatten
+    def save(img: BufferedImage, p: GenerationParams, seed: Long, visible: Seq[OutputImage]): OutputImage =
+      val gp = Support.gridParams(p.copy(extra = p.extra ++ xyzExtra), visible)
       ctx.saveImage(img, "grids", gp, Support.infotext(gp, seed))
 
     val zGrids: Seq[(BufferedImage, Int)] = (0 until nz).flatMap { z =>
@@ -233,16 +243,16 @@ class XyzGridPlugin(extraAxes: () => Seq[XyzAxis] = () => Nil) extends Plugin:
     }
 
     val grids: Seq[OutputImage] =
-      if nz == 1 then zGrids.map((g, _) => save(g, firstParams, firstSeed))
+      if nz == 1 then zGrids.map((g, z) => save(g, firstParams, firstSeed, sources(z)))
       else
         val zLabels = if legend then zGrids.map((_, z) => rz.labels(z)) else Nil
         val combined = Grid.labeled(zGrids.map(_._1), zGrids.size, zLabels, Nil)
-        val main = save(combined, firstParams, firstSeed)
+        val main = save(combined, firstParams, firstSeed, zGrids.flatMap((_, z) => sources(z)))
         val subs =
           if v.bool("include_sub_grids") then
             zGrids.map { (g, z) =>
               val zp = cells.filter(_.z == z).flatMap(results.get).headOption.map(_._2).getOrElse(firstParams)
-              save(g, zp, firstSeed)
+              save(g, zp, firstSeed, sources(z))
             }
           else Nil
         main +: subs

@@ -92,8 +92,8 @@ class LoopbackPlugin extends Plugin:
       if v.bool("make_grid", true) && images.size > 1 then
         val filled = rows.toSeq.filter(_.nonEmpty)
         val cols = filled.map(_.size).max
-        val cells = filled.flatMap(r => r.toSeq.map(o => Support.readImage(o.path)) ++ Seq.fill(cols - r.size)(null))
-        val gp = p0.copy(extra = extra + ("Script" -> "Loopback"))
+        val cells = filled.flatMap(r => r.toSeq.map(Support.gridTile) ++ Seq.fill(cols - r.size)(null))
+        val gp = Support.gridParams(p0.copy(extra = extra + ("Script" -> "Loopback")), images)
         Seq(ctx.saveImage(Grid.labeled(cells, cols, Nil, Nil), "grids", gp, Support.infotext(gp, images.head.seed)))
       else Nil
     JobOutput(images, grids)

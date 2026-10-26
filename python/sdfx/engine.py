@@ -25,7 +25,7 @@ from . import controlnet as cn_mod
 from . import hires as hires_mod
 from . import hooks as hooks_mod
 from . import adapters, extras, inpaint, lora_blocks, models, preview, prompt, prompt_schedule, schedulers, upscalers
-from . import weight_gradient, save_intermediate
+from . import weight_gradient, save_intermediate, latent_upscale
 from . import negpip
 from . import neutral_prompt, neutral_runtime, prompt_fusion
 from . import extensions as ext_mod
@@ -199,7 +199,7 @@ class Engine(BaseEngine):
             f.append("taesd")
         f += ["apg", "mahiro", "rescale_cfg", "model_sampling", "kohya_hrfix", "multidiffusion", "latent_modifier",
               "soft_inpainting", "neveroom", "reference", "revision", "ip_adapter", "controllllite", "fooocus_inpaint",
-              "img2imgalt", "caption", "ldsr", "adetailer", "weight_gradient", "negpip", "neutral_prompt", "tokenizer", "prompt_fusion", "save_intermediate"]
+              "img2imgalt", "caption", "ldsr", "adetailer", "weight_gradient", "negpip", "neutral_prompt", "tokenizer", "prompt_fusion", "save_intermediate", "latent_upscale"]
         f += list(ext_mod.sampling_ext.HOOKS)
         if hasattr(diffusers, "StableDiffusionSAGPipeline"):
             f.append("sag")
@@ -899,7 +899,7 @@ class Engine(BaseEngine):
              schedule: Optional[str], cfg_scale: float, embeds: dict, steps: int, w: int, h: int, seeds: list[int],
              pass_: str, image_idx: int, images_total: int, latents=None, image=None, mask=None, strength: float = 1.0,
              expected_steps: int = 0, cn: Optional[tuple] = None, output_type: str = "pil", pag: Optional[dict] = None,
-             hook_seed: int = 0):
+             hook_seed: int = 0, latent_source=None):
         cn_models, cn_images, cn_kw = cn if cn else ([], [], {})
         neutral_plan = embeds.get("_neutral")
         if neutral_plan:
@@ -1047,6 +1047,18 @@ class Engine(BaseEngine):
                     int(expected_steps or steps), gp.steps if pass_ == "hires" else 0,
                     image_idx // max(1, gp.batch_size)))
             ctx.check_interrupt()
+            if latent_source is not None:
+                source_image, source_mask = latent_source
+                config = latent_upscale.normalize(hooks_mod.hook_config(gp.hooks, "latent_upscale", {}))
+                if task == "inpaint" and not _accepts(pipe.__call__, "masked_image_latents"):
+                    raise EngineError(UNSUPPORTED, f"Latent Upscale masked input is not supported by {type(pipe).__name__}")
+                kw["image"] = latent_upscale.encode(pipe, source_image, w, h, config["method"],
+                    kw["generator"], self.device, self.dtype)
+                if task == "inpaint":
+                    # A latent image cannot be multiplied by a pixel mask inside the pipeline.
+                    # Encode source-sized masked pixels separately, then resize that conditioning in latent space.
+                    kw["masked_image_latents"] = latent_upscale.encode(pipe, source_image, w, h, config["method"],
+                        kw["generator"], self.device, self.dtype, mask=source_mask)
             filtered = _filter_kwargs(pipe.__call__, kw)
             for k in ("eta", "pag_scale", "pag_adaptive_scale", "controlnet_conditioning_scale", "guidance_rescale",
                       "sag_scale", "ip_adapter_image", "input_id_images"):
@@ -1085,6 +1097,10 @@ class Engine(BaseEngine):
         t0 = time.monotonic()
         req = self.parse_generation(params, mode, ctx)
         gp = req.params
+        latent_config = hooks_mod.hook_config(gp.hooks, "latent_upscale", {})
+        if latent_config is not None:
+            latent_config = latent_upscale.normalize(latent_config)
+            gp = replace(gp, scheduler=latent_upscale.schedule(latent_config, gp.scheduler))
         intermediate = hooks_mod.hook_config(gp.hooks, "save_intermediate", {})
         if intermediate is not None:
             self._intermediate_recorder = save_intermediate.Recorder(intermediate.get("output_dir") or req.output_dir, intermediate, ctx,
@@ -1120,7 +1136,7 @@ class Engine(BaseEngine):
 
         alternative = (mode == "img2img" and gp.img2img.mask is None and not is_inpaint_model
                        and hooks_mod.hook_config(gp.hooks, "img2imgalt", extras.IMG2IMGALT_DEFAULTS) is not None)
-        gradient_steps = (img2img_steps(gp.steps, gp.img2img.denoising_strength)[2]
+        gradient_steps = ((gp.steps if latent_config is not None else img2img_steps(gp.steps, gp.img2img.denoising_strength)[2])
                           if mode == "img2img" and not alternative else gp.steps)
         embeds = self._encode_scheduled(gp.prompt, gp.negative_prompt, gp, bs, gp.steps, gradient_total=gradient_steps)
         hr_pos, hr_neg = (hp.prompt or gp.prompt, hp.negative_prompt or gp.negative_prompt) if hires else ("", "")
@@ -1209,15 +1225,29 @@ class Engine(BaseEngine):
                                         strength=strength, expected_steps=actual, cn=hr_cn, pag=pag, hook_seed=seeds[0] + 1)
             else:
                 ip = gp.img2img
-                n, strength, actual = img2img_steps(gp.steps, ip.denoising_strength)
+                n, strength, actual = (latent_upscale.full_steps(gp.steps, ip.denoising_strength) if latent_config is not None
+                                       else img2img_steps(gp.steps, ip.denoising_strength))
+                latent_source = None
                 if ip.mask is not None:
-                    job = inpaint.prepare(init_img, load_mask(ip.mask), w, h, ip.resize_mode, ip.mask_blur, ip.inpainting_fill,
+                    source_mask = load_mask(ip.mask)
+                    job = inpaint.prepare(init_img, source_mask, w, h, 0 if latent_config is not None else ip.resize_mode, ip.mask_blur, ip.inpainting_fill,
                                           ip.inpaint_full_res, ip.inpaint_full_res_padding, ip.inpainting_mask_invert, seeds[0])
                     image, mask, task = job.image, job.mask, "inpaint"
+                    if latent_config is not None:
+                        if ip.inpaint_full_res:
+                            # Upstream full-res inpainting crops/resizes pixels before latent interpolation too.
+                            latent_source = (job.image, job.mask)
+                        else:
+                            source_job = inpaint.prepare(init_img, source_mask, init_img.width, init_img.height, 0,
+                                ip.mask_blur, ip.inpainting_fill, False, ip.inpaint_full_res_padding,
+                                ip.inpainting_mask_invert, seeds[0])
+                            latent_source = (source_job.image, source_job.mask)
                 else:
-                    image = resize_image(ip.resize_mode, init_img, w, h)
+                    image = resize_image(0 if latent_config is not None else ip.resize_mode, init_img, w, h)
                     mask = Image.new("L", (w, h), 255)
                     task = "inpaint" if is_inpaint_model else "img2img"
+                    if latent_config is not None:
+                        latent_source = (init_img, Image.new("L", init_img.size, 255) if is_inpaint_model else None)
                 alt = hooks_mod.hook_config(gp.hooks, "img2imgalt", extras.IMG2IMGALT_DEFAULTS)
                 if alt and (ip.mask is not None or is_inpaint_model):
                     ctx.warn("img2img alternative test needs plain img2img with a normal model; ignored")
@@ -1229,7 +1259,7 @@ class Engine(BaseEngine):
                                            cfg_scale=gp.cfg_scale, embeds=embeds, steps=n, w=w, h=h, seeds=seeds,
                                            pass_="base", image_idx=idx0, images_total=total, image=[image] * bs,
                                            mask=[mask] * bs, strength=strength, expected_steps=actual, cn=cn, pag=pag,
-                                           hook_seed=seeds[0])
+                                           hook_seed=seeds[0], latent_source=latent_source)
                 if job is not None:
                     imgs = [job.finalize(im) for im in imgs]
             ad = hooks_mod.hook_config(gp.hooks, "adetailer", {})

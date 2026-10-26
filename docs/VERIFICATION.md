@@ -793,3 +793,55 @@ ran real models and sbt. Sources and pinned revisions are in each implementation
 
 Ledger entries 43, 72 and 87 are now done: **90 done / 212 todo / 51 NA**, 147 distinct pending targets.
 The overall 353-entry objective remains active. Next planned target: `composable_lora`.
+
+## Grid Numbers and Latent Upscale native acceptance (2026-10-26)
+
+These two independent branches are accepted; the larger Composable LoRA implementation remains pending.
+
+- **Grid Numbers:** parent observed missing-renderer RED, then visible-Z-subgrid mapping RED (eight sources were
+  incorrectly listed for four visible tiles). After correction, core5/plugin48/engine15 targeted tests and MCP
+  compile passed. Genuine Java2D renderer contact sheet was inspected, including half-transparent panels, Unicode,
+  long labels and tiny images: `.worktrees/grid-numbers/outputs/grid-numbers-render-check/`.
+  `RealGridNumbersCheck` passed on SD1.5 and SDXL. Ordinary batch2 x iteration2 yields four unchanged final images
+  plus one numbered grid; disabled yields no grid. Full-parameter replay uses newly assigned source filenames,
+  source SHA-256 hashes remain unchanged, and XYZ 2x2x2 yields eight sources/three grids with effective axis values
+  and visible row-major mappings. Actual numbered batch/XYZ images were inspected. Reports and model logs:
+  `.worktrees/grid-numbers/outputs/verify-grid-{sd15,sdxl}/grid-numbers-evidence/report.json` and
+  `outputs/grid-numbers-{sd15,sdxl}-native.log` in that worktree. No Python generation hook or dependency.
+- **Grid PNG import:** independent review found native Restore discarded display extras. Parent observed RED for
+  the missing form-restorer, then28 UI/state tests passed after repair. Both boolean flags, including false,
+  now load into the actual checkbox properties and the next JobBuilder values. Both-false retains imported
+  settings but creates no annotations/grid. No hidden GenerationVM extra workaround.
+- **Latent Upscale:** `scripts/dev/latent_upscale_check.py --full` passed **21 cases per actual model**, covering all
+  seven interpolation modes, six schedules, batch2, masked/full-resolution paths and no-hook/disabled restoration.
+  All active cases execute exactly seven denoising steps at strength0.4 (ordinary baseline executes two).
+  VAE traces confirm ordinary unmasked source encoding at512/768 before target640/960; masked full-resolution
+  mode deliberately retains native crop preparation. Disabled/restored RGB hashes match baseline independently
+  of metadata. Source/output comparison sheets were inspected. Reports, PNGs and raw events:
+  `outputs/verify-latent-{sd15,sdxl}`. Four-/nine-channel inpaint handling also has actual random tiny-diffusers CPU
+  coverage, distinct from the real checkpoint checks (which use the native four-channel mask path).
+- **Latent numerical validation:** independent review reproduced raw OverflowError for strength1e-308 and5e-324.
+  Guarding before division now returns `INVALID_PARAMS`; the exact10,000-entry boundary remains valid. Tests
+  observed RED/GREEN, and independent rerun passed19 focused checks. Zero strength and invalid 4-D interpolation
+  names have explicit errors. No learned model or new package was needed.
+- **Actual native services and forms:** `RealLatentUpscaleCheck` passed on both real models. Script execution,
+  persisted JSON params and infotext+script replay produce equal RGB hashes; isolated homes do not alter user
+  settings. Reports: `outputs/verify-latent-native-{sd15,sdxl}/native-replay-report.json`.
+  Extended `RealTokenizerCheck` passed both models, exercising public Restore/Send-to, grid false/true values,
+  native latent controls, Txt2img→Img2img redirection and Inpaint→Inpaint restoration. Target forms are explicitly
+  reset before each final SDXL Restore assertion to exclude stale-state false positives. Root inspected expanded
+  Grid Numbers and the selected latent Script card; snapshots preserve the actual dark card background.
+  Artifacts: `outputs/verify-wave2-native-ui-{sd15,sdxl}`; batched logs `outputs/next-wave-native-app.log`, strengthened
+  final SDXL log `outputs/next-wave-native-ui-final.log`. Plugin tabs intentionally share img2img eligibility with
+  Inpaint through `Mode.Inpaint.pluginTab`; registry/form regression checks this actual API boundary.
+- **Aggregate Python:** torch731 passed/1skipped, eight existing torchsde/Swig warnings; torch-free312 passed/74skipped.
+  Logs: `outputs/next-wave-python.log`, `outputs/next-wave-notorch.log`. Swig also prints an interpreter-exit
+  deprecation warning. These checks do not imply untested third-party adapter combinations are supported.
+  Full Scala **514 passed**, and jar assembly succeeded: `outputs/next-wave-scala-final.log`.
+- **Sources/notices:** fresh authenticated collector completed118 projects, adding feynlee/latent-upscale MIT
+  attribution (clean implementation, sourceb9f75f4) and AlUlkesh/sd_grid_add_image_number Unlicense attribution
+  (native Java2D reimplementation, source693a8a7). No copied unlicensed source or additional dependency.
+
+Only indices88 and189 are promoted: **92 done / 210 todo / 51 NA**, 145 distinct pending targets. The overall
+353-entry goal is still active. Composable LoRA core formats, controllers, adapter mapping and real-model/UI gates
+remain in progress; none is counted as complete by this wave.
