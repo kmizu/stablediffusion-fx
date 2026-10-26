@@ -55,6 +55,7 @@ description of their behaviour only.
 | [Bing-su/adetailer](https://github.com/Bing-su/adetailer) | reimplemented | AGPL-3.0 ([text](licenses/Bing-su__adetailer.txt)) | extension rewritten as ADetailer -> `adetailer` |
 | [Bing-su/dddetailer](https://github.com/Bing-su/dddetailer) | reimplemented | no license file published | extension rewritten as Detection Detailer -> `adetailer` |
 | [Coyote-A/ultimate-upscale-for-automatic1111](https://github.com/Coyote-A/ultimate-upscale-for-automatic1111) | reimplemented | GPL-3.0 ([text](licenses/Coyote-A__ultimate-upscale-for-automatic1111.txt)) | extension rewritten as Ultimate SD Upscale -> `ultimate_sd_upscale` |
+| [DingoBite/weight_gradient](https://github.com/DingoBite/weight_gradient) | reimplemented | no license file published | extension rewritten as Weight Gradient -> `weight_gradient` |
 | [Extraltodeus/depthmap2mask](https://github.com/Extraltodeus/depthmap2mask) | reimplemented | no license file published | extension rewritten as depthmap2mask -> `depthmap2mask` |
 | [Extraltodeus/test_my_prompt](https://github.com/Extraltodeus/test_my_prompt) | reimplemented | no license file published | extension rewritten as Test my prompt! -> `test_my_prompt` |
 | [GeekyGhost/Automatic1111-Geeky-Remb](https://github.com/GeekyGhost/Automatic1111-Geeky-Remb) | reimplemented | MIT ([text](licenses/GeekyGhost__Automatic1111-Geeky-Remb.txt)) | extension rewritten as GeekyRemB -> `remove_background` |

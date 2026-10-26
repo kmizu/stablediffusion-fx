@@ -24,6 +24,7 @@ from . import controlnet as cn_mod
 from . import hires as hires_mod
 from . import hooks as hooks_mod
 from . import adapters, extras, inpaint, lora_blocks, models, preview, prompt, prompt_schedule, schedulers, upscalers
+from . import weight_gradient
 from . import extensions as ext_mod
 from .base import LATENT_UPSCALERS, BaseEngine
 from .images import Image, load_mask, load_rgb, next_output_path, resize_image, save_png
@@ -195,7 +196,7 @@ class Engine(BaseEngine):
             f.append("taesd")
         f += ["apg", "mahiro", "rescale_cfg", "model_sampling", "kohya_hrfix", "multidiffusion", "latent_modifier",
               "soft_inpainting", "neveroom", "reference", "revision", "ip_adapter", "controllllite", "fooocus_inpaint",
-              "img2imgalt", "caption", "ldsr", "adetailer"]
+              "img2imgalt", "caption", "ldsr", "adetailer", "weight_gradient"]
         f += list(ext_mod.sampling_ext.HOOKS)
         if hasattr(diffusers, "StableDiffusionSAGPipeline"):
             f.append("sag")
@@ -608,11 +609,15 @@ class Engine(BaseEngine):
                     "negative_prompt_embeds": ne.repeat(bs, 1, 1).to(self.dtype)}
 
     def _encode_scheduled(self, pos: str, neg: str, gp: GenerationParams, bs: int, steps: int,
-                          hires_total: Optional[int] = None) -> dict:
+                          hires_total: Optional[int] = None, gradient_total: Optional[int] = None) -> dict:
         """_encode plus A1111 prompt editing / alternation: returns the embeddings for step 1; when the prompt
         changes during sampling the result is a ScheduledEmbeds carrying [(end_step, embeds), ...] (equal lengths)."""
-        ps = prompt_schedule.schedule(prompt.strip_extra_networks(pos), steps, hires_total)
-        ns = prompt_schedule.schedule(prompt.strip_extra_networks(neg), steps, hires_total)
+        def schedule(text):
+            text = prompt.strip_extra_networks(text)
+            if hooks_mod.hook_config(gp.hooks, "weight_gradient", {}) is not None:
+                return weight_gradient.schedule(text, steps, hires_total, gradient_total)
+            return prompt_schedule.schedule(text, steps, hires_total)
+        ps, ns = schedule(pos), schedule(neg)
         if len(ps) == 1 and len(ns) == 1:
             return self._encode(ps[0][1], ns[0][1], gp, bs)
         cache: dict = {}
@@ -682,7 +687,10 @@ class Engine(BaseEngine):
             return schedule[-1][1]
 
         def cb(pipe, i, t, d):
-            cur = at(i + 2)  # embeddings for the next step (1-based)
+            # Heun / DPM2 / DPM++ SDE evaluate each inference step twice. Keep one conditioning state
+            # for both stages instead of finishing a requested-step schedule halfway through the pass.
+            order = max(1, int(getattr(getattr(pipe, "scheduler", None), "order", 1)))
+            cur = at((int(i) + 1) // order + 1)  # next logical step, 1-based
             if cur is state["last"]:
                 return d
             state["last"] = cur
@@ -1000,14 +1008,25 @@ class Engine(BaseEngine):
         hp = gp.hires
         hires = mode == "txt2img" and hp.enabled
         texts = [gp.prompt, gp.negative_prompt] + ([hp.prompt, hp.negative_prompt] if hires else [])
+        gradient_enabled = hooks_mod.hook_config(gp.hooks, "weight_gradient", {}) is not None
+        if (gradient_enabled and hooks_mod.hook_config(gp.hooks, "photomaker", {}) is not None
+                and any(weight_gradient.has_gradient(text) for text in texts)):
+            raise EngineError(UNSUPPORTED, "Weight Gradient syntax is not available with PhotoMaker's text-only encoder")
         self._load_embeddings(req, texts, ctx)
         pag = self._pag_config(gp, ctx)
 
-        embeds = self._encode_scheduled(gp.prompt, gp.negative_prompt, gp, bs, gp.steps)
+        alternative = (mode == "img2img" and gp.img2img.mask is None and not is_inpaint_model
+                       and hooks_mod.hook_config(gp.hooks, "img2imgalt", extras.IMG2IMGALT_DEFAULTS) is not None)
+        gradient_steps = (img2img_steps(gp.steps, gp.img2img.denoising_strength)[2]
+                          if mode == "img2img" and not alternative else gp.steps)
+        embeds = self._encode_scheduled(gp.prompt, gp.negative_prompt, gp, bs, gp.steps, gradient_total=gradient_steps)
         hr_pos, hr_neg = (hp.prompt or gp.prompt, hp.negative_prompt or gp.negative_prompt) if hires else ("", "")
+        gradient_hr = gradient_enabled and (weight_gradient.has_gradient(hr_pos) or weight_gradient.has_gradient(hr_neg))
         if hires and (hp.prompt or hp.negative_prompt or prompt_schedule.has_schedule(hr_pos)
-                      or prompt_schedule.has_schedule(hr_neg)):
-            hr_embeds = self._encode_scheduled(hr_pos, hr_neg, gp, bs, gp.steps, hp.second_pass_steps or gp.steps)
+                      or prompt_schedule.has_schedule(hr_neg) or gradient_hr):
+            hr_actual = hires_steps(hp.second_pass_steps or gp.steps, hp.denoising_strength)[2]
+            hr_embeds = self._encode_scheduled(hr_pos, hr_neg, gp, bs, gp.steps, hp.second_pass_steps or gp.steps,
+                                               gradient_total=hr_actual)
         else:
             hr_embeds = embeds
         same_hr = hr_embeds is embeds
@@ -1174,7 +1193,8 @@ class Engine(BaseEngine):
                     ctx.check_interrupt()
                     job = inpaint.prepare(im, m, w, h, 0, int(u["mask_blur"]), 1, bool(u["inpaint_only_masked"]),
                                           int(u["inpaint_padding"]), False, seed)
-                    emb = self._adjust_embeds(sub, self._encode_scheduled(pos[k], neg[k], sub, 1, steps), ctx)
+                    emb = self._adjust_embeds(sub, self._encode_scheduled(pos[k], neg[k], sub, 1, steps,
+                                                                         gradient_total=actual), ctx)
                     res, _ = self._run("inpaint", sub, req, ctx, sampler=sampler, schedule=gp.scheduler,
                                        cfg_scale=cfg_scale, embeds=emb, steps=n, w=w, h=h, seeds=[seed],
                                        pass_="adetailer", image_idx=idx0 + j, images_total=total, image=[job.image],

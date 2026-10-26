@@ -20,8 +20,8 @@ server, 40 rewrites of the reForge built-ins. Repo: private GitHub `kmizu/stable
 
 | | Count |
 |---|---|
-| Index entries done | 84 |
-| Index entries todo | 218 (153 distinct targets) |
+| Index entries done | 85 |
+| Index entries todo | 217 (152 distinct targets) |
 | Not applicable (web-UI CSS/UX only, accounts, obsolete, external apps, server ops) | 51 |
 
 `scripts/extensions_matrix.py` is the single ledger. Its `S` dict maps each index entry to `done:<plugin id>`,
@@ -48,17 +48,28 @@ Done in this session, all GPU-verified unless marked:
   upscale, depthmap2mask and inpaint background. Real SD1.5 and SDXL images, both masked inpainting paths, and all
   seven plugins through the real Java/MCP app were checked. See `docs/VERIFICATION.md` for scope and evidence.
   Fixed full-range seed overflow and output dimensions in pixel art, an open input file in the engine, and a leaked
-  auxiliary mask in the Scala background-inpainting plugin. **Next task: prompt-embedding hooks** below; the 218 todo
+  auxiliary mask in the Scala background-inpainting plugin. The 217 todo
   entries remain unfinished. Completing this verification wave does not complete the extension-index goal.
 - **Seamless tile inpainting (Codex):** `SeamlessTilePlugin.scala`, id `seamless_tile`. Circularly offsets the input,
   inpaints the central seam in horizontal/vertical/both directions, optionally restores the original arrangement.
   SD1.5 and SDXL checked through the actual app/MCP; repeated tile previews and the form inspected. Neural seam
   repair quality depends on the checkpoint and texture; an ordinary SD1.5 anime checkpoint failed to improve a stone
   texture in some cases. See `docs/VERIFICATION.md`. No new dependency or Python engine hook.
+- **Weight Gradient (Codex):** `python/sdfx/weight_gradient.py`, `WeightGradientPlugin.scala`, hook/id `weight_gradient`.
+  Full documented syntax with linear/exponential/circular easing, return ramps, step ranges, positive/negative
+  prompts, A1111 editing and per-pass clocks. Real SD1.5/SDXL, normal/hires/img2img/Alternative/Heun paths checked;
+  constant tags match ordinary weights exactly, and disabling restores the baseline. Actual app-service pipeline
+  and UI checked. PhotoMaker combination is explicitly unsupported. No upstream code was copied (no licence).
+  See `docs/VERIFICATION.md` and the implementation plan for tested scope and decisions.
 
 UI improvements made this session: `Control.Section` (collapsible groups inside a plugin form), `Plugin.enabledBy`
 (greys a control out while its checkbox is off), and the form layout in `W.Form`. Labels longer than 18 characters
 go above their control, and the label column stays at least 88 px wide so cards line up.
+
+**Next action:** investigate the existing SDXL img2img Alternative oversaturation recorded under Known issues.
+Quality takes priority over increasing the count. Reproduce with `scripts/dev/gpu_check.py <GPU python>
+outputs/verify-weight-gradient/alternative weight_alt_sdxl`; the fixed-weight control also reproduces it, so don't
+attribute it to Weight Gradient without further evidence. Then continue the remaining prompt-embedding hooks below.
 
 ## Remaining targets, most-starred first
 
@@ -80,14 +91,14 @@ core:image-compare, encrypt_image, inpaint_difference, depth_library, rpg_diffus
 img2img_hires_fix, depth_anything, agent_attention, conditioning_highres_fix, hires_fix_tweaks,
 panorama_tools, chara_searcher, lua_scripting, deepdanbooru, gpu_temperature_guard, corridor_crawler,
 old_sd_firstpasser, temporal, grid_numbers, batch_interrogate, token_downsampling, embedding_inspector, demofusion,
-prompt_expansion, weight_gradient, color_correction, video_extras, clip_io, face_manipulation, ditail,
+prompt_expansion, color_correction, video_extras, clip_io, face_manipulation, ditail,
 minecraft_schematic, img2img_workflow, ocr, controlnet_preprocess_extras, triposr, manga_inpainting,
 pnginfo_injection, masked_content_extras, metadata_utils, hardware_info, waifu2x, core:nsfw-card-blur, vae_tools,
 core:prevent-interrupt
 
 Suggested next steps, by value and fit with what exists:
 
-1. **Prompt-embedding hooks**: negpip, prompt_fusion, weight_gradient, neutral_prompt and composable_lora. They build
+1. **Prompt-embedding hooks**: negpip, prompt_fusion, neutral_prompt and composable_lora. They build
    on `prompt_schedule.py` and `_schedule_swapper`.
 2. **Regional prompting**: regional_prompter and latent_couple, via attention-level region masks.
    tiled_diffusion can largely reuse the existing `multidiffusion` hook plus noise inversion and region prompts.
@@ -146,10 +157,10 @@ Suggested next steps, by value and fit with what exists:
 
 | What | Command / file |
 |---|---|
-| Scala tests | `sbt.bat -batch test` (6 modules, about 470 tests, all green at handoff) |
-| Python tests | `python/.venv-smoke/Scripts/python.exe -m pytest` (254 green) and `.venv-test` (221 green, 15 skipped) |
+| Scala tests | `sbt.bat -batch test` (latest: 481 passed, 2026-10-26) |
+| Python tests | `python/.venv-smoke/Scripts/python.exe -m pytest` (latest: 300 passed) and `.venv-test` (247 passed, 16 skipped) |
 | Dry-run smoke | `scripts/smoke.ps1` / `scripts/smoke.sh` |
-| Engine on GPU, one case per process | `scripts/dev/gpu_check.py <venv python> <out dir> <case>`; cases `sched_*`, `ext_*`, `ad_*` |
+| Engine on GPU, one case per process | `scripts/dev/gpu_check.py <venv python> <out dir> <case>`; cases `sched_*`, `ext_*`, `ad_*`, `image_*`, `weight_*` |
 | Script plugins through the real app over MCP | `scripts/dev/write_settings.py`, then `scripts/dev/mcp_scripts.py "C:\Program Files\Java\jdk-21\bin\java.exe" <script ids>` |
 | LoRA Block Weight / merger checks | `scripts/dev/lbw_check.py`, `scripts/dev/merge_check.py` |
 | UI screenshot | `java -jar target/stablediffusion-fx.jar --dry-run --home <dir> --screenshot out.png --exit-after 8` (also writes `out-panel.png`, the full form). Expand a plugin by putting `{"expanded": {"txt2img.plugin.<id>": true}}` in `<home>/config/ui-state.json` |
@@ -161,6 +172,15 @@ Look at the images, not only the numbers. Vectorscope and Diffusion CG were "wor
 broken (pseudo-inverse colour directions were too large). The ridge-regularised `rgb_to_latent_dir` fixed them.
 
 ## Known issues and decisions
+
+- **SDXL img2img Alternative contrast**: the portrait inversion check in
+  `outputs/verify-weight-gradient/alternative/weight_alt_sdxl.json` is visibly oversaturated both with a gradient
+  and with an ordinary fixed weight. Reproduced with default inversion count as well as a six-step diagnostic;
+  disabling the new hook does not remove it. The existing inversion path needs separate quality investigation.
+  Do not describe the Alternative smoke's successful protocol response as proof of aesthetic quality.
+- **Weight Gradient clocks**: each sampling pass restarts the ramp and uses its actual logical inference steps
+  (second-order callback stages do not advance twice). Existing A1111 prompt-editing hires offsets are unchanged.
+  PhotoMaker uses separate text-only encoding; combining it with gradient tags raises an unsupported error.
 
 - **LoRA residue in fp16**: once a LoRA has been loaded into the pipeline, the UNet output differs by about 0.002 in
   fp16 even after the LoRA is disabled or unloaded. Weights, hooks, flags and the memory layout were all verified

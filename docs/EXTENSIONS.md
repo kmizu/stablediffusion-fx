@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 84, todo 218, na 51.
+Totals: done 85, todo 217, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-fx | Why not applicable |
 |---|---|---|---|---|---|
@@ -158,7 +158,7 @@ Totals: done 84, todo 218, na 51.
 | 149 | [sd-webui-prompt-all-in-one](https://github.com/Physton/sd-webui-prompt-all-in-one) | 3242 | todo | `core:prompt-tools` |  |
 | 150 | [sd-model-preview-xd](https://github.com/CurtisDS/sd-model-preview-xd) | 78 | todo | `model_organizer` |  |
 | 151 | [ADetailer](https://github.com/Bing-su/adetailer.git) | 4793 | done | `adetailer` |  |
-| 152 | [Weight Gradient](https://github.com/DingoBite/weight_gradient) | 22 | todo | `weight_gradient` |  |
+| 152 | [Weight Gradient](https://github.com/DingoBite/weight_gradient) | 22 | done | `weight_gradient` |  |
 | 153 | [One Button Prompt](https://github.com/AIrjen/OneButtonPrompt) | 1069 | done | `one_button_prompt` |  |
 | 154 | [Miaoshouai Assistant](https://github.com/miaoshouai/miaoshouai-assistant.git) | 309 | todo | `model_organizer` |  |
 | 155 | [miniPaint](https://github.com/0Tick/a1111-mini-paint) | 123 | todo | `image_editor` |  |

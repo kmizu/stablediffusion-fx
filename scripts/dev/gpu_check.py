@@ -123,7 +123,74 @@ def mask_png(size):
 
 t0 = time.time()
 r = None
-if CASE in ("image_sd15", "image_sdxl"):
+if CASE in ("weight_sd15", "weight_sdxl", "weight_alt_sd15", "weight_alt_sdxl"):
+    from PIL import Image, ImageChops, ImageStat
+    load(SD15 if CASE.endswith("sd15") else SDXL)
+    size = dict(width=512, height=768) if CASE.endswith("sd15") else dict(width=832, height=832)
+    prefix, suffix = "portrait of a woman wearing ", ", in a park, detailed"
+    plain = prefix + "(red scarf:0.8)" + suffix
+    gradient = prefix + "{red scarf::0.2-1.4:e}" + suffix
+    common = dict(steps=16, seed=11, **size)
+    reference = call("txt2img", req(gp(prompt=plain, **common)))
+    source = keep(reference, CASE + "_reference")
+    paths, errors, checks = {"reference": source}, [], {}
+    if not source:
+        errors.append({"reference": reference})
+    cases = [
+        ("constant", dict(prompt=prefix + "{red scarf::0.8-0.8}" + suffix, hooks={"weight_gradient": {}})),
+        ("start", dict(prompt=prefix + "(red scarf:0.2)" + suffix)),
+        ("end", dict(prompt=prefix + "(red scarf:1.4)" + suffix)),
+        ("exponential", dict(prompt=gradient, hooks={"weight_gradient": {}})),
+        ("return", dict(prompt=prefix + "{red scarf::1.4-0.2-1.4:c}" + suffix, hooks={"weight_gradient": {}})),
+        ("negative", dict(prompt=plain, negative_prompt="lowres, {red scarf::0.1-1.5:eo}", hooks={"weight_gradient": {}})),
+        ("hires", dict(prompt=gradient, hooks={"weight_gradient": {}},
+                       hires=dict(gp()["hires"], enabled=True, scale=1.25, second_pass_steps=7, denoising_strength=0.6))),
+        ("img2img", dict(prompt=gradient, hooks={"weight_gradient": {}}, img2img=i2i(source, denoise=0.5))),
+        ("alternative", dict(prompt=gradient, hooks={"weight_gradient": {}, "img2imgalt": {"inversion_steps": 6}},
+                             img2img=i2i(source, denoise=0.4))),
+        ("heun_reference", dict(prompt=plain, sampler_name="Heun")),
+        ("heun_constant", dict(prompt=prefix + "{red scarf::0.8-0.8}" + suffix,
+                               hooks={"weight_gradient": {}}, sampler_name="Heun")),
+        ("heun_start", dict(prompt=prefix + "(red scarf:0.2)" + suffix, sampler_name="Heun")),
+        ("heun_gradient", dict(prompt=gradient, hooks={"weight_gradient": {}}, sampler_name="Heun")),
+        ("restored", dict(prompt=plain)),
+    ]
+    if CASE.startswith("weight_alt_"):
+        cases = [
+            ("alternative_start", dict(prompt=prefix + "(red scarf:0.2)" + suffix, hooks={"img2imgalt": {}},
+                                       img2img=i2i(source, denoise=0.4))),
+            ("alternative", dict(prompt=gradient, hooks={"weight_gradient": {}, "img2imgalt": {}},
+                                 img2img=i2i(source, denoise=0.4))),
+            ("restored", dict(prompt=plain)),
+        ]
+    for tag, options in cases:
+        result = call("img2img" if options.get("img2img") else "txt2img", req(gp(**dict(common, **options))))
+        path = keep(result, CASE + "_" + tag)
+        paths[tag] = path
+        if not path or result.get("result", {}).get("warnings"):
+            errors.append({tag: result})
+            continue
+        with Image.open(path) as im:
+            rgb = im.convert("RGB")
+            checks[tag] = {"path": path, "size": list(im.size), "std": ImageStat.Stat(rgb).stddev}
+            if max(checks[tag]["std"]) < 2:
+                errors.append({tag: "uniform output"})
+        print(tag, checks[tag], flush=True)
+    differences = {}
+    for a, b in (("constant", "reference"), ("restored", "reference"),
+                 ("exponential", "start"), ("exponential", "end"),
+                 ("heun_constant", "heun_reference"), ("heun_gradient", "heun_start")):
+        if paths.get(a) and paths.get(b):
+            with Image.open(paths[a]) as x, Image.open(paths[b]) as y:
+                diff = sum(ImageStat.Stat(ImageChops.difference(x.convert("RGB"), y.convert("RGB"))).mean) / 3
+            differences[f"{a}-{b}"] = diff
+            if (a in ("constant", "restored", "heun_constant") and diff != 0) or (a in ("exponential", "heun_gradient") and diff <= 0):
+                errors.append({f"{a}-{b}": diff})
+    report = {"paths": paths, "checks": checks, "differences": differences, "errors": errors}
+    with open(os.path.join(OUT, CASE + ".json"), "w", encoding="utf-8", newline="\n") as fh:
+        json.dump(report, fh, indent=2)
+    r = {"type": "error" if errors else "result", "result": {"result": differences}, "message": str(errors)}
+elif CASE in ("image_sd15", "image_sdxl"):
     from PIL import Image
     import numpy as np
     load(SD15 if CASE == "image_sd15" else SDXL)

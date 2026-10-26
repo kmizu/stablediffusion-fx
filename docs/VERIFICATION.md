@@ -201,3 +201,68 @@ Independent collector review found no important issue; explicit timeout-retry an
 fixtures remain minor test gaps. The new tile plugin's upstream AGPL-3.0 text is bundled under `licenses/`.
 The final live refresh succeeded for 109 projects; the existing SuperMerger and close-confirmation licences were
 retained, and two previously mislabelled MIT notices were restored. No fetched licence text was removed.
+
+## Weight Gradient (Codex, 2026-10-26)
+
+`weight_gradient` is an opt-in AlwaysOn plugin. Pure Python syntax rendering feeds the existing embedding scheduler;
+both positive and negative prompts support `{words : first-last step : first-last[-return] weight : curve}`.
+The interval and curve are optional (empty interval means the whole pass). Modes `a/e/ei/eo/c/ci/co` reproduce the
+upstream README's linear, exponential and circular numeric examples to four decimal places. Fractions floor to
+sampling steps; explicit percentages are also accepted. Escaped/malformed tags remain literal; balanced emphasis
+and A1111 editing/alternation inside the words compose with the gradient.
+
+Only the README was used: `DingoBite/weight_gradient`, file `readme.md`, blob
+`addaac1a522d33fcf896b29c04e84fe129d68cef`. The repository's licence endpoint returned 404. No upstream source code
+was read/copied; there is no new dependency.
+
+Gradient clocks restart in each pass and use actual img2img sampling steps. Plain img2img Alternative uses the full
+sampling count; masked/inpainting-model requests that fall back to normal img2img use its shorter count. Hires
+re-encodes inherited prompts if its sampling count differs. A1111 editing retains its separate hires-offset rules.
+Second-order samplers keep the same conditioning for both model evaluations of a logical inference step.
+PhotoMaker's separate text-only encoding path rejects gradient tags explicitly instead of silently ignoring them.
+
+Real-model checks used RTX 3090, SD1.5 `animekawa_v10` at 512x768 and SDXL `waiIllustriousSDXL_v170` at 832x832,
+seed 11, 16 steps. Fifteen images per model include normal weights, constant tags, fixed endpoints, exponential and
+return ramps, negative prompt ramp, hires (7 steps at 1.25x), img2img (strength 0.5), Alternative, Heun references,
+and a disabled-hook baseline after switching samplers. Reports/PNGs are local under
+`outputs/verify-weight-gradient/final/`, named `weight_sd15*` and `weight_sdxl*`.
+
+| Pixel MAE comparison | SD1.5 | SDXL |
+|---|---:|---:|
+| Constant tag vs equivalent ordinary weight, DPM++ 2M | 0 | 0 |
+| Constant tag vs equivalent ordinary weight, Heun | 0 | 0 |
+| Disabled afterward vs original DPM++ 2M baseline | 0 | 0 |
+| Exponential ramp vs fixed starting weight | 2.80 | 5.02 |
+| Exponential ramp vs fixed ending weight | 27.82 | 61.35 |
+| Heun ramp vs fixed starting weight | 3.61 | 6.60 |
+
+All responses completed without engine warnings; comparison sheets were inspected. Early weights can dominate
+composition (the SDXL low initial scarf weight produced a park without the person). A changing weight does not
+guarantee a particular intermediate subject or preserve identity; the constant controls distinguish normal model
+behavior from scheduling. The short six-step inversion Alternative diagnostic showed visibly stronger contrast
+on SDXL; its default-inversion comparison is recorded separately rather than treated as an aesthetic success.
+The focused default-inversion run (`outputs/verify-weight-gradient/alternative/weight_alt_sdxl.json`) reproduced
+the same oversaturation with ordinary fixed weights and the new hook disabled. A side-by-side image was inspected;
+this remains an existing Alternative-path quality issue, not a claimed improvement by Weight Gradient.
+
+The real Scala AppServices path (Plugin.process -> JobQueue -> Generator -> engine -> GPU) completed 1/1 on each
+model with the hook active and `Weight Gradient: True` in output infotext, recorded in
+`outputs/verify-weight-gradient/app-check.txt`. This was a direct app-service check, not an MCP protocol check.
+The rebuilt jar's form/help/compatibility note were inspected via an isolated dry-run home; final UI run exited 0.
+
+Reproduce engine checks:
+
+```powershell
+python scripts/dev/gpu_check.py python/.venv-smoke/Scripts/python.exe outputs/verify-weight-gradient/final weight_sd15
+python scripts/dev/gpu_check.py python/.venv-smoke/Scripts/python.exe outputs/verify-weight-gradient/final weight_sdxl
+```
+
+Independent review found two P2 timing bugs (Alternative count and second-order callbacks). Five regression failures
+were observed, then fixed; tests cover real installed Euler, Heun, DPM2, DPM2 ancestral and DPM++ SDE timestep arrays.
+Additional tests cover positive/negative schedules, pooled conditioning and CFG/PAG batch layout, inherited hires
+steps, feature advertisements and PhotoMaker rejection. Full suites: **481 Scala passed**, **300 Python GPU-venv
+passed**, **247 Python torch-free passed / 16 skipped**. `ui/assembly` succeeded. These tests complement, rather than
+replace, the real-model image checks.
+The refreshed extension ledger reports **85 done / 217 todo (152 targets) / 51 not applicable**. After promotion,
+BuiltinsSuite's 18 tests passed, including the check that every done entry names a registered plugin. Live notice
+collection completed for 110 projects and added the new reimplementation attribution without losing existing text.

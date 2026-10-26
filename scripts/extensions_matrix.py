@@ -124,6 +124,7 @@ IMPLEMENTED = {
     "ultimate_sd_upscale", "adetailer", "lora_block_weight", "model_merge", "model_converter",
     "pixel_art", "color_enhance", "fsr_upscale", "person_mask", "remove_background", "depthmap2mask", "inpaint_background",
     "seamless_tile",
+    "weight_gradient",
 }
 
 

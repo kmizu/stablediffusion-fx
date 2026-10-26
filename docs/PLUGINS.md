@@ -79,6 +79,10 @@ edges to the centre, inpaints a band around their join, optionally shifts back. 
 mask width is the total band across the joined edges. Best with texture prompts and an inpainting checkpoint.
 Both directions can retain small seams. Implementation/real-model evidence is in [VERIFICATION.md](VERIFICATION.md).
 
+`weight_gradient` — AlwaysOn **Weight Gradient**. Enable it, then use `{words::0-1:e}` in either prompt to change
+their weight over a sampling pass. Optional step range and return weight, seven easing curves, A1111 prompt editing,
+hires and img2img are supported. The form includes syntax help. PhotoMaker cannot be combined with these tags.
+
 Every plugin has unit tests (Scala `plugins`, `engine`, `mcp`, `ui` suites; Python `tests/`) and runs end to end in
 dry-run mode. Real-model GPU runs:
 

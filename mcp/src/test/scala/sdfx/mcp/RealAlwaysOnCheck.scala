@@ -14,11 +14,12 @@ import scala.concurrent.duration.*
 /** Manual real-GPU check (not part of `sbt test`): every AlwaysOn plugin goes through the Scala path
   * (Plugin.process -> JobQueue -> Generator -> Python engine -> GPU) on SD1.5.
   *
-  * {{{ sbt "mcp/Test/runMain sdfx.mcp.RealAlwaysOnCheck <python exe> <checkpoint dir> <checkpoint name> <out dir> <face model dir>" }}}
+  * {{{ sbt "mcp/Test/runMain sdfx.mcp.RealAlwaysOnCheck <python exe> <checkpoint dir> <checkpoint name> <out dir> <face model dir> [plugin ids...]" }}}
   */
 object RealAlwaysOnCheck:
   def main(args: Array[String]): Unit =
     val Array(python, ckptDir, ckpt, out, faceDir) = args.take(5)
+    val only = args.drop(5).toSet
     val home = AppHome.detect()
     val settings = Settings(
       pythonExe = Some(python), outputDir = out, lastModel = Some(ckpt),
@@ -26,7 +27,9 @@ object RealAlwaysOnCheck:
     val services = new AppServices(home, settings, dryRun = false, builtins = StandardPlugins.withOwnAxes, persistSettings = false)
     val hello = services.start()
     println(s"engine: ${hello.device}, model loaded: ${services.supervisor.loadedModel.map(_.name)}")
-    val base = GenerationParams(prompt = "a cat sitting on a windowsill", negativePrompt = "lowres", seed = 21, steps = 12,
+    val prompt = if only.contains("weight_gradient") then "portrait of a woman wearing {red scarf::0.2-1.4:e}, in a park"
+      else "a cat sitting on a windowsill"
+    val base = GenerationParams(prompt = prompt, negativePrompt = "lowres", seed = 21, steps = 12,
       width = 512, height = 512, samplerName = "DPM++ 2M")
     def run(p: GenerationParams, plugins: Seq[(Plugin, Values)]) =
       Await.result(services.queue.submit(Job(Job.newId(), p, None, plugins, "check")), 10.minutes)
@@ -48,7 +51,7 @@ object RealAlwaysOnCheck:
     val skip = Set("ip_adapter", "controllllite", "fooocus_inpaint", "photomaker")
     var okCount = 0
     var total = 0
-    StandardPlugins.alwaysOn.filterNot(p => skip.contains(p.id)).foreach { pl =>
+    StandardPlugins.alwaysOn.filterNot(p => skip.contains(p.id)).filter(p => only.isEmpty || only.contains(p.id)).foreach { pl =>
       val vals = Values(Values.defaults(pl.controls).map ++ Map("enabled" -> "true") ++ extra.getOrElse(pl.id, Map.empty))
       val p = pl.id match
         case "soft_inpainting" => base.copy(img2img = Some(Img2ImgParams(initImage = ref.toString, mask = Some(mask.toString), maskBlur = 16)))
@@ -58,6 +61,9 @@ object RealAlwaysOnCheck:
       val res =
         try
           val o = run(p, Seq(pl -> vals)).images.head
+          if pl.id == "weight_gradient" then
+            require(o.params.hooks.contains("weight_gradient"), "weight gradient hook missing")
+            require(o.infotext.contains("Weight Gradient: True"), "weight gradient infotext missing")
           val img = ImageIO.read(o.path.toFile)
           val keys = o.params.extra.keys.filterNot(_ == "Version").take(3).mkString(";")
           okCount += 1
@@ -67,4 +73,4 @@ object RealAlwaysOnCheck:
     }
     println(s"SUMMARY $okCount / $total")
     services.shutdown()
-    sys.exit(if okCount == total then 0 else 1)
+    sys.exit(if okCount == total && total > 0 then 0 else 1)
