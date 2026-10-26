@@ -145,6 +145,9 @@ class ColorGradingPlugin extends HookPlugin:
   def name = "Diffusion Color Grading"
   def hook = "color_grading"
   override def description = "Recenters the latent colour channels (removes casts or tints towards a colour) and stretches the range."
+  override def enabledBy: Map[String, String] =
+    Map("recenter_strength" -> "recenter", "r" -> "recenter", "g" -> "recenter", "b" -> "recenter",
+      "normalize_strength" -> "normalize")
   override def controls: Seq[Control] = Seq(
     Check("enabled", "Enabled"),
     Check("recenter", "Recenter", true),

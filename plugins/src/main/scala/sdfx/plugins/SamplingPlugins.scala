@@ -17,6 +17,8 @@ class ApgPlugin extends HookPlugin:
   def name = "APG is now your CFG"
   def hook = "apg"
   override def description = "Adaptive Projected Guidance: reduces oversaturation at high CFG (replaces CFG)."
+  override def enabledBy: Map[String, String] =
+    Map("guidance_sigma_start" -> "guidance_limiter", "guidance_sigma_end" -> "guidance_limiter")
   override def controls: Seq[Control] = Seq(
     Check("enabled", "Enabled"),
     Slider("momentum", "Momentum", -1.5, 1.0, 0.01, 0.5),
