@@ -77,9 +77,11 @@ UI improvements made this session: `Control.Section` (collapsible groups inside 
 (greys a control out while its checkbox is off), and the form layout in `W.Form`. Labels longer than 18 characters
 go above their control, and the label column stays at least 88 px wide so cards line up.
 
-**Next action:** continue the remaining prompt-embedding hooks below (prompt_fusion / neutral_prompt /
-composable_lora). The Alternative amplitude defect has been repaired; its remaining reconstruction limits are
-documented under Known issues rather than presented as exact inversion.
+**Next action:** finish Neutral Prompt runtime integration first, following
+`docs/superpowers/plans/2026-10-26-neutral-prompt.md`. Its licensed parser and per-image denoised-x0 math foundation
+are present in `python/sdfx/neutral_prompt.py`, but **not called by generation**; there is no plugin/engine feature
+yet and the target remains todo. Continue with prompt_fusion / composable_lora afterwards. The Alternative
+amplitude defect has been repaired; its remaining reconstruction limits are documented under Known issues.
 
 ## Remaining targets, most-starred first
 
@@ -168,7 +170,7 @@ Suggested next steps, by value and fit with what exists:
 | What | Command / file |
 |---|---|
 | Scala tests | `sbt.bat -batch test` (latest: 482 passed, 2026-10-26) |
-| Python tests | `python/.venv-smoke/Scripts/python.exe -m pytest` (latest: 323 passed) and `.venv-test` (250 passed, 23 skipped) |
+| Python tests | `python/.venv-smoke/Scripts/python.exe -m pytest` (latest: 341 passed) and `.venv-test` (260 passed, 31 skipped) |
 | Dry-run smoke | `scripts/smoke.ps1` / `scripts/smoke.sh` |
 | Engine on GPU, one case per process | `scripts/dev/gpu_check.py <venv python> <out dir> <case>`; cases `sched_*`, `ext_*`, `ad_*`, `image_*`, `weight_*`, `negpip_*` |
 | Script plugins through the real app over MCP | `scripts/dev/write_settings.py`, then `scripts/dev/mcp_scripts.py "C:\Program Files\Java\jdk-21\bin\java.exe" <script ids>` |

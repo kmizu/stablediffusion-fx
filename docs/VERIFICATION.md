@@ -364,3 +364,27 @@ finite results plus exact baseline restoration. SD2, actual ControlNet/IP-Adapte
 and newer upstream LLM architectures were not GPU-verified. PhotoMaker's text-only path rejects negative terms.
 
 No new dependency. The ledger is **86 done / 216 todo (151 targets) / 51 na**; the overall goal remains unfinished.
+
+## Neutral Prompt foundation only (Codex, 2026-10-26)
+
+`python/sdfx/neutral_prompt.py` contains the MIT-adapted parser/expression tree and per-image denoised-x0
+composition for AND / AND_PERP / AND_SALT / AND_TOPK, nested groups, signed weights and mean/std CFG rescale.
+**It is not connected to generation.** No plugin, feature advertisement, runtime compatibility, UI or real-model
+success is claimed. The target remains todo; the plan lists the remaining scheduler/conditioning and image gates.
+
+Initial missing-module RED preceded implementation. Eighteen targeted tests pass: ordinary editing and escaped
+keywords, nested/group weights, non-finite rejection, nesting bound, independent batch projections, saliency
+softmax selection, upstream inclusive kthvalue threshold, once-only weights, rescale and degenerate tensors.
+Extreme nonzero normal scales and tiny nonzero std each reproduced a failure before their numerical repairs.
+Max-scaled projection avoids norm underflow/overflow; standardizing before rescaling avoids an overflowing std ratio.
+
+Direct CPU comparison of six expression trees and 20 random prediction sets each (seed 231, C=4/H=W=8) matched the
+upstream visitor composition within 2e-5 relative/absolute tolerance (maximum absolute error 7.63e-6), recorded in
+`outputs/neutral-reference-parity.log`. Independent review also compared 169 parser cases and 100 random trees;
+its only finding was the now-fixed tiny-std clamp. Source blob IDs are in the implementation plan. No exact pixel
+equivalence is implied by these finite synthetic checks.
+
+After the final numerical edit, full Python **341 passed**, torch-free **260 passed / 31 skipped**. Scala/runtime
+files were unchanged in this foundation wave, so the previous 482 Scala tests and jar remain the last such checks;
+they do not validate a Neutral Prompt runtime. Notice collection completed for 112 projects, adding the MIT source
+and original licence text while preserving all prior notices. Ledger unchanged at **86 done / 216 todo / 51 na**.

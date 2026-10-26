@@ -23,6 +23,7 @@ description of their behaviour only.
 | [crowsonkb/k-diffusion](https://github.com/crowsonkb/k-diffusion) | ported | MIT ([text](licenses/crowsonkb__k-diffusion.txt)) | Karras / exponential / polyexponential sigma schedules |
 | [mcmonkeyprojects/sd-dynamic-thresholding](https://github.com/mcmonkeyprojects/sd-dynamic-thresholding) | ported | MIT ([text](licenses/mcmonkeyprojects__sd-dynamic-thresholding.txt)) | Dynamic Thresholding (CFG-Fix) math |
 | [tfernd/HyperTile](https://github.com/tfernd/HyperTile) | ported | MIT ([text](licenses/tfernd__HyperTile.txt)) | HyperTile attention tiling |
+| [ljleb/sd-webui-neutral-prompt](https://github.com/ljleb/sd-webui-neutral-prompt) | ported | MIT ([text](licenses/ljleb__sd-webui-neutral-prompt.txt)) | Neutral Prompt parser and denoised-x0 composition foundation (runtime integration pending) |
 | [kohya-ss/sd-scripts](https://github.com/kohya-ss/sd-scripts) | ported | Apache-2.0 ([text](licenses/kohya-ss__sd-scripts.txt)) | ControlNet-LLLite module layout |
 | [lllyasviel/Fooocus](https://github.com/lllyasviel/Fooocus) | ported | GPL-3.0 ([text](licenses/lllyasviel__Fooocus.txt)) | Fooocus inpaint patch / head application |
 | [threestudio-project/threestudio](https://github.com/threestudio-project/threestudio) | reimplemented | Apache-2.0 ([text](licenses/threestudio-project__threestudio.txt)) | Zero123 diffusers layout and sampling |
