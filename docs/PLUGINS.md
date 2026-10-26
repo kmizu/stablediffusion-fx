@@ -93,8 +93,10 @@ positive prompts with AND, AND_PERP, AND_SALT or AND_TOPK, signed `:weight` suff
 The form offers CFG rescale and an optional extra-prompt formatter; saved images contain the effective combined
 prompt. Hires, img2img/Alternative, editing, Weight Gradient and NegPiP are checked on SD1.5/SDXL. ControlNet and
 PAG, including their joint use, are checked with per-branch conditioning. IP-Adapter (basic/Plus) also supplies
-native positive/negative image features to every branch, including CFG off/PAG and Alternative. PhotoMaker, Reference/ControlLLLite and
-guidance/timestep modifiers currently report an explicit unsupported-combination
+native positive/negative image features to every branch, including CFG off/PAG and Alternative. Reference and
+SDXL ControlLLLite now prepare their image conditioning per branch, including Alternative inversion and PAG.
+Reference adds a reference-image model evaluation for each leaf. PhotoMaker and guidance/timestep modifiers
+currently report an explicit unsupported-combination
 error while their branch-specific integration is unfinished.
 
 Every plugin has unit tests (Scala `plugins`, `engine`, `mcp`, `ui` suites; Python `tests/`) and runs end to end in

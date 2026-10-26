@@ -123,7 +123,92 @@ def mask_png(size):
 
 t0 = time.time()
 r = None
-if CASE in ("neutral_ip_sd15", "neutral_ip_sdxl", "neutral_ip_reload_sd15", "neutral_ip_reload_sdxl"):
+if CASE in ("neutral_reference_sd15", "neutral_reference_sdxl"):
+    from PIL import Image, ImageChops, ImageStat
+    xl = CASE.endswith("sdxl")
+    load(SDXL if xl else SD15)
+    size = dict(width=832, height=832) if xl else dict(width=512, height=768)
+    plain = "portrait of a woman, in a park, detailed"
+    common = dict(prompt=plain, steps=10, seed=11, **size)
+    source = call("txt2img", req(gp(**common)))
+    init = keep(source, CASE + "_input")
+    assert init, source
+    ref = dict(image=init, style_fidelity=0.5, attention_auto_machine_weight=0.8)
+    neutral = {"neutral_prompt": {}}
+    text = plain + " AND_TOPK red scarf :0.5"
+    def composed(prompt=text, phi=0., cfg=6., batch=1, hooks=None, **kw):
+        return dict(prompt=prompt, cfg_scale=cfg, batch_size=batch,
+                    hooks=dict(neutral_prompt=dict(cfg_rescale=phi), reference=ref, **(hooks or {})), **kw)
+    cases = [("baseline", {}), ("reference_native", dict(hooks={"reference": ref})),
+             ("reference_noop", dict(hooks=dict(neutral, reference=ref))),
+             ("compose_plain", dict(prompt=text, hooks=neutral)),
+             ("reference_zero", dict(prompt=text, hooks=dict(neutral, reference=dict(ref, attention_auto_machine_weight=0.)))),
+             ("topk_rescale", composed(phi=0.7)),
+             ("salt", composed(prompt=plain + " AND_SALT red scarf :0.5")),
+             ("perp", composed(prompt=plain + " AND_PERP black hair :-0.4")),
+             ("cfg1_batch", composed(cfg=1., batch=2)),
+             ("heun_edit", composed(prompt=plain + " AND_TOPK [red scarf:blue scarf:0.5] :0.5", sampler_name="Heun")),
+             ("pag", composed(hooks={"pag": {"scale": 2.}})),
+             ("pag_cfg1", composed(cfg=1., hooks={"pag": {"scale": 2.}})),
+             ("img2img", composed(img2img=i2i(init, denoise=0.5))),
+             ("alternative", composed(img2img=i2i(init), hooks={"img2imgalt": {"randomness": 0.2, "inversion_steps": 6,
+                 "override_prompt": plain + " AND_SALT blue scarf :0.4", "decode_cfg_scale": 1.}}))]
+    model = None
+    if xl:
+        import hashlib
+        model = hf("kohya-ss/controlnet-lllite", "controllllite_v01032064e_sdxl_canny_anime.safetensors")
+        edge = call("preprocess", {"preprocessor": "canny", "image_path": init, "output_dir": OUT, "args": {}})
+        assert edge["type"] == "result", edge
+        ll = dict(model=model, image=edge["result"]["path"], strength=0.6, start_percent=0.25, end_percent=0.75)
+        with open(model, "rb") as fh:
+            digest = hashlib.file_digest(fh, "sha256").hexdigest() if hasattr(hashlib, "file_digest") else hashlib.sha256(fh.read()).hexdigest()
+        with open(os.path.join(OUT, "adapter-sources.json"), "w", encoding="utf-8") as fh:
+            json.dump(dict(path=model, sha256=digest, url="https://huggingface.co/kohya-ss/controlnet-lllite/blob/main/controllllite_v01032064e_sdxl_canny_anime.safetensors"), fh, indent=2)
+        cases += [("lllite_native", dict(hooks={"controllllite": ll})),
+                  ("lllite_noop", dict(hooks=dict(neutral, controllllite=ll))),
+                  ("lllite_compose", dict(prompt=text, hooks=dict(neutral, controllllite=ll))),
+                  ("lllite_reference_pag", composed(hooks={"controllllite": ll, "pag": {"scale": 2.}})),
+                  ("lllite_cfg1_batch", composed(cfg=1., batch=2, hooks={"controllllite": ll})),
+                  ("lllite_alternative", composed(img2img=i2i(init), hooks={"controllllite": ll,
+                      "img2imgalt": {"randomness": 0.2, "inversion_steps": 6, "decode_cfg_scale": 0.5}}))]
+    focus = os.environ.get("SDFX_REFERENCE_FOCUS", "")
+    if focus == "passes":
+        hires = dict(gp()["hires"], enabled=True, resize_x=1024 if xl else 640,
+                     resize_y=1024 if xl else 960, second_pass_steps=4)
+        cases = [("baseline", {}), ("hires_reference", composed(hires=hires))]
+        if xl:
+            cases += [("hires_lllite", composed(hires=hires, hooks={"controllllite": ll})),
+                      ("lllite_alternative_fallback", composed(img2img=i2i(init), hooks={
+                          "controllllite": dict(ll, image=""), "img2imgalt": {"randomness": 0.2,
+                          "inversion_steps": 6, "decode_cfg_scale": 1.}}))]
+    cases += [("restored", {})]
+    paths, report, errors = {}, {}, []
+    for tag, changes in cases:
+        method = "img2img" if changes.get("img2img") else "txt2img"
+        result = call(method, req(gp(**dict(common, **changes))))
+        path = keep(result, CASE + "_" + tag)
+        if path:
+            paths[tag] = path
+            report[tag] = dict(path=path, warnings=result["result"]["warnings"], images=len(result["result"]["images"]))
+            if report[tag]["warnings"]:
+                errors.append({tag: report[tag]["warnings"]})
+        else:
+            errors.append({tag: result})
+        print(tag, report.get(tag) or result, flush=True)
+    pairs = [("baseline", "restored"), ("reference_native", "reference_noop"), ("compose_plain", "reference_zero")]
+    if xl:
+        pairs += [("lllite_native", "lllite_noop")]
+    for a, b in pairs:
+        if a in paths and b in paths:
+            with Image.open(paths[a]) as ia, Image.open(paths[b]) as ib:
+                diff = sum(ImageStat.Stat(ImageChops.difference(ia.convert("RGB"), ib.convert("RGB"))).mean) / 3
+            report[a + "_vs_" + b] = diff
+            if diff:
+                errors.append({a + "_vs_" + b: diff})
+    with open(os.path.join(OUT, CASE + ".json"), "w", encoding="utf-8") as fh:
+        json.dump(dict(cases=report, errors=errors, model=model, focus=focus), fh, indent=2)
+    r = {"type": "error" if errors else "result", "result": {"result": report}, "message": str(errors)}
+elif CASE in ("neutral_ip_sd15", "neutral_ip_sdxl", "neutral_ip_reload_sd15", "neutral_ip_reload_sdxl"):
     from PIL import Image, ImageChops, ImageStat
     from huggingface_hub import snapshot_download
     xl = CASE.endswith("sdxl")

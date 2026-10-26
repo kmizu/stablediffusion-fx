@@ -84,7 +84,10 @@ rule, decode schedule clock, full CFG slider and NegPiP contexts; ordinary no-op
 ControlNet/PAG are also connected: branch-specific residuals, internal CFG groups, native PAG/adaptive scale and
 joint ControlNet+PAG were checked on SD1.5/SDXL. IP-Adapter/basic/Plus, CFG/PAG layouts and Alternative image
 conditioning are now checked too, with derived encoder synchronization and model/encoder cache fixes.
-**Still todo:** PhotoMaker, Reference/ControlLLLite, CADS/SAG and guidance/timestep
+Reference and SDXL ControlLLLite now prepare image conditioning per branch in both forward sampling and
+Alternative inversion, including their joint PAG path. The ordinary/no-op path remains unchanged; see the new
+Reference verification section for the actual model matrices, equality comparisons and visual limitations.
+**Still todo:** PhotoMaker, CADS/SAG and guidance/timestep
 modifiers explicitly guarded in `neutral_runtime.validate`. No ledger promotion yet. See VERIFICATION.md for
 tested scope and finite synthetic checks. Continue prompt_fusion / composable_lora after this feature is finished.
 

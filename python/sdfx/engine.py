@@ -1002,8 +1002,10 @@ class Engine(BaseEngine):
         try:
             if ht:
                 hk2.install()
+            branch_hooks = [] if neutral_plan else None
             ext_mod.install(self, pipe, task, gp, req, kw, ctx, cleanups, plan=xplan, w=w, h=h, sched=sched,
-                            cfg_scale=cfg_scale, image=image, mask=mask, steps=steps, seed=hook_seed)
+                            cfg_scale=cfg_scale, image=image, mask=mask, steps=steps, seed=hook_seed,
+                            branch_hooks=branch_hooks)
             if pag:
                 # Capture after IP load/unload: restoring pre-install processors would discard IP weights while
                 # IPAdapterState still considers them loaded. Also restore native PAG changes on failure.
@@ -1026,6 +1028,7 @@ class Engine(BaseEngine):
                         pag=bool(pag),
                         controlnet=neutral_cn,
                         image_embeds=ip_embeds,
+                        branch_hooks=branch_hooks,
                         check_interrupt=ctx.check_interrupt).install()
                 cleanups.append(nh.remove)
                 ext_mod._chain_callback(kw, nh.callback)
@@ -1310,10 +1313,21 @@ class Engine(BaseEngine):
         lat = ext_mod.encode_image(self, self.pipe, image)
         use_negpip = enc.get("_negpip") or (inverse_plan and any(v.get("_negpip") for v in inverse_plan.branches))
         remove_negpip = negpip.install(self.pipe) if use_negpip else lambda: None
+        image_cleanups = []
+        def inverse_images(scheduler):
+            branch_hooks = []
+            ext_mod.install_reference(self, self.pipe, gp, image_cleanups, w=w, h=h, scheduler=scheduler,
+                                      branch_hooks=branch_hooks)
+            ext_mod.install_lllite(self, self.pipe, gp, req, image_cleanups, w=w, h=h, image=image,
+                                   branch_hooks=branch_hooks)
+            return branch_hooks
         try:
+            inverse_options = {"branch_setup": inverse_images} if inverse_plan else {}
             inv = extras.invert_latents(self, self.pipe, lat, enc, steps, float(c["decode_cfg_scale"]), w, h,
-                                        ctx.check_interrupt)
+                                        ctx.check_interrupt, **inverse_options)
         finally:
+            for cleanup in reversed(image_cleanups):
+                cleanup()
             remove_negpip()
         noise = inv.repeat(len(seeds), 1, 1, 1)
         r = float(c["randomness"])
@@ -1324,7 +1338,7 @@ class Engine(BaseEngine):
         # signal (and even changes a pure seeded Gaussian at randomness=1), causing excessive contrast.
         return self._run("txt2img", gp, req, ctx, sampler=gp.sampler_name, schedule=gp.scheduler, cfg_scale=gp.cfg_scale,
                          embeds=embeds, steps=gp.steps, w=w, h=h, seeds=seeds, pass_="base", image_idx=idx0,
-                         images_total=total, latents=noise, cn=cn, pag=pag, hook_seed=seeds[0])
+                         images_total=total, latents=noise, image=image, cn=cn, pag=pag, hook_seed=seeds[0])
 
     def _decode(self, latents):
         pipe = self.pipe

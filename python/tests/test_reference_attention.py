@@ -165,6 +165,48 @@ def test_managed_lllite_window_activation_is_reset_between_branches():
         assert module.active is False
 
 
+@pytest.mark.parametrize("fail", [False, True])
+def test_inverse_loop_prepares_image_hooks_with_actual_inverse_scheduler(fail):
+    from sdfx.extras import invert_latents
+    from sdfx.neutral_runtime import Plan
+    from sdfx.neutral_prompt import parse
+    from diffusers import DDIMScheduler
+    from types import SimpleNamespace
+    events = []
+    class UNet(torch.nn.Module):
+        def forward(self, sample, timestep, **kw):
+            events.append("forward")
+            if fail:
+                raise RuntimeError("interrupted inverse")
+            return SimpleNamespace(sample=sample * 0.1)
+    class Hook:
+        priority = 0
+        def before_branch(self, forward, sample, timestep, kw, layout):
+            events.append("prepare")
+            assert layout == [False, True]
+        def after_branch(self):
+            events.append("cleanup")
+    def setup(scheduler):
+        assert type(scheduler).__name__ == "DDIMInverseScheduler"
+        assert scheduler.num_inference_steps == 3
+        return [Hook()]
+    unet = UNet()
+    branch = dict(prompt_embeds=torch.ones(1, 5, 4), negative_prompt_embeds=torch.zeros(1, 5, 4))
+    embeds = dict(branch, _neutral=Plan(parse("one AND two"), [branch, branch]))
+    pipe = SimpleNamespace(unet=unet, scheduler=DDIMScheduler())
+    try:
+        if fail:
+            with pytest.raises(RuntimeError, match="interrupted inverse"):
+                invert_latents(SimpleNamespace(sdxl=False), pipe, torch.randn(1, 4, 3, 3), embeds,
+                               3, 7, 24, 24, lambda: None, branch_setup=setup)
+        else:
+            invert_latents(SimpleNamespace(sdxl=False), pipe, torch.randn(1, 4, 3, 3), embeds,
+                           3, 7, 24, 24, lambda: None, branch_setup=setup)
+    finally:
+        assert "forward" not in unet.__dict__
+    assert events == ["prepare", "forward", "cleanup"] * (1 if fail else 6)
+
+
 def test_reference_zero_weight_never_writes_or_changes_attention():
     from sdfx.adapters import ReferenceOnlyHook
     from diffusers import DDIMScheduler
@@ -182,3 +224,44 @@ def test_reference_zero_weight_never_writes_or_changes_attention():
     finally:
         hook.after_branch()
         hook.remove()
+
+
+@pytest.mark.parametrize("kind", ["reference", "controllllite"])
+def test_partial_image_hook_installation_has_registered_cleanup(monkeypatch, tmp_path, kind):
+    from sdfx import extensions
+    from sdfx.params import GenerationParams
+    from PIL import Image
+    from types import SimpleNamespace
+    image = tmp_path / "image.png"
+    Image.new("RGB", (24, 24)).save(image)
+    model = tmp_path / "model.safetensors"
+    model.touch()
+    state = dict(installed=False)
+    class PartialHook:
+        def __init__(self, *args):
+            pass
+        def install(self, *, managed):
+            assert managed
+            state["installed"] = True
+            raise RuntimeError("partial installation")
+        def remove(self):
+            state["installed"] = False
+    name = "ReferenceOnlyHook" if kind == "reference" else "ControlLLLiteHook"
+    monkeypatch.setattr(extensions.adapters, name, PartialHook)
+    monkeypatch.setattr(extensions, "encode_image", lambda *a: torch.zeros(1, 4, 3, 3))
+    gp = GenerationParams(hooks={kind: dict(image=str(image), model=str(model))})
+    cleanups, branch_hooks = [], []
+    try:
+        with pytest.raises(RuntimeError, match="partial installation"):
+            if kind == "reference":
+                extensions.install_reference(None, SimpleNamespace(unet=None), gp, cleanups,
+                                             w=24, h=24, scheduler=None, branch_hooks=branch_hooks)
+            else:
+                extensions.install_lllite(SimpleNamespace(sdxl=True), SimpleNamespace(unet=None), gp,
+                                          SimpleNamespace(controlnet_paths={}), cleanups,
+                                          w=24, h=24, branch_hooks=branch_hooks)
+        assert state["installed"] and not branch_hooks
+    finally:
+        for cleanup in reversed(cleanups):
+            cleanup()
+    assert not state["installed"]

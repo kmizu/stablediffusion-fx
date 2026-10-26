@@ -246,3 +246,24 @@ Then SD1.5/SDXL Reference matrices and SDXL-only ControlLLLite with real weights
   reports: `outputs/verify-reference-foundation{,-no-torch}.xml`. No Scala/UI changes, dependencies or new licences.
 - Not GPU-verified or product-enabled in this wave. Next: factor image-hook installation for forward and inverse
   passes, connect managed hooks through Engine/extras, then run the SD1.5/SDXL matrices before lifting guards.
+
+### Reference / LLLite integration wave (starting 014c5da)
+
+- Connected managed image hooks in Engine's forward runs and Alternative inversion. Helpers register removal
+  before installing hooks; inverse setup receives its initialized DDIMInverseScheduler. LLLite activation precedes
+  the reference bank write. Each pass installs fresh hooks at its current dimensions. Removed the two guards.
+- Retained the ordinary/no-composition root-hook route. Alternative's latent forward pass now preserves its init
+  image for LLLite's optional-image fallback; it does not supply that image as a txt2img pipeline argument.
+- Independent read-only review found no material wiring issue, including the fallback follow-up. Tests cover
+  inverse preparation/cleanup and partial installation failures; the reference-attention file now has 41 tests.
+- Real GPU backend matrices: SD1.5 15 cases, SDXL 21 cases; focused pass matrices add 3/5 respectively. All returned
+  no result warnings. Nine comparison pairs across the four folders are pixel-identical. Inspected contact sheets
+  for all four folders. Reports and external LLLite URL/hash: `outputs/verify-neutral-reference-*`.
+- Visual limits are recorded in VERIFICATION.md: existing native SDXL Reference strongly changes saturation/contrast,
+  short Alternative cases can be posterized, and the four-step SD1.5 hires example is soft. Finite successful
+  execution/equality checks do not establish universal image quality. This wave does not verify GPU cancellation,
+  sequential offload or native nine-channel inpainting checkpoints.
+- UI compatibility help/cost description and PLUGINS/HANDOFF updated. No new dependencies/source licences;
+  the ledger remains 86 done / 216 todo / 51 NA. Next: remaining PhotoMaker, CADS/SAG and guidance/timestep modifiers.
+- Final checks: Python 508 passed / four existing torchsde warnings; torch-free 260 passed / 35 skipped; Scala 483
+  passed and jar rebuilt. JUnit reports: `outputs/verify-reference-integration{,-no-torch}.xml`.

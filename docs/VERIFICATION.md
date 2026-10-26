@@ -567,5 +567,57 @@ Independent review compared a real small UNet with native IP projection/processo
 cases (maximum error 1.91e-6) and actual Plus resampling across four cases (maximum 9.54e-7). Its cache/extractor
 findings were fixed. All 27 IP tests pass. Final full Python **467 passed** (four known torchsde endpoint warnings),
 torch-free **260 passed / 34 skipped**; full Scala **483 passed**, jar built. No new dependencies/source licences.
-Remaining guarded combinations are PhotoMaker, Reference/ControlLLLite, CADS/SAG and guidance/timestep modifiers;
+At that stage, guarded combinations still included PhotoMaker, Reference/ControlLLLite, CADS/SAG and guidance/timestep modifiers;
 target stays todo and the extension ledger remains **86/216/51**.
+
+## Neutral Prompt — Reference / ControlLLLite integration (2026-10-26)
+
+`ReferenceOnlyHook` and `ControlLLLiteHook` now have a managed per-branch lifecycle. Runtime activates LLLite's
+step window before Reference writes a bank using that leaf's text/pooled/image conditioning. It writes through
+the saved UNet forward, without recursively composing prompts, and clears the bank after every branch, including
+failures. Reference uses the scheduler's actual input noise level (including intermediate solver stages and inverse
+DDIM), and its positive fidelity mask follows the actual CFG/PAG layout. Native PAG identity groups are preserved.
+Separate spatial key/value projections retain LLLite image conditioning for the reference tokens; combined-context
+normalization still precedes projection. Both guards have been removed; the other pending guards remain.
+
+Installation helpers register cleanup before installation, covering partially installed hooks. Alternative inversion
+sets them up against the initialized inverse scheduler, and the forward latent pass now retains the init image for
+LLLite's optional image fallback. Ordinary/no-composition prompts keep the existing root-hook path.
+
+Main backend JSONL matrices: `outputs/verify-neutral-reference-sd15/neutral_reference_sd15.json` (15 cases) and
+`outputs/verify-neutral-reference-sdxl/neutral_reference_sdxl.json` (21). They cover Reference, PERP/SALT/TOPK,
+rescale, CFG1/batching, editing/Heun, PAG, img2img and Alternative; SDXL adds real LLLite windowed conditioning,
+Reference+LLLite+PAG, CFG1/batching and Alternative with interpolated decode CFG. All returned no result warnings.
+Three SD1.5 and four SDXL comparisons are **zero pixel MAE**: native Reference/no-op, composed prompt/Reference
+weight zero, disabled/restored, and native LLLite/no-op on SDXL. Contact sheets and images were inspected.
+
+Focused pass checks add three SD1.5 and five SDXL cases in `outputs/verify-neutral-reference-passes-{sd15,sdxl}`:
+Reference hires at 640x960/1024x1024, joint Reference+LLLite hires, and Alternative using the init-image fallback
+instead of an explicit LLLite image. They returned no result warnings, and baseline/restored are pixel-identical
+in both folders. Their contact sheet was inspected; the four-step SD1.5 hires example is soft. To reproduce, set
+`SDFX_REFERENCE_FOCUS=passes` and use the same commands with the focused output directories.
+
+Visual limits: on waiIllustriousSDXL_v170, the existing native Reference path itself strongly changes saturation
+and contrast. The short Alternative cases are especially posterized. Composition, inverse editing and PAG can
+amplify these changes; the equality checks establish restoration/no-op behavior, not a quality improvement.
+SD1.5's CFG1 cases also produce a looser painted style. These runs use GPU mode and four-channel SD1.5/SDXL
+checkpoints; sequential offload, native nine-channel inpainting checkpoints and GPU cancellation are not tested
+in this wave. Exception cleanup is covered by CPU tests. Current checks use the backend JSONL path; the earlier
+app-service checks cover the unchanged formatter/request/replay path.
+
+LLLite verification weights: `kohya-ss/controlnet-lllite/controllllite_v01032064e_sdxl_canny_anime.safetensors`,
+SHA256 `d51729ea113eee127b6ddf6db08a4e926fe42ac976e977de68fd354d3157635a`.
+The source URL/path/hash are retained in `adapter-sources.json`; weights remain external ignored assets. No new
+dependency or source licence was added.
+
+Independent read-only review found no material wiring defects. Full Python **508 passed** (four existing torchsde
+endpoint warnings); torch-free **260 passed / 35 skipped**. Reference tests: **41 passed**, including native attention
+comparisons, real PAG processors, inverse hook setup/cleanup and partial installation failures. Full Scala **483
+passed**, jar rebuilt. JUnit reports: `outputs/verify-reference-integration{,-no-torch}.xml`. Remaining guards are
+PhotoMaker, CADS/SAG, CFG Schedule/APG/Mahiro/Latent Modifier/Dynamic Thresholding/Detail Daemon. The target is
+still todo and the ledger remains **86/216/51**.
+
+```text
+python/.venv-smoke/Scripts/python.exe scripts/dev/gpu_check.py python/.venv-smoke/Scripts/python.exe outputs/verify-neutral-reference-sd15 neutral_reference_sd15
+python/.venv-smoke/Scripts/python.exe scripts/dev/gpu_check.py python/.venv-smoke/Scripts/python.exe outputs/verify-neutral-reference-sdxl neutral_reference_sdxl
+```

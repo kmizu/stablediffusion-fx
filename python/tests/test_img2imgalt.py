@@ -83,8 +83,10 @@ def test_alternative_preserves_inverse_magnitude_and_exact_random_endpoint(monke
     monkeypatch.setattr(extensions, "encode_image", lambda *args: inv)
     monkeypatch.setattr(extras, "invert_latents", lambda *args: inv)
     gp = GenerationParams()
+    source = object()
     engine._img2imgalt(gp, None, types.SimpleNamespace(check_interrupt=lambda: None), {"randomness": randomness},
-                      None, {}, [11, 12], 0, 2, 16, 16, None, None)
+                      source, {}, [11, 12], 0, 2, 16, 16, None, None)
+    assert captured["image"] is source  # image-hook fallback must survive the latent-only sampling path
     expected = ((1 - randomness) * inv.repeat(2, 1, 1, 1) + randomness * rnd) / (
         (1 - randomness)**2 + randomness**2)**0.5
     assert torch.allclose(captured["latents"], expected)

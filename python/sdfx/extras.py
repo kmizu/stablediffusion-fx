@@ -384,7 +384,8 @@ def novel_view(engine, params: dict, ctx) -> dict:
 
 
 # ----------------------------------------------------------------------------------------------- img2img alternative
-def invert_latents(engine, pipe, latents, embeds: dict, steps: int, cfg: float, w: int, h: int, check_interrupt):
+def invert_latents(engine, pipe, latents, embeds: dict, steps: int, cfg: float, w: int, h: int, check_interrupt,
+                   *, branch_setup=None):
     """DDIM-invert scaled VAE latents, preserving the amplitude of the terminal noisy state."""
     import torch
     from diffusers import DDIMInverseScheduler  # type: ignore
@@ -408,12 +409,13 @@ def invert_latents(engine, pipe, latents, embeds: dict, steps: int, cfg: float, 
         from .neutral_ip import align
         added = dict(added or {}, image_embeds=align(ip_embeds, 1, [False, True] if guided else [True], x.device, x.dtype))
     runtime = None
-    if "_neutral" in embeds:
-        from .neutral_runtime import RuntimeHook
-        plan = embeds["_neutral"]
-        runtime = RuntimeHook(pipe.unet, inv, plan, cfg, plan.phi, guided=guided, image_embeds=ip_embeds,
-                              check_interrupt=check_interrupt).install()
     try:
+        if "_neutral" in embeds:
+            from .neutral_runtime import RuntimeHook
+            plan = embeds["_neutral"]
+            branch_hooks = branch_setup(inv) if branch_setup else ()
+            runtime = RuntimeHook(pipe.unet, inv, plan, cfg, plan.phi, guided=guided, image_embeds=ip_embeds,
+                                  branch_hooks=branch_hooks, check_interrupt=check_interrupt).install()
         with torch.no_grad():
             for index, t in enumerate(inv.timesteps):
                 check_interrupt()

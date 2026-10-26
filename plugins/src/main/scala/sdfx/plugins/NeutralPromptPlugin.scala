@@ -18,7 +18,8 @@ class NeutralPromptPlugin extends HookPlugin:
       "AND adds, AND_PERP adds only the perpendicular difference, AND_SALT selects salient regions, " +
       "and AND_TOPK keeps the strongest 5% of differences. Negative weights reverse the effect."),
     Note("groups", "Nest groups with brackets: a forest AND_PERP [a city AND_SALT lights :0.5] :-0.7. " +
-      "Each additional prompt takes another model evaluation per step."),
+      "Each additional prompt takes another model evaluation per step. " +
+      "Reference also evaluates the reference image for each prompt."),
     Section("formatter", "Add a prompt"),
     Check("format_enabled", "Add extra prompt"),
     Text("extra_prompt", "Extra prompt", multiline = true, placeholder = "red scarf, or [a city AND_SALT lights]"),
@@ -27,9 +28,10 @@ class NeutralPromptPlugin extends HookPlugin:
     Note("formatter_help", "Adds this text to the positive prompt when generating. " +
       "The saved image includes the full combined prompt; repeating the same settings does not append it twice."),
     Section("compatibility", "Compatibility", expanded = false),
-    Note("pending", "PhotoMaker, Reference, ControlLLLite and guidance/timestep modifiers " +
+    Note("pending", "PhotoMaker and guidance/timestep modifiers " +
       "are still being integrated. Composed prompts report an error for these combinations. " +
-      "IP-Adapter (including Plus), ControlNet and PAG can be combined. Prompt editing, Weight Gradient, NegPiP, hires, img2img and " +
+      "Reference, ControlLLLite (SDXL), IP-Adapter (including Plus), ControlNet and PAG are supported. " +
+      "Prompt editing, Weight Gradient, NegPiP, hires, img2img and " +
       "img2img Alternative are supported.")
   )
   override def enabledBy = Map("cfg_rescale" -> "enabled", "format_enabled" -> "enabled",

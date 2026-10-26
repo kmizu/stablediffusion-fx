@@ -175,7 +175,7 @@ def configure_ip_adapter(engine, pipe, gp, req):
 
 
 def install(engine, pipe, task: str, gp, req, kw: dict, ctx, cleanups: list, *, plan: RunPlan, w: int, h: int, sched,
-            cfg_scale: float, image=None, mask=None, steps: int = 0, seed: int = 0) -> list:
+            cfg_scale: float, image=None, mask=None, steps: int = 0, seed: int = 0, branch_hooks=None) -> list:
     """Installs every requested hook, appending cleanup callables to `cleanups` as it goes (so a failure half way
     still lets the engine undo what was installed)."""
     import torch
@@ -227,35 +227,11 @@ def install(engine, pipe, task: str, gp, req, kw: dict, ctx, cleanups: list, *, 
         cleanups.append(mw.remove)
 
     # --- image conditioning ---------------------------------------------------------------------------------------
-    ref = cfg(gp, "reference", adapters.REFERENCE_DEFAULTS)
-    if ref:
-        if not ref.get("image"):
-            raise EngineError(INVALID_PARAMS, "reference needs an image")
-        from .images import load_rgb, resize_image
-        c = adapters.normalize(ref, adapters.REFERENCE_DEFAULTS)
-        rimg = resize_image(1, load_rgb(ref["image"]), w, h)
-        ref_lat = encode_image(engine, pipe, rimg)
-        rh = adapters.ReferenceOnlyHook(unet, ref_lat, pipe.scheduler, c["style_fidelity"],
-                                        c["attention_auto_machine_weight"]).install()
-        cleanups.append(rh.remove)
+    install_reference(engine, pipe, gp, cleanups, w=w, h=h, scheduler=sched, branch_hooks=branch_hooks)
     ip_image = configure_ip_adapter(engine, pipe, gp, req)
     if ip_image is not None:
         kw["ip_adapter_image"] = ip_image
-    ll = cfg(gp, "controllllite", adapters.LLLITE_DEFAULTS)
-    if ll:
-        if not engine.sdxl:
-            raise EngineError(UNSUPPORTED, "ControlNet-LLLite models are SDXL only")
-        from .images import load_rgb, resize_image
-        c = adapters.normalize(ll, adapters.LLLITE_DEFAULTS)
-        path = req.controlnet_paths.get(ll.get("model"), ll.get("model"))
-        if not path or not os.path.isfile(path):
-            raise EngineError(INVALID_PARAMS, f"ControlNet-LLLite model not found: {ll.get('model')}")
-        if not ll.get("image") and image is None:
-            raise EngineError(INVALID_PARAMS, "ControlNet-LLLite needs an image")
-        src = load_rgb(ll["image"]) if ll.get("image") else (image[0] if isinstance(image, list) else image)
-        hk = adapters.ControlLLLiteHook(unet, path, resize_image(1, src, w, h), c["strength"], c["start_percent"],
-                                        c["end_percent"]).install()
-        cleanups.append(hk.remove)
+    install_lllite(engine, pipe, gp, req, cleanups, w=w, h=h, image=image, branch_hooks=branch_hooks)
     fo = cfg(gp, "fooocus_inpaint", adapters.FOOOCUS_DEFAULTS)
     if fo:
         if not engine.sdxl or task not in ("inpaint", "img2img") or mask is None:
@@ -316,6 +292,46 @@ def latent_mask(mask_img, lh: int, lw: int):
     m = torch.from_numpy(np.asarray(mask_img.convert("L"), dtype=np.float32) / 255.0)[None, None]
     m = torch.nn.functional.adaptive_max_pool2d(m, (lh, lw))
     return m.round()
+
+
+def install_reference(engine, pipe, gp, cleanups, *, w, h, scheduler, branch_hooks=None):
+    ref = cfg(gp, "reference", adapters.REFERENCE_DEFAULTS)
+    if ref is None:
+        return
+    if not ref.get("image"):
+        raise EngineError(INVALID_PARAMS, "reference needs an image")
+    from .images import load_rgb, resize_image
+    c = adapters.normalize(ref, adapters.REFERENCE_DEFAULTS)
+    rimg = resize_image(1, load_rgb(ref["image"]), w, h)
+    ref_lat = encode_image(engine, pipe, rimg)
+    hook = adapters.ReferenceOnlyHook(pipe.unet, ref_lat, scheduler, c["style_fidelity"],
+                                      c["attention_auto_machine_weight"])
+    cleanups.append(hook.remove)
+    hook.install(managed=branch_hooks is not None)
+    if branch_hooks is not None:
+        branch_hooks.append(hook)
+
+
+def install_lllite(engine, pipe, gp, req, cleanups, *, w, h, image=None, branch_hooks=None):
+    ll = cfg(gp, "controllllite", adapters.LLLITE_DEFAULTS)
+    if ll is None:
+        return
+    if not engine.sdxl:
+        raise EngineError(UNSUPPORTED, "ControlNet-LLLite models are SDXL only")
+    from .images import load_rgb, resize_image
+    c = adapters.normalize(ll, adapters.LLLITE_DEFAULTS)
+    path = req.controlnet_paths.get(ll.get("model"), ll.get("model"))
+    if not path or not os.path.isfile(path):
+        raise EngineError(INVALID_PARAMS, f"ControlNet-LLLite model not found: {ll.get('model')}")
+    if not ll.get("image") and image is None:
+        raise EngineError(INVALID_PARAMS, "ControlNet-LLLite needs an image")
+    src = load_rgb(ll["image"]) if ll.get("image") else (image[0] if isinstance(image, list) else image)
+    hook = adapters.ControlLLLiteHook(pipe.unet, path, resize_image(1, src, w, h), c["strength"], c["start_percent"],
+                                     c["end_percent"])
+    cleanups.append(hook.remove)
+    hook.install(managed=branch_hooks is not None)
+    if branch_hooks is not None:
+        branch_hooks.append(hook)
 
 
 def install_soft_inpaint(engine, pipe, kw: dict, plan: RunPlan, image, mask, seed: int):

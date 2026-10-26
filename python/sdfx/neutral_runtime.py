@@ -21,7 +21,7 @@ class Plan:
 def validate(hooks, *, controlnet=False, pag=False):
     """Temporary explicit compatibility boundary while branch-dependent integrations are unfinished."""
     from .hooks import hook_config
-    blocked = ("photomaker", "reference", "controllllite", "cads", "sag", "cfg_schedule",
+    blocked = ("photomaker", "cads", "sag", "cfg_schedule",
                "apg", "mahiro", "latent_modifier", "dynamic_thresholding", "detail_daemon")
     conflicts = [name for name in blocked if hook_config(hooks, name, {}) is not None]
     if conflicts:
