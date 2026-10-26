@@ -124,6 +124,14 @@ class BaseEngine:
                 except OSError:
                     pass
 
+    def tokenize(self, params: dict, ctx: JobContext) -> dict:
+        if self.dry_run:
+            raise EngineError(UNSUPPORTED, "token inspection requires a real loaded model; dry-run has no tokenizer")
+        if self.model is None or getattr(self, "pipe", None) is None:
+            raise EngineError(NO_MODEL, "load a checkpoint before inspecting its tokenizer")
+        from .tokenizer_tool import inspect
+        return inspect(self.pipe, params, ctx)
+
     def image_tool(self, params: dict, ctx: JobContext) -> dict:
         """Non-diffusion image tools (sdfx.image_tools): {tool, image_path, output_dir, ...tool params}."""
         from . import image_tools

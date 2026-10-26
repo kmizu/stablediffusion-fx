@@ -125,6 +125,7 @@ IMPLEMENTED = {
     "pixel_art", "color_enhance", "fsr_upscale", "person_mask", "remove_background", "depthmap2mask", "inpaint_background",
     "seamless_tile",
     "weight_gradient", "negpip", "neutral_prompt",
+    "prompt_fusion", "tokenizer", "save_intermediate",
 }
 
 

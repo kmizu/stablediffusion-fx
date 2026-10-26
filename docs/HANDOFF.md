@@ -20,8 +20,8 @@ server, 40 rewrites of the reForge built-ins. Repo: private GitHub `kmizu/stable
 
 | | Count |
 |---|---|
-| Index entries done | 87 |
-| Index entries todo | 215 (150 distinct targets) |
+| Index entries done | 90 |
+| Index entries todo | 212 (147 distinct targets) |
 | Not applicable (web-UI CSS/UX only, accounts, obsolete, external apps, server ops) | 51 |
 
 `scripts/extensions_matrix.py` is the single ledger. Its `S` dict maps each index entry to `done:<plugin id>`,
@@ -77,7 +77,15 @@ UI improvements made this session: `Control.Section` (collapsible groups inside 
 (greys a control out while its checkbox is off), and the form layout in `W.Form`. Labels longer than 18 characters
 go above their control, and the label column stays at least 88 px wide so cards line up.
 
-**Next action:** implement `prompt_fusion`, then `composable_lora`, preserving their documented behaviours and
+**Parallel implementation wave (2026-10-26):** `prompt_fusion`, `tokenizer` and `save_intermediate` are integrated.
+Prompt Fusion has source grammar/geometry, SDXL pooled conditioning, ordinary-prompt bypass and replay checks.
+Tokenizer uses the actual loaded model vocabularies in a native text/ID inspection tab (literal input, not a
+simulation of generation conditioning). Intermediate PNG/video artifacts persist separately from final images;
+root `outputs/intermediates` is excluded from gallery scans. Both model families, native forms and actual app
+queue/replay paths are verified; optional ffmpeg codecs/recipes have independent actual encoding checks. See
+the three implementation plans and the final section of `docs/VERIFICATION.md` for exact limits and artifacts.
+
+**Next action:** implement `composable_lora`, preserving its documented behaviours and
 the normal real-model/UI/notice gates. Neutral Prompt is now marked implemented after an explicit original-scope
 acceptance audit; see `docs/superpowers/plans/2026-10-26-neutral-prompt.md` and the closing VERIFICATION section.
 All operators, nesting/signed weights, CFG rescale, schedules, native form/formatter/replay and actual AppServices
@@ -89,7 +97,7 @@ composed Neutral prompts remain explicitly unsupported in `neutral_runtime.valid
 original Runtime task permits clear unsupported combinations; later agent-added notes making every combination
 a promotion prerequisite are superseded by the documented acceptance clarification. No original Neutral operator
 or model/UI/notice gate was omitted. Keep the seven guards until their own implementations are verified.
-The overall 353-entry goal remains active; 215 accepted entries are unfinished. Do not treat this promotion as
+The overall 353-entry goal remains active; 212 accepted entries are unfinished. Do not treat this promotion as
 completion of that goal or reclassify remaining entries to make it appear complete.
 
 ## Remaining targets, most-starred first
@@ -100,12 +108,12 @@ regional_prompter, openpose_editor, core:localization, wav2lip, text2video, inpa
 stable_sr, cn_animation, unprompted, llul, dataset_tag_editor, deoldify, dreamartist, qr_code, infinite_zoom, tipo,
 lcm, stylepile, clip_interrogator, prompt_generator, style_selector, aesthetic_gradients, latent_couple,
 outpaint_canvas, fabric, manga_maker, model_downloader, multi_subject_render, batch_face_swap, video_loopback,
-core:presets, model_organizer, core:system-info, model_keyword, shap_e, prompt_travel, prompt_fusion, lora_control,
+core:presets, model_organizer, core:system-info, model_keyword, shap_e, prompt_travel, lora_control,
 gif2gif, replacer, cd_tuner, riffusion, core:api-payload, smart_process, haku_img, infinity_grid,
-core:panorama-viewer, loopback_scaler, daam, tokenizer, text2prompt, prompt_translate, prompt_gallery,
+core:panorama-viewer, loopback_scaler, daam, text2prompt, prompt_translate, prompt_gallery,
 composable_lora, refiner, incantations, old_photo_restoration, abysz_lab, aesthetic_score, steps_animation,
 nsfw_checker, image_editor, embedding_merge, rich_text, mosaic_outpaint, cross_attention_viz, hypernetwork_training,
-inspiration, vram_estimator, sonar, save_intermediate, dump_unet, llm_prompt, training_picker, model_presets,
+inspiration, vram_estimator, sonar, dump_unet, llm_prompt, training_picker, model_presets,
 lama_cleaner, kandinsky, hypernetworks, core:styles-editor, characteristic_guidance, hotshot_xl, live_portrait,
 booru_prompt, latent_upscale, depth_image_io, creaprompt, embedding_editor, semantic_guidance, custom_diffusion,
 core:image-compare, encrypt_image, inpaint_difference, depth_library, rpg_diffusion, custom_hires_fix,
@@ -119,12 +127,12 @@ core:prevent-interrupt
 
 Suggested next steps, by value and fit with what exists:
 
-1. **Prompt-embedding hooks**: prompt_fusion and composable_lora. They build
+1. **Prompt-embedding hooks**: composable_lora. It builds
    on `prompt_schedule.py` and `_schedule_swapper`.
 2. **Regional prompting**: regional_prompter and latent_couple, via attention-level region masks.
    tiled_diffusion can largely reuse the existing `multidiffusion` hook plus noise inversion and region prompts.
-3. **Small, cheap ones**: tokenizer (engine `tokenize` request), latent_upscale,
-   img2img/custom/conditioning hires fix variants, grid_numbers, save_intermediate, color_correction, vae_tools,
+3. **Small, cheap ones**: latent_upscale,
+   img2img/custom/conditioning hires fix variants, grid_numbers, color_correction, vae_tools,
    waifu2x, deepdanbooru (the WD14 tagger already exists in `extras.caption_image`), batch_interrogate,
    clip_interrogator, aesthetic_score, nsfw_checker.
 4. **Big ones**: animatediff, segment_anything, inpaint_anything, deforum, text2video, face_swap (insightface is

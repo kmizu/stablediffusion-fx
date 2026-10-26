@@ -85,17 +85,21 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   val gallery = new GalleryView(ctx, galleryVM, actions, it => preview.show(it.path, it.parameters))
   val pngInfo = new PngInfoTab(ctx, actions)
   val extras = new ExtrasTab(ctx, initial.extrasUpscaler, initial.extrasScale)
+  val tokenizer = new TokenizerTab(ctx, () => vms(activeMode).prompt.get)
   val statusBar = new StatusBar(progress, () => generate(false), () => generate(true), () => interrupt(), () => clearQueue())
   val topBar = new TopBar(ctx, model, loadCheckpoint, setVae, () => refreshCatalog(), () => restartEngine(), () => openSettings())
 
   private val tabs = new TabPane()
+  tabs.setId("main-tabs")
   tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE)
   tabs.getStyleClass.add("main-tabs")
   private val modeTabs: Map[Mode, Tab] = Mode.values.map(m => m -> new Tab(m.label, panels(m).node)).toMap
   Mode.values.foreach(m => tabs.getTabs.add(modeTabs(m)))
   private val pngTab = new Tab("PNG Info", pngInfo.node)
   private val extrasTab = new Tab("Extras", extras.node)
-  tabs.getTabs.addAll(pngTab, extrasTab)
+  private val tokenizerTab = new Tab("Tokenizer", tokenizer.node)
+  tokenizerTab.setId("tokenizer-tab")
+  tabs.getTabs.addAll(pngTab, extrasTab, tokenizerTab)
   private var lastMode: Mode = Mode.Txt2Img
   tabs.getSelectionModel.selectedItemProperty.addListener((_, _, t) => modeOf(t).foreach(lastMode = _))
   private def modeOf(t: Tab): Option[Mode] = modeTabs.collectFirst { case (m, tab) if tab eq t => m }
@@ -457,6 +461,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
       Mode.fromKey(t).foreach(select)
       if t == "pnginfo" then tabs.getSelectionModel.select(pngTab)
       if t == "extras" then tabs.getSelectionModel.select(extrasTab)
+      if t == "tokenizer" then tabs.getSelectionModel.select(tokenizerTab)
     }
     statusBar.logToggle.setSelected(initial.logVisible)
     reloadGallery()
@@ -468,6 +473,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
     val selected = Option(tabs.getSelectionModel.getSelectedItem) match
       case Some(t) if t eq pngTab    => "pnginfo"
       case Some(t) if t eq extrasTab => "extras"
+      case Some(t) if t eq tokenizerTab => "tokenizer"
       case Some(t)                   => modeOf(t).map(_.key).getOrElse("txt2img")
       case None                      => "txt2img"
     UiState(

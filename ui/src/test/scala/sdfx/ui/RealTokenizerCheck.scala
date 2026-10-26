@@ -1,0 +1,218 @@
+package sdfx.ui
+
+import javafx.application.Platform
+import javafx.embed.swing.SwingFXUtils
+import javafx.scene.Node
+import javafx.scene.control.*
+import javafx.scene.input.{Clipboard, DataFormat}
+import javafx.stage.Stage
+import sdfx.core.config.{AppHome, ModelDirs, Settings}
+import sdfx.core.protocol.{Json, TokenPiece}
+import sdfx.engine.{AppServices, EngineLaunch, EngineTimeouts}
+import sdfx.plugins.StandardPlugins
+import sdfx.ui.vm.{Mode, UiState}
+
+import java.nio.file.{Files, Path, Paths}
+import java.util.concurrent.{Callable, CountDownLatch, FutureTask, TimeUnit}
+import javax.imageio.ImageIO
+import scala.concurrent.Await
+import scala.concurrent.duration.*
+import scala.jdk.CollectionConverters.*
+
+/** MANUAL real-engine/native-UI acceptance entrypoint; deliberately not a normal test suite.
+  * Args: python checkpoint-directory checkpoint-name output-directory screenshot.png
+  * Runs one loaded model per process. Never changes the user's app settings or stores clipboard contents.
+  */
+object RealTokenizerCheck:
+  private def fx[A](body: => A): A =
+    val task = new FutureTask[A](new Callable[A]:
+      def call(): A = body
+    )
+    Platform.runLater(task)
+    task.get(30, TimeUnit.SECONDS)
+
+  private def eventually(label: String, timeout: FiniteDuration = 60.seconds)(test: => Boolean): Unit =
+    val end = System.nanoTime() + timeout.toNanos
+    while !test && System.nanoTime() < end do Thread.sleep(50)
+    require(test, s"Timed out: $label")
+
+  def main(args: Array[String]): Unit =
+    require(args.length == 5, "python checkpoint-directory checkpoint-name output-directory screenshot.png")
+    val python = Paths.get(args(0)).toAbsolutePath.normalize()
+    val checkpointDir = Paths.get(args(1)).toAbsolutePath.normalize()
+    val output = Paths.get(args(3)).toAbsolutePath.normalize()
+    val screenshot = Paths.get(args(4)).toAbsolutePath.normalize()
+    Files.createDirectories(output)
+    Option(screenshot.getParent).foreach(Files.createDirectories(_))
+    val engineDir = AppHome.detect().pythonDir
+    require(Files.isDirectory(engineDir.resolve("sdfx")), s"Run from the integrated app repository: $engineDir")
+    val home = AppHome(Files.createTempDirectory(output, "tokenizer-app-home-"))
+    val settings = Settings(pythonExe = Some(python.toString), modelDirs = ModelDirs(checkpoints = Seq(checkpointDir.toString)),
+      outputDir = output.resolve("images").toString, mcpHttpEnabled = false)
+    val services = new AppServices(home, settings, dryRun = false, StandardPlugins.withOwnAxes,
+      launchOverride = Some(() => EngineLaunch(Seq(python.toString, "-m", "sdfx"), engineDir,
+        Map("PYTHONPATH" -> engineDir.toString, "USE_TF" -> "0"))),
+      persistSettings = false, timeouts = EngineTimeouts(load = 10.minutes), installShutdownHook = false)
+    val ready = new CountDownLatch(1)
+    Platform.startup(() => { Platform.setImplicitExit(false); ready.countDown() })
+    require(ready.await(30, TimeUnit.SECONDS), "JavaFX startup timed out")
+    var window: MainWindow = null
+    var clipboardBackup: Option[java.util.HashMap[DataFormat, Object]] = None
+    val text = "a cat, 日本語 café 🐈"
+    val expectedIds = Seq(320, 2368, 267, 39121, 44353, 34002, 508, 15304, 2074, 486)
+    var checks = Vector.empty[String]
+    def checked(label: String): Unit = checks :+= label
+    def find[A <: Node](id: String): A =
+      val n = window.scene.lookup(s"#$id")
+      require(n != null, s"Missing control #$id")
+      n.asInstanceOf[A]
+    def inspect(value: String, ids: Boolean): Unit =
+      fx {
+        find[ComboBox[String]]("tokenizer-mode").getSelectionModel.select(if ids then "Token IDs" else "Text")
+        find[TextArea]("tokenizer-input").setText(value)
+        find[Button]("tokenizer-inspect").fire()
+        require(find[Button]("tokenizer-inspect").isDisabled, "Inspect handler did not start")
+      }
+      eventually("tokenizer Future callback") { fx { !find[Button]("tokenizer-inspect").isDisabled } }
+    def snapshot(path: Path): Unit = fx {
+      window.root.applyCss()
+      window.root.layout()
+      require(ImageIO.write(SwingFXUtils.fromFXImage(window.scene.snapshot(null), null), "png", path.toFile))
+    }
+    try
+      window = fx {
+        val w = new MainWindow(new Stage(), services, UiState(selectedTab = "tokenizer"), CliOptions())
+        w.vms(Mode.Txt2Img).prompt.set(text)
+        w.show()
+        w
+      }
+      val hello = services.start()
+      require(!hello.dryRun && hello.features.contains("tokenizer"), "Must use the actual tokenizer engine")
+      val loaded = services.loadCheckpoint(args(2), remember = false)
+      val streamCount = if loaded.kind == "sdxl" then 2 else 1
+      require(Set("sd15", "sdxl").contains(loaded.kind), s"Expected SD1.5/SDXL, got ${loaded.kind}")
+      val direct = Await.result(services.client.tokenize(text), 60.seconds)
+      require(direct.streams.size == streamCount)
+      require(direct.streams.forall(_.ids == expectedIds), "Actual CLIP vocabulary returned unexpected Unicode IDs")
+      checked("actual AppServices engine and loaded model tokenizer IDs")
+      fx {
+        window.model.checkpoint.set(loaded.name)
+        require(window.state.selectedTab == "tokenizer", "Tokenizer selection was not restored")
+        val tabs = find[TabPane]("main-tabs")
+        tabs.getSelectionModel.select(0)
+        tabs.getSelectionModel.select(tabs.getTabs.asScala.find(_.getId == "tokenizer-tab").get)
+        require(window.state.selectedTab == "tokenizer", "Tokenizer selection was not captured")
+        UiState.save(UiState.file(home), window.state)
+        require(UiState.load(UiState.file(home)).selectedTab == "tokenizer")
+        find[Button]("tokenizer-from-prompt").fire()
+        require(find[TextArea]("tokenizer-input").getText == text, "Prompt import handler failed")
+        find[Button]("tokenizer-inspect").fire()
+      }
+      eventually("imported prompt result") { fx { !find[Button]("tokenizer-inspect").isDisabled } }
+      checked("native tab selection restore/save and current prompt button")
+      fx {
+        val results = find[TabPane]("tokenizer-results")
+        require(results.getTabs.size == streamCount)
+        direct.streams.zipWithIndex.foreach { (stream, index) =>
+          results.getSelectionModel.select(index)
+          window.root.applyCss()
+          window.root.layout()
+          val table = find[TableView[TokenPiece]](s"tokenizer-${stream.name}-tokens")
+          require(table.getItems.asScala.map(_.id).toSeq == expectedIds)
+          require(find[TextArea](s"tokenizer-${stream.name}-decoded").getText == stream.decoded)
+        }
+        results.getSelectionModel.selectFirst()
+        window.root.applyCss()
+        window.root.layout()
+        val clipboard = Clipboard.getSystemClipboard
+        val saved = new java.util.HashMap[DataFormat, Object]()
+        clipboard.getContentTypes.asScala.foreach(format => saved.put(format, clipboard.getContent(format)))
+        clipboardBackup = Some(saved)
+        find[Button]("tokenizer-tokenizer-copy-ids").fire()
+        require(clipboard.getString == expectedIds.mkString(", "), "Copy IDs handler failed")
+      }
+      checked("native stream tabs, token table, decoded Unicode, copy IDs button")
+      inspect(expectedIds.mkString(", "), ids = true)
+      fx {
+        require(find[TabPane]("tokenizer-results").getTabs.size == streamCount)
+        require(find[TextArea]("tokenizer-tokenizer-decoded").getText == direct.streams.head.decoded)
+        require(find[Label]("tokenizer-status").getText.contains("IDs decoded as supplied"))
+      }
+      checked("native ID mode decoding through button and Future callback")
+      inspect("999999999", ids = true)
+      fx {
+        require(find[TabPane]("tokenizer-results").getTabs.isEmpty)
+        require(find[Label]("tokenizer-status").getText.contains("not in"))
+      }
+      inspect(text, ids = false)
+      fx {
+        require(find[TextArea]("tokenizer-tokenizer-ids").getText == expectedIds.mkString(", "))
+        require(find[Label]("tokenizer-status").getText.contains("literal special tokens retained"))
+      }
+      checked("invalid ID error and successful native recovery")
+      fx { window.stage.setWidth(1280); window.stage.setHeight(800) }
+      eventually("compact native resize pulse") { fx { window.scene.getWidth < 1300 && window.scene.getHeight < 810 } }
+      eventually("minimum-size layout") { fx { window.tokenizer.node.getWidth > 100 && window.tokenizer.node.getHeight > 300 } }
+      fx {
+        val scroll = find[ScrollPane]("tokenizer-tokenizer-scroll")
+        require(scroll.getViewportBounds.getWidth > 100 && scroll.getViewportBounds.getHeight > 100)
+        scroll.setVvalue(1)
+        find[ScrollPane]("tokenizer-page-scroll").setVvalue(1)
+      }
+      snapshot(screenshot.resolveSibling(screenshot.getFileName.toString.replaceFirst("\\.png$", "") + "-compact.png"))
+      fx {
+        window.stage.setWidth(1600)
+        window.stage.setHeight(1000)
+      }
+      eventually("expanded native resize pulse") { fx { window.scene.getWidth > 1500 && window.scene.getHeight > 900 } }
+      fx {
+        find[ScrollPane]("tokenizer-tokenizer-scroll").setVvalue(0)
+        find[ScrollPane]("tokenizer-page-scroll").setVvalue(0)
+      }
+      snapshot(screenshot)
+      checked("minimum and expanded viewport, scrolling and native screenshots")
+      fx {
+        find[TabPane]("main-tabs").getSelectionModel.selectFirst()
+        val form = window.panels(Mode.Txt2Img).content
+        window.root.applyCss()
+        window.root.layout()
+        Seq("prompt_fusion", "save_intermediate").foreach { id =>
+          val vm = window.plugins(Mode.Txt2Img).alwaysOnForms.find(_.plugin.id == id).get
+          vm.props("enabled").set("true")
+          if id == "save_intermediate" then vm.props("mode").set("Video")
+          val pane = form.lookupAll(".titled-pane").asScala.collect {
+            case p: TitledPane if p.getText == vm.plugin.name => p
+          }.head
+          pane.setExpanded(true)
+          pane.setAnimated(false)
+          if id == "save_intermediate" then
+            pane.lookupAll(".titled-pane").asScala.collect {
+              case p: TitledPane if p.getText == "Video export" => p
+            }.foreach { p => p.setAnimated(false); p.setExpanded(true) }
+          window.root.applyCss()
+          window.root.layout()
+          val path = output.resolve(s"$id-form.png")
+          require(ImageIO.write(SwingFXUtils.fromFXImage(pane.snapshot(null, null), null), "png", path.toFile))
+        }
+      }
+      checked("native expanded Prompt Fusion and intermediate video forms")
+      val report = ujson.Obj("success" -> true, "model" -> Json.toJs(loaded), "tokenization" -> Json.toJs(direct),
+        "checks" -> ujson.Arr.from(checks), "screenshot" -> screenshot.toString,
+        "home" -> home.root.toString, "clipboard_saved_to_disk" -> false)
+      Files.writeString(output.resolve("tokenizer-ui-report.json"), ujson.write(report, indent = 2))
+      println(s"Real tokenizer UI acceptance passed: ${loaded.kind}; report ${output.resolve("tokenizer-ui-report.json")}")
+    catch
+      case error: Throwable =>
+        if window != null then
+          try snapshot(output.resolve("tokenizer-ui-failure.png")) catch case _: Throwable => ()
+        throw error
+    finally
+      try fx {
+        clipboardBackup.foreach(saved => Clipboard.getSystemClipboard.setContent(saved))
+        if window != null then
+          window.dispose()
+          window.stage.close()
+      }
+      finally
+        try services.shutdown()
+        finally Platform.exit()

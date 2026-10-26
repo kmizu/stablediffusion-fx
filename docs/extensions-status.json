@@ -261,7 +261,7 @@
 "index": 43,
 "name": "tokenizer",
 "url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-tokenizer.git",
-"status": "todo:tokenizer"
+"status": "done:tokenizer"
 },
 {
 "index": 44,
@@ -435,7 +435,7 @@
 "index": 72,
 "name": "Prompt Fusion",
 "url": "https://github.com/ljleb/prompt-fusion-extension.git",
-"status": "todo:prompt_fusion"
+"status": "done:prompt_fusion"
 },
 {
 "index": 73,
@@ -525,7 +525,7 @@
 "index": 87,
 "name": "Save Intermediate Images",
 "url": "https://github.com/AlUlkesh/sd_save_intermediate_images.git",
-"status": "todo:save_intermediate"
+"status": "done:save_intermediate"
 },
 {
 "index": 88,

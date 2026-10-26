@@ -22,3 +22,7 @@ onnxruntime==1.23.2  # WD14 tagger (Caption plugin, method wd14)
 #   pip install ultralytics==8.4.66
 # optional: background removal models for the "Remove background" extras plugin:
 #   pip install rembg==2.0.69
+# optional external executable: ffmpeg on PATH for Save Intermediate video export (not a pip package).
+# Install a suitable FFmpeg build separately; this app does not bundle or install its executable.
+# Build licensing varies (LGPL/GPL and linked libraries); retain the selected build's own notices.
+# https://ffmpeg.org/download.html ; upstream licensing overview: https://github.com/FFmpeg/FFmpeg/blob/master/LICENSE.md

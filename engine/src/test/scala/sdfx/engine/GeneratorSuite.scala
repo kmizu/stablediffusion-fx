@@ -15,6 +15,18 @@ class GeneratorSuite extends munit.FunSuite:
 
   override val munitTimeout: Duration = 120.seconds
 
+  test("intermediate captures use a persistent destination without recording machine paths") {
+    val p = GenerationParams(seed = 5, hooks = Map("save_intermediate" -> ujson.Obj("every_n" -> 2,
+      "output_dir" -> "../../untrusted")))
+    val prep = services.generator.prepare(p)
+    val capture = prep.request.params.hooks("save_intermediate")
+    assertEquals(capture("output_dir").str, home.outputs(services.settings).toAbsolutePath.toString)
+    assertEquals(prep.recorded.hooks("save_intermediate")("output_dir").str, "../../untrusted")
+    val normal = services.generator.prepare(p.copy(hooks = Map("save_intermediate" -> ujson.Obj("every_n" -> 2))))
+    assert(!normal.recorded.hooks("save_intermediate").obj.contains("output_dir"))
+    assertEquals(prep.request.outputDir, home.tmpDir(services.settings).toAbsolutePath.toString)
+  }
+
   private lazy val home = tempHome()
   private lazy val services =
     val s = new AppServices(home, Settings(lastModel = Some("foo")), dryRun = true, builtins = Nil,

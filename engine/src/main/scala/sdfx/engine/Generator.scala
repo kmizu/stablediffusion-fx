@@ -220,11 +220,18 @@ final class Generator(
       .flatMap(u => catalog.findUpscaler(u).map(e => u -> e.path))
       .toMap
     val s = settings()
+    val resolvedHooks = resolveHookModels(recorded.hooks, msg => warnings += msg).map {
+      case ("save_intermediate", o: ujson.Obj) =>
+        val persistent = ujson.Obj.from(o.value.toSeq)
+        persistent("output_dir") = home.outputs(s).toAbsolutePath.toString
+        "save_intermediate" -> persistent
+      case other => other
+    }
     val sent = recorded.copy(
       prompt = ex.prompt,
       hires = recorded.hires.copy(prompt = hrEx.prompt),
       loras = allLoras.filter(l => loraPaths.contains(l.name)),
-      hooks = resolveHookModels(recorded.hooks, msg => warnings += msg)
+      hooks = resolvedHooks
     )
     val req = GenerationRequest(
       params = sent,
@@ -363,6 +370,8 @@ final class Generator(
     val result = awaitActive(handle.result, activity)
     result.images.foreach(i => listener.onTempFile(Paths.get(i.path)))
     result.warnings.foreach(listener.onLog)
+    result.intermediateArtifacts.filter(a => a.`type` == "manifest" || a.`type` == "video")
+      .foreach(a => listener.onLog(s"Intermediate ${a.`type`}: ${a.path}"))
     (prep, result)
 
   private def saveResult(prep: PreparedGeneration, result: GenerationResult, listener: GenerationListener): Seq[OutputImage] =

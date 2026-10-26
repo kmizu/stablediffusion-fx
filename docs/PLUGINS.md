@@ -121,3 +121,21 @@ Notes from the real-model runs:
 - SVD / Zero123 folders downloaded with only `*.fp16.*` weights are detected and loaded with `variant="fp16"`.
 
 Per-plugin evidence of the final real-model runs (which run, duration, result): [VERIFICATION.md](VERIFICATION.md).
+
+### Prompt Fusion, Tokenizer and intermediate capture
+
+- Enable **Prompt Fusion** to use embedding curves (`[red:blue: , ]`, `:bezier`, `:catmull`), means,
+  contextual attention ramps and `$name` variables/functions in either prompt. Slerp controls its geometry;
+  each actual sampling pass has its own clock. Ordinary prompts bypass Fusion. Active Fusion syntax combined
+  with PhotoMaker, signed NegPiP terms or Alternative inversion returns an explicit unsupported error.
+- The **Tokenizer** tab inspects actual loaded CLIP vocabularies, with both streams for SDXL. Enter literal text
+  or comma-separated IDs; colored Unicode groups, full IDs and a table can be copied and scrolled. No automatic
+  BOS/EOS is added. Attention/scheduling/LoRA/textual-inversion syntax is inspected literally, without expansion.
+  This tool describes vocabulary tokens rather than predicting generation chunks.
+- **Save intermediate images** records denoised estimates, incoming noisy samples or the native preview at the
+  chosen cadence. Hires shares the base step clock; each iteration restarts it. Frames, optional final copies,
+  manifests and videos persist in `outputs/intermediates`, separate from the final gallery. Inversion and
+  ADetailer repair passes are not captured. Video mode needs a separately installed `ffmpeg` on PATH; it supports
+  GIF, WebM and MP4 (H264/HEVC/AV1 subject to the executable's encoders), optional interpolation and executable
+  Windows recipes. Encoding failures retain PNGs and final images with an explicit export error in the manifest.
+  Interpolation uses at least one second per selected source frame (including endpoint holds).

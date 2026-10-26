@@ -52,6 +52,10 @@ final class EngineClient(val supervisor: EngineSupervisor):
 
   def memory(): Future[MemoryInfo] = call[MemoryInfo](Protocol.Types.Memory)
 
+  /** Literal CLIP BPE inspection on the currently loaded model; SDXL returns both tokenizers. */
+  def tokenize(text: String, inputMode: String = "text"): Future[TokenizeResult] =
+    call[TokenizeResult](Protocol.Types.Tokenize, ujson.Obj("text" -> text, "input_mode" -> inputMode))
+
   def interrupt(): Unit = supervisor.interrupt()
 
   def unload(): Future[Unit] = raw(Protocol.Types.Unload).map(_ => ())

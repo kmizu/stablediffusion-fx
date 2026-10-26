@@ -29,6 +29,18 @@ BASE = [
     ("mcmonkeyprojects/sd-dynamic-thresholding", "ported", "Dynamic Thresholding (CFG-Fix) math"),
     ("tfernd/HyperTile", "ported", "HyperTile attention tiling"),
     ("ljleb/sd-webui-neutral-prompt", "ported", "Neutral Prompt parser, nested/signed prompt composition, denoised-x0 operators and CFG rescale"),
+    ("ljleb/prompt-fusion-extension", "ported", "Prompt Fusion parser, AST and interpolation algorithms: "
+     "upstream lib_prompt_fusion/{ast_nodes,geometries,interpolation_functions,interpolation_tensor,prompt_parser,t_scaler}.py "
+     "at [1d86996](https://github.com/ljleb/prompt-fusion-extension/tree/1d86996ac4c3d32efaacb8a115600aa6fde6dab6/lib_prompt_fusion) "
+     "adapted into python/sdfx/fusion/; upstream MIT notice also preserved in python/sdfx/fusion/LICENSE"),
+    ("AUTOMATIC1111/stable-diffusion-webui-tokenizer", "reimplemented", "CLIP text/ID token inspection -> `tokenizer`; "
+     "clean implementation in python/sdfx/tokenizer_tool.py and native Tokenizer tab from documented behaviour "
+     "at [ac6d541](https://github.com/AUTOMATIC1111/stable-diffusion-webui-tokenizer/tree/ac6d541c7032e9f9c69c8ead2ed201302b06a4fe); "
+     "no upstream code copied"),
+    ("AlUlkesh/sd_save_intermediate_images", "reimplemented", "Sampling snapshots, intermediate gallery and video export "
+     "-> `save_intermediate`; standalone python/sdfx/save_intermediate.py from upstream behaviour "
+     "at [a1d7cec](https://github.com/AlUlkesh/sd_save_intermediate_images/tree/a1d7cecff893280d709767794d5654e8cbc6746f) "
+     "(upstream Unlicense)"),
     ("kohya-ss/sd-scripts", "ported", "ControlNet-LLLite module layout"),
     ("lllyasviel/Fooocus", "ported", "Fooocus inpaint patch / head application"),
     ("threestudio-project/threestudio", "reimplemented", "Zero123 diffusers layout and sampling"),
@@ -45,6 +57,13 @@ BASE = [
     ("microsoft/onnxruntime", "dependency", "WD14 tagger"),
     ("ultralytics/ultralytics", "dependency", "YOLO detectors for ADetailer (optional Python package)"),
     ("danielgatis/rembg", "dependency", "background removal models (optional Python package)"),
+    ("FFmpeg/FFmpeg", "dependency", "Optional external ffmpeg executable for Save Intermediate video export; "
+     "no FFmpeg binary is bundled or installed by this app. Upstream LICENSE.md explains build-dependent licensing: "
+     "LGPL-2.1-or-later by default; --enable-gpl changes the combined build to GPL-2.0-or-later, "
+     "--enable-version3 selects version 3, and linked libraries can change the terms. "
+     "The selected executable's build and accompanying notices determine its effective license; "
+     "--enable-nonfree builds are not redistributable. The collected upstream file is the licensing overview "
+     "([inspected source](https://github.com/FFmpeg/FFmpeg/blob/46f23be8b1976ed4c8ec85584daabcf0e57a7b9e/LICENSE.md))."),
     ("openjdk/jfx", "dependency", "JavaFX UI toolkit"),
     ("com-lihaoyi/upickle", "dependency", "JSON"),
     ("scala/scala3", "dependency", "Scala runtime"),
@@ -121,7 +140,7 @@ def main():
         "- **ported**: code or algorithms were translated from the project; its license applies to those parts.",
         "- **reimplemented**: the feature was written from scratch from the project's documented behaviour; no code was",
         "  copied. The license is listed for attribution.",
-        "- **dependency**: installed separately (pip / Maven), not redistributed in this repository.",
+        "- **dependency**: installed separately (pip / Maven / external executable), not redistributed in this repository.",
         "- **data**: data files included in this repository.",
         "",
         "Projects without a published license file were not copied from; their features were re-implemented from the",

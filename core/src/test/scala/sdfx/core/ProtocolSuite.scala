@@ -7,6 +7,14 @@ import sdfx.core.protocol.*
 class ProtocolSuite extends munit.FunSuite:
   import EngineEvent.*
 
+  test("intermediate artifacts are typed auxiliary outputs and old responses still decode") {
+    val old = SnakePickle.read[GenerationResult]("""{"images":[]}""")
+    assertEquals(old.intermediateArtifacts, Nil)
+    val result = SnakePickle.read[GenerationResult]("""{"images":[],"intermediate_artifacts":[{"path":"outputs/intermediates/job/manifest.json","type":"manifest","future_field":1}]}""")
+    assertEquals(result.images, Nil)
+    assertEquals(result.intermediateArtifacts, Seq(IntermediateArtifact("outputs/intermediates/job/manifest.json", "manifest")))
+  }
+
   private def ev(s: String) = EngineEvent.parse(ujson.read(s))
 
   test("EngineEvent.parse: progress (full and defaults)") {

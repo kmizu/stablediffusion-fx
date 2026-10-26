@@ -72,7 +72,7 @@ class FakeEngine(BaseEngine):
         return ["freeu", "dynamic_thresholding", "hypertile", "pag", "controlnet", "apg", "mahiro", "rescale_cfg",
                 "model_sampling", "kohya_hrfix", "multidiffusion", "latent_modifier", "soft_inpainting", "sag", "neveroom",
                 "reference", "revision", "ip_adapter", "controllllite", "fooocus_inpaint", "photomaker", "img2imgalt",
-                "face_restore", "caption", "img2vid", "novel_view", "ldsr", "marigold", "adetailer", "weight_gradient", "negpip", "neutral_prompt"] + list(sampling_ext.HOOKS) + (
+                "face_restore", "caption", "img2vid", "novel_view", "ldsr", "marigold", "adetailer", "weight_gradient", "negpip", "neutral_prompt", "prompt_fusion", "save_intermediate"] + list(sampling_ext.HOOKS) + (
                     ["custom_code"] if os.environ.get("SDFX_ALLOW_CODE") == "1" else [])
 
     def preprocessors(self) -> list[str]:

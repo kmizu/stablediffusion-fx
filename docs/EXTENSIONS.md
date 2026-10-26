@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 87, todo 215, na 51.
+Totals: done 90, todo 212, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-fx | Why not applicable |
 |---|---|---|---|---|---|
@@ -49,7 +49,7 @@ Totals: done 87, todo 215, na 51.
 | 40 | [StylePile](https://github.com/some9000/StylePile.git) | 571 | todo | `stylepile` |  |
 | 41 | [Booru tag autocompletion](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete.git) | 2811 | todo | `core:tag-autocomplete` |  |
 | 42 | [novelai-2-local-prompt](https://github.com/animerl/novelai-2-local-prompt.git) | 73 | done | `novelai_prompt` |  |
-| 43 | [tokenizer](https://github.com/AUTOMATIC1111/stable-diffusion-webui-tokenizer.git) | 171 | todo | `tokenizer` |  |
+| 43 | [tokenizer](https://github.com/AUTOMATIC1111/stable-diffusion-webui-tokenizer.git) | 171 | done | `tokenizer` |  |
 | 44 | [Randomize](https://github.com/innightwolfsleep/stable-diffusion-webui-randomize.git) | 25 | done | `randomize` |  |
 | 45 | [conditioning-highres-fix](https://github.com/klimaleksus/stable-diffusion-webui-conditioning-highres-fix.git) | 43 | todo | `conditioning_highres_fix` |  |
 | 46 | [model-keyword](https://github.com/mix1009/model-keyword.git) | 269 | todo | `model_keyword` |  |
@@ -78,7 +78,7 @@ Totals: done 87, todo 215, na 51.
 | 69 | [Sonar](https://github.com/Kahsolt/stable-diffusion-webui-sonar.git) | 112 | todo | `sonar` |  |
 | 70 | [Depth Image I/O](https://github.com/AnonymousCervine/depth-image-io-for-SDWebui.git) | 73 | todo | `depth_image_io` |  |
 | 71 | [Ultimate SD Upscale](https://github.com/Coyote-A/ultimate-upscale-for-automatic1111.git) | 1764 | done | `ultimate_sd_upscale` |  |
-| 72 | [Prompt Fusion](https://github.com/ljleb/prompt-fusion-extension.git) | 265 | todo | `prompt_fusion` |  |
+| 72 | [Prompt Fusion](https://github.com/ljleb/prompt-fusion-extension.git) | 265 | done | `prompt_fusion` |  |
 | 73 | [Neutral Prompt](https://github.com/ljleb/sd-webui-neutral-prompt.git) | 184 | done | `neutral_prompt` |  |
 | 74 | [Dynamic Thresholding](https://github.com/mcmonkeyprojects/sd-dynamic-thresholding.git) | 1224 | done | `dynamic_thresholding` |  |
 | 75 | [anti-burn](https://github.com/klimaleksus/stable-diffusion-webui-anti-burn.git) | 164 | done | `anti_burn` |  |
@@ -93,7 +93,7 @@ Totals: done 87, todo 215, na 51.
 | 84 | [Diffusion Defender](https://github.com/WildBanjos/DiffusionDefender.git) | 29 | done | `prompt_filter` |  |
 | 85 | [DH Patch](https://github.com/d8ahazard/sd_auto_fix.git) | 12 | na | `obsolete` | superseded: the feature is in the base app (A1111 >= 1.5) or the extension is deprecated |
 | 86 | [Riffusion](https://github.com/enlyth/sd-webui-riffusion.git) | 202 | todo | `riffusion` |  |
-| 87 | [Save Intermediate Images](https://github.com/AlUlkesh/sd_save_intermediate_images.git) | 112 | todo | `save_intermediate` |  |
+| 87 | [Save Intermediate Images](https://github.com/AlUlkesh/sd_save_intermediate_images.git) | 112 | done | `save_intermediate` |  |
 | 88 | [Add image number to grid](https://github.com/AlUlkesh/sd_grid_add_image_number.git) | 26 | todo | `grid_numbers` |  |
 | 89 | [Multiple Hypernetworks](https://github.com/antis0007/sd-webui-multiple-hypernetworks.git) | 95 | todo | `hypernetworks` |  |
 | 90 | [System Info](https://github.com/vladmandic/sd-extension-system-info.git) | 307 | todo | `core:system-info` |  |

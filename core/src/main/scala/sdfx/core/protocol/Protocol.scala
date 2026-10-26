@@ -27,6 +27,7 @@ object Protocol:
     val Interrupt = "interrupt"
     val Unload = "unload"
     val Memory = "memory"
+    val Tokenize = "tokenize"
     val Shutdown = "shutdown"
 
   object ErrorCodes:
@@ -75,6 +76,9 @@ case class GenerationRequest(
 
 case class GeneratedImage(path: String, seed: Long, subseed: Long = -1L, width: Int = 0, height: Int = 0) derives RW
 
+/** Persistent auxiliary output; not an engine temp file or a final-image gallery member. */
+case class IntermediateArtifact(path: String, `type`: String = "image") derives RW
+
 case class GenerationResult(
     images: Seq[GeneratedImage],
     timingS: Double = 0,
@@ -84,13 +88,21 @@ case class GenerationResult(
     vaeHash: Option[String] = None,
     loraHashes: Map[String, String] = Map.empty,
     scheduler: Option[String] = None,
-    warnings: Seq[String] = Nil
+    warnings: Seq[String] = Nil,
+    intermediateArtifacts: Seq[IntermediateArtifact] = Nil
 ) derives RW
 
 case class UpscaleRequest(imagePath: String, upscaler: String, scale: Double, outputDir: String, upscalerPaths: Map[String, String] = Map.empty) derives RW
 case class PreprocessRequest(preprocessor: String, imagePath: String, outputDir: String, args: Map[String, Double] = Map.empty) derives RW
 case class ImagePathResult(path: String) derives RW
 case class MemoryInfo(allocatedMb: Double = 0, reservedMb: Double = 0, totalMb: Double = 0, ramUsedMb: Double = 0) derives RW
+
+case class TokenPiece(index: Int, id: Int, piece: String, text: String, bytesHex: String, special: Boolean) derives RW
+case class TokenGroup(ids: Seq[Int], text: String) derives RW
+case class TokenStream(name: String, source: String, count: Int, ids: Seq[Int], contentCapacity: Int,
+                       bosId: Int, eosId: Int, padId: Int, decoded: String,
+                       tokens: Seq[TokenPiece], groups: Seq[TokenGroup]) derives RW
+case class TokenizeResult(inputMode: String, streams: Seq[TokenStream]) derives RW
 
 sealed trait EngineEvent
 object EngineEvent:

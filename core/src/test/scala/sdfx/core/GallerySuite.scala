@@ -120,6 +120,17 @@ class GalleryIndexSuite extends munit.FunSuite with TempDir:
     assertEquals(new GalleryIndex(dir).scan().map(_.path), Vector(a, b))
   }
 
+  tmp.test("scan and search exclude root intermediates while retaining unrelated nested directories") { dir =>
+    val finalImage = png(dir.resolve("txt2img/2026-10-26/final.png"), Some("cat"), T0)
+    png(dir.resolve("intermediates/generation-one/frame.png"), Some("cat intermediate"), T0 + 3)
+    val nested = png(dir.resolve("archive/intermediates/keep.png"), Some("cat archived"), T0 + 2)
+    val similarlyNamed = png(dir.resolve("intermediates-old/keep.png"), Some("cat old"), T0 + 1)
+    val idx = new GalleryIndex(dir)
+    assertEquals(idx.scan().map(_.path), Vector(nested, similarlyNamed, finalImage))
+    assertEquals(idx.search("cat").map(_.path), Vector(nested, similarlyNamed, finalImage))
+    assertEquals(idx.search("cat", limit = 1).map(_.path), Vector(nested))
+  }
+
   tmp.test("cache: same mtime/size -> cached item; changed mtime -> re-read") { dir =>
     val f = png(dir.resolve("a.png"), Some("first"), T0)
     val idx = new GalleryIndex(dir)

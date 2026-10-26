@@ -741,3 +741,55 @@ Fresh final checks:
 Only index entry 73 changes: `done:neutral_prompt`. Totals are **87 done / 215 todo / 51 NA**, with 150 distinct
 pending targets. The overall 353-entry objective remains active. Next implementations are Prompt Fusion and other
 independent entries; remaining compatibility work stays visible rather than silently weakening accepted requests.
+
+## Parallel native extension wave: Prompt Fusion, Tokenizer, intermediate capture (2026-10-26)
+
+Three isolated implementation branches and independent reviews were integrated by the parent. Only the parent
+ran real models and sbt. Sources and pinned revisions are in each implementation plan and third-party notices.
+
+- **Prompt Fusion:** `scripts/dev/prompt_fusion_check.py` passed 20 actual-generation cases and six structured
+  rejection cases per model, SD1.5 `animekawa_v10` and SDXL `waiIllustriousSDXL_v170`. Exact RGB equality holds for
+  ordinary enabled/disabled prompts, variable/function expansion, constant curves and the final restored baseline.
+  Active linear/Bezier/Catmull/means/alternation/contextual attention and geometry change conditioning; negative
+  prompts, long conditioning, two-image batches, Heun, hires and img2img complete. SDXL includes pooled embeddings.
+  Reports, raw protocol journals, images and visually inspected contact sheets: `outputs/verify-fusion-{sd15,sdxl}`.
+  PhotoMaker, signed NegPiP and Alternative inversion with active Fusion syntax remain explicit unsupported
+  combinations. Nonfinite positions/attention reject as invalid parameters. These are bounded core-feature
+  checks, not proof of every cross-extension combination or artistic quality.
+- **Intermediate capture:** `scripts/dev/save_intermediate_check.py` completed 12 real-generation cases per model:
+  baseline, all three capture subjects, disabled, batch/iterations, hires, img2img, Heun and GIF/WebM/MP4. All
+  enabled/disabled final RGB images exactly match baseline. Cadence, combined hires clock, PNG metadata and typed
+  auxiliaries were checked; contact sheets were inspected. Artifacts: `outputs/verify-intermediate-{sd15,sdxl}`.
+  A real ffmpeg check subsequently found and fixed GIF coarse-palette color loss with adaptive palette generation.
+  The independent post-fix nine-case CPU check executes both direct exports and generated Windows recipes:
+  decoded parity is exact, interpolation creates new frames, endpoints/holds/duration and one/two-frame fallback
+  pass, and cancellation removes staging/partial videos. Report/reproducer/videos:
+  `.worktrees/save-intermediate/outputs/verify-intermediate-ffmpeg/`. Separate actual HEVC/AV1 checks with uniform
+  and odd mixed-size inputs passed all four cases (six decoded frames, 3 s, 96x64 or padded 102x78 canvas;
+  RGB error 1.56–2.87/255): `.worktrees/tokenizer/outputs/verify-intermediate-codecs/`. These codec checks use
+  synthetic CPU frames, separately from the real-model captures. Sampling is unchanged by the palette-only fix.
+- **Native app service and replay:** `RealAlwaysOnCheck` passed **2/2 plugins per model** in
+  `outputs/verify-wave-native-{sd15,sdxl}`. Active Fusion grammar, PNG saved/full-parameter metadata and serialized
+  replay give equal pixels. Intermediate batch 2 x iteration 2 keeps four final gallery images; captured PNGs and
+  manifests survive queue temp cleanup. A serialized outside-root hook destination is replaced by configured
+  outputs, the sentinel stays absent, and historical gallery scans omit root intermediates. Gallery regression
+  retains unrelated nested directories with the same name. Evidence lives in each `native-alwayson-evidence`.
+- **Tokenizer and forms:** `RealTokenizerCheck` passed on both actual loaded models and vocabularies through
+  AppServices and native Inspect/Copy controls. Unicode IDs match cached CLIP reference IDs; SDXL has both streams.
+  Text/ID mode, prompt import, table/decoded text, tab persistence, invalid-ID recovery, clipboard restoration and
+  resizing/scrolling pass. Literal special tokens are classified by the real vocabulary. Help/input shrink and
+  table visibility were repaired after screenshot inspection. Native expanded Fusion/intermediate video forms
+  are captured with all controls readable. Reports/screenshots: `outputs/verify-tokenizer-{sd15,sdxl}-ui`.
+- **Integration tests:** full torch-enabled Python **707 passed / 1 skipped**, six torchsde floating endpoint
+  warnings; full torch-free Python **306 passed / 60 skipped**. Logs: `outputs/parallel-wave-python-final.log` and
+  `outputs/parallel-wave-notorch.log`. The skipped integration checks require opt-in cached vocabularies/ffmpeg or
+  unavailable torch; actual vocabularies and ffmpeg have the separate acceptance evidence above.
+  Full Scala **491 passed**, and assembly succeeded after the final native resize-pulse check and gallery repair:
+  `outputs/parallel-wave-scala-final.log`. The final native screenshots include the real 1280x800 compact viewport
+  and 1600x1000 expanded viewport (scene excludes window decorations).
+- **Notices:** authenticated collector completed **116 projects**, adding the MIT Fusion source notice, Unlicense
+  recorder attribution, no-license tokenizer clean-reimplementation attribution and external ffmpeg build-dependent
+  licensing overview. No FFmpeg executable is bundled. Existing license content was preserved with repository LF.
+
+Ledger entries 43, 72 and 87 are now done: **90 done / 212 todo / 51 NA**, 147 distinct pending targets.
+The overall 353-entry objective remains active. Next planned target: `composable_lora`.

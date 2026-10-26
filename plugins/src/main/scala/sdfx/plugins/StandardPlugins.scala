@@ -7,6 +7,7 @@ import sdfx.core.plugins.api.{Plugin, XyzAxis}
   */
 object StandardPlugins:
   def alwaysOn: Seq[Plugin] = Seq(
+    new PromptFusionPlugin,
     // guidance
     new FreeUPlugin, new DynamicThresholdingPlugin, new ApgPlugin, new MahiroPlugin, new RescaleCfgPlugin, new PagPlugin,
     new SagPlugin,
@@ -22,10 +23,11 @@ object StandardPlugins:
     // prompt processing (extension index)
     new RandomizePlugin, new PromptFormatPlugin, new PromptFilterPlugin, new NegativePromptWeightPlugin,
     new NovelAIPromptPlugin, new StyleVariablesPlugin(), new LoraBlockWeightPlugin, new WeightGradientPlugin, new NegPipPlugin,
-    new NeutralPromptPlugin,
+    new NeutralPromptPlugin, new TokenizerPlugin,
     // sampling (extension index)
     new DetailDaemonPlugin, new VectorscopeCcPlugin, new LatentMirroringPlugin, new AsymmetricTilingPlugin,
-    new AntiBurnPlugin, new ReSharpenPlugin, new ColorGradingPlugin, new CfgSchedulePlugin, new CadsPlugin
+    new AntiBurnPlugin, new ReSharpenPlugin, new ColorGradingPlugin, new CfgSchedulePlugin, new CadsPlugin,
+    new SaveIntermediatePlugin
   )
 
   def scripts(extraAxes: () => Seq[XyzAxis]): Seq[Plugin] = Seq(

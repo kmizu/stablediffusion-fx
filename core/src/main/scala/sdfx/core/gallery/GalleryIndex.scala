@@ -19,7 +19,7 @@ final class GalleryIndex(root: Path):
 
   def rootDir: Path = root
 
-  /** Newest first. Skips the engine temp directory. */
+  /** Newest first. Skips engine temp files and the reserved root intermediate-artifact directory. */
   def scan(limit: Int = Int.MaxValue): Vector[GalleryItem] =
     if !Files.isDirectory(root) then Vector.empty
     else
@@ -27,6 +27,7 @@ final class GalleryIndex(root: Path):
         s.iterator().asScala
           .filter(p => Files.isRegularFile(p) && p.getFileName.toString.toLowerCase.endsWith(".png"))
           .filterNot(p => root.relativize(p).iterator().asScala.exists(_.toString.startsWith(".")))
+          .filterNot(p => root.relativize(p).getName(0).toString == "intermediates")
           .toVector
       }
       val items = files.flatMap(item)

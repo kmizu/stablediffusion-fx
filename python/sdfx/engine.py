@@ -25,9 +25,9 @@ from . import controlnet as cn_mod
 from . import hires as hires_mod
 from . import hooks as hooks_mod
 from . import adapters, extras, inpaint, lora_blocks, models, preview, prompt, prompt_schedule, schedulers, upscalers
-from . import weight_gradient
+from . import weight_gradient, save_intermediate
 from . import negpip
-from . import neutral_prompt, neutral_runtime
+from . import neutral_prompt, neutral_runtime, prompt_fusion
 from . import extensions as ext_mod
 from .base import LATENT_UPSCALERS, BaseEngine
 from .images import Image, load_mask, load_rgb, next_output_path, resize_image, save_png
@@ -199,7 +199,7 @@ class Engine(BaseEngine):
             f.append("taesd")
         f += ["apg", "mahiro", "rescale_cfg", "model_sampling", "kohya_hrfix", "multidiffusion", "latent_modifier",
               "soft_inpainting", "neveroom", "reference", "revision", "ip_adapter", "controllllite", "fooocus_inpaint",
-              "img2imgalt", "caption", "ldsr", "adetailer", "weight_gradient", "negpip", "neutral_prompt"]
+              "img2imgalt", "caption", "ldsr", "adetailer", "weight_gradient", "negpip", "neutral_prompt", "tokenizer", "prompt_fusion", "save_intermediate"]
         f += list(ext_mod.sampling_ext.HOOKS)
         if hasattr(diffusers, "StableDiffusionSAGPipeline"):
             f.append("sag")
@@ -639,6 +639,9 @@ class Engine(BaseEngine):
                 out = dict(branches[0])
                 out["_neutral"] = neutral_runtime.Plan(tree, branches, phi)
                 return out
+        if (hooks_mod.hook_config(gp.hooks, "prompt_fusion", {}) is not None
+                and (prompt_fusion.active(pos) or prompt_fusion.active(neg))):
+            return prompt_fusion.encode(self, pos, neg, gp, bs, steps, hires_total, gradient_total)
         def schedule(text):
             text = prompt.strip_extra_networks(text)
             if hooks_mod.hook_config(gp.hooks, "weight_gradient", {}) is not None:
@@ -1038,6 +1041,11 @@ class Engine(BaseEngine):
                 ext_mod._chain_callback(kw, nh.callback)
             if embeds.get("_negpip") or (neutral_plan and any(v.get("_negpip") for v in neutral_plan.branches)):
                 cleanups.append(negpip.install(pipe))
+            recorder = getattr(self, "_intermediate_recorder", None)
+            if recorder is not None and hooks_mod.hook_config(gp.hooks, "save_intermediate", {}) is not None:
+                cleanups.append(save_intermediate.install(self, pipe, kw, recorder, seeds, pass_,
+                    int(expected_steps or steps), gp.steps if pass_ == "hires" else 0,
+                    image_idx // max(1, gp.batch_size)))
             ctx.check_interrupt()
             filtered = _filter_kwargs(pipe.__call__, kw)
             for k in ("eta", "pag_scale", "pag_adaptive_scale", "controlnet_conditioning_scale", "guidance_rescale",
@@ -1061,12 +1069,33 @@ class Engine(BaseEngine):
         return imgs, plan
 
     def _generate(self, params: dict, ctx: JobContext, mode: str) -> dict:
+        self._intermediate_recorder = None
+        try:
+            return self._generate_recorded(params, ctx, mode)
+        finally:
+            recorder = self._intermediate_recorder
+            if recorder is not None:
+                try:
+                    recorder.close()
+                except OSError as e:
+                    log.warning("could not close intermediate manifest: %s", e)
+            self._intermediate_recorder = None
+
+    def _generate_recorded(self, params: dict, ctx: JobContext, mode: str) -> dict:
         t0 = time.monotonic()
         req = self.parse_generation(params, mode, ctx)
         gp = req.params
+        intermediate = hooks_mod.hook_config(gp.hooks, "save_intermediate", {})
+        if intermediate is not None:
+            self._intermediate_recorder = save_intermediate.Recorder(intermediate.get("output_dir") or req.output_dir, intermediate, ctx,
+                dict(prompt=gp.prompt, negative_prompt=gp.negative_prompt, sampler=gp.sampler_name,
+                     steps=gp.steps, cfg_scale=gp.cfg_scale, mode=mode, preview_method=req.preview_method,
+                     generation=params.get("params", {})))
         self._extra = dict(gp.extra or {})
         self._ms_overrides = ext_mod.model_sampling_overrides(gp)
         self.ensure_model(gp, ctx)
+        if self._intermediate_recorder is not None:
+            self._intermediate_recorder.metadata.update(model=self.model, vae=self.vae_info)
         seed = resolve_seed(gp.seed)
         subseed = resolve_seed(gp.subseed)
         bs, n_iter = gp.batch_size, gp.n_iter
@@ -1097,7 +1126,9 @@ class Engine(BaseEngine):
         hr_pos, hr_neg = (hp.prompt or gp.prompt, hp.negative_prompt or gp.negative_prompt) if hires else ("", "")
         gradient_hr = gradient_enabled and (weight_gradient.has_gradient(hr_pos) or weight_gradient.has_gradient(hr_neg))
         if hires and (hp.prompt or hp.negative_prompt or prompt_schedule.has_schedule(hr_pos)
-                      or prompt_schedule.has_schedule(hr_neg) or gradient_hr):
+                      or prompt_schedule.has_schedule(hr_neg) or gradient_hr
+                      or (hooks_mod.hook_config(gp.hooks, "prompt_fusion", {}) is not None
+                          and (prompt_fusion.active(hr_pos) or prompt_fusion.active(hr_neg)))):
             hr_actual = hires_steps(hp.second_pass_steps or gp.steps, hp.denoising_strength)[2]
             hr_embeds = self._encode_scheduled(hr_pos, hr_neg, gp, bs, gp.steps, hp.second_pass_steps or gp.steps,
                                                gradient_total=hr_actual)
@@ -1211,8 +1242,11 @@ class Engine(BaseEngine):
                 save_png(im, path)
                 out_images.append({"path": path, "seed": seed + k, "subseed": subseed + k,
                                    "width": im.width, "height": im.height})
+                if self._intermediate_recorder is not None:
+                    self._intermediate_recorder.final(im, seed + k, it, j)
 
         m = self.model
+        intermediate_artifacts = self._intermediate_recorder.finish() if self._intermediate_recorder else []
         return {
             "images": out_images,
             "timing_s": round(time.monotonic() - t0, 3),
@@ -1222,10 +1256,11 @@ class Engine(BaseEngine):
             "lora_hashes": lora_hashes,
             "scheduler": plan.schedule if plan else schedulers.resolve_schedule(gp.sampler_name, gp.scheduler),
             "warnings": list(ctx.warnings),
+            "intermediate_artifacts": intermediate_artifacts,
         }
 
     # hooks that must not run again on ADetailer's inpainting passes (whole-image effects, or ADetailer itself)
-    _ADETAILER_SKIP_HOOKS = ("adetailer", "tiling", "latent_mirroring", "multidiffusion", "kohya_hrfix", "reference",
+    _ADETAILER_SKIP_HOOKS = ("adetailer", "save_intermediate", "tiling", "latent_mirroring", "multidiffusion", "kohya_hrfix", "reference",
                              "revision", "ip_adapter", "controllllite", "photomaker", "img2imgalt", "soft_inpainting")
 
     def _adetailer(self, gp, req, ctx, cfg, imgs, seeds, idx0, total, pag):
@@ -1286,6 +1321,10 @@ class Engine(BaseEngine):
         c = adapters.normalize(alt, extras.IMG2IMGALT_DEFAULTS)
         steps = int(c["inversion_steps"]) or gp.steps
         enc = embeds
+        if (hooks_mod.hook_config(gp.hooks, "prompt_fusion", {}) is not None
+                and any(prompt_fusion.active(t) for t in
+                        (c["override_prompt"] or gp.prompt, c["override_negative"] or gp.negative_prompt))):
+            raise EngineError(UNSUPPORTED, "Prompt Fusion schedules are not supported during img2img Alternative inversion")
         if c["override_prompt"] or c["override_negative"]:
             if hooks_mod.hook_config(gp.hooks, "neutral_prompt", {}) is not None:
                 candidate = self._encode_scheduled(c["override_prompt"] or gp.prompt, c["override_negative"] or gp.negative_prompt,
@@ -1352,13 +1391,16 @@ class Engine(BaseEngine):
         pipe = self.pipe
         vae = pipe.vae
         with torch.inference_mode():
-            needs_upcast = vae.dtype == torch.float16 and getattr(vae.config, "force_upcast", False)
-            if needs_upcast:
-                vae.to(torch.float32)
-            lat = latents.to(vae.device, vae.dtype) / vae.config.scaling_factor
-            img = vae.decode(lat, return_dict=False)[0]
-            if needs_upcast:
-                vae.to(torch.float16)
+            original_dtype = vae.dtype
+            needs_upcast = original_dtype == torch.float16 and getattr(vae.config, "force_upcast", False)
+            try:
+                if needs_upcast:
+                    vae.to(torch.float32)
+                lat = latents.to(vae.device, vae.dtype) / vae.config.scaling_factor
+                img = vae.decode(lat, return_dict=False)[0]
+            finally:
+                if needs_upcast:
+                    vae.to(original_dtype)
         return pipe.image_processor.postprocess(img, output_type="pil")
 
     # -- extras ----------------------------------------------------------------

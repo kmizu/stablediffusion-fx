@@ -8,7 +8,7 @@ How each project is used:
 - **ported**: code or algorithms were translated from the project; its license applies to those parts.
 - **reimplemented**: the feature was written from scratch from the project's documented behaviour; no code was
   copied. The license is listed for attribution.
-- **dependency**: installed separately (pip / Maven), not redistributed in this repository.
+- **dependency**: installed separately (pip / Maven / external executable), not redistributed in this repository.
 - **data**: data files included in this repository.
 
 Projects without a published license file were not copied from; their features were re-implemented from the
@@ -24,6 +24,9 @@ description of their behaviour only.
 | [mcmonkeyprojects/sd-dynamic-thresholding](https://github.com/mcmonkeyprojects/sd-dynamic-thresholding) | ported | MIT ([text](licenses/mcmonkeyprojects__sd-dynamic-thresholding.txt)) | Dynamic Thresholding (CFG-Fix) math |
 | [tfernd/HyperTile](https://github.com/tfernd/HyperTile) | ported | MIT ([text](licenses/tfernd__HyperTile.txt)) | HyperTile attention tiling |
 | [ljleb/sd-webui-neutral-prompt](https://github.com/ljleb/sd-webui-neutral-prompt) | ported | MIT ([text](licenses/ljleb__sd-webui-neutral-prompt.txt)) | Neutral Prompt parser, nested/signed prompt composition, denoised-x0 operators and CFG rescale |
+| [ljleb/prompt-fusion-extension](https://github.com/ljleb/prompt-fusion-extension) | ported | MIT ([text](licenses/ljleb__prompt-fusion-extension.txt)) | Prompt Fusion parser, AST and interpolation algorithms: upstream lib_prompt_fusion/{ast_nodes,geometries,interpolation_functions,interpolation_tensor,prompt_parser,t_scaler}.py at [1d86996](https://github.com/ljleb/prompt-fusion-extension/tree/1d86996ac4c3d32efaacb8a115600aa6fde6dab6/lib_prompt_fusion) adapted into python/sdfx/fusion/; upstream MIT notice also preserved in python/sdfx/fusion/LICENSE |
+| [AUTOMATIC1111/stable-diffusion-webui-tokenizer](https://github.com/AUTOMATIC1111/stable-diffusion-webui-tokenizer) | reimplemented | no license file published | CLIP text/ID token inspection -> `tokenizer`; clean implementation in python/sdfx/tokenizer_tool.py and native Tokenizer tab from documented behaviour at [ac6d541](https://github.com/AUTOMATIC1111/stable-diffusion-webui-tokenizer/tree/ac6d541c7032e9f9c69c8ead2ed201302b06a4fe); no upstream code copied |
+| [AlUlkesh/sd_save_intermediate_images](https://github.com/AlUlkesh/sd_save_intermediate_images) | reimplemented | Unlicense ([text](licenses/AlUlkesh__sd_save_intermediate_images.txt)) | Sampling snapshots, intermediate gallery and video export -> `save_intermediate`; standalone python/sdfx/save_intermediate.py from upstream behaviour at [a1d7cec](https://github.com/AlUlkesh/sd_save_intermediate_images/tree/a1d7cecff893280d709767794d5654e8cbc6746f) (upstream Unlicense) |
 | [kohya-ss/sd-scripts](https://github.com/kohya-ss/sd-scripts) | ported | Apache-2.0 ([text](licenses/kohya-ss__sd-scripts.txt)) | ControlNet-LLLite module layout |
 | [lllyasviel/Fooocus](https://github.com/lllyasviel/Fooocus) | ported | GPL-3.0 ([text](licenses/lllyasviel__Fooocus.txt)) | Fooocus inpaint patch / head application |
 | [threestudio-project/threestudio](https://github.com/threestudio-project/threestudio) | reimplemented | Apache-2.0 ([text](licenses/threestudio-project__threestudio.txt)) | Zero123 diffusers layout and sampling |
@@ -40,6 +43,7 @@ description of their behaviour only.
 | [microsoft/onnxruntime](https://github.com/microsoft/onnxruntime) | dependency | MIT ([text](licenses/microsoft__onnxruntime.txt)) | WD14 tagger |
 | [ultralytics/ultralytics](https://github.com/ultralytics/ultralytics) | dependency | AGPL-3.0 ([text](licenses/ultralytics__ultralytics.txt)) | YOLO detectors for ADetailer (optional Python package) |
 | [danielgatis/rembg](https://github.com/danielgatis/rembg) | dependency | MIT ([text](licenses/danielgatis__rembg.txt)) | background removal models (optional Python package) |
+| [FFmpeg/FFmpeg](https://github.com/FFmpeg/FFmpeg) | dependency | NOASSERTION ([text](licenses/FFmpeg__FFmpeg.txt)) | Optional external ffmpeg executable for Save Intermediate video export; no FFmpeg binary is bundled or installed by this app. Upstream LICENSE.md explains build-dependent licensing: LGPL-2.1-or-later by default; --enable-gpl changes the combined build to GPL-2.0-or-later, --enable-version3 selects version 3, and linked libraries can change the terms. The selected executable's build and accompanying notices determine its effective license; --enable-nonfree builds are not redistributable. The collected upstream file is the licensing overview ([inspected source](https://github.com/FFmpeg/FFmpeg/blob/46f23be8b1976ed4c8ec85584daabcf0e57a7b9e/LICENSE.md)). |
 | [openjdk/jfx](https://github.com/openjdk/jfx) | dependency | GPL-2.0 ([text](licenses/openjdk__jfx.txt)) | JavaFX UI toolkit |
 | [com-lihaoyi/upickle](https://github.com/com-lihaoyi/upickle) | dependency | MIT ([text](licenses/com-lihaoyi__upickle.txt)) | JSON |
 | [scala/scala3](https://github.com/scala/scala3) | dependency | Apache-2.0 ([text](licenses/scala__scala3.txt)) | Scala runtime |

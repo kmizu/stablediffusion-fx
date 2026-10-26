@@ -16,9 +16,12 @@ class AlwaysOnSuite extends munit.FunSuite:
       // image / model based plugins additionally need an input (covered in BuiltinsSuite)
       if !NeedsInput.contains(p.id) then assert(p.isActive(on(p)), p.id)
     }
-    assertEquals(StandardPlugins.alwaysOn.take(2).map(_.requiresEngineFeatures), Seq(Seq("freeu"), Seq("dynamic_thresholding")))
+    Seq("freeu", "dynamic_thresholding").foreach { id =>
+      assertEquals(StandardPlugins.alwaysOn.find(_.id == id).get.requiresEngineFeatures, Seq(id))
+    }
     StandardPlugins.alwaysOn.foreach {
       case h: HookPlugin => assertEquals(h.requiresEngineFeatures, Seq(h.hook), h.id)
+      case t: TokenizerPlugin => assertEquals(t.requiresEngineFeatures, Seq("tokenizer"))
       case other         => assertEquals(other.requiresEngineFeatures, Nil, other.id)
     }
   }
