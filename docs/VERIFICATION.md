@@ -996,3 +996,67 @@ VAE Tools remain pending their own integrated acceptance. The overall353-entry g
 
 Indices163/248/286/352 are the combined native wave: **98 done /204todo /51NA**,140 distinct pending targets.
 The overall353-entry goal remains unfinished.
+
+## Runtime interruption protection and compact hardware metadata (2026-10-26)
+
+This wave is integrated and its final acceptance passed; indices309/320 are promoted below.
+
+- Index320, `core:prevent-interrupt`: independent rewrite of light-and-ray/sd-webui-prevent-interruption at
+  ea22bc0de11875f3889f09c8e6ed7b879f321d05 (no upstream license grant; no code/assets copied). The actual reader
+  owns defaultOff/revision state and atomically admits interruption/restart. Native GUI/MCP display caches cannot
+  bypass protection. Running cancellation, footer/Esc/SystemInfo and explicit restart share admission; pending-only
+  clearing, shutdown and health recovery stay separate. Five-second frontend convergence and new-process reset
+  match the source. Native has no skip or Web UI reload operation, so neither was invented.
+- Actual reader regressions cover blocked active/queued cancellation with no side effects, strict bool validation,
+  responsive controls while the worker is busy, and ordinary Off behavior. Native process/queue tests cover private
+  owner identities, stale handles, delayed admission, queued work behind unrelated active work, no false forced
+  restart, stop-wins, empty capture, and global cancellation of standalone benchmarks. MCP confirms truthful blocked
+  responses, separate pending clearing and no deferred transport cancellation after unlock.
+- Final independent review reproduced two more failures: detached remembered-model startup reuse and request-ID
+  order differing from actual wire order. Fixes give explicit restart a fresh lifecycle epoch, guard late model/state
+  bookkeeping, and capture wire admission order without serializing expensive JSON under the pipe lock. Both
+  deterministic tests passed in the73-test focused native regression; MCP4 passed afterward
+  (`outputs/prevent-final-ordering-{red,green}.log`). Independent repair review found no further material issue.
+- Prior actual GUI/engine/MCP acceptance passed CPU5checks, SD1.5 and SDXL4checks each, including protected
+  in-progress generation completing and Off stopping SystemInfo's own nonqueue benchmark. Reports are in
+  `outputs/verify-prevent-cpu`, `outputs/verify-prevent-sd15-retry`, `outputs/verify-prevent-sdxl`.
+  The initial interrupted real run had no terminal report and is not counted. Root inspected actual lighthouse
+  outputs. The final helper additionally waits for actual loaded preview pixels before taking the screenshot.
+- Index309, `hardware_info`: independent rewrite of light-and-ray/sd-webui-hardware-info-in-metadata at
+  784a0dd8521108815aff007d7a4807ac6f98d251 (no upstream code copied). Source compact normalization, per-image batch
+  timing/reset, remark, Extras whole-operation timing and two informational paste notices are implemented.
+  Native adaptations are explicit opt-in, actual active device, per-operation settings snapshots, and offline
+  metadata restoration. Queue wait/model preloading and final file publication are outside timing boundaries.
+- Hardware records are typed and associated with each result/seed, remove only reserved stale imported facts,
+  preserve foreign PNG metadata and refuse input aliases. No kernel/RNG hook or second preparation pass is added.
+  A review-found passive lookup race now uses a bounded nonstarting status request bound to the captured process;
+  stale completion cannot migrate facts into a replacement process. Ownership/cache7tests and actual native CPU
+  acceptance passed (`.worktrees/hardware-info/outputs/hardware-status-native-final-green.log`).
+- Hardware actual SD1.5 and SDXL native controls each passed5checks, including four records across batch2/iterations2,
+  exact enabled/off pixel parity, literal Japanese/multiline remark persistence, independent SystemInfo selection,
+  img2img, hires, actual Extras, original-byte preservation, bounded equal/unknown/different device notices and
+  final gallery isolation. Reports/screenshots: `.worktrees/hardware-info/outputs/verify-hardware-native-{sd15,sdxl}`;
+  log `hardware-real-parent.log`. Root inspected the cards and actual generated images. Four-step results establish
+  metadata neutrality/routing, not image quality. Missing declared psutil==7.0.0 in the no-Torch acceptance venv was
+  installed; the unknown-profile assertion was retained. No driver/model source is modified or bundled.
+
+Final integrated evidence:
+
+- Full Scala **596 passed**, assembly successful (`outputs/control-metadata-release.log`). Jar SHA256:
+  `C27F6F7D99CDFBD9D5A520F043FC8012A92E68294F535464DEB121C0193DCA16`.
+- Full Python **867 passed/1 skipped**,8 warnings (`outputs/control-metadata-python-cpu.log` and JUnit), with
+  CUDA hidden for the tiny CPU pipeline fixtures. The first run omitted that environment and exposed19 fixture
+  device mismatches plus5 legacy partial-request fixture failures; it was not accepted. Three WeightGradient test
+  stubs now use real GenerationRequest defaults. Production validation and existing assertions remain unchanged.
+  NoTorch **397 passed/82 skipped**, including collection skips (`outputs/control-metadata-notorch.log`/JUnit).
+- All six final native runs passed sequentially through the integrated main source
+  (`outputs/control-metadata-native-final.log`): protection CPU5checks/SD1.5+SDXL4checks each, hardware CPU+SD1.5+
+  SDXL5checks each. Read actual reports/screenshots in `outputs/verify-control-final-{cpu,sd15,sdxl}` and
+  `outputs/verify-hardware-final-{cpu,sd15,sdxl}`. Protection screenshots now wait for loaded completed preview pixels;
+  root inspected final visible image/footer and final hardware metadata card/output. Every run shut down cleanly.
+- Independent source/integration review approved preservation of Styles/VAE/Comparison/Tokenizer, ExtendedStyle,
+  grid/latent/Composable restore, SystemInfo lifecycle, private cancellation ownership and metadata routing.
+  Notice collector completed128projects (`outputs/control-metadata-notices.log`); original license/crypto fixture
+  bytes were preserved. Code whitespace checks exclude those verbatim archives.
+
+Result: **100 done /202todo /51NA**,138 distinct pending targets. The overall353-entry objective remains active.

@@ -12,7 +12,8 @@ import java.util.UUID
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 import java.util.concurrent.{CopyOnWriteArrayList, LinkedBlockingQueue, TimeUnit}
 import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.{Await, ExecutionContext, Future, Promise}
+import scala.concurrent.duration.*
 import scala.jdk.CollectionConverters.*
 import scala.util.control.NonFatal
 
@@ -80,9 +81,17 @@ object JobRunner:
       val c = e.getCause
       c != null && (c ne e) && isInterruption(c)
 
+/** Truthful user-action outcome; pending-only queue operations are separate. */
+final case class QueueInterruption(interrupted: Boolean, blocked: Boolean, protection: InterruptionProtection,
+    message: Option[String] = None)
+
+final case class QueueCancellation(cancelled: Boolean, blocked: Boolean,
+    protection: Option[InterruptionProtection] = None, message: Option[String] = None)
+
 /** FIFO job queue with a single worker thread. */
-final class JobQueue(generator: Generator, interruptEngine: () => Unit):
-  private final class Entry(val job: Job, val promise: Promise[JobOutput])
+final class JobQueue(generator: Generator, interruptEngine: Option[String] => Future[InterruptionDecision]):
+  private final class Entry(val job: Job, val promise: Promise[JobOutput]):
+    val interruptionOwner: String = UUID.randomUUID().toString
 
   private val queue = new LinkedBlockingQueue[Entry]()
   private val listeners = new CopyOnWriteArrayList[JobEvent => Unit]()
@@ -112,26 +121,58 @@ final class JobQueue(generator: Generator, interruptEngine: () => Unit):
   def current: Option[Job] = running.map(_._1.job)
   def isIdle: Boolean = running.isEmpty && queue.isEmpty
 
-  /** Stops the running job (its script loop and the engine generation). */
-  def interruptCurrent(): Boolean =
-    running match
-      case Some((_, flag)) =>
-        flag.set(true)
-        try interruptEngine()
-        catch case NonFatal(_) => ()
-        true
-      case None => false
+  /** Admission precedes mutation. Captured identity prevents a late reply from cancelling the next job. */
+  def interruptCurrentResult(): Future[QueueInterruption] = interruptFor(None)
+
+  private def interruptFor(expectedJob: Option[String]): Future[QueueInterruption] =
+    captureInterruptFor(expectedJob, None)()
+
+  /** The common runtime control may target nonqueue work, but native flags still
+    * belong exclusively to the entry captured before dispatch.
+    */
+  private[engine] def captureRuntimeInterrupt(fallback: () => Future[InterruptionDecision]): () => Future[QueueInterruption] =
+    captureInterruptFor(None, Some(fallback))
+
+  private def captureInterruptFor(expectedJob: Option[String], fallback: Option[() => Future[InterruptionDecision]]): () => Future[QueueInterruption] =
+    val captured = running.filter((entry, _) => expectedJob.forall(_ == entry.job.id))
+    if expectedJob.nonEmpty && captured.isEmpty then
+      return () => Future.successful(QueueInterruption(false, false, InterruptionProtection()))
+    // Even an idle capture has an identity: never turn a delayed idle action
+    // into a global cancellation of a job which started after this capture.
+    val owner = captured.map(_._1.interruptionOwner).getOrElse(UUID.randomUUID().toString)
+    // A global action targets the captured actual backend request even when a
+    // native entry is waiting behind other work; its loop flag is independent.
+    // Queue-only cancellation retains its immutable entry-owner restriction.
+    val dispatch = fallback.getOrElse(() => interruptEngine(Some(owner)))
+    () => dispatch().map { decision =>
+      require(decision.accepted != decision.blocked, "Invalid interruption admission response")
+      val same = captured.exists { (entry, flag) =>
+        val current = running.exists((active, _) => active eq entry)
+        if decision.accepted && current then flag.set(true)
+        current
+      }
+      QueueInterruption(decision.accepted && (same || decision.affected), decision.blocked,
+        decision.protection, decision.message)
+    }(using ExecutionContext.parasitic)
+
+  /** Blocking compatibility facade for worker/MCP callers; the JavaFX UI uses the asynchronous outcome. */
+  def interruptCurrent(): Boolean = Await.result(interruptCurrentResult(), 5.seconds).interrupted
 
   /** Cancels a pending job or interrupts it if it is running. */
-  def cancel(jobId: String): Boolean =
-    if running.exists(_._1.job.id == jobId) then interruptCurrent()
+  def cancelResult(jobId: String): Future[QueueCancellation] =
+    if running.exists(_._1.job.id == jobId) then
+      interruptFor(Some(jobId)).map(r => QueueCancellation(r.interrupted, r.blocked, Some(r.protection), r.message))(
+        using ExecutionContext.parasitic)
     else
-      queue.asScala.find(_.job.id == jobId) match
+      val cancelled = queue.asScala.find(_.job.id == jobId) match
         case Some(e) if queue.remove(e) =>
           e.promise.tryFailure(JobCancelledException(jobId, JobOutput(Nil)))
           emit(JobEvent.JobCancelled(jobId, JobOutput(Nil)))
           true
         case _ => false
+      Future.successful(QueueCancellation(cancelled, false))
+
+  def cancel(jobId: String): Boolean = Await.result(cancelResult(jobId), 5.seconds).cancelled
 
   /** Drops all pending jobs; returns how many were removed. The running job continues. */
   def clear(): Int =
@@ -146,7 +187,8 @@ final class JobQueue(generator: Generator, interruptEngine: () => Unit):
   def shutdown(): Unit =
     stopped = true
     clear()
-    interruptCurrent()
+    // Internal teardown is intentionally outside user protection. AppServices closes the owned engine next.
+    running.foreach((_, flag) => flag.set(true))
     worker.interrupt()
 
   private val worker: Thread =
@@ -179,6 +221,7 @@ final class JobQueue(generator: Generator, interruptEngine: () => Unit):
     @volatile var done = 0
     @volatile var total = 0
     val listener = new GenerationListener:
+      override def interruptionOwner: Option[String] = Some(e.interruptionOwner)
       override def onProgress(p: EngineEvent.Progress): Unit = emit(JobEvent.Progress(id, p, statusText, done, total))
       override def onPreview(p: EngineEvent.Preview): Unit = emit(JobEvent.Preview(id, p.jpegB64, p.step))
       override def onLog(message: String): Unit = emit(JobEvent.Log(id, message))

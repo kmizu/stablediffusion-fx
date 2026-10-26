@@ -75,6 +75,10 @@ state = {
 }
 interrupted = threading.Event()
 work = queue.Queue()
+work_lock = threading.Lock()
+active = {"id": None, "owner": None}
+queued_owners = {}
+cancelled = set()
 
 
 def model_info():
@@ -145,7 +149,6 @@ def generate(rid, kind, req):
 def handle_work(rid, typ, params):
     try:
         if typ in ("txt2img", "img2img"):
-            interrupted.clear()
             generate(rid, typ, params)
         elif typ == "vae_tools":
             error(rid, "unsupported", "VAE Tools requires a real loaded VAE; fake engine cannot encode or decode latents")
@@ -188,8 +191,23 @@ def handle_work(rid, typ, params):
 
 def worker():
     while True:
-        rid, typ, params = work.get()
-        handle_work(rid, typ, params)
+        rid, typ, params, owner = work.get()
+        with work_lock:
+            queued_owners.pop(rid, None)
+            skip = rid in cancelled
+            cancelled.discard(rid)
+            if not skip:
+                interrupted.clear()
+                active.update(id=rid, owner=owner)
+        if skip:
+            error(rid, "interrupted", "interrupted before start")
+            continue
+        try:
+            handle_work(rid, typ, params)
+        finally:
+            with work_lock:
+                active.update(id=None, owner=None)
+                interrupted.clear()
 
 
 def list_dir(dirs, exts):
@@ -207,6 +225,7 @@ def list_dir(dirs, exts):
 
 
 def main():
+    protection = {"enabled": False, "revision": 0}
     if opt("--crash-on-start"):
         sys.stderr.write("boom at start\n")
         sys.exit(2)
@@ -238,9 +257,34 @@ def main():
             sys.stderr.write("crashing on purpose\n")
             sys.stderr.flush()
             os._exit(3)
-        elif typ == "interrupt":
-            interrupted.set()
-            result(rid, {})
+        elif typ == "interruption_protection":
+            if "enabled" in params and not isinstance(params["enabled"], bool):
+                error(rid, "invalid_params", "enabled must be boolean")
+                continue
+            if "enabled" in params and params["enabled"] != protection["enabled"]:
+                protection["enabled"] = params["enabled"]
+                protection["revision"] += 1
+            result(rid, dict(protection))
+        elif typ in ("interrupt", "restart_authorization"):
+            blocked = protection["enabled"]
+            affected = False
+            active_id = None
+            if typ == "interrupt" and not blocked:
+                target, owner = params.get("target_id"), params.get("owner_id")
+                with work_lock:
+                    if (active["id"] is not None and (target is None or target == active["id"])
+                            and (owner is None or owner == active["owner"])):
+                        interrupted.set()
+                        affected = True
+                        active_id = active["id"]
+                    else:
+                        queued = next((key for key, value in queued_owners.items()
+                                       if (target is None or target == key) and (owner is None or owner == value)), None)
+                        if queued is not None:
+                            cancelled.add(queued)
+                            affected = True
+            result(rid, {"accepted": not blocked, "blocked": blocked, "affected": affected, "active_id": active_id,
+                         "protection": dict(protection), "message": "Interruptions are blocked" if blocked else None})
         elif typ == "memory":
             result(rid, {"allocated_mb": 1.5, "reserved_mb": 2.0, "total_mb": 8192.0, "ram_used_mb": 100.0})
         elif typ == "echo":
@@ -270,7 +314,10 @@ def main():
                          "upscalers": ["Latent", "Lanczos"],
                          "preprocessors": ["none", "canny"]})
         else:
-            work.put((rid, typ, params))
+            owner = msg.get("owner_id")
+            with work_lock:
+                queued_owners[rid] = owner
+            work.put((rid, typ, params, owner))
 
 
 if __name__ == "__main__":

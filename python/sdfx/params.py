@@ -176,6 +176,12 @@ class GenerationParams:
 
 
 @dataclass
+class HardwareInfoOptions:
+    enabled: bool = False
+    remark: str = ''
+
+
+@dataclass
 class GenerationRequest:
     params: GenerationParams = field(default_factory=GenerationParams)
     output_dir: str = ""
@@ -188,6 +194,7 @@ class GenerationRequest:
     lbw_presets: Dict[str, str] = field(default_factory=dict)   # LoRA Block Weight user presets (NAME -> weights)
     system_info_fields: List[str] = field(default_factory=list)  # explicit opt-in only
     vae_recovery_dir: str = ""  # persistent recovery artifacts; never overwrite source inputs
+    hardware_info: HardwareInfoOptions = field(default_factory=HardwareInfoOptions)
 
 
 @dataclass
@@ -206,6 +213,7 @@ class UpscaleRequest:
     scale: float = 2.0
     output_dir: str = ""
     upscaler_paths: Dict[str, str] = field(default_factory=dict)
+    hardware_info: HardwareInfoOptions = field(default_factory=HardwareInfoOptions)
 
 
 @dataclass

@@ -2,7 +2,7 @@ package sdfx.engine
 
 import sdfx.core.config.{AppHome, Settings}
 import sdfx.core.gallery.OutputNaming
-import sdfx.core.infotext.{ImageFacts, Infotext}
+import sdfx.core.infotext.{HardwareInfo, ImageFacts, Infotext}
 import sdfx.core.model.*
 import sdfx.core.plugins.api.*
 import sdfx.core.png.PngMetadata
@@ -17,6 +17,8 @@ import scala.util.control.NonFatal
 
 /** Receives everything a single job produces. All callbacks run on the job thread or the engine reader thread. */
 trait GenerationListener:
+  /** Private transport identity for queued work; never part of GenerationParams or image metadata. */
+  def interruptionOwner: Option[String] = None
   def onProgress(p: EngineEvent.Progress): Unit = ()
   def onPreview(p: EngineEvent.Preview): Unit = ()
   def onLog(message: String): Unit = ()
@@ -119,6 +121,7 @@ final class Generator(
           engineInterrupted.set(true)
           throw e
     val scopedListener: GenerationListener = new GenerationListener:
+      override def interruptionOwner: Option[String] = listener.interruptionOwner
       override def onProgress(p: EngineEvent.Progress): Unit = listener.onProgress(p)
       override def onPreview(p: EngineEvent.Preview): Unit = listener.onPreview(p)
       override def onLog(m: String): Unit = listener.onLog(m)
@@ -132,7 +135,7 @@ final class Generator(
         guard(self.generateTransientWith(limited(p), scopedListener))
       def upscale(image: Path, upscaler: String, scale: Double): Path = guard {
         if isInterrupted then throw interruptedError
-        val out = self.upscaleImage(image, upscaler, scale)
+        val out = self.upscaleImage(image, upscaler, scale, listener.interruptionOwner)
         listener.onTempFile(out)
         out
       }
@@ -195,7 +198,8 @@ final class Generator(
     val (prompt, negative) =
       if p0.styles.isEmpty then (p0.prompt, p0.negativePrompt)
       else Styles.apply(styleSource(), p0.styles, p0.prompt, p0.negativePrompt)
-    val recorded = p0.copy(prompt = prompt, negativePrompt = negative, styles = Nil, seed = seed, subseed = subseed)
+    val recorded = p0.copy(prompt = prompt, negativePrompt = negative, styles = Nil, seed = seed, subseed = subseed,
+      extra = p0.extra.filterNot((key, _) => HardwareInfo.fieldNames(key)))
 
     val ex = LoraSyntax.extract(prompt)
     val hrEx = LoraSyntax.extract(recorded.hires.prompt)
@@ -262,6 +266,7 @@ final class Generator(
       previewEvery = s.previewEvery,
       previewMethod = s.previewMethod,
       systemInfoFields = s.systemInfoMetadataFields,
+      hardwareInfo = HardwareInfo.Options(s.hardwareInfoEnabled, s.hardwareInfoRemark),
       vaeRecoveryDir = home.outputs(s).toAbsolutePath.toString,
       lbwPresets = if sent.loras.exists(_.lbw.nonEmpty) then Generator.lbwPresets(home.configDir) else Map.empty
     )
@@ -326,19 +331,19 @@ final class Generator(
         .getOrElse(throw EngineError(Protocol.ErrorCodes.InvalidParams, s"checkpoint not found: $name"))
       if !client.supervisor.loadedModel.exists(m => samePath(m.path, path)) then
         listener.onLog(s"loading checkpoint $name")
-        val m = await(client.loadModel(LoadModelRequest(path, s.dtype, s.vramMode, None, s.vaeTiling)), timeouts.load, "load_model")
+        val m = await(client.loadModelOwned(LoadModelRequest(path, s.dtype, s.vramMode, None, s.vaeTiling), listener.interruptionOwner), timeouts.load, "load_model")
         catalog.rememberHash(m)
     }
     p.vae.map(_.trim).filter(_.nonEmpty).foreach { v =>
       val loaded = client.supervisor.loadedModel
       if v == "Automatic" || v == "None" then
-        if loaded.exists(_.vaeName.isDefined) then await(client.setVae(None), timeouts.load, "set_vae")
+        if loaded.exists(_.vaeName.isDefined) then await(client.setVaeOwned(None, listener.interruptionOwner), timeouts.load, "set_vae")
       else
         val e = catalog.findVae(v).getOrElse(throw EngineError(Protocol.ErrorCodes.InvalidParams, s"VAE not found: $v"))
         def stem(x: String) = Paths.get(x.replace('\\', '/')).getFileName.toString.replaceFirst("\\.[^.]+$", "")
         if !loaded.flatMap(_.vaeName).exists(n => n == e.name || stem(n) == stem(e.name) || stem(n) == stem(e.path)) then
           listener.onLog(s"loading VAE ${e.name}")
-          await(client.setVae(Some(e.path)), timeouts.load, "set_vae")
+          await(client.setVaeOwned(Some(e.path), listener.interruptionOwner), timeouts.load, "set_vae")
     }
 
   /** Runs one generation and saves every image under outputs/<txt2img|img2img>/<date>/. */
@@ -372,7 +377,7 @@ final class Generator(
       loraHashes = result.loraHashes.toSeq.sortBy(_._1),
       scheduler = result.scheduler,
       extra = scala.collection.immutable.ListMap.from(result.systemInfo.toSeq.map(v => "System Info" -> v.render()) ++
-        Option.when(result.vaeRecovery.nonEmpty)("VAE recovery" -> ujson.Arr.from(result.vaeRecovery).render()))
+        Option.when(result.vaeRecovery.nonEmpty)("VAE recovery" -> ujson.Arr.from(result.vaeRecovery).render())) ++ HardwareInfo.fields(img.hardwareInfo)
     )
     (params, Infotext.write(params, facts))
 
@@ -383,13 +388,13 @@ final class Generator(
     ensureModel(prep.recorded, listener)
     if listener.isInterrupted then throw interruptedError
     val activity = new java.util.concurrent.atomic.AtomicLong(System.nanoTime())
-    val handle = client.generate(prep.request, prep.mode, { ev =>
+    val handle = client.generateOwned(prep.request, prep.mode, { ev =>
       activity.set(System.nanoTime())
       ev match
         case e: EngineEvent.Progress => listener.onProgress(e)
         case e: EngineEvent.Preview  => listener.onPreview(e)
         case EngineEvent.Log(_, m)   => listener.onLog(m)
-    })
+    }, listener.interruptionOwner)
     val result = awaitActive(handle.result, activity)
     result.images.foreach(i => listener.onTempFile(Paths.get(i.path)))
     result.warnings.foreach(listener.onLog)
@@ -435,7 +440,7 @@ final class Generator(
   def engineCallWith(kind: String, params: ujson.Obj, listener: GenerationListener): ujson.Value =
     val p = ujson.Obj.from(params.value)
     if !p.value.contains("output_dir") then p("output_dir") = home.tmpDir(settings()).toAbsolutePath.toString
-    val r = await(client.raw(kind, p, {
+    val r = await(client.rawOwned(kind, p, listener.interruptionOwner, {
       case e: EngineEvent.Progress => listener.onProgress(e)
       case e: EngineEvent.Preview  => listener.onPreview(e)
       case EngineEvent.Log(_, m)   => listener.onLog(m)
@@ -450,11 +455,25 @@ final class Generator(
       case _ => ()
     r
 
-  def upscaleImage(image: Path, upscaler: String, scale: Double): Path =
+  def upscaleImage(image: Path, upscaler: String, scale: Double, owner: Option[String] = None): Path =
     val s = settings()
     val paths = catalog.findUpscaler(upscaler).map(e => upscaler -> e.path).toMap
-    val r = await(client.upscale(UpscaleRequest(image.toAbsolutePath.toString, upscaler, scale, home.tmpDir(s).toAbsolutePath.toString, paths)), timeouts.upscale, "upscale")
-    Paths.get(r.path)
+    val req = UpscaleRequest(image.toAbsolutePath.toString, upscaler, scale, home.tmpDir(s).toAbsolutePath.toString, paths,
+      HardwareInfo.Options(s.hardwareInfoEnabled, s.hardwareInfoRemark))
+    val r = Json.fromJs[ImagePathResult](await(client.rawOwned(Protocol.Types.Upscale, Json.toJs(req), owner), timeouts.upscale, "upscale"))
+    val output = Paths.get(r.path)
+    r.hardwareInfo.foreach { record =>
+      require(!Files.isSameFile(image, output), "Upscale metadata cannot overwrite the original input image")
+      val pixels = PngMetadata.readImage(output)
+      val existing = PngMetadata.readTexts(output)
+      val processing = scala.collection.immutable.ListMap("Postprocess upscaler" -> upscaler,
+        "Postprocess upscale by" -> scale.toString, "Size" -> s"${pixels.getWidth}x${pixels.getHeight}") ++ HardwareInfo.fields(Some(record))
+      val extra = existing.toSeq.filterNot(_._1 == PngMetadata.ParametersKey) ++
+        existing.get(PngMetadata.ParametersKey).filter(_.nonEmpty).filter(_ => !existing.contains("Source parameters"))
+          .map("Source parameters" -> _)
+      PngMetadata.write(pixels, output, (PngMetadata.ParametersKey -> Infotext.render("", "", processing)) +: extra)
+    }
+    output
 
   def preprocess(image: Path, preprocessor: String, args: Map[String, Double] = Map.empty): Path =
     val s = settings()

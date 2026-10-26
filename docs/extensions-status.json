@@ -1857,7 +1857,7 @@
 "index": 309,
 "name": "Hardware Info in metadata",
 "url": "https://github.com/light-and-ray/sd-webui-hardware-info-in-metadata.git",
-"status": "todo:hardware_info"
+"status": "done:hardware_info"
 },
 {
 "index": 310,
@@ -1923,7 +1923,7 @@
 "index": 320,
 "name": "Prevent interruption",
 "url": "https://github.com/light-and-ray/sd-webui-prevent-interruption.git",
-"status": "todo:core:prevent-interrupt"
+"status": "done:core:prevent-interrupt"
 },
 {
 "index": 321,

@@ -10,6 +10,7 @@ import javafx.stage.{Screen, Stage}
 import javafx.util.Duration
 import sdfx.core.gallery.GalleryItem
 import sdfx.core.model.ExtendedStyle
+import sdfx.core.infotext.HardwareInfo
 import sdfx.core.plugins.api.Plugin
 import sdfx.engine.{AppServices, EngineState, JobEvent}
 import sdfx.ui.view.*
@@ -106,7 +107,9 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   val systemInfo = new SystemInfoTab(ctx)
   val stylesEditor = new StylesEditorTab(ctx)
   val vaeTools = new VaeToolsTab(ctx)
-  val statusBar = new StatusBar(progress, () => generate(false), () => generate(true), () => interrupt(), () => clearQueue())
+  private val interruptionControls = new InterruptionControls(ctx)
+  val statusBar = new StatusBar(progress, () => generate(false), () => generate(true), () => interrupt(),
+    () => clearQueue(), interruptionControls.node)
   val topBar = new TopBar(ctx, model, loadCheckpoint, setVae, () => refreshCatalog(), () => restartEngine(), () => openSettings())
 
   private val tabs = new TabPane()
@@ -253,6 +256,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
           case None => Fx.async(ImageFiles.saveFxImage(ctx, image, "comparison-"))(send)(e => ctx.error(Fx.message(e)))
         event.consume()
   )
+  ctx.interruptRuntime = () => interrupt()
   ctx.loadStyles()
 
   services.catalog.addListener(snap => Fx.run(catalogVM.update(snap, services.catalog.choices)))
@@ -370,7 +374,15 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
       case None => submit(Nil)
 
   def interrupt(): Unit =
-    if services.queue.interruptCurrent() then statusBar.log("[ui] interrupt requested")
+    Fx.onFx(services.interruptRuntime()) { result =>
+      interruptionControls.refresh()
+      if result.blocked then
+        val message = result.message.getOrElse("Interruptions are blocked")
+        statusBar.log(message)
+        ctx.info(message)
+      else if result.interrupted then statusBar.log("[ui] interrupt requested")
+      else ctx.info("Nothing is running")
+    }(e => ctx.error("Cannot request interruption: " + Fx.message(e)))
 
   def clearQueue(): Unit =
     val n = services.queue.clear()
@@ -381,12 +393,14 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
     vm.initImage.set(path.toString)
     infotext.foreach { t =>
       restorePlugins(mode, t, vm.restoreInfotext(t))
+      noticeHardware(t)
     }
     select(mode)
     ctx.info(s"Sent to ${mode.label}")
 
   def restore(infotext: String): Unit =
     val parsed = sdfx.core.infotext.Infotext.parse(infotext)
+    noticeHardware(infotext)
     val mode = if activeMode == Mode.Txt2Img && sdfx.plugins.LatentUpscalePlugin.replay(parsed.fields).nonEmpty then Mode.Img2Img else activeMode
     restorePlugins(mode, infotext, vms(mode).restoreInfotext(infotext))
     select(mode)
@@ -397,6 +411,16 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
         ctx.info(s"Parameters restored · switching checkpoint to ${e.name}")
       case None =>
         ctx.success(s"Parameters restored into ${mode.label}")
+
+  private val hardwareNotices = new HardwareInfo.PasteNotices
+  private var disposed = false
+  private def noticeHardware(infotext: String): Unit =
+    val imported = sdfx.core.infotext.Infotext.parse(infotext).get("Hardware Info")
+    if imported.nonEmpty then Fx.onFx(ctx.hardwareInfo.profile()) { local =>
+      if !disposed then hardwareNotices.pasted(local, imported).foreach { difference =>
+        ctx.info(s"Recorded device differs: image ${difference.imageDevice}; current ${difference.currentDevice}")
+      }
+    }(_ => ()) // Provenance lookup failure must not interfere with ordinary parameter restoration.
 
   private def restorePlugins(mode: Mode, infotext: String, params: sdfx.core.model.GenerationParams): Unit =
     plugins(mode).restoreInfotext(infotext)
@@ -507,7 +531,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   def restartEngine(): Unit =
     statusBar.log("[ui] restarting engine")
     Fx.async {
-      scala.concurrent.Await.result(services.supervisor.forceRestart(), scala.concurrent.duration.Duration(3, "min"))
+      services.supervisor.restart()
       services.catalog.refresh()
     }(_ =>
       refreshChip()
@@ -677,6 +701,8 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
     catch case NonFatal(e) => System.err.println(s"[sdfx] cannot save ui state: ${e.getMessage}")
 
   def dispose(): Unit =
+    interruptionControls.dispose()
+    disposed = true
     systemInfo.dispose()
     stylesEditor.dispose()
     vramPoll.stop()

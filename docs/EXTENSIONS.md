@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 98, todo 204, na 51.
+Totals: done 100, todo 202, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-fx | Why not applicable |
 |---|---|---|---|---|---|
@@ -315,7 +315,7 @@ Totals: done 98, todo 204, na 51.
 | 306 | [Readme browser](https://github.com/light-and-ray/sd-webui-readme-browser.git) | 11 | na | `webui-ux` | Gradio page behaviour (tabs, buttons, dialogs); the desktop UI provides the equivalent natively |
 | 307 | [D2 Prompt Selector](https://github.com/da2el-ai/sd-d2-prompt-selector.git) | 6 | todo | `core:prompt-tools` |  |
 | 308 | [Untitled Merger](https://github.com/silveroxides/sd-webui-untitledmerger.git) | 22 | done | `model_merge` |  |
-| 309 | [Hardware Info in metadata](https://github.com/light-and-ray/sd-webui-hardware-info-in-metadata.git) | 6 | todo | `hardware_info` |  |
+| 309 | [Hardware Info in metadata](https://github.com/light-and-ray/sd-webui-hardware-info-in-metadata.git) | 6 | done | `hardware_info` |  |
 | 310 | [PNGINFO Beautify](https://github.com/bluelovers/sd-webui-pnginfo-beautify.git) | 32 | done | `core:png-info` |  |
 | 311 | [InputAccordion Highlight](https://github.com/w-e-w/sd-webui-input-accordion-highlight.git) | 9 | na | `webui-css` | styles / JavaScript tweaks of the Gradio web page; the JavaFX UI has its own theme and layout |
 | 312 | [Metadata Utils](https://github.com/Tzigo/metadata_utils.git) | 8 | todo | `metadata_utils` |  |
@@ -326,7 +326,7 @@ Totals: done 98, todo 204, na 51.
 | 317 | [Aspect Ratio and Resolution Buttons (ar-plusplus)](https://github.com/altoiddealer/--sd-webui-ar-plusplus.git) | 69 | done | `core:size-presets` |  |
 | 318 | [ScramblePrompts [m9]](https://github.com/MarcusNyne/sd-scramble-prompts-m9.git) | 9 | done | `scramble_prompts` |  |
 | 319 | [TweakWeights [m9]](https://github.com/MarcusNyne/sd-tweak-weights-m9.git) | 2 | done | `tweak_weights` |  |
-| 320 | [Prevent interruption](https://github.com/light-and-ray/sd-webui-prevent-interruption.git) | 1 | todo | `core:prevent-interrupt` |  |
+| 320 | [Prevent interruption](https://github.com/light-and-ray/sd-webui-prevent-interruption.git) | 1 | done | `core:prevent-interrupt` |  |
 | 321 | [Waifu2x Upscaler](https://github.com/light-and-ray/sd-webui-waifu2x-upscaler.git) | 6 | todo | `waifu2x` |  |
 | 322 | [sd-webui-udav2](https://github.com/MackinationsAi/sd-webui-udav2.git) | 45 | todo | `depth_anything` |  |
 | 323 | [Topaz Photo AI integration](https://github.com/light-and-ray/sd-webui-topaz-photo-ai-integration.git) | 12 | na | `external-app` | bridge to a specific external application (Photoshop, Krita, ComfyUI, ...) |

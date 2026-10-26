@@ -16,6 +16,7 @@ final class UiContext(val services: AppServices, val catalog: CatalogVM, val sta
   val styles: ObservableList[PromptStyle] = FXCollections.observableArrayList()
   private var styleRefresh = 0L
   lazy val styleLibrary = new StyleLibrary(services.home.stylesFile)
+  lazy val hardwareInfo = new sdfx.engine.HardwareInfoService(services)
   var openStylesEditor: () => Unit = () => ()
   var currentGeneration: () => GenerationParams = () => GenerationParams()
   var applyPromptStyle: PromptStyle => Unit = _ => ()
@@ -29,6 +30,8 @@ final class UiContext(val services: AppServices, val catalog: CatalogVM, val sta
   var showImage: Path => Unit = _ => ()
   /** Read-only comparison routes, wired by MainWindow. */
   var comparePair: (Path, Path) => Unit = (_, _) => ()
+  /** Shared native cancellation route; MainWindow includes its job loop and truthful action feedback. */
+  var interruptRuntime: () => Unit = () => services.client.interrupt()
 
   def info(msg: String): Unit = toaster.show(msg, Toaster.Kind.Info)
   def error(msg: String): Unit = toaster.show(msg, Toaster.Kind.Error)

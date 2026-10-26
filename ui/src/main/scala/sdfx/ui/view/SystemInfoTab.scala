@@ -17,6 +17,7 @@ import java.nio.file.Files
 /** Read-only diagnostics, explicit benchmark workload, and preview-before-send legacy submission. */
 final class SystemInfoTab(ctx: UiContext):
   private val service = new SystemInfoService(ctx.services)
+  private val hardwareMetadata = new HardwareMetadataPane(ctx)
   private var current: ujson.Value = ujson.Obj()
   private var active = false
   private var initialized = false
@@ -48,8 +49,7 @@ final class SystemInfoTab(ctx: UiContext):
   private val exportButton = W.button("Export JSON…", "Save the report you can inspect in Info JSON")(exportJson(current, "system-info.json"))
   exportButton.setId("system-info-export")
   private val interrupt = W.button("Send interrupt", "Interrupt the active engine request, including a benchmark") {
-    ctx.services.client.interrupt()
-    status.setText("Interrupt requested")
+    ctx.interruptRuntime()
   }
   interrupt.setId("system-info-interrupt")
   private val xAxis = new NumberAxis()
@@ -80,6 +80,7 @@ final class SystemInfoTab(ctx: UiContext):
   private val metadataHelp = W.label("Optional image metadata: selected fields are written into future generated PNGs. All fields start off; this setting persists locally.", "muted")
   metadataHelp.setWrapText(true)
   private val metadataPane = new TitledPane("Image metadata (opt-in)", new VBox(8, metadataHelp, metadata))
+  metadataPane.setId("system-info-metadata")
   metadataPane.setExpanded(false)
 
   private val level = combo("system-benchmark-level", Seq("quick", "normal", "extensive", "ludicrous"), "normal")
@@ -141,10 +142,13 @@ final class SystemInfoTab(ctx: UiContext):
   tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE)
   tabs.getTabs.addAll(new Tab("Overview", overviewBox), new Tab("Models & Networks", networks),
     new Tab("Benchmark", scroll(benchmarkBox)), new Tab("Info JSON", json))
-  private val content = new VBox(10, W.hbox(6, refresh, hash, exportButton, interrupt), status, tabs, metadataPane)
+  private val content = new VBox(10, W.hbox(6, refresh, hash, exportButton, interrupt), status, hardwareMetadata.node, tabs, metadataPane)
   content.setPadding(new Insets(12))
   VBox.setVgrow(tabs, Priority.ALWAYS)
-  val node: VBox = content
+  tabs.setMinHeight(280)
+  val node = new ScrollPane(content)
+  node.setFitToWidth(true)
+  node.setFitToHeight(true)
   node.setId("system-info-tool")
   private val timer = new Timeline(new KeyFrame(Duration.seconds(5), _ => refreshStatus()))
   timer.setCycleCount(javafx.animation.Animation.INDEFINITE)
@@ -161,7 +165,9 @@ final class SystemInfoTab(ctx: UiContext):
       timer.play()
     else timer.stop()
 
-  def dispose(): Unit = timer.stop()
+  def dispose(): Unit =
+    timer.stop()
+    hardwareMetadata.dispose()
 
   private def refreshStatus(): Unit =
     if active && !statusBusy then

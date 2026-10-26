@@ -6,7 +6,7 @@ torch = pytest.importorskip("torch")
 pytest.importorskip("diffusers")
 
 from sdfx.engine import Engine  # noqa: E402
-from sdfx.params import GenerationParams, HiresParams, Img2ImgParams  # noqa: E402
+from sdfx.params import GenerationParams, GenerationRequest, HiresParams, Img2ImgParams  # noqa: E402
 from sdfx.protocol import EngineError  # noqa: E402
 
 
@@ -42,7 +42,7 @@ def test_engine_schedules_both_prompts_and_hires_with_opt_in():
 def test_photomaker_rejects_dynamic_gradient_instead_of_silently_using_raw_tags():
     engine, _ = fake_engine()
     gp = GenerationParams(prompt="a woman img {red scarf::0-1}", hooks={"weight_gradient": {}, "photomaker": {}})
-    engine.parse_generation = lambda *args: types.SimpleNamespace(params=gp)
+    engine.parse_generation = lambda *args: GenerationRequest(params=gp)
     engine.ensure_model = lambda *args: None
     engine.kind = "sdxl"
     engine._apply_loras = lambda *args: {}
@@ -62,7 +62,7 @@ def test_generation_reencodes_inherited_hires_prompt_for_new_step_count():
     engine, calls = fake_engine()
     gp = GenerationParams(prompt="{cat::0-1}", steps=3, hooks={"weight_gradient": {}},
                           hires=HiresParams(enabled=True, second_pass_steps=2))
-    engine.parse_generation = lambda *args: types.SimpleNamespace(params=gp)
+    engine.parse_generation = lambda *args: GenerationRequest(params=gp)
     engine.ensure_model = lambda *args: None
     engine.kind = "sd15"
     engine._apply_loras = lambda *args: {}
@@ -94,7 +94,7 @@ def test_img2img_gradient_reaches_end_at_actual_last_step(tmp_path, alternative,
     gp = GenerationParams(prompt="{cat::0-1}", steps=10, hooks=hooks,
                           img2img=Img2ImgParams(init_image=str(src), mask=str(src) if masked else None,
                                               denoising_strength=0.4))
-    engine.parse_generation = lambda *args: types.SimpleNamespace(params=gp)
+    engine.parse_generation = lambda *args: GenerationRequest(params=gp)
     engine.ensure_model = lambda *args: None
     engine.kind = "sd15"
     engine._apply_loras = lambda *args: {}

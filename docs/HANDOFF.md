@@ -20,14 +20,25 @@ server, 40 rewrites of the reForge built-ins. Repo: private GitHub `kmizu/stable
 
 | | Count |
 |---|---|
-| Index entries done | 98 |
-| Index entries todo | 204 (140 distinct targets) |
+| Index entries done | 100 |
+| Index entries todo | 202 (138 distinct targets) |
 | Not applicable (web-UI CSS/UX only, accounts, obsolete, external apps, server ops) | 51 |
 
 `scripts/extensions_matrix.py` is the single ledger. Its `S` dict maps each index entry to `done:<plugin id>`,
 `todo:<target>` or `na:<reason>`, and the `IMPLEMENTED` set promotes `todo:<target>` to done. Several entries may
 share one target (for example every background remover maps to `remove_background`). To merge a target into another,
 edit its `S` entry (done for `pixelization -> pixel_art`, `mask2background -> inpaint_background`).
+
+**Latest verified wave (Codex,2026-10-26):** index320 `core:prevent-interrupt` and index309 `hardware_info` are
+integrated. The footer protection is process-global/defaultOff and covers actual native/MCP running cancellation
+and explicit user restart without blocking shutdown/health recovery or pending-only clearing. Hardware metadata
+has native opt-in/remark controls, compact actual-device facts, per-image batch timing, Extras provenance and
+bounded informational Restore/Send-to notices with no offline engine startup. Source behavior and original
+license limitations are recorded in the owned plans and128-project notices; no unlicensed upstream code was copied.
+Final integrated checks:596Scala tests plus assembly,867Python/1skip,397noTorch/82skips, six actual native helpers
+(CPU+SD1.5+SDXL for each feature), all successful. Reports/logs and precise limits are in `docs/VERIFICATION.md`.
+The next source-audited target is index253 `core:api-payload`; its full implementation plan is prepared under
+`docs/superpowers/plans/2026-10-26-core-api-payload.md`. It is still pending. The353-entry goal remains unfinished.
 
 Done in this session, all GPU-verified unless marked:
 

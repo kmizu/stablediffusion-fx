@@ -3,6 +3,7 @@ package sdfx.core
 import sdfx.core.json.SnakePickle
 import sdfx.core.model.*
 import sdfx.core.protocol.*
+import sdfx.core.infotext.HardwareInfo
 
 class ProtocolSuite extends munit.FunSuite:
   import EngineEvent.*
@@ -94,11 +95,13 @@ class ProtocolSuite extends munit.FunSuite:
       previewEvery = 3,
       previewMethod = "full",
       systemInfoFields = Seq("version.app", "platform.python"),
-      vaeRecoveryDir = "D:/out"
+      vaeRecoveryDir = "D:/out",
+      hardwareInfo = HardwareInfo.Options(enabled = true, remark = "quiet, 日本語\nsecond line")
     )
     val js = Json.toJs(req)
     assertEquals(js.obj.keys.toSet, Set("params", "output_dir", "lora_paths", "embedding_paths", "controlnet_paths",
-      "upscaler_paths", "preview_every", "preview_method", "lbw_presets", "system_info_fields", "vae_recovery_dir"))
+      "upscaler_paths", "preview_every", "preview_method", "lbw_presets", "system_info_fields", "vae_recovery_dir", "hardware_info"))
+    assertEquals(js("hardware_info"), ujson.Obj("enabled" -> true, "remark" -> "quiet, 日本語\nsecond line"))
     assertEquals(js("vae_recovery_dir").str, "D:/out")
     assertEquals(js("system_info_fields").arr.map(_.str).toSeq, Seq("version.app", "platform.python"))
     assertEquals(js("params")("negative_prompt").str, "n")
@@ -113,9 +116,24 @@ class ProtocolSuite extends munit.FunSuite:
     val r = Json.fromJs[GenerationRequest](ujson.read("""{"params":{},"output_dir":"o"}"""))
     assertEquals(r, GenerationRequest(GenerationParams(), "o"))
     assertEquals(r.vaeRecoveryDir, "")
+    assertEquals(r.hardwareInfo, HardwareInfo.Options())
     val serialized = Json.toJs(r)
     assertEquals(serialized("vae_recovery_dir").str, "")
+    assertEquals(serialized("hardware_info"), ujson.Obj("enabled" -> false, "remark" -> ""))
     assertEquals(Json.fromJs[GenerationRequest](serialized), r)
+  }
+
+  test("hardware metadata absent in legacy generation/Extras results and nested options remain additive") {
+    assertEquals(Json.fromJs[GeneratedImage](ujson.Obj("path" -> "legacy.png", "seed" -> 17)).hardwareInfo, None)
+    assertEquals(Json.fromJs[ImagePathResult](ujson.Obj("path" -> "legacy-upscale.png")).hardwareInfo, None)
+    val oldUpscale = Json.fromJs[UpscaleRequest](ujson.Obj("image_path" -> "source.png", "upscaler" -> "Lanczos",
+      "scale" -> 2, "output_dir" -> "tmp"))
+    assertEquals(oldUpscale.hardwareInfo, HardwareInfo.Options())
+    val configured = oldUpscale.copy(hardwareInfo = HardwareInfo.Options(true, "日本語 remark"))
+    assertEquals(Json.fromJs[UpscaleRequest](Json.toJs(configured)), configured)
+    val record = HardwareInfo.Record("GPU, CPU, RAM", "2.5 sec.")
+    val result = ImagePathResult("upscaled.png", Some(record))
+    assertEquals(Json.fromJs[ImagePathResult](Json.toJs(result)), result)
   }
 
   test("GenerationResult: snake keys, defaults when reading engine output") {

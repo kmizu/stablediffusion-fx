@@ -3,6 +3,7 @@ package sdfx.core.protocol
 import sdfx.core.json.SnakePickle
 import sdfx.core.json.SnakePickle.{ReadWriter => RW, *}
 import sdfx.core.model.GenerationParams
+import sdfx.core.infotext.HardwareInfo
 
 /** Engine (Python) <-> app JSON Lines protocol, version [[sdfx.core.Version.protocol]].
   *
@@ -25,6 +26,8 @@ object Protocol:
     val Preprocess = "preprocess"
     val Upscale = "upscale"
     val Interrupt = "interrupt"
+    val InterruptionProtection = "interruption_protection"
+    val RestartAuthorization = "restart_authorization"
     val Unload = "unload"
     val Memory = "memory"
     val Tokenize = "tokenize"
@@ -40,8 +43,16 @@ object Protocol:
     val NoModel = "no_model"
     val Oom = "oom"
     val Interrupted = "interrupted"
+    val InterruptionBlocked = "interruption_blocked"
     val Unsupported = "unsupported"
     val Internal = "internal"
+
+/** Runtime state belongs to the owned engine process, never to persistent generation/settings data. */
+case class InterruptionProtection(enabled: Boolean = false, revision: Long = 0) derives RW
+
+/** Admission is evaluated before any native cancellation flag or escalation timer may be changed. */
+case class InterruptionDecision(accepted: Boolean, blocked: Boolean, protection: InterruptionProtection,
+    affected: Boolean = false, message: Option[String] = None) derives RW
 
 case class EngineHello(
     protocol: Int,
@@ -77,10 +88,12 @@ case class GenerationRequest(
     previewMethod: String = "approx",
     lbwPresets: Map[String, String] = Map.empty,
     systemInfoFields: Seq[String] = Nil,
-    vaeRecoveryDir: String = ""
+    vaeRecoveryDir: String = "",
+    hardwareInfo: HardwareInfo.Options = HardwareInfo.Options()
 ) derives RW
 
-case class GeneratedImage(path: String, seed: Long, subseed: Long = -1L, width: Int = 0, height: Int = 0) derives RW
+case class GeneratedImage(path: String, seed: Long, subseed: Long = -1L, width: Int = 0, height: Int = 0,
+    hardwareInfo: Option[HardwareInfo.Record] = None) derives RW
 
 /** Persistent auxiliary output; not an engine temp file or a final-image gallery member. */
 case class IntermediateArtifact(path: String, `type`: String = "image") derives RW
@@ -104,9 +117,10 @@ case class GenerationResult(
     vaeRecovery: Seq[ujson.Value] = Nil
 ) derives RW
 
-case class UpscaleRequest(imagePath: String, upscaler: String, scale: Double, outputDir: String, upscalerPaths: Map[String, String] = Map.empty) derives RW
+case class UpscaleRequest(imagePath: String, upscaler: String, scale: Double, outputDir: String, upscalerPaths: Map[String, String] = Map.empty,
+    hardwareInfo: HardwareInfo.Options = HardwareInfo.Options()) derives RW
 case class PreprocessRequest(preprocessor: String, imagePath: String, outputDir: String, args: Map[String, Double] = Map.empty) derives RW
-case class ImagePathResult(path: String) derives RW
+case class ImagePathResult(path: String, hardwareInfo: Option[HardwareInfo.Record] = None) derives RW
 case class MemoryInfo(allocatedMb: Double = 0, reservedMb: Double = 0, totalMb: Double = 0, ramUsedMb: Double = 0) derives RW
 
 case class TokenPiece(index: Int, id: Int, piece: String, text: String, bytesHex: String, special: Boolean) derives RW

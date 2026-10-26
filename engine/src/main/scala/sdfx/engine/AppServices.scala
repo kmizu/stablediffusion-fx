@@ -58,7 +58,16 @@ final class AppServices(
   val client: EngineClient = new EngineClient(supervisor)
   val catalog: ModelCatalog = new ModelCatalog(client, home, () => _settings)
   val generator: Generator = new Generator(client, catalog, home, () => _settings, timeouts = timeouts)
-  val queue: JobQueue = new JobQueue(generator, () => supervisor.interrupt())
+  val queue: JobQueue = new JobQueue(generator, owner => supervisor.requestInterrupt(owner))
+  /** Global user interrupt: capture owned queue work or the actual nonqueue request
+    * now, then perform admission I/O off the caller/FX thread. Queue-specific APIs
+    * continue to affect only the native entry they captured.
+    */
+  def interruptRuntime(): Future[QueueInterruption] =
+    val backend = supervisor.captureInterrupt()
+    val dispatch = queue.captureRuntimeInterrupt(backend)
+    Future(dispatch()).flatten
+
   val registry: PluginRegistry = new PluginRegistry(builtins, home, () => _settings)
   def gallery: GalleryIndex = galleryIndex
   @volatile private var galleryIndex = new GalleryIndex(home.outputs(_settings))

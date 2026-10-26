@@ -70,7 +70,7 @@ class BaseEngine:
         }
 
     def features(self) -> list[str]:
-        return []
+        return ["prevent_interrupt"]
 
     def preprocessors(self) -> list[str]:
         return ["none"]
@@ -217,11 +217,16 @@ class BaseEngine:
 
     def system_status(self, params: dict, ctx: JobContext) -> dict:
         from .system_info import snapshot
-        return snapshot(self)
+        from .hardware_info import cached_profile
+        data = snapshot(self)
+        data['hardware_info'] = cached_profile(self)
+        return data
 
     def system_info(self, params: dict, ctx: JobContext) -> dict:
         from .system_info import snapshot, inventory
+        from .hardware_info import cached_profile
         data = snapshot(self, full=True)
+        data['hardware_info'] = cached_profile(self)
         if 'dirs' in params:
             data['networks'] = inventory(self, params['dirs'], params.get('hashes', False), ctx)
         return data

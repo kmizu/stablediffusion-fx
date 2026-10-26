@@ -260,8 +260,10 @@ def test_interrupt_mid_run(tmp_path):
         assert time.time() - t0 < 5
         steps = [m["step"] for m in msgs if m.get("event") == "progress"]
         assert not steps or max(steps) < 100
-        # the interrupt request itself got an immediate empty result (before the interrupted error)
-        assert ir == {"id": irid, "type": "result", "result": {}}
+        # The immediate admission response arrives before the interrupted generation's error.
+        assert ir == {"id": irid, "type": "result", "result": {
+            "accepted": True, "blocked": False, "affected": True, "active_id": rid,
+            "protection": {"enabled": False, "revision": 0}}}
         # the flag is cleared for the next generation
         res = e.collect(e.send("txt2img", gen_params(tmp_path, steps=2)))[-1]
         assert res["type"] == "result"

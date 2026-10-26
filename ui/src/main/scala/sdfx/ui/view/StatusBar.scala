@@ -8,7 +8,8 @@ import javafx.scene.layout.{HBox, Priority, VBox}
 import sdfx.ui.vm.{Outcome, ProgressState, ProgressVM}
 
 /** Bottom bar: Generate / Interrupt, Queue, progress of both passes, job status and the collapsible log. */
-final class StatusBar(progress: ProgressVM, generate: () => Unit, enqueue: () => Unit, interrupt: () => Unit, clearQueue: () => Unit):
+final class StatusBar(progress: ProgressVM, generate: () => Unit, enqueue: () => Unit, interrupt: () => Unit,
+    clearQueue: () => Unit, protection: javafx.scene.Node):
   val generateBtn = new Button("▶  Generate")
   generateBtn.getStyleClass.add("generate-button")
   generateBtn.setDefaultButton(false)
@@ -94,7 +95,7 @@ final class StatusBar(progress: ProgressVM, generate: () => Unit, enqueue: () =>
   private val texts = new VBox(2, stepText, statusText)
   texts.setAlignment(Pos.CENTER_LEFT)
   texts.setMinWidth(260)
-  private val bar = new HBox(10, generateBtn, queueBtn, clearBtn, bars, texts, logToggle)
+  private val bar = new HBox(10, generateBtn, queueBtn, clearBtn, bars, texts, protection, logToggle)
   HBox.setHgrow(bars, Priority.ALWAYS)
   bar.setAlignment(Pos.CENTER_LEFT)
   bar.getStyleClass.add("status-bar")

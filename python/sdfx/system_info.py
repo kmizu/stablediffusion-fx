@@ -90,6 +90,48 @@ def _memory(engine):
     return memory
 
 
+def _cpu_brand():
+    """Read the processor's model label without importing a hardware survey package."""
+    if sys.platform == 'win32':
+        try:
+            import winreg
+            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,
+                    r'HARDWARE\DESCRIPTION\System\CentralProcessor\0') as key:
+                value, _ = winreg.QueryValueEx(key, 'ProcessorNameString')
+                if isinstance(value, str) and value.strip():
+                    return value.strip()
+        except OSError:
+            pass
+    elif sys.platform.startswith('linux'):
+        try:
+            with Path('/proc/cpuinfo').open(encoding='utf-8', errors='replace') as stream:
+                for line in stream:
+                    key, _, value = line.partition(':')
+                    if key.strip() in ('model name', 'Hardware') and value.strip():
+                        return value.strip()
+        except OSError:
+            pass
+    elif sys.platform == 'darwin':
+        value = _command(['sysctl', '-n', 'machdep.cpu.brand_string'])
+        if value:
+            return value
+    return platform.processor().strip()
+
+
+def hardware_facts(engine):
+    """Small raw fact subset for image provenance; no Git/library report or model loading."""
+    memory = _memory(engine)
+    facts = dict(gpu_name=None, vram_bytes=None, cpu_name=_cpu_brand(),
+                 ram_bytes=memory.get('ram_total_mb', 0) * 2**20)
+    torch = sys.modules.get('torch')
+    if getattr(engine, 'cuda', False):
+        if torch is None:
+            raise RuntimeError('Active CUDA device information unavailable')
+        props = torch.cuda.get_device_properties(torch.cuda.current_device())
+        facts.update(gpu_name=props.name, vram_bytes=props.total_memory)
+    return facts
+
+
 def snapshot(engine, full=False):
     now = time.time()
     started = getattr(engine, 'system_started_at', now)

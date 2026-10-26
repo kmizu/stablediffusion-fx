@@ -187,7 +187,7 @@ class Engine(BaseEngine):
         return h
 
     def features(self) -> list[str]:
-        f = ["freeu", "dynamic_thresholding", "hypertile", "system_info", "vae_tools"]
+        f = ["freeu", "dynamic_thresholding", "hypertile", "system_info", "vae_tools", "prevent_interrupt"]
         if hasattr(diffusers, "StableDiffusionXLPAGPipeline"):
             f.append("pag")
         if hasattr(diffusers, "ControlNetModel"):
@@ -1148,8 +1148,15 @@ class Engine(BaseEngine):
 
     def _generate_recorded(self, params: dict, ctx: JobContext, mode: str) -> dict:
         t0 = time.monotonic()
+        hardware_started = time.perf_counter()
         req = self.parse_generation(params, mode, ctx)
         gp = req.params
+        hardware_timer = None
+        hardware_profile = None
+        if req.hardware_info.enabled:
+            from .hardware_info import ImageTiming, cached_profile
+            hardware_timer = ImageTiming(gp.batch_size, started_at=hardware_started)
+            hardware_profile = cached_profile(self)
         latent_config = hooks_mod.hook_config(gp.hooks, "latent_upscale", {})
         if latent_config is not None:
             latent_config = latent_upscale.normalize(latent_config)
@@ -1323,12 +1330,17 @@ class Engine(BaseEngine):
             for j, im in enumerate(imgs):
                 k = idx0 + j
                 path = next_output_path(req.output_dir, str(seed + k))
+                image_result = {"path": path, "seed": seed + k, "subseed": subseed + k,
+                                "width": im.width, "height": im.height}
+                if hardware_timer is not None:
+                    from .hardware_info import record
+                    image_result['hardware_info'] = record(hardware_profile, hardware_timer.next_image(), req.hardware_info.remark)
                 if getattr(self, '_benchmark_no_save', False):
                     path = ''  # internal benchmark excludes PNG encoding/disk I/O, like upstream do_not_save_samples
+                    image_result['path'] = path
                 else:
                     save_png(im, path)
-                out_images.append({"path": path, "seed": seed + k, "subseed": subseed + k,
-                                   "width": im.width, "height": im.height})
+                out_images.append(image_result)
                 if self._intermediate_recorder is not None:
                     self._intermediate_recorder.final(im, seed + k, it, j)
 
@@ -1547,7 +1559,14 @@ class Engine(BaseEngine):
         return {"path": path}
 
     def upscale(self, params: dict, ctx: JobContext) -> dict:
+        hardware_started = time.perf_counter()
         req = self.parse_upscale(params)
+        hardware_timer = None
+        hardware_profile = None
+        if req.hardware_info.enabled:
+            from .hardware_info import ImageTiming, cached_profile
+            hardware_timer = ImageTiming(1, started_at=hardware_started)
+            hardware_profile = cached_profile(self)
         img = load_rgb(req.image_path)
         try:
             out = upscalers.upscale_by(img, req.scale, req.upscaler, req.upscaler_paths.get(req.upscaler),
@@ -1559,8 +1578,12 @@ class Engine(BaseEngine):
         except Exception as e:
             raise EngineError(MODEL_LOAD_FAILED, f"upscaler '{req.upscaler}' failed: {e}", traceback.format_exc())
         path = next_output_path(req.output_dir, f"up-{req.upscaler}")
+        result = {"path": path}
+        if hardware_timer is not None:
+            from .hardware_info import record
+            result['hardware_info'] = record(hardware_profile, hardware_timer.next_image(), req.hardware_info.remark)
         save_png(out, path)
-        return {"path": path}
+        return result
 
 
 SAG_SCHEDULERS = ("DDIMScheduler", "PNDMScheduler", "DDPMScheduler", "DEISMultistepScheduler", "UniPCMultistepScheduler",

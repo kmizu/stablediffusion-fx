@@ -179,3 +179,14 @@ Per-plugin evidence of the final real-model runs (which run, duration, result): 
   are optional previews. Downloads require explicit enablement. Generation VAE failures retain exact decoder-input
   safetensors and a quantized recovery PNG, and clearly mark the approximate image Broken. Recovery artifacts stay
   separate from final gallery scans. Tiling and precision changes restore their previous state after each request.
+- **Prevent interruption** is a runtime-only footer switch, shared by GUI and MCP clients of the same engine.
+  When On, active Interrupt/Esc, running-job cancellation and explicit user restart are rejected with a visible
+  reason; existing work continues. Turn it Off to interrupt normally. Pending-only queue clearing, shutdown and
+  automatic health recovery keep their normal behavior. A new engine starts Off; another frontend's change
+  appears within five seconds. Admission is checked by the engine even before the displayed switch refreshes.
+- **Hardware image metadata** in System Info optionally adds compact hardware facts, per-image time and a literal
+  remark to generated PNGs and Extras output. It starts Off and is independent of the selectable System Info JSON
+  fields. Generation timing averages each batch and resets between iterations; Extras measures its whole operation.
+  Queue wait, model preloading and final file publication are excluded. Restore/Send to can show up to two
+  informational device-difference notices per window; they never change the local device and work offline without
+  starting an engine. Unavailable hardware facts are recorded as unknown rather than invented.

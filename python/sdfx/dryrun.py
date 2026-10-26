@@ -72,7 +72,7 @@ class FakeEngine(BaseEngine):
         return ["freeu", "dynamic_thresholding", "hypertile", "pag", "controlnet", "apg", "mahiro", "rescale_cfg",
                 "model_sampling", "kohya_hrfix", "multidiffusion", "latent_modifier", "soft_inpainting", "sag", "neveroom",
                 "reference", "revision", "ip_adapter", "controllllite", "fooocus_inpaint", "photomaker", "img2imgalt",
-                "face_restore", "caption", "img2vid", "novel_view", "ldsr", "marigold", "adetailer", "weight_gradient", "negpip", "neutral_prompt", "prompt_fusion", "save_intermediate", "latent_upscale", "composable_lora", "system_info"] + list(sampling_ext.HOOKS) + (
+                "face_restore", "caption", "img2vid", "novel_view", "ldsr", "marigold", "adetailer", "weight_gradient", "negpip", "neutral_prompt", "prompt_fusion", "save_intermediate", "latent_upscale", "composable_lora", "system_info", "prevent_interrupt"] + list(sampling_ext.HOOKS) + (
                     ["custom_code"] if os.environ.get("SDFX_ALLOW_CODE") == "1" else [])
 
     def preprocessors(self) -> list[str]:
@@ -151,8 +151,15 @@ class FakeEngine(BaseEngine):
 
     def _generate(self, params: dict, ctx: JobContext, mode: str) -> dict:
         t0 = time.monotonic()
+        hardware_started = time.perf_counter()
         req = self.parse_generation(params, mode, ctx)
         gp = req.params
+        hardware_timer = None
+        hardware_profile = None
+        if req.hardware_info.enabled:
+            from .hardware_info import ImageTiming, cached_profile
+            hardware_timer = ImageTiming(gp.batch_size, started_at=hardware_started)
+            hardware_profile = cached_profile(self)
         try:
             self.ensure_model(gp, ctx)
             m = self.model
@@ -195,6 +202,7 @@ class FakeEngine(BaseEngine):
                 k = idx0 + j
                 s, ss = seed + k, subseed + k
                 path = next_output_path(req.output_dir, str(s))
+                hardware_record = None
                 if HAVE_PIL:
                     img = fake_image(out_w, out_h, s, ss, gp.subseed_strength)
                     if init is not None:
@@ -207,12 +215,22 @@ class FakeEngine(BaseEngine):
                         else:
                             base = resize_image(ip.resize_mode, init, w, h)
                             img = Image.blend(base, img, ip.denoising_strength)
+                    if hardware_timer is not None:
+                        from .hardware_info import record
+                        hardware_record = record(hardware_profile, hardware_timer.next_image(), req.hardware_info.remark)
                     save_png(img, path)
                     iw, ih = img.size
                 else:
-                    write_png_rgb(path, out_w, out_h, fake_rows(out_w, out_h, s))
+                    rows = fake_rows(out_w, out_h, s)
+                    if hardware_timer is not None:
+                        from .hardware_info import record
+                        hardware_record = record(hardware_profile, hardware_timer.next_image(), req.hardware_info.remark)
+                    write_png_rgb(path, out_w, out_h, rows)
                     iw, ih = out_w, out_h
-                images.append({"path": path, "seed": s, "subseed": ss, "width": iw, "height": ih})
+                entry = {"path": path, "seed": s, "subseed": ss, "width": iw, "height": ih}
+                if hardware_record is not None:
+                    entry['hardware_info'] = hardware_record
+                images.append(entry)
 
         return {
             "images": images,
@@ -256,17 +274,31 @@ class FakeEngine(BaseEngine):
         return {"path": out}
 
     def upscale(self, params: dict, ctx: JobContext) -> dict:
+        hardware_started = time.perf_counter()
         req = self.parse_upscale(params)
+        hardware_timer = None
+        hardware_profile = None
+        if req.hardware_info.enabled:
+            from .hardware_info import ImageTiming, cached_profile
+            hardware_timer = ImageTiming(1, started_at=hardware_started)
+            hardware_profile = cached_profile(self)
         out = next_output_path(req.output_dir, f"up-{req.upscaler}")
+        result = {"path": out}
         if not HAVE_PIL:
+            if hardware_timer is not None:
+                from .hardware_info import record
+                result['hardware_info'] = record(hardware_profile, hardware_timer.next_image(), req.hardware_info.remark)
             shutil.copyfile(req.image_path, out)
-            return {"path": out}
+            return result
         img = load_rgb(req.image_path)
         if req.upscaler != "None":
             nw, nh = max(1, round(img.width * req.scale)), max(1, round(img.height * req.scale))
             img = img.resize((nw, nh), Image.NEAREST if req.upscaler == "Nearest" else Image.LANCZOS)
+        if hardware_timer is not None:
+            from .hardware_info import record
+            result['hardware_info'] = record(hardware_profile, hardware_timer.next_image(), req.hardware_info.remark)
         save_png(img, out)
-        return {"path": out}
+        return result
 
 
     # -- extras (fake but shape-correct outputs) ----------------------------------------------------------------------

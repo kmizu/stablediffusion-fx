@@ -59,7 +59,9 @@ case class Settings(
     comparisonSendButtons: String = "Off",
     comparisonTxtButton: String = "Off",
     comparisonMouseSend: Boolean = false,
-    comparisonMouseAuto: Boolean = false
+    comparisonMouseAuto: Boolean = false,
+    hardwareInfoEnabled: Boolean = false,
+    hardwareInfoRemark: String = ""
 ) derives RW
 
 object Settings:

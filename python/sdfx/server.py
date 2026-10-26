@@ -1,7 +1,6 @@
 """stdin/stdout JSON Lines server: a reader thread (this one) and a single worker thread.
 
-`ping`, `interrupt` and `shutdown` are answered directly on the reader thread; everything else is queued
-and executed in order by the worker.
+Control and status requests are answered directly on the reader thread; model work is queued.
 """
 from __future__ import annotations
 
@@ -17,7 +16,7 @@ from typing import Optional
 
 from .params import ParamError
 from .protocol import (INTERNAL, INTERRUPTED, INVALID_PARAMS, OOM, UNSUPPORTED, Emitter, EngineError, JobContext,
-                       error_msg, result_msg)
+                       error_msg, result_msg, log_msg)
 
 log = logging.getLogger("sdfx.server")
 
@@ -48,15 +47,31 @@ class Server:
         self.interrupt = threading.Event()
         self.lock = threading.Lock()
         self.current_id: Optional[str] = None
+        self.current_owner: Optional[str] = None
         self.current_type: Optional[str] = None
         self.current_ctx: Optional[JobContext] = None
         self.cancelled: set = set()
         self.queued: "collections.deque[str]" = collections.deque()  # ids waiting in the queue, in order
+        self.queued_owners: dict[str, Optional[str]] = {}
         self.closing = False
+        # Process-global runtime protection, independent of checkpoint and job state.
+        self.prevent_interruption = False
+        self.protection_revision = 0
         self._hello: Optional[dict] = None
         self.worker = threading.Thread(target=self._work, name="sdfx-worker", daemon=True)
 
     # -- reader side --------------------------------------------------------
+    def _protection_locked(self):
+        """Caller holds self.lock, shared with cancellation state transitions."""
+        return dict(enabled=self.prevent_interruption, revision=self.protection_revision)
+
+    def _interruption_decision_locked(self):
+        decision = dict(accepted=not self.prevent_interruption, blocked=self.prevent_interruption,
+                        affected=False, protection=self._protection_locked())
+        if self.prevent_interruption:
+            decision['message'] = 'Interruptions are blocked; turn off Prevent interruption to continue'
+        return decision
+
     def handle_line(self, line: str) -> bool:
         """Process one input line. Returns False when the server should exit (shutdown)."""
         line = line.strip()
@@ -80,8 +95,28 @@ class Server:
         if not isinstance(params, dict):
             self.emitter.emit(error_msg(rid, INVALID_PARAMS, "params must be an object"))
             return True
+        owner = msg.get('owner_id')
+        if 'owner_id' in msg and (not isinstance(owner, str) or not 1 <= len(owner) <= 256):
+            self.emitter.emit(error_msg(rid, INVALID_PARAMS, 'owner_id must be a nonempty string of at most 256 characters'))
+            return True
 
-        if typ == "system_status":
+        if typ == "interruption_protection":
+            if 'enabled' in params and not isinstance(params['enabled'], bool):
+                self.emitter.emit(error_msg(rid, INVALID_PARAMS, 'enabled must be boolean'))
+                return True
+            with self.lock:
+                if 'enabled' in params and params['enabled'] != self.prevent_interruption:
+                    self.prevent_interruption = params['enabled']
+                    self.protection_revision += 1
+                data = self._protection_locked()
+            self.emitter.emit(result_msg(rid, data))
+        elif typ == "restart_authorization":
+            with self.lock:
+                data = self._interruption_decision_locked()
+            if data['blocked']:
+                self.emitter.emit(log_msg(rid, 'warn', data['message']))
+            self.emitter.emit(result_msg(rid, data))
+        elif typ == "system_status":
             try:
                 data = self.engine.system_status(params, None)
                 with self.lock:
@@ -96,16 +131,33 @@ class Server:
         elif typ == "interrupt":
             target = params.get("target_id")
             target = None if target is None else str(target)
+            expected_owner = params.get('owner_id')
+            if 'owner_id' in params and (not isinstance(expected_owner, str) or not 1 <= len(expected_owner) <= 256):
+                self.emitter.emit(error_msg(rid, INVALID_PARAMS, 'owner_id must be a nonempty string of at most 256 characters'))
+                return True
             with self.lock:
-                if self.current_id is not None and (target is None or target == self.current_id):
-                    self.interrupt.set()
-                elif target is None and self.queued:
-                    # nothing running yet (e.g. interrupt right after submit): cancel the next queued job
-                    self.cancelled.add(self.queued[0])
-                elif target is not None and target in self.queued:
-                    self.cancelled.add(target)
+                data = self._interruption_decision_locked()
+                data['active_id'] = None
+                if data['accepted']:
+                    # Job ownership is checked at the same reader admission point as policy.
+                    # A late cancel for A must never mutate B, even if its request ID was
+                    # independently observed after the native queue changed jobs.
+                    if (self.current_id is not None and (target is None or target == self.current_id)
+                            and (expected_owner is None or expected_owner == self.current_owner)):
+                        self.interrupt.set()
+                        data['affected'] = True
+                        data['active_id'] = self.current_id
+                    else:
+                        queued_target = next((item for item in self.queued
+                            if (target is None or target == item)
+                            and (expected_owner is None or self.queued_owners.get(item) == expected_owner)), None)
+                        if queued_target is not None:
+                            self.cancelled.add(queued_target)
+                            data['affected'] = True
                 # unknown / finished ids are ignored (nothing is remembered)
-            self.emitter.emit(result_msg(rid, {}))
+            if data['blocked']:
+                self.emitter.emit(log_msg(rid, 'warn', data['message']))
+            self.emitter.emit(result_msg(rid, data))
         elif typ == "shutdown":
             self.interrupt.set()
             self.emitter.emit(result_msg(rid, {}))
@@ -114,7 +166,9 @@ class Server:
             with self.lock:
                 if rid is not None:
                     self.queued.append(rid)
-            self.q.put((rid, typ, params))
+                    self.queued_owners[rid] = owner
+            # Ownership is transport metadata, never injected into model parameters/results.
+            self.q.put((rid, typ, params, owner))
         else:
             self.emitter.emit(error_msg(rid, UNSUPPORTED, f"unknown request type '{typ}'"))
         return True
@@ -140,9 +194,11 @@ class Server:
                     pass
 
     def _handle(self, item):
-        rid, typ, params = item
+        rid, typ, params = item[:3]
+        owner = item[3] if len(item) > 3 else None  # direct/internal legacy callers
         with self.lock:
             if rid is not None:
+                self.queued_owners.pop(rid, None)
                 try:
                     self.queued.remove(rid)
                 except ValueError:
@@ -152,6 +208,7 @@ class Server:
                 self.emitter.emit(error_msg(rid, INTERRUPTED, "interrupted before start"))
                 return
             self.current_id = rid
+            self.current_owner = owner
             self.current_type = typ
             self.interrupt.clear()
         ctx = JobContext(self.emitter, rid, self.interrupt)
@@ -174,6 +231,7 @@ class Server:
         finally:
             with self.lock:
                 self.current_id = None
+                self.current_owner = None
                 self.current_type = None
                 self.current_ctx = None
                 self.interrupt.clear()

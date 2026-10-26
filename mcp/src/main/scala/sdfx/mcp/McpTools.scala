@@ -287,11 +287,13 @@ final class McpTools(
           val f = submitCapped(job)
           ctx.onCancel { () =>
             // JobQueue.cancel misses a job between dequeue and start; retry once shortly after
-            if !services.queue.cancel(job.id) then
-              Future {
+            services.queue.cancelResult(job.id).foreach { outcome =>
+              // Only a dequeue/start miss is retryable. A blocked user action must never be replayed after unlock.
+              if !outcome.cancelled && !outcome.blocked then Future {
                 Thread.sleep(150)
-                if !f.isCompleted then services.queue.cancel(job.id)
+                if !f.isCompleted then services.queue.cancelResult(job.id)
               }
+            }
             ()
           }
           try
@@ -437,8 +439,12 @@ final class McpTools(
         val remove = services.queue.addListener(progressListener(job.id, job.params, job.script.isDefined, aj.tracker))
         try
           // a waiting job already holds a pending slot; an immediate one takes it now
-          val f = if aj.status == "waiting_for_engine" then services.queue.submit(job) else submitCapped(job)
-          if aj.status == "waiting_for_engine" then aj.status = "queued"
+          val f = aj.synchronized {
+            if aj.cancelRequested then throw JobCancelledException(job.id, JobOutput(Nil))
+            val waiting = aj.status == "waiting_for_engine"
+            if waiting then aj.status = "queued"
+            if waiting then services.queue.submit(job) else submitCapped(job)
+          }
           f.onComplete { r =>
             remove()
             aj.result.tryComplete(r)
@@ -460,9 +466,12 @@ final class McpTools(
   /** cancel_job for async jobs that have not reached the queue yet. */
   private def cancelWaiting(id: String): Boolean =
     Option(asyncJobs.get(id)).filter(_.status == "waiting_for_engine") match
-      case Some(aj) =>
-        aj.cancelRequested = true
-        true
+      case Some(aj) => aj.synchronized {
+        if aj.status == "waiting_for_engine" then
+          aj.cancelRequested = true
+          true
+        else false
+      }
       case None => false
 
   private def getJob(a: Args, ctx: ToolContext): ToolResult =
@@ -775,8 +784,12 @@ final class McpTools(
         val q = services.queue
         val isMcp = asyncJobs.containsKey(id) || (q.current.toSeq ++ q.pending).exists(j => j.id == id && j.origin == Origin)
         if !isMcp then throw ToolError(s"no queued or running MCP job with id $id")
-        val ok = cancelWaiting(id) || q.cancel(id)
-        ToolResult.json(ujson.Obj("job_id" -> id, "cancelled" -> ok), Some(if ok then s"cancel requested for $id" else s"$id is no longer queued or running"))
+        val result = if cancelWaiting(id) then QueueCancellation(true, false)
+          else Await.result(q.cancelResult(id), 5.seconds)
+        ToolResult.json(ujson.Obj("job_id" -> id, "cancelled" -> result.cancelled, "blocked" -> result.blocked,
+          "protection" -> result.protection.map(Json.toJs(_)).getOrElse(ujson.Null)),
+          Some(if result.blocked then result.message.getOrElse("Interruptions are blocked")
+            else if result.cancelled then s"cancel requested for $id" else s"$id is no longer queued or running"))
       }),
     tool("list_models", "List checkpoints",
       "Checkpoints (with kind: sd15 / sdxl ...) and VAEs available to the engine, marking the loaded one.",
@@ -892,13 +905,23 @@ final class McpTools(
       }
       ToolResult.json(v)
     }),
+    tool("interruption_protection", "Prevent interruption", "Get or set this engine process's interruption protection. Runtime-only, default off; shared with the desktop toggle.",
+      Schema.obj(Seq("enabled" -> Schema.bool("Set protection; omit to query."))), idempotentHint = true)((a, _) => {
+        val args = Args(a, Seq("enabled"))
+        ready()
+        val state = Await.result(services.client.interruptionProtection(args.bool("enabled")), 5.seconds)
+        ToolResult.json(Json.toJs(state))
+      }),
     tool("interrupt", "Interrupt", "Stop the currently running generation (any origin). clear_queue also drops all pending jobs.",
       Schema.obj(Seq("clear_queue" -> Schema.bool("Also remove pending jobs.", Some(false)))), destructiveHint = true)((a, _) => {
         val args = Args(a, Seq("clear_queue"))
         val cleared = if args.bool("clear_queue").getOrElse(false) then services.queue.clear() else 0
-        val stopped = services.queue.interruptCurrent()
-        ToolResult.json(ujson.Obj("interrupted" -> stopped, "cleared" -> cleared),
-          Some(s"${if stopped then "interrupt requested" else "nothing running"}${if cleared > 0 then s"; removed $cleared pending job(s)" else ""}"))
+        val outcome = Await.result(services.interruptRuntime(), 5.seconds)
+        val message = if outcome.blocked then outcome.message.getOrElse("Interruptions are blocked")
+          else if outcome.interrupted then "interrupt requested" else "nothing running"
+        ToolResult.json(ujson.Obj("interrupted" -> outcome.interrupted, "blocked" -> outcome.blocked,
+          "protection" -> Json.toJs(outcome.protection), "cleared" -> cleared),
+          Some(message + (if cleared > 0 then s"; removed $cleared pending job(s)" else "")))
       }),
     tool("list_scripts", "List scripts", "Scripts usable with run_script (X/Y/Z plot, prompt matrix, loopback, SD upscale ...) with their controls (key, type, options, default).",
       Schema.empty, ro = true)((a, _) => {

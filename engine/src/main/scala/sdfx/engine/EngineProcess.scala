@@ -51,10 +51,14 @@ object EngineProcess:
 final class EngineProcess private (proc: Process, log: String => Unit, onExit: (Int, Boolean) => Unit):
   import EngineProcess.*
 
-  private case class Pending(promise: Promise[ujson.Value], onEvent: EngineEvent => Unit, tpe: String)
+  private case class Pending(promise: Promise[ujson.Value], onEvent: EngineEvent => Unit, tpe: String, owner: Option[String]):
+    // Allocating a request ID precedes serialization and does not establish wire order.
+    // Zero means this request has not reached the serialized writer admission point.
+    @volatile var wireOrder: Long = 0L
 
   private val pending = new ConcurrentHashMap[String, Pending]()
   private val ids = new AtomicLong(0)
+  private val writes = new AtomicLong(0)
   private val helloP = Promise[EngineHello]()
   private val closing = new AtomicBoolean(false)
   private val exited = new AtomicBoolean(false)
@@ -109,7 +113,14 @@ final class EngineProcess private (proc: Process, log: String => Unit, onExit: (
   def pendingTypes: Seq[String] = pending.values().asScala.map(_.tpe).toSeq
   /** Pending requests as (id, type), oldest first. */
   def pendingIds: Seq[(String, String)] =
-    pending.entrySet().asScala.toSeq.map(e => (e.getKey, e.getValue.tpe)).sortBy((id, _) => id.drop(1).toLongOption.getOrElse(Long.MaxValue))
+    pendingIdsFor(None)
+  private[engine] def pendingIdsFor(owner: Option[String]): Seq[(String, String)] =
+    pending.entrySet().asScala.toSeq.flatMap { e =>
+      val p = e.getValue
+      val order = p.wireOrder
+      if order > 0 && owner.forall(value => p.owner.contains(value)) then Some((order, e.getKey, p.tpe))
+      else None
+    }.sortBy(_._1).map((_, id, tpe) => (id, tpe))
   def isPending(id: String): Boolean = pending.containsKey(id)
   /** Completion future of a pending request, if still pending. */
   def futureOf(id: String): Option[Future[ujson.Value]] = Option(pending.get(id)).map(_.promise.future)
@@ -204,16 +215,27 @@ final class EngineProcess private (proc: Process, log: String => Unit, onExit: (
   def request(tpe: String, params: ujson.Value = ujson.Obj(), onEvent: EngineEvent => Unit = _ => ()): Future[ujson.Value] =
     requestWithId(tpe, params, onEvent)._2
 
+  private[engine] def requestOwned(tpe: String, params: ujson.Value, onEvent: EngineEvent => Unit,
+                                   owner: Option[String]): Future[ujson.Value] =
+    requestWithId(tpe, params, onEvent, owner)._2
+
   /** Like [[request]] but also returns the request id. */
-  def requestWithId(tpe: String, params: ujson.Value = ujson.Obj(), onEvent: EngineEvent => Unit = _ => ()): (String, Future[ujson.Value]) =
+  def requestWithId(tpe: String, params: ujson.Value = ujson.Obj(), onEvent: EngineEvent => Unit = _ => (),
+                    owner: Option[String] = None): (String, Future[ujson.Value]) =
     if !isAlive then ("", Future.failed(forcedError.getOrElse(EngineError(EngineNotRunning, "engine is not running"))))
     else
       val id = s"r${ids.incrementAndGet()}"
-      val p = Pending(Promise[ujson.Value](), onEvent, tpe)
+      val p = Pending(Promise[ujson.Value](), onEvent, tpe, owner)
       pending.put(id, p)
-      val msg = ujson.write(ujson.Obj("id" -> id, "type" -> tpe, "params" -> params))
+      val envelope = ujson.Obj("id" -> id, "type" -> tpe, "params" -> params)
+      owner.foreach(value => envelope("owner_id") = value)
+      val msg = ujson.write(envelope)
       try
         writer.synchronized {
+          // Publish the same order in which envelopes enter the pipe. Serialization
+          // stays outside this lock, so a large request cannot hide active work
+          // behind its earlier allocated but not yet written request ID.
+          p.wireOrder = writes.incrementAndGet()
           writer.write(msg)
           writer.write('\n')
           writer.flush()

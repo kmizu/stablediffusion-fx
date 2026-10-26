@@ -71,6 +71,14 @@ BASE = [
     ("madebyollin/taesd", "dependency", "Optional separately downloaded TAESD/TAESDXL model weights for VAE Tools. "
      "Weights are not bundled; model repositories madebyollin/taesd and madebyollin/taesdxl on Hugging Face "
      "are revision-pinned by python/sdfx/vae_tools.py and download requires explicit enablement."),
+    ("light-and-ray/sd-webui-prevent-interruption", "reimplemented", "Runtime-global interruption protection "
+     "and explicit user restart admission -> `core:prevent-interrupt`; independent native/JSON Lines implementation, "
+     "no upstream code or assets copied; "
+     "[source ea22bc0](https://github.com/light-and-ray/sd-webui-prevent-interruption/tree/ea22bc0de11875f3889f09c8e6ed7b879f321d05)"),
+    ("light-and-ray/sd-webui-hardware-info-in-metadata", "reimplemented", "Compact hardware, per-image batch timing, "
+     "remark, Extras provenance and informational paste notices -> `hardware_info`; independently implemented, "
+     "no upstream code copied; "
+     "[source 784a0dd](https://github.com/light-and-ray/sd-webui-hardware-info-in-metadata/tree/784a0dd8521108815aff007d7a4807ac6f98d251)"),
     ("kohya-ss/sd-scripts", "ported", "ControlNet-LLLite module layout"),
     ("lllyasviel/Fooocus", "ported", "Fooocus inpaint patch / head application"),
     ("threestudio-project/threestudio", "reimplemented", "Zero123 diffusers layout and sampling"),
