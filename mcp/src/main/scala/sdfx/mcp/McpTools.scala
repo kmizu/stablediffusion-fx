@@ -558,6 +558,8 @@ final class McpTools(
     val unknown = values.keySet.filterNot(known.contains)
     if unknown.nonEmpty then throw ToolError(s"unknown control(s) for ${plugin.id}: ${unknown.mkString(", ")}. Controls: ${known.toSeq.sorted.mkString(", ")}")
     if plugin.id == "custom_code" then throw ToolError("custom_code cannot be run over MCP")
+    // writing multi-GB checkpoints into the model folders is left to the person at the GUI
+    if McpTools.GuiOnlyScripts(plugin.id) then throw ToolError(s"${plugin.id} writes model files and cannot be run over MCP")
     // image controls are file paths read by the engine: same allowed-directory policy as init_image / get_image
     val imageKeys = plugin.controls.collect { case c: Control.ImageFile => c.key }.toSet
     val checkedValues = values.map { (k, v) =>
@@ -895,6 +897,7 @@ final class McpTools(
   )
 
 object McpTools:
+  val GuiOnlyScripts: Set[String] = Set("model_merge", "model_converter")
   val Origin = "mcp"
   val MaxImages = 16
   val MaxPreviews = 16

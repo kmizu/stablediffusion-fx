@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 62, todo 240, na 51.
+Totals: done 69, todo 233, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-fx | Why not applicable |
 |---|---|---|---|---|---|
@@ -23,12 +23,12 @@ Totals: done 62, todo 240, na 51.
 | 14 | [Custom Diffusion](https://github.com/guaneec/custom-diffusion-webui.git) | 67 | todo | `custom_diffusion` |  |
 | 15 | [Smart Process](https://github.com/d8ahazard/sd_smartprocess.git) | 198 | todo | `smart_process` |  |
 | 16 | [Embeddings editor](https://github.com/CodeExplode/stable-diffusion-webui-embedding-editor.git) | 72 | todo | `embedding_editor` |  |
-| 17 | [Merge Board](https://github.com/bbc-mc/sdweb-merge-board.git) | 76 | todo | `model_merge` |  |
-| 18 | [Model Converter](https://github.com/Akegarasu/sd-webui-model-converter.git) | 336 | todo | `model_converter` |  |
+| 17 | [Merge Board](https://github.com/bbc-mc/sdweb-merge-board.git) | 76 | done | `model_merge` |  |
+| 18 | [Model Converter](https://github.com/Akegarasu/sd-webui-model-converter.git) | 336 | done | `model_converter` |  |
 | 19 | [Kohya-ss Additional Networks](https://github.com/kohya-ss/sd-webui-additional-networks.git) | 1814 | done | `core:lora` |  |
-| 20 | [Merge Block Weighted](https://github.com/bbc-mc/sdweb-merge-block-weighted-gui.git) | 320 | todo | `model_merge` |  |
+| 20 | [Merge Block Weighted](https://github.com/bbc-mc/sdweb-merge-block-weighted-gui.git) | 320 | done | `model_merge` |  |
 | 21 | [Embedding Merge](https://github.com/klimaleksus/stable-diffusion-webui-embedding-merge.git) | 122 | todo | `embedding_merge` |  |
-| 22 | [SuperMerger](https://github.com/hako-mikan/sd-webui-supermerger.git) | 837 | todo | `model_merge` |  |
+| 22 | [SuperMerger](https://github.com/hako-mikan/sd-webui-supermerger.git) | 837 | done | `model_merge` |  |
 | 23 | [LoRA Block Weight](https://github.com/hako-mikan/sd-webui-lora-block-weight.git) | 1167 | done | `lora_block_weight` |  |
 | 24 | [Image browser](https://github.com/AlUlkesh/stable-diffusion-webui-images-browser.git) | 648 | done | `core:gallery` |  |
 | 25 | [Infinite image browsing](https://github.com/zanllp/sd-webui-infinite-image-browsing.git) | 1363 | done | `core:gallery` |  |
@@ -154,7 +154,7 @@ Totals: done 62, todo 240, na 51.
 | 145 | [Model Organizer](https://github.com/alexandersokol/sd-model-organizer.git) | 97 | todo | `model_organizer` |  |
 | 146 | [Model Preset Manager](https://github.com/rifeWithKaiju/model_preset_manager.git) | 102 | todo | `model_presets` |  |
 | 147 | [SD-CN-Animation](https://github.com/volotat/SD-CN-Animation.git) | 823 | todo | `cn_animation` |  |
-| 148 | [Model toolkit](https://github.com/arenasys/stable-diffusion-webui-model-toolkit.git) | 528 | todo | `model_converter` |  |
+| 148 | [Model toolkit](https://github.com/arenasys/stable-diffusion-webui-model-toolkit.git) | 528 | done | `model_converter` |  |
 | 149 | [sd-webui-prompt-all-in-one](https://github.com/Physton/sd-webui-prompt-all-in-one) | 3242 | todo | `core:prompt-tools` |  |
 | 150 | [sd-model-preview-xd](https://github.com/CurtisDS/sd-model-preview-xd) | 78 | todo | `model_organizer` |  |
 | 151 | [ADetailer](https://github.com/Bing-su/adetailer.git) | 4793 | done | `adetailer` |  |
@@ -229,7 +229,7 @@ Totals: done 62, todo 240, na 51.
 | 220 | [Stable Diffusion Webui Civitai Helper](https://github.com/zixaphir/Stable-Diffusion-Webui-Civitai-Helper.git) | 254 | todo | `model_downloader` |  |
 | 221 | [Scenario loader](https://github.com/Chaest/sd-webui-sc-loader.git) | 41 | todo | `core:presets` |  |
 | 222 | [PromptsBrowser](https://github.com/AlpacaInTheNight/PromptsBrowser.git) | 48 | todo | `prompt_library` |  |
-| 223 | [Model Mixer](https://github.com/wkpark/sd-webui-model-mixer.git) | 115 | todo | `model_merge` |  |
+| 223 | [Model Mixer](https://github.com/wkpark/sd-webui-model-mixer.git) | 115 | done | `model_merge` |  |
 | 224 | [Fast PNG Info](https://github.com/NoCrypt/sd-fast-pnginfo.git) | 44 | done | `core:png-info` |  |
 | 225 | [sd-webui-mov2mov](https://github.com/Scholar01/sd-webui-mov2mov.git) | 2157 | todo | `mov2mov` |  |
 | 226 | [EasyPhoto](https://github.com/aigc-apps/sd-webui-EasyPhoto.git) | 5144 | todo | `easyphoto` |  |
@@ -314,7 +314,7 @@ Totals: done 62, todo 240, na 51.
 | 305 | [TripoSR](https://github.com/AlbedoFire/sd-webui-triposr.git) | 16 | todo | `triposr` |  |
 | 306 | [Readme browser](https://github.com/light-and-ray/sd-webui-readme-browser.git) | 11 | na | `webui-ux` | Gradio page behaviour (tabs, buttons, dialogs); the desktop UI provides the equivalent natively |
 | 307 | [D2 Prompt Selector](https://github.com/da2el-ai/sd-d2-prompt-selector.git) | 6 | todo | `core:prompt-tools` |  |
-| 308 | [Untitled Merger](https://github.com/silveroxides/sd-webui-untitledmerger.git) | 22 | todo | `model_merge` |  |
+| 308 | [Untitled Merger](https://github.com/silveroxides/sd-webui-untitledmerger.git) | 22 | done | `model_merge` |  |
 | 309 | [Hardware Info in metadata](https://github.com/light-and-ray/sd-webui-hardware-info-in-metadata.git) | 6 | todo | `hardware_info` |  |
 | 310 | [PNGINFO Beautify](https://github.com/bluelovers/sd-webui-pnginfo-beautify.git) | 32 | done | `core:png-info` |  |
 | 311 | [InputAccordion Highlight](https://github.com/w-e-w/sd-webui-input-accordion-highlight.git) | 9 | na | `webui-css` | styles / JavaScript tweaks of the Gradio web page; the JavaFX UI has its own theme and layout |

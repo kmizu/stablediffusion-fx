@@ -40,6 +40,8 @@ object StandardPlugins:
     new Zero123Plugin,
     new CustomCodePlugin,
     new UltimateSdUpscalePlugin,
+    // checkpoint tools (extension index)
+    new ModelMergePlugin, new ModelConverterPlugin,
     // extension index: prompt and sequence scripts
     new DynamicPromptsPlugin, new OneButtonPromptPlugin, new TestMyPromptPlugin, new ScramblePromptsPlugin,
     new TweakWeightsPlugin, new LoraQueuePlugin, new BatchCheckpointsPromptsPlugin, new SeedTravelPlugin,

@@ -99,6 +99,53 @@ class BaseEngine:
     def _no_extra(self, what: str):
         raise EngineError(UNSUPPORTED, f"{what} is not available in this engine")
 
+    # -- model tools (CPU, safetensors; work without a loaded model) -----------------------------------------
+    def _model_tool(self, what: str, inputs: list, out: str, overwrite: bool, run):
+        import os
+        for p in inputs:
+            if not p or not os.path.isfile(p):
+                raise EngineError(INVALID_PARAMS, f"{what}: model not found: {p}")
+        if not out or not out.lower().endswith(".safetensors"):
+            raise EngineError(INVALID_PARAMS, f"{what}: output must be a .safetensors path")
+        if any(os.path.abspath(out) == os.path.abspath(p) for p in inputs):
+            raise EngineError(INVALID_PARAMS, f"{what}: output would overwrite an input model")
+        if os.path.exists(out) and not overwrite:
+            raise EngineError(INVALID_PARAMS, f"{what}: {os.path.basename(out)} already exists")
+        try:
+            return run()
+        except ImportError as e:
+            raise EngineError(UNSUPPORTED, f"{what} needs torch and safetensors: {e}")
+        except (ValueError, KeyError) as e:
+            raise EngineError(INVALID_PARAMS, f"{what}: {e}")
+        finally:
+            if os.path.exists(out + ".part"):
+                try:
+                    os.remove(out + ".part")
+                except OSError:
+                    pass
+
+    def merge_models(self, params: dict, ctx: JobContext) -> dict:
+        from . import model_tools
+        a, b, c = params.get("model_a"), params.get("model_b"), params.get("model_c") or None
+        mode = str(params.get("mode", "Weight sum"))
+        out = str(params.get("output", ""))
+        inputs = [a, b] + ([c] if c and mode != "Weight sum" else [])
+        return self._model_tool("merge", inputs, out, bool(params.get("overwrite", False)), lambda: model_tools.merge(
+            a, b, out, c=c, mode=mode, alpha=float(params.get("alpha", 0.5)), beta=float(params.get("beta", 0.0)),
+            block_weights=str(params.get("block_weights", "") or ""), vae_source=str(params.get("vae_source", "merge")),
+            precision=str(params.get("precision", "fp16")),
+            progress=lambda i, n: ctx.progress(i, n, "merge"), check=ctx.check_interrupt))
+
+    def convert_model(self, params: dict, ctx: JobContext) -> dict:
+        from . import model_tools
+        src, out = params.get("model"), str(params.get("output", ""))
+        vae = params.get("bake_vae") or None
+        return self._model_tool("convert", [src] + ([vae] if vae else []), out, bool(params.get("overwrite", False)),
+                                lambda: model_tools.convert(
+            src, out, precision=str(params.get("precision", "fp16")), ema=str(params.get("ema", "no-ema")),
+            fix_clip=bool(params.get("fix_clip", True)), drop_junk=bool(params.get("drop_junk", True)), bake_vae=vae,
+            progress=lambda i, n: ctx.progress(i, n, "convert"), check=ctx.check_interrupt))
+
     def restore_faces(self, params: dict, ctx: JobContext) -> dict:
         self._no_extra("face restoration")
 

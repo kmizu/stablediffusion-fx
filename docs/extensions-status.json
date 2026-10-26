@@ -105,13 +105,13 @@
 "index": 17,
 "name": "Merge Board",
 "url": "https://github.com/bbc-mc/sdweb-merge-board.git",
-"status": "todo:model_merge"
+"status": "done:model_merge"
 },
 {
 "index": 18,
 "name": "Model Converter",
 "url": "https://github.com/Akegarasu/sd-webui-model-converter.git",
-"status": "todo:model_converter"
+"status": "done:model_converter"
 },
 {
 "index": 19,
@@ -123,7 +123,7 @@
 "index": 20,
 "name": "Merge Block Weighted",
 "url": "https://github.com/bbc-mc/sdweb-merge-block-weighted-gui.git",
-"status": "todo:model_merge"
+"status": "done:model_merge"
 },
 {
 "index": 21,
@@ -135,7 +135,7 @@
 "index": 22,
 "name": "SuperMerger",
 "url": "https://github.com/hako-mikan/sd-webui-supermerger.git",
-"status": "todo:model_merge"
+"status": "done:model_merge"
 },
 {
 "index": 23,
@@ -891,7 +891,7 @@
 "index": 148,
 "name": "Model toolkit",
 "url": "https://github.com/arenasys/stable-diffusion-webui-model-toolkit.git",
-"status": "todo:model_converter"
+"status": "done:model_converter"
 },
 {
 "index": 149,
@@ -1341,7 +1341,7 @@
 "index": 223,
 "name": "Model Mixer",
 "url": "https://github.com/wkpark/sd-webui-model-mixer.git",
-"status": "todo:model_merge"
+"status": "done:model_merge"
 },
 {
 "index": 224,
@@ -1851,7 +1851,7 @@
 "index": 308,
 "name": "Untitled Merger",
 "url": "https://github.com/silveroxides/sd-webui-untitledmerger.git",
-"status": "todo:model_merge"
+"status": "done:model_merge"
 },
 {
 "index": 309,
