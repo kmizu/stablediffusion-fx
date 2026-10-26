@@ -182,6 +182,12 @@ object Infotext:
       subseed = l("Variation seed").getOrElse(-1L),
       subseedStrength = subStrength,
       clipSkip = i("Clip skip").getOrElse(1),
+      hooks =
+        if f.get("Composable LoRA").exists(_.equalsIgnoreCase("true")) then
+          val keys = Seq("with_step", "uc_text_model_encoder", "uc_diffusion_model", "plot_weights", "single_no_uc", "hires_global_step")
+          base.hooks + ("composable_lora" -> ujson.Obj.from(keys.map(k =>
+            k -> ujson.Bool(f.get("Composable LoRA " + k).exists(_.equalsIgnoreCase("true"))))))
+        else base.hooks,
       hires = hires,
       // Inpaint fields use A1111's paste defaults when absent (Whole picture, padding 32, original, Inpaint masked).
       img2img = base.img2img.map(ii =>

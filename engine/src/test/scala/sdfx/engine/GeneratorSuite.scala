@@ -27,6 +27,39 @@ class GeneratorSuite extends munit.FunSuite:
     assertEquals(prep.request.outputDir, home.tmpDir(services.settings).toAbsolutePath.toString)
   }
 
+  test("Composable trace uses a persistent destination without recording machine paths") {
+    val p = GenerationParams(hooks = Map("composable_lora" -> ujson.Obj("enabled" -> true, "plot_weights" -> true)))
+    val prep = services.generator.prepare(p)
+    assertEquals(prep.request.params.hooks("composable_lora")("output_dir").str,
+      home.outputs(services.settings).toAbsolutePath.toString)
+    assert(!prep.recorded.hooks("composable_lora").obj.contains("output_dir"))
+  }
+
+  test("Composable trace survives image cleanup and is logged rather than registered as temporary") {
+    val traceHome = tempHome()
+    val traceServices = new AppServices(traceHome, Settings(lastModel = Some("foo")), dryRun = true, builtins = Nil,
+      launchOverride = Some(() => launch()), persistSettings = false, installShutdownHook = false)
+    val logs = scala.collection.mutable.ArrayBuffer.empty[String]
+    val temps = scala.collection.mutable.ArrayBuffer.empty[java.nio.file.Path]
+    val listener = new GenerationListener:
+      override def onLog(s: String): Unit = logs += s
+      override def onTempFile(p: java.nio.file.Path): Unit = temps += p
+    try {
+      traceServices.start()
+      val images = traceServices.generator.generateWith(GenerationParams(seed = 9, steps = 1, width = 64, height = 64,
+        hooks = Map("composable_lora" -> ujson.Obj("enabled" -> true, "plot_weights" -> true))), listener)
+      val trace = java.nio.file.Paths.get(logs.find(_.startsWith("Composable LoRA trace: ")).get.stripPrefix("Composable LoRA trace: "))
+      assert(Files.isRegularFile(trace))
+      assert(trace.startsWith(traceHome.outputs(traceServices.settings)))
+      assert(!temps.contains(trace))
+      assert(temps.forall(p => !Files.exists(p)))
+      assert(images.forall(i => Files.isRegularFile(i.path)))
+    } finally {
+      traceServices.shutdown()
+      deleteTree(traceHome.root)
+    }
+  }
+
   private lazy val home = tempHome()
   private lazy val services =
     val s = new AppServices(home, Settings(lastModel = Some("foo")), dryRun = true, builtins = Nil,
@@ -43,6 +76,24 @@ class GeneratorSuite extends munit.FunSuite:
     deleteTree(home.root)
 
   private def engineState = await(services.client.raw("get_state"))
+
+  test("Composable LoRA keeps branch and step tags while resolving repeated adapters only once") {
+    val prompt = "red <lora:My Lora:.5> AND blue [<lora:My Lora:.8>:2]"
+    val enabled = services.generator.prepare(GenerationParams(prompt = prompt, seed = 7,
+      hooks = Map("composable_lora" -> ujson.Obj("with_step" -> true))))
+    assertEquals(enabled.request.params.prompt, prompt)
+    assertEquals(enabled.request.params.loras.map(_.name), Seq("My Lora"))
+    assertEquals(enabled.request.params.loras.head.weight, .5)
+    assertEquals(enabled.request.loraPaths.keySet, Set("My Lora"))
+    val disabled = services.generator.prepare(GenerationParams(prompt = prompt, seed = 7,
+      hooks = Map("composable_lora" -> ujson.Obj("enabled" -> false))))
+    assert(!disabled.request.params.prompt.contains("<lora:"))
+    assertEquals(disabled.request.params.loras.head.weight, 1.3)
+    val textDisabled = services.generator.prepare(GenerationParams(prompt = prompt, seed = 7,
+      hooks = Map("composable_lora" -> ujson.Obj("enabled" -> "false"))))
+    assertEquals(textDisabled.request.params.prompt, disabled.request.params.prompt)
+    assertEquals(textDisabled.request.params.loras, disabled.request.params.loras)
+  }
 
   test("start refreshes the catalog and loads the last model") {
     val c = services.catalog

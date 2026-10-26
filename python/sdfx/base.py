@@ -56,6 +56,8 @@ class BaseEngine:
     dry_run = False
 
     def __init__(self):
+        import time
+        self.system_started_at = time.time()
         self.model: Optional[dict] = None   # LoadedModel-shaped dict
         self.load_opts = LoadModelRequest()
 
@@ -202,6 +204,34 @@ class BaseEngine:
     def memory(self, params: dict, ctx: JobContext) -> dict:
         return {"allocated_mb": 0.0, "reserved_mb": 0.0, "total_mb": 0.0, "ram_used_mb": ram_used_mb()}
 
+    def system_status(self, params: dict, ctx: JobContext) -> dict:
+        from .system_info import snapshot
+        return snapshot(self)
+
+    def system_info(self, params: dict, ctx: JobContext) -> dict:
+        from .system_info import snapshot, inventory
+        data = snapshot(self, full=True)
+        if 'dirs' in params:
+            data['networks'] = inventory(self, params['dirs'], params.get('hashes', False), ctx)
+        return data
+
+    def system_benchmark(self, params: dict, ctx: JobContext) -> dict:
+        from .system_info import benchmark
+        previous = getattr(self, '_benchmark_no_save', False)
+        self._benchmark_no_save = True
+        try:
+            return benchmark(self, params, ctx)
+        finally:
+            self._benchmark_no_save = previous
+
+    def system_submission_preview(self, params: dict, ctx: JobContext) -> dict:
+        from .system_info import submission_preview
+        return submission_preview(self, params)
+
+    def system_submit(self, params: dict, ctx: JobContext) -> dict:
+        from .system_info import submit
+        return submit(self, params)
+
     # -- helpers -----------------------------------------------------------
     def parse_load(self, params: dict) -> LoadModelRequest:
         req = from_dict(LoadModelRequest, params, "params")
@@ -285,9 +315,10 @@ class BaseEngine:
                 ctx.warn(f"ControlNet preprocessor '{u.preprocessor}' is not available; using the image as-is")
         from .prompt import unsupported_syntax_warnings
         for index, t in enumerate((gp.prompt, gp.negative_prompt)):
-            if index == 0 and "neutral_prompt" in (gp.hooks or {}):
+            if index == 0:
                 from .hooks import hook_config
-                if hook_config(gp.hooks, "neutral_prompt", {}) is not None:
+                if any(hook_config(gp.hooks, name, {}) is not None
+                       for name in ("neutral_prompt", "composable_lora")):
                     continue
             for w in unsupported_syntax_warnings(t):
                 ctx.warn(w)

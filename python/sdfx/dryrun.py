@@ -72,7 +72,7 @@ class FakeEngine(BaseEngine):
         return ["freeu", "dynamic_thresholding", "hypertile", "pag", "controlnet", "apg", "mahiro", "rescale_cfg",
                 "model_sampling", "kohya_hrfix", "multidiffusion", "latent_modifier", "soft_inpainting", "sag", "neveroom",
                 "reference", "revision", "ip_adapter", "controllllite", "fooocus_inpaint", "photomaker", "img2imgalt",
-                "face_restore", "caption", "img2vid", "novel_view", "ldsr", "marigold", "adetailer", "weight_gradient", "negpip", "neutral_prompt", "prompt_fusion", "save_intermediate", "latent_upscale"] + list(sampling_ext.HOOKS) + (
+                "face_restore", "caption", "img2vid", "novel_view", "ldsr", "marigold", "adetailer", "weight_gradient", "negpip", "neutral_prompt", "prompt_fusion", "save_intermediate", "latent_upscale", "composable_lora", "system_info"] + list(sampling_ext.HOOKS) + (
                     ["custom_code"] if os.environ.get("SDFX_ALLOW_CODE") == "1" else [])
 
     def preprocessors(self) -> list[str]:
@@ -223,9 +223,16 @@ class FakeEngine(BaseEngine):
             "lora_hashes": {lr.name: models.short_hash(req.lora_paths[lr.name]) for lr in gp.loras},
             "scheduler": schedulers.resolve_schedule(gp.sampler_name, gp.scheduler),
             "warnings": list(ctx.warnings),
+            "system_info": self._system_metadata(req.system_info_fields),
         }
 
     # -- tools ---------------------------------------------------------------
+    def _system_metadata(self, fields):
+        if not fields:
+            return None
+        from .system_info import snapshot, metadata
+        return metadata(snapshot(self, full=True), fields)
+
     def preprocess(self, params: dict, ctx: JobContext) -> dict:
         req = self.parse_preprocess(params)
         out = next_output_path(req.output_dir, f"pre-{req.preprocessor}")

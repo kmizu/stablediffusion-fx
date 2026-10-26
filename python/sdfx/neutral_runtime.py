@@ -180,7 +180,7 @@ class RuntimeHook:
             common["added_cond_kwargs"] = dict(common.get("added_cond_kwargs") or {},
                 image_embeds=align(self.image_embeds, batch, layout, inputs.device, inputs.dtype))
         results, perturbed, template = [], [], None
-        for branch in branches:
+        for index, branch in enumerate(branches):
             self.check_interrupt()
             kw = dict(common)
             kw["encoder_hidden_states"] = torch.cat([branch["prompt_embeds" if positive else "negative_prompt_embeds"] for positive in layout]).to(inputs.device, inputs.dtype)
@@ -197,6 +197,8 @@ class RuntimeHook:
             try:
                 for hook in self.branch_hooks:
                     prepared.append(hook)
+                    if hasattr(hook, "set_branch"):
+                        hook.set_branch(index, branch, self.step)
                     hook.before_branch(self.original, inputs, timestep, kw, layout)
                 output = self.original(inputs, timestep, *args, **kw)
             finally:

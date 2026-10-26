@@ -23,7 +23,8 @@ log = logging.getLogger("sdfx.server")
 
 QUEUED_TYPES = ("list_models", "list_files", "list_samplers", "load_model", "set_vae", "txt2img", "img2img",
                 "preprocess", "upscale", "unload", "memory", "restore_faces", "caption", "run_code", "img2vid",
-                "novel_view", "merge_models", "convert_model", "image_tool", "tokenize")
+                "novel_view", "merge_models", "convert_model", "image_tool", "tokenize", "system_info",
+                "system_benchmark", "system_submission_preview", "system_submit")
 
 
 def classify_exception(e: BaseException) -> tuple[str, str, str]:
@@ -47,6 +48,8 @@ class Server:
         self.interrupt = threading.Event()
         self.lock = threading.Lock()
         self.current_id: Optional[str] = None
+        self.current_type: Optional[str] = None
+        self.current_ctx: Optional[JobContext] = None
         self.cancelled: set = set()
         self.queued: "collections.deque[str]" = collections.deque()  # ids waiting in the queue, in order
         self.closing = False
@@ -78,7 +81,17 @@ class Server:
             self.emitter.emit(error_msg(rid, INVALID_PARAMS, "params must be an object"))
             return True
 
-        if typ == "ping":
+        if typ == "system_status":
+            try:
+                data = self.engine.system_status(params, None)
+                with self.lock:
+                    data['state'] = dict(request_id=self.current_id, request_type=self.current_type, queued=len(self.queued), interrupted=self.interrupt.is_set(),
+                        progress=dict(self.current_ctx.latest_progress) if self.current_ctx else {})
+                self.emitter.emit(result_msg(rid, data))
+            except Exception as e:
+                code, message, detail = classify_exception(e)
+                self.emitter.emit(error_msg(rid, code, message))
+        elif typ == "ping":
             self.emitter.emit(result_msg(rid, self.hello()))
         elif typ == "interrupt":
             target = params.get("target_id")
@@ -139,8 +152,11 @@ class Server:
                 self.emitter.emit(error_msg(rid, INTERRUPTED, "interrupted before start"))
                 return
             self.current_id = rid
+            self.current_type = typ
             self.interrupt.clear()
         ctx = JobContext(self.emitter, rid, self.interrupt)
+        with self.lock:
+            self.current_ctx = ctx
         try:
             handler = getattr(self.engine, typ)
             res = handler(params, ctx)
@@ -158,6 +174,8 @@ class Server:
         finally:
             with self.lock:
                 self.current_id = None
+                self.current_type = None
+                self.current_ctx = None
                 self.interrupt.clear()
                 self.cancelled.discard(rid)
 

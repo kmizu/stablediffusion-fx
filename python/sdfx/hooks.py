@@ -21,7 +21,7 @@ KNOWN_HOOKS = ("freeu", "dynamic_thresholding", "hypertile", "pag", "apg", "mahi
                "revision", "ip_adapter", "controllllite", "fooocus_inpaint", "photomaker", "face_restore", "img2imgalt",
                # sdfx.sampling_ext.HOOKS (extension index)
                "detail_daemon", "vectorscope_cc", "latent_mirroring", "tiling", "anti_burn", "resharpen", "color_grading",
-               "cfg_schedule", "cads", "adetailer", "weight_gradient", "negpip", "neutral_prompt", "prompt_fusion", "save_intermediate", "latent_upscale")
+               "cfg_schedule", "cads", "adetailer", "weight_gradient", "negpip", "neutral_prompt", "prompt_fusion", "save_intermediate", "latent_upscale", "composable_lora")
 
 FREEU_DEFAULTS = {
     False: {"b1": 1.5, "b2": 1.6, "s1": 0.9, "s2": 0.2},  # SD1.x

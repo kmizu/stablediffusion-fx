@@ -20,8 +20,8 @@ server, 40 rewrites of the reForge built-ins. Repo: private GitHub `kmizu/stable
 
 | | Count |
 |---|---|
-| Index entries done | 92 |
-| Index entries todo | 210 (145 distinct targets) |
+| Index entries done | 94 |
+| Index entries todo | 208 (143 distinct targets) |
 | Not applicable (web-UI CSS/UX only, accounts, obsolete, external apps, server ops) | 51 |
 
 `scripts/extensions_matrix.py` is the single ledger. Its `S` dict maps each index entry to `done:<plugin id>`,
@@ -88,11 +88,20 @@ the three implementation plans and the final section of `docs/VERIFICATION.md` f
 **Second parallel wave:** `grid_numbers` and `latent_upscale` are accepted after real SD1.5/SDXL, native app/replay,
 actual PNG Restore/Send-to, rendered forms and aggregate checks. Grid annotations preserve source images and record
 only visible tiles. Latent Upscale encodes before resizing and executes the full requested denoising count.
-See the closing VERIFICATION section and their plans. Composable LoRA is still in progress in
-`.worktrees/composable-lora`, branch `agent/composable-lora-20261026`; its formats/controllers and layer mapping
-must finish review and all normal model/UI gates before promotion. Do not include it in this wave's done count.
+See the closing VERIFICATION section and their plans.
 
-**Next action:** finish `composable_lora`, preserving its documented behaviours and
+**Third parallel wave:** `composable_lora` and `core:system-info` are now accepted after source-scope review,
+SD1.5/SDXL generation, actual native queue/replay and rendered controls. Composable's source controllers and all
+adapter algebra families are implemented; real LoRA/LoCon/LoKr have model evidence, while unavailable trained
+LoHa/full/IA3/CP formats have CPU algebra coverage. Keep that distinction. Plots are source-compatible appended
+images; trace JSON persists outside `.tmp`. System Info has live diagnostics, native benchmark/history, explicit
+metadata selection and preview/submit separation. No cloud submission was sent during acceptance. See both plans
+and VERIFICATION for exact scope, paths and limits.
+
+**Next action:** finish `core:styles-editor` in `.worktrees/core-styles-editor`, branch
+`agent/core-styles-editor-20261026`, covering both index163 and248 source extensions. CSV/category preservation,
+unsaved-draft identities, backups/AES-Crypt interoperability and full native editing workflows are being verified;
+do not promote until actual model/UI/source gates pass. Preserve documented behaviours and
 the normal real-model/UI/notice gates. Neutral Prompt is now marked implemented after an explicit original-scope
 acceptance audit; see `docs/superpowers/plans/2026-10-26-neutral-prompt.md` and the closing VERIFICATION section.
 All operators, nesting/signed weights, CFG rescale, schedules, native form/formatter/replay and actual AppServices
@@ -104,7 +113,7 @@ composed Neutral prompts remain explicitly unsupported in `neutral_runtime.valid
 original Runtime task permits clear unsupported combinations; later agent-added notes making every combination
 a promotion prerequisite are superseded by the documented acceptance clarification. No original Neutral operator
 or model/UI/notice gate was omitted. Keep the seven guards until their own implementations are verified.
-The overall 353-entry goal remains active; 210 accepted entries are unfinished. Do not treat this promotion as
+The overall 353-entry goal remains active; 208 accepted entries are unfinished. Do not treat this promotion as
 completion of that goal or reclassify remaining entries to make it appear complete.
 
 ## Remaining targets, most-starred first
@@ -115,10 +124,10 @@ regional_prompter, openpose_editor, core:localization, wav2lip, text2video, inpa
 stable_sr, cn_animation, unprompted, llul, dataset_tag_editor, deoldify, dreamartist, qr_code, infinite_zoom, tipo,
 lcm, stylepile, clip_interrogator, prompt_generator, style_selector, aesthetic_gradients, latent_couple,
 outpaint_canvas, fabric, manga_maker, model_downloader, multi_subject_render, batch_face_swap, video_loopback,
-core:presets, model_organizer, core:system-info, model_keyword, shap_e, prompt_travel, lora_control,
+core:presets, model_organizer, model_keyword, shap_e, prompt_travel, lora_control,
 gif2gif, replacer, cd_tuner, riffusion, core:api-payload, smart_process, haku_img, infinity_grid,
 core:panorama-viewer, loopback_scaler, daam, text2prompt, prompt_translate, prompt_gallery,
-composable_lora, refiner, incantations, old_photo_restoration, abysz_lab, aesthetic_score, steps_animation,
+refiner, incantations, old_photo_restoration, abysz_lab, aesthetic_score, steps_animation,
 nsfw_checker, image_editor, embedding_merge, rich_text, mosaic_outpaint, cross_attention_viz, hypernetwork_training,
 inspiration, vram_estimator, sonar, dump_unet, llm_prompt, training_picker, model_presets,
 lama_cleaner, kandinsky, hypernetworks, core:styles-editor, characteristic_guidance, hotshot_xl, live_portrait,
@@ -134,8 +143,7 @@ core:prevent-interrupt
 
 Suggested next steps, by value and fit with what exists:
 
-1. **Prompt-embedding hooks**: composable_lora. It builds
-   on `prompt_schedule.py` and `_schedule_swapper`.
+1. **Native tools**: finish core:styles-editor; then core:image-compare and vae_tools, preserving their source scope.
 2. **Regional prompting**: regional_prompter and latent_couple, via attention-level region masks.
    tiled_diffusion can largely reuse the existing `multidiffusion` hook plus noise inversion and region prompts.
 3. **Small, cheap ones**: img2img/custom/conditioning hires fix variants, color_correction, vae_tools,

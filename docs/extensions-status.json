@@ -471,7 +471,7 @@
 "index": 78,
 "name": "Composable LoRA",
 "url": "https://github.com/a2569875/stable-diffusion-webui-composable-lora.git",
-"status": "todo:composable_lora"
+"status": "done:composable_lora"
 },
 {
 "index": 79,
@@ -543,7 +543,7 @@
 "index": 90,
 "name": "System Info",
 "url": "https://github.com/vladmandic/sd-extension-system-info.git",
-"status": "todo:core:system-info"
+"status": "done:core:system-info"
 },
 {
 "index": 91,

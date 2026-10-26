@@ -28,6 +28,9 @@ object Protocol:
     val Unload = "unload"
     val Memory = "memory"
     val Tokenize = "tokenize"
+    val SystemInfo = "system_info"
+    val SystemStatus = "system_status"
+    val SystemBenchmark = "system_benchmark"
     val Shutdown = "shutdown"
 
   object ErrorCodes:
@@ -71,13 +74,17 @@ case class GenerationRequest(
     upscalerPaths: Map[String, String] = Map.empty,
     previewEvery: Int = 2,
     previewMethod: String = "approx",
-    lbwPresets: Map[String, String] = Map.empty
+    lbwPresets: Map[String, String] = Map.empty,
+    systemInfoFields: Seq[String] = Nil
 ) derives RW
 
 case class GeneratedImage(path: String, seed: Long, subseed: Long = -1L, width: Int = 0, height: Int = 0) derives RW
 
 /** Persistent auxiliary output; not an engine temp file or a final-image gallery member. */
 case class IntermediateArtifact(path: String, `type`: String = "image") derives RW
+
+/** Persistent effective-weight JSON; diagnostic plot is carried in images like upstream. */
+case class ComposableLoraTrace(path: String) derives RW
 
 case class GenerationResult(
     images: Seq[GeneratedImage],
@@ -89,7 +96,9 @@ case class GenerationResult(
     loraHashes: Map[String, String] = Map.empty,
     scheduler: Option[String] = None,
     warnings: Seq[String] = Nil,
-    intermediateArtifacts: Seq[IntermediateArtifact] = Nil
+    intermediateArtifacts: Seq[IntermediateArtifact] = Nil,
+    composableLoraTrace: Option[ComposableLoraTrace] = None,
+    systemInfo: Option[ujson.Value] = None
 ) derives RW
 
 case class UpscaleRequest(imagePath: String, upscaler: String, scale: Double, outputDir: String, upscalerPaths: Map[String, String] = Map.empty) derives RW

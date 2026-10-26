@@ -54,7 +54,8 @@ case class Settings(
     pluginValues: Map[String, Map[String, String]] = Map.empty,
     hfOffline: Boolean = false,
     theme: String = "dark",
-    allowCustomCode: Boolean = false
+    allowCustomCode: Boolean = false,
+    systemInfoMetadataFields: Seq[String] = Nil
 ) derives RW
 
 object Settings:

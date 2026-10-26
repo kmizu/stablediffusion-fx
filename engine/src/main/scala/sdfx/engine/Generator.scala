@@ -199,7 +199,26 @@ final class Generator(
 
     val ex = LoraSyntax.extract(prompt)
     val hrEx = LoraSyntax.extract(recorded.hires.prompt)
-    val allLoras = (recorded.loras ++ ex.loras ++ hrEx.loras.filterNot(l => ex.loras.exists(_.name == l.name)))
+    val composable = recorded.hooks.get("composable_lora").exists {
+      case o: ujson.Obj => o.value.get("enabled").forall {
+        case ujson.Bool(value) => value
+        case ujson.Num(value) => value != 0
+        case ujson.Str(value) => !Set("disable", "disabled", "false", "off", "no", "0", "")(value.trim.toLowerCase(java.util.Locale.ROOT))
+        case _ => true
+      }
+      case ujson.Bool(value) => value
+      case ujson.Str(value) => Set("enable", "enabled", "true", "on", "yes", "1")(value.trim.toLowerCase(java.util.Locale.ROOT))
+      case _ => false
+    }
+    val allLoras =
+      if composable then
+        // Placement and repeated tag weights belong to the composable engine. Resolve
+        // each file once; retain its first native TE/UNet settings instead of summing tags.
+        val tags = """<(?:lora|lyco):[^>]+>""".r.findAllIn(prompt + " " + recorded.hires.prompt)
+          .flatMap(t => LoraSyntax.extract(t).loras).toSeq
+        (recorded.loras ++ tags).foldLeft(Vector.empty[LoraRef])((found, lr) =>
+          if found.exists(_.name == lr.name) then found else found :+ lr)
+      else recorded.loras ++ ex.loras ++ hrEx.loras.filterNot(l => ex.loras.exists(_.name == l.name))
     val warnings = Seq.newBuilder[String]
     val loraPaths = allLoras.map(_.name).distinct.flatMap { n =>
       catalog.findLora(n).map(e => n -> e.path).orElse {
@@ -221,15 +240,15 @@ final class Generator(
       .toMap
     val s = settings()
     val resolvedHooks = resolveHookModels(recorded.hooks, msg => warnings += msg).map {
-      case ("save_intermediate", o: ujson.Obj) =>
+      case (id @ ("save_intermediate" | "composable_lora"), o: ujson.Obj) =>
         val persistent = ujson.Obj.from(o.value.toSeq)
         persistent("output_dir") = home.outputs(s).toAbsolutePath.toString
-        "save_intermediate" -> persistent
+        id -> persistent
       case other => other
     }
     val sent = recorded.copy(
-      prompt = ex.prompt,
-      hires = recorded.hires.copy(prompt = hrEx.prompt),
+      prompt = if composable then prompt else ex.prompt,
+      hires = recorded.hires.copy(prompt = if composable then recorded.hires.prompt else hrEx.prompt),
       loras = allLoras.filter(l => loraPaths.contains(l.name)),
       hooks = resolvedHooks
     )
@@ -242,6 +261,7 @@ final class Generator(
       upscalerPaths = upPaths,
       previewEvery = s.previewEvery,
       previewMethod = s.previewMethod,
+      systemInfoFields = s.systemInfoMetadataFields,
       lbwPresets = if sent.loras.exists(_.lbw.nonEmpty) then Generator.lbwPresets(home.configDir) else Map.empty
     )
     PreparedGeneration(recorded, req, if recorded.isImg2Img then GenerationMode.Img2Img else GenerationMode.Txt2Img, warnings.result())
@@ -349,7 +369,8 @@ final class Generator(
       vaeName = result.vaeName.orElse(loaded.flatMap(_.vaeName)),
       vaeHash = result.vaeHash.orElse(loaded.flatMap(_.vaeHash)).map(_.take(10)),
       loraHashes = result.loraHashes.toSeq.sortBy(_._1),
-      scheduler = result.scheduler
+      scheduler = result.scheduler,
+      extra = scala.collection.immutable.ListMap.from(result.systemInfo.toSeq.map(v => "System Info" -> v.render()))
     )
     (params, Infotext.write(params, facts))
 
@@ -370,6 +391,7 @@ final class Generator(
     val result = awaitActive(handle.result, activity)
     result.images.foreach(i => listener.onTempFile(Paths.get(i.path)))
     result.warnings.foreach(listener.onLog)
+    result.composableLoraTrace.foreach(t => listener.onLog(s"Composable LoRA trace: ${t.path}"))
     result.intermediateArtifacts.filter(a => a.`type` == "manifest" || a.`type` == "video")
       .foreach(a => listener.onLog(s"Intermediate ${a.`type`}: ${a.path}"))
     (prep, result)

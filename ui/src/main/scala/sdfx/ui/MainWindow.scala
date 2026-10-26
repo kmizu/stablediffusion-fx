@@ -86,6 +86,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   val pngInfo = new PngInfoTab(ctx, actions)
   val extras = new ExtrasTab(ctx, initial.extrasUpscaler, initial.extrasScale)
   val tokenizer = new TokenizerTab(ctx, () => vms(activeMode).prompt.get)
+  val systemInfo = new SystemInfoTab(ctx)
   val statusBar = new StatusBar(progress, () => generate(false), () => generate(true), () => interrupt(), () => clearQueue())
   val topBar = new TopBar(ctx, model, loadCheckpoint, setVae, () => refreshCatalog(), () => restartEngine(), () => openSettings())
 
@@ -99,9 +100,14 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   private val extrasTab = new Tab("Extras", extras.node)
   private val tokenizerTab = new Tab("Tokenizer", tokenizer.node)
   tokenizerTab.setId("tokenizer-tab")
-  tabs.getTabs.addAll(pngTab, extrasTab, tokenizerTab)
+  private val systemInfoTab = new Tab("System Info", systemInfo.node)
+  systemInfoTab.setId("system-info-tab")
+  tabs.getTabs.addAll(pngTab, extrasTab, tokenizerTab, systemInfoTab)
   private var lastMode: Mode = Mode.Txt2Img
-  tabs.getSelectionModel.selectedItemProperty.addListener((_, _, t) => modeOf(t).foreach(lastMode = _))
+  tabs.getSelectionModel.selectedItemProperty.addListener((_, _, t) =>
+    modeOf(t).foreach(lastMode = _)
+    systemInfo.setActive(t eq systemInfoTab)
+  )
   private def modeOf(t: Tab): Option[Mode] = modeTabs.collectFirst { case (m, tab) if tab eq t => m }
   def activeMode: Mode = Option(tabs.getSelectionModel.getSelectedItem).flatMap(modeOf).getOrElse(lastMode)
   def select(mode: Mode): Unit = tabs.getSelectionModel.select(modeTabs(mode))
@@ -253,8 +259,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
     val vm = vms(mode)
     vm.initImage.set(path.toString)
     infotext.foreach { t =>
-      vm.restoreInfotext(t)
-      restorePlugins(mode, t)
+      restorePlugins(mode, t, vm.restoreInfotext(t))
     }
     select(mode)
     ctx.info(s"Sent to ${mode.label}")
@@ -262,8 +267,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   def restore(infotext: String): Unit =
     val parsed = sdfx.core.infotext.Infotext.parse(infotext)
     val mode = if activeMode == Mode.Txt2Img && sdfx.plugins.LatentUpscalePlugin.replay(parsed.fields).nonEmpty then Mode.Img2Img else activeMode
-    vms(mode).restoreInfotext(infotext)
-    restorePlugins(mode, infotext)
+    restorePlugins(mode, infotext, vms(mode).restoreInfotext(infotext))
     select(mode)
     val parsedModel = sdfx.core.infotext.Infotext.parse(infotext).get("Model").filter(_.nonEmpty)
     parsedModel.flatMap(services.catalog.findCheckpoint).filter(_.name != model.checkpoint.get) match
@@ -273,10 +277,22 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
       case None =>
         ctx.success(s"Parameters restored into ${mode.label}")
 
-  private def restorePlugins(mode: Mode, infotext: String): Unit =
+  private def restorePlugins(mode: Mode, infotext: String, params: sdfx.core.model.GenerationParams): Unit =
     plugins(mode).restoreInfotext(infotext)
     if mode != Mode.Txt2Img then
       plugins(mode).restoreLatentUpscale(sdfx.core.infotext.Infotext.parse(infotext).fields)
+    restoreComposable(mode, params)
+
+  /** Restore this tool's complete PNG settings into its native form as well as the request. */
+  private def restoreComposable(mode: Mode, params: sdfx.core.model.GenerationParams): Unit =
+    params.hooks.get("composable_lora").collect { case o: ujson.Obj => o }.foreach { hook =>
+      plugins(mode).form("composable_lora").foreach { form =>
+        form.prop("enabled").foreach(_.set("true"))
+        hook.obj.foreach { (key, value) =>
+          form.prop(key).foreach(_.set(value.bool.toString))
+        }
+      }
+    }
 
   def delete(path: Path): Unit =
     val a = new Alert(Alert.AlertType.CONFIRMATION, s"Delete ${path.getFileName}?\nThe file is removed from disk.", ButtonType.CANCEL, ButtonType.OK)
@@ -472,6 +488,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
       if t == "pnginfo" then tabs.getSelectionModel.select(pngTab)
       if t == "extras" then tabs.getSelectionModel.select(extrasTab)
       if t == "tokenizer" then tabs.getSelectionModel.select(tokenizerTab)
+      if t == "systeminfo" then tabs.getSelectionModel.select(systemInfoTab)
     }
     statusBar.logToggle.setSelected(initial.logVisible)
     reloadGallery()
@@ -484,6 +501,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
       case Some(t) if t eq pngTab    => "pnginfo"
       case Some(t) if t eq extrasTab => "extras"
       case Some(t) if t eq tokenizerTab => "tokenizer"
+      case Some(t) if t eq systemInfoTab => "systeminfo"
       case Some(t)                   => modeOf(t).map(_.key).getOrElse("txt2img")
       case None                      => "txt2img"
     UiState(
@@ -530,6 +548,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
     catch case NonFatal(e) => System.err.println(s"[sdfx] cannot save ui state: ${e.getMessage}")
 
   def dispose(): Unit =
+    systemInfo.dispose()
     vramPoll.stop()
     mcpExec.execute(() => mcp.close())
     mcpExec.shutdown()

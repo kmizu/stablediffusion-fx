@@ -45,8 +45,9 @@ final class EngineSupervisor(
 
   /** Requests that make the engine "busy" (everything that may take long). */
   val heavyTypes: Set[String] = Set(Protocol.Types.Txt2Img, Protocol.Types.Img2Img, Protocol.Types.Upscale,
-    Protocol.Types.Preprocess, Protocol.Types.LoadModel, Protocol.Types.SetVae)
-  private val generationTypes: Set[String] = Set(Protocol.Types.Txt2Img, Protocol.Types.Img2Img, Protocol.Types.Upscale, Protocol.Types.Preprocess)
+    Protocol.Types.Preprocess, Protocol.Types.LoadModel, Protocol.Types.SetVae, Protocol.Types.SystemBenchmark)
+  private val generationTypes: Set[String] = Set(Protocol.Types.Txt2Img, Protocol.Types.Img2Img, Protocol.Types.Upscale, Protocol.Types.Preprocess,
+    Protocol.Types.SystemBenchmark)
   private val loadTypes: Set[String] = Set(Protocol.Types.LoadModel, Protocol.Types.SetVae)
 
   private val lock = new Object

@@ -28,6 +28,7 @@ from . import adapters, extras, inpaint, lora_blocks, models, preview, prompt, p
 from . import weight_gradient, save_intermediate, latent_upscale
 from . import negpip
 from . import neutral_prompt, neutral_runtime, prompt_fusion
+from .clora import runtime as composable_lora
 from . import extensions as ext_mod
 from .base import LATENT_UPSCALERS, BaseEngine
 from .images import Image, load_mask, load_rgb, next_output_path, resize_image, save_png
@@ -186,7 +187,7 @@ class Engine(BaseEngine):
         return h
 
     def features(self) -> list[str]:
-        f = ["freeu", "dynamic_thresholding", "hypertile"]
+        f = ["freeu", "dynamic_thresholding", "hypertile", "system_info"]
         if hasattr(diffusers, "StableDiffusionXLPAGPipeline"):
             f.append("pag")
         if hasattr(diffusers, "ControlNetModel"):
@@ -199,7 +200,7 @@ class Engine(BaseEngine):
             f.append("taesd")
         f += ["apg", "mahiro", "rescale_cfg", "model_sampling", "kohya_hrfix", "multidiffusion", "latent_modifier",
               "soft_inpainting", "neveroom", "reference", "revision", "ip_adapter", "controllllite", "fooocus_inpaint",
-              "img2imgalt", "caption", "ldsr", "adetailer", "weight_gradient", "negpip", "neutral_prompt", "tokenizer", "prompt_fusion", "save_intermediate", "latent_upscale"]
+              "img2imgalt", "caption", "ldsr", "adetailer", "weight_gradient", "negpip", "neutral_prompt", "tokenizer", "prompt_fusion", "save_intermediate", "latent_upscale", "composable_lora"]
         f += list(ext_mod.sampling_ext.HOOKS)
         if hasattr(diffusers, "StableDiffusionSAGPipeline"):
             f.append("sag")
@@ -470,6 +471,15 @@ class Engine(BaseEngine):
     def _apply_loras(self, gp: GenerationParams, req: GenerationRequest, ctx: JobContext) -> dict:
         hashes: dict = {}
         pipe = self.pipe
+        if hooks_mod.hook_config(gp.hooks, "composable_lora", {}) is not None:
+            self._lora_windows, self._lora_state = [], ([], [])
+            if self.loaded_loras:
+                pipe.disable_lora()
+            try:
+                self._composable_job = composable_lora.Job(pipe, gp, req, ctx)
+            except (ValueError, KeyError, OverflowError, RecursionError) as exc:
+                raise EngineError(INVALID_PARAMS, f"Composable LoRA: {exc}") from exc
+            return {name: models.short_hash(adapter.path) for name, adapter in self._composable_job.adapters.items()}
         want = []
         self._lora_windows = []
         self._lora_key = None
@@ -621,6 +631,14 @@ class Engine(BaseEngine):
                           hires_total: Optional[int] = None, gradient_total: Optional[int] = None) -> dict:
         """_encode plus A1111 prompt editing / alternation: returns the embeddings for step 1; when the prompt
         changes during sampling the result is a ScheduledEmbeds carrying [(end_step, embeds), ...] (equal lengths)."""
+        job = getattr(self, "_composable_job", None)
+        if job is not None and hooks_mod.hook_config(gp.hooks, "composable_lora", {}) is not None:
+            try:
+                composed = job.encode(self, pos, neg, gp, bs, steps, hires_total, gradient_total)
+            except (ValueError, KeyError, OverflowError, RecursionError) as exc:
+                raise EngineError(INVALID_PARAMS, f"Composable LoRA: {exc}") from exc
+            if composed is not None:
+                return composed
         nc = hooks_mod.hook_config(gp.hooks, "neutral_prompt", {"cfg_rescale": 0})
         if nc is not None:
             try:
@@ -927,6 +945,9 @@ class Engine(BaseEngine):
         kw: dict = dict(embeds)
         kw.pop("_negpip", None)
         kw.pop("_neutral", None)
+        kw.pop("_clora_branch", None)
+        kw.pop("_clora_prompt", None)
+        kw.pop("_clora_negative", None)
         kw.update(num_inference_steps=steps, guidance_scale=cfg_scale, generator=self._generators(seeds, gp),
                   output_type=output_type, callback_on_step_end=self._callback(ctx, req, pass_, image_idx, images_total,
                                                                                expected_steps or steps))
@@ -1018,6 +1039,13 @@ class Engine(BaseEngine):
                 cleanups.append(lambda: unet.set_attn_processor(saved_procs))
             if neutral_plan:
                 from .neutral_sampling import Controller
+                composable = getattr(self, "_composable_job", None)
+                if composable is not None and all("_clora_branch" in b for b in neutral_plan.branches):
+                    actual = int(expected_steps or steps)
+                    global_clock = hooks_mod.coerce_bool(composable.config.get("hires_global_step", False))
+                    offset = gp.steps if pass_ == "hires" and global_clock else 0
+                    total_clock = composable_lora.clock_total(gp, composable.config, actual)
+                    branch_hooks.append(composable_lora.BranchHook(composable, sched, total_clock, offset, pass_))
                 guided = cfg_scale > 1 and getattr(unet.config, "time_cond_proj_dim", None) is None
                 ip_embeds = None
                 if "ip_adapter_image" in kw:
@@ -1029,7 +1057,7 @@ class Engine(BaseEngine):
                     neutral_cn = ControlNetFrame(pipe.controlnet).install()
                     cleanups.append(neutral_cn.remove)
                 nh = neutral_runtime.RuntimeHook(unet, sched, neutral_plan, cfg_scale,
-                        float(hooks_mod.hook_config(gp.hooks, "neutral_prompt", {"cfg_rescale": 0})["cfg_rescale"]),
+                        float((hooks_mod.hook_config(gp.hooks, "neutral_prompt", {"cfg_rescale": 0}) or {"cfg_rescale": 0})["cfg_rescale"]),
                         guided=guided,
                         pag=bool(pag),
                         controlnet=neutral_cn,
@@ -1082,9 +1110,19 @@ class Engine(BaseEngine):
 
     def _generate(self, params: dict, ctx: JobContext, mode: str) -> dict:
         self._intermediate_recorder = None
+        self._composable_job = None
         try:
-            return self._generate_recorded(params, ctx, mode)
+            result = self._generate_recorded(params, ctx, mode)
+            if self._composable_job is not None:
+                self._composable_job.finish(result, params.get("output_dir", ""))
+            if params.get('system_info_fields'):
+                from .system_info import snapshot, metadata
+                result['system_info'] = metadata(snapshot(self, full=True), params['system_info_fields'])
+            return result
         finally:
+            if self._composable_job is not None:
+                self._composable_job.remove()
+                self._composable_job = None
             recorder = self._intermediate_recorder
             if recorder is not None:
                 try:
@@ -1144,7 +1182,8 @@ class Engine(BaseEngine):
         if hires and (hp.prompt or hp.negative_prompt or prompt_schedule.has_schedule(hr_pos)
                       or prompt_schedule.has_schedule(hr_neg) or gradient_hr
                       or (hooks_mod.hook_config(gp.hooks, "prompt_fusion", {}) is not None
-                          and (prompt_fusion.active(hr_pos) or prompt_fusion.active(hr_neg)))):
+                          and (prompt_fusion.active(hr_pos) or prompt_fusion.active(hr_neg)))
+                      or getattr(self, "_composable_job", None) is not None):
             hr_actual = hires_steps(hp.second_pass_steps or gp.steps, hp.denoising_strength)[2]
             hr_embeds = self._encode_scheduled(hr_pos, hr_neg, gp, bs, gp.steps, hp.second_pass_steps or gp.steps,
                                                gradient_total=hr_actual)
@@ -1269,7 +1308,10 @@ class Engine(BaseEngine):
             for j, im in enumerate(imgs):
                 k = idx0 + j
                 path = next_output_path(req.output_dir, str(seed + k))
-                save_png(im, path)
+                if getattr(self, '_benchmark_no_save', False):
+                    path = ''  # internal benchmark excludes PNG encoding/disk I/O, like upstream do_not_save_samples
+                else:
+                    save_png(im, path)
                 out_images.append({"path": path, "seed": seed + k, "subseed": subseed + k,
                                    "width": im.width, "height": im.height})
                 if self._intermediate_recorder is not None:

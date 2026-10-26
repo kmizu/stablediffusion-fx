@@ -15,6 +15,14 @@ class ProtocolSuite extends munit.FunSuite:
     assertEquals(result.intermediateArtifacts, Seq(IntermediateArtifact("outputs/intermediates/job/manifest.json", "manifest")))
   }
 
+  test("Composable trace is typed and legacy results decode without it") {
+    assertEquals(Json.fromJs[GenerationResult](ujson.Obj("images" -> ujson.Arr())).composableLoraTrace, None)
+    val raw = ujson.read("""{"images":[],"composable_lora_trace":{"path":"outputs/intermediates/composable-lora/job.json","records":[],"plot":"obsolete-temp.png"}}""")
+    val result = Json.fromJs[GenerationResult](raw)
+    assertEquals(result.composableLoraTrace.map(_.path), Some("outputs/intermediates/composable-lora/job.json"))
+    assertEquals(Json.fromJs[GenerationResult](Json.toJs(result)), result)
+  }
+
   private def ev(s: String) = EngineEvent.parse(ujson.read(s))
 
   test("EngineEvent.parse: progress (full and defaults)") {
@@ -84,11 +92,13 @@ class ProtocolSuite extends munit.FunSuite:
       controlnetPaths = Map("canny" -> "D:/cn/canny.pth"),
       upscalerPaths = Map("4x-UltraSharp" -> "D:/up/4x.pth"),
       previewEvery = 3,
-      previewMethod = "full"
+      previewMethod = "full",
+      systemInfoFields = Seq("version.app", "platform.python")
     )
     val js = Json.toJs(req)
     assertEquals(js.obj.keys.toSet, Set("params", "output_dir", "lora_paths", "embedding_paths", "controlnet_paths",
-      "upscaler_paths", "preview_every", "preview_method", "lbw_presets"))
+      "upscaler_paths", "preview_every", "preview_method", "lbw_presets", "system_info_fields"))
+    assertEquals(js("system_info_fields").arr.map(_.str).toSeq, Seq("version.app", "platform.python"))
     assertEquals(js("params")("negative_prompt").str, "n")
     assertEquals(js("params")("cfg_scale").num, 6.0)
     assertEquals(js("lora_paths").obj.keys.toSeq, Seq("foo"))

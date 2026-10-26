@@ -47,6 +47,13 @@ BASE = [
     ("AlUlkesh/sd_grid_add_image_number", "reimplemented", "Filename numbers and XYZ axis labels on grid tiles "
      "-> `grid_numbers`; standalone Java2D renderer; "
      "[source 693a8a7](https://github.com/AlUlkesh/sd_grid_add_image_number/tree/693a8a710e1872d3ba9b63a41f69ee705f4ad54c)"),
+    ("a2569875/stable-diffusion-webui-composable-lora", "ported", "Composable LoRA/LyCORIS controllers and adapter "
+     "algebra -> `composable_lora`; standalone branch routing and native controls; "
+     "[source a03d40e](https://github.com/a2569875/stable-diffusion-webui-composable-lora/tree/a03d40eb3a3bc63728f46f1c00229310734c8fef)"),
+    ("vladmandic/sd-extension-system-info", "ported", "Fixed benchmark prompts -> native System Info; remaining "
+     "diagnostics, benchmark, local history, metadata and explicit legacy submission independently implemented; "
+     "[source 006f08f](https://github.com/vladmandic/sd-extension-system-info/tree/006f08f499bbe69c484f0f1cc332bbf0e75526c2). "
+     "Optional preinstalled NVIDIA driver diagnostics are queried when available; no driver utility is bundled."),
     ("kohya-ss/sd-scripts", "ported", "ControlNet-LLLite module layout"),
     ("lllyasviel/Fooocus", "ported", "Fooocus inpaint patch / head application"),
     ("threestudio-project/threestudio", "reimplemented", "Zero123 diffusers layout and sampling"),

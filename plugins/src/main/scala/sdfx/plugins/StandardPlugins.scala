@@ -8,6 +8,7 @@ import sdfx.core.plugins.api.{Plugin, XyzAxis}
 object StandardPlugins:
   def alwaysOn: Seq[Plugin] = Seq(
     new PromptFusionPlugin,
+    new ComposableLoraPlugin,
     // guidance
     new FreeUPlugin, new DynamicThresholdingPlugin, new ApgPlugin, new MahiroPlugin, new RescaleCfgPlugin, new PagPlugin,
     new SagPlugin,

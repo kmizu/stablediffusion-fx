@@ -845,3 +845,66 @@ These two independent branches are accepted; the larger Composable LoRA implemen
 Only indices88 and189 are promoted: **92 done / 210 todo / 51 NA**, 145 distinct pending targets. The overall
 353-entry goal is still active. Composable LoRA core formats, controllers, adapter mapping and real-model/UI gates
 remain in progress; none is counted as complete by this wave.
+
+## Composable LoRA and native System Info acceptance (2026-10-26)
+
+- **Scope and source:** Composable LoRA/LyCORIS sourcea03d40e (AGPL-3.0) includes all seven controls, AND branch
+  scoping, negative encoder/denoiser behavior including its single-branch exception, source step/alternation/ramp
+  grammar, pure math and gated Python commands, plots and all LoRA/LoCon/CP/LoHa/LoKr/full/IA3 algebra families.
+  System Info source006f08f (MIT) supplies the retained fixed benchmark prompts; the native diagnostics, inventory,
+  benchmark/history, status API, opt-in metadata and preview/submit implementation are standalone. Each plan
+  distinguishes source behaviors, native adaptations and compatibility limits.
+- **Independent review and repairs:** legacy SGM root-convolution mapping, sparse LoRA residuals, full-factor LoKr
+  alpha normalization and base/hires weight/single-branch scope were reproduced and repaired with CPU regressions.
+  Global hires totals also reach prepare-step commands. Independent frozen review passed36 CPU cases. A later
+  trace-lifecycle gap was reproduced and repaired: JSON now persists under the native output root, typed protocol
+  decoding preserves/logs it, and temporary plot cleanup leaves no orphan. Independent fix review passed20 cases.
+  Source postprocess appends the plot as an image; the native implementation does so after generation
+  postprocessing. No new diagnostic-image protocol was imposed.
+- **Actual adapter mapping:** parent loaded both real checkpoints and mapped six actual files. SD1.5 20_yui and
+  slimegirl11 each264modules; SDXL alraune986modules, SeifukuKh03/BNSeifukuKh03 and LoKr788each. Report
+  `outputs/verify-clora-mapping/report.json`, reproduced by ignored `outputs/clora-mapping-preflight.py`.
+  This preflight checks actual model graphs and tensor-family loading, not forward execution or artistic quality.
+- **Actual generation:** `scripts/dev/composable_lora_check.py --allow-code` passed **31 SD1.5 /33SDXL cases**, plus
+  four structured compatibility errors per model. Cases cover ordinary/disabled/no-adapter and zero-weight AND
+  equality, branch isolation, negative settings, separate TE/UNet weights, source controllers/escaped hash/Python
+  function, batch2, Heun, hires restart/global clocks, img2img, Fusion and Neutral. Real SDXL LoCon and LoKr generated
+  successfully. No-adapter/restored baselines exactly match RGB pixels. Reports, raw protocol journals, traces,
+  plots and visually inspected sheets: `outputs/verify-clora-{sd15,sdxl}`. Trained LoHa/full/IA3/CP files were not
+  available; their actual tensor algebra has CPU module/tiny-pipeline coverage, not claimed trained-model GPU
+  evidence. Multi-branch high-CFG examples can oversaturate; AND does not impose spatial separation. Source math
+  and baseline invariants are verified, not universal artistic quality.
+- **Native LoRA queue and replay:** `RealComposableLoraCheck` passed both real models. Native preparation preserves
+  placement/step tags and resolves each adapter once. JSON/PNG replay gives identical source RGB; plotcount2 and
+  two persistent UUID JSON traces retain actual evaluations after temporary-image cleanup. Request `.tmp` is empty
+  and source/no-adapter/after-adapter baselines match. Logs/report paths:
+  `outputs/verify-clora-native-{sd15,sdxl}/native-composable-report.json`, `outputs/clora-native-final.log`.
+  An obsolete positive-AND warning was found in actual native logs and fixed; final helpers assert its absence.
+  Disabled/no-hook and unsupported negative-AND warnings remain. The native six checkbox values restore from
+  PNG Restore/Send-to with explicit true/false replacement; expanded form inspected in
+  `outputs/verify-clora-native-ui`. Other grid/latent restoration still passes the shared entry points.
+- **Native System Info:** actual SD1.5 and SDXL runs passed full loaded-model snapshots, live GPU-memory samples,
+  hidden-tab polling stop, native quick/turbo256 benchmark, local fingerprint history, actual interrupt, and PNG
+  metadata opt-in with exact RGB equality/restoration. Raw status stays responsive during the queued worker.
+  Benchmarks decode actual images but suppress PNG-save I/O with a scoped finally-restored internal flag. Actual
+  tiny CPU sampling separately verifies normal saving resumes afterward. A Windows diagnostic subprocess pipe
+  deadlock was reproduced and fixed using bounded temporary output files.
+  Reports/screenshots: `.worktrees/core-system-info/outputs/verify-system-info-sd15` and
+  `outputs/verify-system-info-sdxl`; logs `outputs/system-info-native-sd15.log`, `outputs/system-info-native-final.log`.
+  Final screenshot helper follows native window startup/model loading and waits for Ready/report refresh, avoiding
+  the earlier helper-only stale Starting header. Score rows lead the benchmark table; actual component dtypes and
+  JVM/JavaFX versions are reported. Real high-batch presets/OOM stress were not run; preset/stop logic has CPU
+  coverage. Quick scores are single-machine workload measurements, not general performance claims.
+- **No external submission:** preview is tested without Submit; transport is mocked in CPU tests. No cloud packet
+  was sent, server receipt is not verified, and legacy UDP cannot acknowledge receipt. Identity/hostname are
+  explicit choices, metadata selection is opt-in, and refresh/benchmark do not send data. Local JSON export is a
+  separate feature rather than a claimed replacement for legacy submission.
+- **Aggregate:** full Python795 passed/1skipped (eight torchsde/Swig warnings plus interpreter-exit Swig warning),
+  torch-free353 passed/78skipped, full Scala522 passed and assembly succeeded. Logs:
+  `outputs/composable-system-{python,notorch,scala-final}.log`. The trace-retention test has an isolated AppHome so it
+  does not advance another naming test's file counter. Fresh authenticated collector completed120projects, adding
+  the retained AGPL and MIT notices; no driver binary or new Python package was bundled.
+
+Only indices78 and90 are promoted: **94 done /208todo /51NA**, 143 distinct pending targets. Styles Editor's two
+source entries remain pending while native data preservation/editing acceptance continues. The overall353-entry
+goal is active.

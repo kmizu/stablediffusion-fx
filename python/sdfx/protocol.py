@@ -129,6 +129,7 @@ class JobContext:
         self.warnings: list[str] = []
         self._pass_start = time.monotonic()
         self._last_step = 0
+        self.latest_progress: dict = {}
 
     # -- interruption ------------------------------------------------------
     @property
@@ -147,7 +148,8 @@ class JobContext:
         if eta_s is None:
             elapsed = time.monotonic() - self._pass_start
             eta_s = (elapsed / step) * max(0, total - step) if step > 0 else 0.0
-        self.emitter.emit(progress_msg(self.req_id, step, total, pass_, eta_s, image, images))
+        self.latest_progress = progress_msg(self.req_id, step, total, pass_, eta_s, image, images)
+        self.emitter.emit(self.latest_progress)
 
     def preview(self, jpeg_b64: str, step: int) -> None:
         self.emitter.emit(preview_msg(self.req_id, jpeg_b64, step))

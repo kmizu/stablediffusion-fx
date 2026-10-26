@@ -26,3 +26,5 @@ onnxruntime==1.23.2  # WD14 tagger (Caption plugin, method wd14)
 # Install a suitable FFmpeg build separately; this app does not bundle or install its executable.
 # Build licensing varies (LGPL/GPL and linked libraries); retain the selected build's own notices.
 # https://ffmpeg.org/download.html ; upstream licensing overview: https://github.com/FFmpeg/FFmpeg/blob/master/LICENSE.md
+# Optional System Info driver query: preinstalled nvidia-smi, supplied by the NVIDIA driver.
+# This is not a pip dependency; the app does not install or redistribute the driver utility.

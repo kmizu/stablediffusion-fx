@@ -127,6 +127,7 @@ IMPLEMENTED = {
     "weight_gradient", "negpip", "neutral_prompt",
     "prompt_fusion", "tokenizer", "save_intermediate",
     "grid_numbers", "latent_upscale",
+    "composable_lora", "core:system-info",
 }
 
 

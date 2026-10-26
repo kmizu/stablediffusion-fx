@@ -7,9 +7,12 @@ import javafx.scene.control.*
 import javafx.scene.input.{Clipboard, DataFormat}
 import javafx.stage.Stage
 import sdfx.core.config.{AppHome, ModelDirs, Settings}
+import sdfx.core.infotext.{ImageFacts, Infotext}
+import sdfx.core.model.GenerationParams
+import sdfx.core.plugins.api.Values
 import sdfx.core.protocol.{Json, TokenPiece}
 import sdfx.engine.{AppServices, EngineLaunch, EngineTimeouts}
-import sdfx.plugins.StandardPlugins
+import sdfx.plugins.{ComposableLoraPlugin, StandardPlugins}
 import sdfx.ui.vm.{Mode, UiState}
 
 import java.nio.file.{Files, Path, Paths}
@@ -219,11 +222,30 @@ object RealTokenizerCheck:
       }
       checked("actual Restore and Send to paths restore grid flags and latent script in img2img/inpaint")
       fx {
+        val plugin = new ComposableLoraPlugin
+        val keys = Seq("with_step", "uc_text_model_encoder", "uc_diffusion_model", "plot_weights", "single_no_uc", "hires_global_step")
+        def text(value: Boolean): String =
+          val values = Values(Map("enabled" -> "true") ++ keys.map(_ -> value.toString))
+          Infotext.write(plugin.process(GenerationParams(prompt = "a cat"), values), ImageFacts(seed = 7))
+        find[TabPane]("main-tabs").getSelectionModel.selectFirst()
+        val txtForm = window.plugins(Mode.Txt2Img).form("composable_lora").get
+        keys.foreach(k => txtForm.props(k).set("false"))
+        txtForm.props("enabled").set("false")
+        window.restore(text(true))
+        require(txtForm.values.bool("enabled") && keys.forall(txtForm.values.bool(_)))
+        val imageForm = window.plugins(Mode.Img2Img).form("composable_lora").get
+        keys.foreach(k => imageForm.props(k).set("true"))
+        imageForm.props("enabled").set("false")
+        window.sendTo(Mode.Img2Img, output.resolve("native-replay-source.png"), Some(text(false)))
+        require(imageForm.values.bool("enabled") && keys.forall(k => !imageForm.values.bool(k)))
+      }
+      checked("native Composable PNG Restore and Send to replace all six true/false source controls")
+      fx {
         find[TabPane]("main-tabs").getSelectionModel.selectFirst()
         val form = window.panels(Mode.Txt2Img).content
         window.root.applyCss()
         window.root.layout()
-        Seq("prompt_fusion", "save_intermediate", "grid_numbers").foreach { id =>
+        Seq("prompt_fusion", "save_intermediate", "grid_numbers", "composable_lora").foreach { id =>
           val vm = window.plugins(Mode.Txt2Img).alwaysOnForms.find(_.plugin.id == id).get
           vm.props("enabled").set("true")
           if id == "save_intermediate" then vm.props("mode").set("Video")
@@ -236,6 +258,9 @@ object RealTokenizerCheck:
             pane.lookupAll(".titled-pane").asScala.collect {
               case p: TitledPane if p.getText == "Video export" => p
             }.foreach { p => p.setAnimated(false); p.setExpanded(true) }
+          if id == "composable_lora" then
+            pane.lookupAll(".titled-pane").asScala.collect { case p: TitledPane => p }
+              .foreach { p => p.setAnimated(false); p.setExpanded(true) }
           window.root.applyCss()
           window.root.layout()
           val path = output.resolve(s"$id-form.png")

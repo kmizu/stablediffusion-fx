@@ -52,6 +52,12 @@ final class EngineClient(val supervisor: EngineSupervisor):
 
   def memory(): Future[MemoryInfo] = call[MemoryInfo](Protocol.Types.Memory)
 
+  def systemStatus(): Future[ujson.Value] = raw(Protocol.Types.SystemStatus)
+  def systemInfo(dirs: ujson.Obj = ujson.Obj(), hashes: Boolean = false): Future[ujson.Value] =
+    raw(Protocol.Types.SystemInfo, ujson.Obj("dirs" -> dirs, "hashes" -> hashes))
+  def systemBenchmark(params: ujson.Obj, listener: EngineEvent => Unit = _ => ()): Future[ujson.Value] =
+    raw(Protocol.Types.SystemBenchmark, params, listener)
+
   /** Literal CLIP BPE inspection on the currently loaded model; SDXL returns both tokenizers. */
   def tokenize(text: String, inputMode: String = "text"): Future[TokenizeResult] =
     call[TokenizeResult](Protocol.Types.Tokenize, ujson.Obj("text" -> text, "input_mode" -> inputMode))

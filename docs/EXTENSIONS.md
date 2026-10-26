@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 92, todo 210, na 51.
+Totals: done 94, todo 208, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-fx | Why not applicable |
 |---|---|---|---|---|---|
@@ -84,7 +84,7 @@ Totals: done 92, todo 210, na 51.
 | 75 | [anti-burn](https://github.com/klimaleksus/stable-diffusion-webui-anti-burn.git) | 164 | done | `anti_burn` |  |
 | 76 | [sd-webui-controlnet](https://github.com/Mikubill/sd-webui-controlnet.git) | 17822 | done | `core:controlnet` |  |
 | 77 | [Latent Couple](https://github.com/ashen-sensored/stable-diffusion-webui-two-shot.git) | 428 | todo | `latent_couple` |  |
-| 78 | [Composable LoRA](https://github.com/a2569875/stable-diffusion-webui-composable-lora.git) | 159 | todo | `composable_lora` |  |
+| 78 | [Composable LoRA](https://github.com/a2569875/stable-diffusion-webui-composable-lora.git) | 159 | done | `composable_lora` |  |
 | 79 | [Auto TLS-HTTPS](https://github.com/papuSpartan/stable-diffusion-webui-auto-tls-https.git) | 61 | na | `server-ops` | operating a shared web server (tunnels, TLS, multi-instance, kill buttons) |
 | 80 | [booru2prompt](https://github.com/Malisius/booru2prompt.git) | 61 | todo | `booru_prompt` |  |
 | 81 | [Gelbooru Prompt](https://github.com/antis0007/sd-webui-gelbooru-prompt.git) | 40 | todo | `booru_prompt` |  |
@@ -96,7 +96,7 @@ Totals: done 92, todo 210, na 51.
 | 87 | [Save Intermediate Images](https://github.com/AlUlkesh/sd_save_intermediate_images.git) | 112 | done | `save_intermediate` |  |
 | 88 | [Add image number to grid](https://github.com/AlUlkesh/sd_grid_add_image_number.git) | 26 | done | `grid_numbers` |  |
 | 89 | [Multiple Hypernetworks](https://github.com/antis0007/sd-webui-multiple-hypernetworks.git) | 95 | todo | `hypernetworks` |  |
-| 90 | [System Info](https://github.com/vladmandic/sd-extension-system-info.git) | 307 | todo | `core:system-info` |  |
+| 90 | [System Info](https://github.com/vladmandic/sd-extension-system-info.git) | 307 | done | `core:system-info` |  |
 | 91 | [OpenPose Editor](https://github.com/fkunn1326/openpose-editor.git) | 1759 | todo | `openpose_editor` |  |
 | 92 | [Stable Horde Worker](https://github.com/sdwebui-w-horde/sd-webui-stable-horde-worker.git) | 62 | na | `account` | needs a third-party account / paid API key and posts data to that service |
 | 93 | [Discord Rich Presence](https://github.com/kabachuha/discord-rpc-for-automatic1111-webui.git) | 20 | na | `account` | needs a third-party account / paid API key and posts data to that service |

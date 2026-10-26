@@ -132,9 +132,19 @@ def generate(rid, kind, req):
     if interrupted.is_set() and not ignore and not images:
         error(rid, "interrupted", "interrupted")
         return
+    trace = None
+    composable = params.get("hooks", {}).get("composable_lora", {})
+    if composable.get("plot_weights"):
+        trace_dir = os.path.join(composable.get("output_dir", out_dir), "intermediates", "composable-lora")
+        os.makedirs(trace_dir, exist_ok=True)
+        trace_path = os.path.join(trace_dir, str(rid) + ".json")
+        with open(trace_path, "w", encoding="utf-8") as f:
+            json.dump({"records": []}, f)
+        trace = {"path": trace_path}
     m = model_info() or {}
     result(rid, {
         "images": images,
+        "composable_lora_trace": trace,
         "timing_s": 0.01,
         "model_name": m.get("name"),
         "model_hash": m.get("hash", "")[:10] or None,

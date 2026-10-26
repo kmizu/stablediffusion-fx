@@ -150,3 +150,17 @@ Per-plugin evidence of the final real-model runs (which run, duration, result): 
   no learned upscaler or extra download. Strength must be positive and large enough for the 10,000-entry schedule
   bound. Upstream linear/trilinear are invalid for 4-D image latents and are rejected explicitly. Unsupported sampler
   schedules report the native fallback. PNG Restore and Send to img2img/Inpaint restore the actual script controls.
+
+- **Composable LoRA / LyCORIS** keeps each adapter with its own `AND` branch and supports per-step switching,
+  ramps and `#cmd` controllers. Negative text-encoder/denoiser switches retain the source single-prompt exception;
+  enable its exclusion option to apply those switches to one prompt too. Math expressions work normally; Python
+  statements/functions use the existing Allow custom code setting. It supports LoRA, LoCon/CP, LoHa, LoKr,
+  full-rank and IA3 algebra. Plots append a diagnostic gallery image; trace JSON persists in
+  `outputs/intermediates/composable-lora` and its path appears in the log. Branches combine predictions rather than
+  defining spatial regions; strong multi-branch guidance can oversaturate. PhotoMaker, Alternative inversion,
+  signed NegPiP and native LoRA Block Weight/start/stop fields have explicit compatibility errors.
+- **System Info** shows live runtime/memory and model/network inventory, plus fixed-scene benchmarks, local
+  history and JSON export. Polling pauses while hidden. Generation metadata is off until fields are selected.
+  Quick/turbo is a short workload; larger presets stop on errors and can be interrupted. Optional legacy submission
+  requires a separate payload preview and Submit action; no data is sent by refresh, benchmark or export. UDP
+  transmission cannot confirm server receipt. The optional preinstalled driver utility is never installed/bundled.
