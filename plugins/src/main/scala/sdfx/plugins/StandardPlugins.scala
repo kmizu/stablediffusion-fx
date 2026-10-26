@@ -42,6 +42,8 @@ object StandardPlugins:
     new UltimateSdUpscalePlugin,
     // checkpoint tools (extension index)
     new ModelMergePlugin, new ModelConverterPlugin,
+    // mask-driven img2img (extension index)
+    new DepthMaskPlugin, new InpaintBackgroundPlugin,
     // extension index: prompt and sequence scripts
     new DynamicPromptsPlugin, new OneButtonPromptPlugin, new TestMyPromptPlugin, new ScramblePromptsPlugin,
     new TweakWeightsPlugin, new LoraQueuePlugin, new BatchCheckpointsPromptsPlugin, new SeedTravelPlugin,
@@ -55,7 +57,9 @@ object StandardPlugins:
     new FlippedCopiesPlugin,
     new SplitOversizedPlugin,
     new AutosizedCropPlugin,
-    new FocalCropPlugin
+    new FocalCropPlugin,
+    // image tools (extension index)
+    new RemoveBackgroundPlugin, new PersonMaskPlugin, new PixelArtPlugin, new ColorEnhancePlugin, new FsrUpscalePlugin
   )
 
   /** `extraAxes` lets the host contribute axes of all loaded plugins (including these AlwaysOn ones). */

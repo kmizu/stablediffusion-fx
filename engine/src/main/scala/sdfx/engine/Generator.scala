@@ -411,6 +411,8 @@ final class Generator(
         Seq("path", "preview").flatMap(k => o.value.get(k)).collect { case ujson.Str(s) => s }.foreach(s => listener.onTempFile(Paths.get(s)))
         o.value.get("images").collect { case a: ujson.Arr => a.value.collect { case ujson.Str(s) => s } }
           .getOrElse(Nil).foreach(s => listener.onTempFile(Paths.get(s)))
+        o.value.get("outputs").collect { case m: ujson.Obj => m.value.values.collect { case ujson.Str(s) => s } }
+          .getOrElse(Nil).foreach(s => listener.onTempFile(Paths.get(s)))
       case _ => ()
     r
 

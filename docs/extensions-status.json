@@ -375,25 +375,25 @@
 "index": 62,
 "name": "depthmap2mask",
 "url": "https://github.com/Extraltodeus/depthmap2mask.git",
-"status": "todo:depthmap2mask"
+"status": "done:depthmap2mask"
 },
 {
 "index": 63,
 "name": "ABG_extension",
 "url": "https://github.com/KutsuyaYuki/ABG_extension.git",
-"status": "todo:remove_background"
+"status": "done:remove_background"
 },
 {
 "index": 64,
 "name": "Pixel",
 "url": "https://github.com/Leodotpy/sd-pixel.git",
-"status": "todo:pixel_art"
+"status": "done:pixel_art"
 },
 {
 "index": 65,
 "name": "Pixelization",
 "url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-pixelization.git",
-"status": "todo:pixelization"
+"status": "done:pixel_art"
 },
 {
 "index": 66,
@@ -669,7 +669,7 @@
 "index": 111,
 "name": "stable-diffusion-webui-rembg",
 "url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-rembg.git",
-"status": "todo:remove_background"
+"status": "done:remove_background"
 },
 {
 "index": 112,
@@ -753,7 +753,7 @@
 "index": 125,
 "name": "PBRemTools",
 "url": "https://github.com/mattyamonaca/PBRemTools.git",
-"status": "todo:remove_background"
+"status": "done:remove_background"
 },
 {
 "index": 126,
@@ -1011,7 +1011,7 @@
 "index": 168,
 "name": "sd-webui-color-enhance",
 "url": "https://git.mmaker.moe/mmaker/sd-webui-color-enhance.git",
-"status": "todo:color_enhance"
+"status": "done:color_enhance"
 },
 {
 "index": 169,
@@ -1029,7 +1029,7 @@
 "index": 171,
 "name": "Pixel art",
 "url": "https://github.com/mrreplicart/sd-webui-pixelart.git",
-"status": "todo:pixel_art"
+"status": "done:pixel_art"
 },
 {
 "index": 172,
@@ -1107,7 +1107,7 @@
 "index": 184,
 "name": "Mask2Background",
 "url": "https://github.com/limithit/Mask2Background.git",
-"status": "todo:mask2background"
+"status": "done:inpaint_background"
 },
 {
 "index": 185,
@@ -1371,7 +1371,7 @@
 "index": 228,
 "name": "sd-webui-bg-mask",
 "url": "https://github.com/Scholar01/sd-webui-bg-mask.git",
-"status": "todo:remove_background"
+"status": "done:remove_background"
 },
 {
 "index": 229,
@@ -1509,7 +1509,7 @@
 "index": 251,
 "name": "A Person Mask Generator",
 "url": "https://github.com/djbielejeski/a-person-mask-generator.git",
-"status": "todo:person_mask"
+"status": "done:person_mask"
 },
 {
 "index": 252,
@@ -1647,7 +1647,7 @@
 "index": 274,
 "name": "Inpaint background",
 "url": "https://github.com/John-WL/sd-webui-inpaint-background.git",
-"status": "todo:inpaint_background"
+"status": "done:inpaint_background"
 },
 {
 "index": 275,
@@ -1995,7 +1995,7 @@
 "index": 332,
 "name": "AMD FSR 1.0 integration",
 "url": "https://github.com/AndreyRGW/sd-webui-fsr-integration.git",
-"status": "todo:fsr_upscale"
+"status": "done:fsr_upscale"
 },
 {
 "index": 333,
@@ -2031,7 +2031,7 @@
 "index": 338,
 "name": "GeekyRemB",
 "url": "https://github.com/GeekyGhost/Automatic1111-Geeky-Remb.git",
-"status": "todo:remove_background"
+"status": "done:remove_background"
 },
 {
 "index": 339,

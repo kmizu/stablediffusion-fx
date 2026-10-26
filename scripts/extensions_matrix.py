@@ -38,7 +38,7 @@ S = {
     49: "todo:text2prompt", 50: "na:account", 51: "todo:deforum", 52: "todo:gif2gif", 53: "todo:video_loopback",
     54: "todo:seed_travel", 55: "todo:shift_attention", 56: "todo:prompt_travel", 57: "todo:steps_animation",
     58: "na:external-app", 59: "todo:batch_face_swap", 60: "todo:depth_maps", 61: "todo:multi_subject_render",
-    62: "todo:depthmap2mask", 63: "todo:remove_background", 64: "todo:pixel_art", 65: "todo:pixelization", 66: "todo:haku_img",
+    62: "todo:depthmap2mask", 63: "todo:remove_background", 64: "todo:pixel_art", 65: "todo:pixel_art", 66: "todo:haku_img",
     67: "todo:asymmetric_tiling", 68: "todo:latent_mirroring", 69: "todo:sonar", 70: "todo:depth_image_io",
     71: "todo:ultimate_sd_upscale", 72: "todo:prompt_fusion", 73: "todo:neutral_prompt", 74: "done:dynamic_thresholding",
     75: "todo:anti_burn", 76: "done:core:controlnet", 77: "todo:latent_couple", 78: "todo:composable_lora",
@@ -68,7 +68,7 @@ S = {
     172: "na:webui-css", 173: "na:webui-css", 174: "todo:llm_prompt", 175: "todo:openpose_editor",
     176: "done:core:size-presets", 177: "done:core:gallery", 178: "todo:qr_code", 179: "todo:sadtalker",
     180: "na:external-app", 181: "todo:model_downloader", 182: "done:caption", 183: "todo:loopback_scaler",
-    184: "todo:mask2background", 185: "na:external-app", 186: "todo:gpu_temperature_guard", 187: "done:core:zoom",
+    184: "todo:inpaint_background", 185: "na:external-app", 186: "todo:gpu_temperature_guard", 187: "done:core:zoom",
     188: "na:server-ops", 189: "todo:latent_upscale", 190: "done:core:gallery", 191: "todo:prompt_filter",
     192: "todo:animatediff", 193: "na:webui-ux", 194: "todo:adetailer", 195: "todo:seamless_tile",
     196: "todo:face_swap", 197: "todo:style_selector", 198: "todo:prompt_library", 199: "todo:custom_hires_fix",
@@ -122,6 +122,7 @@ IMPLEMENTED = {
     "detail_daemon", "vectorscope_cc", "latent_mirroring", "asymmetric_tiling", "anti_burn", "resharpen",
     "color_grading", "cfg_schedule", "cads",
     "ultimate_sd_upscale", "adetailer", "lora_block_weight", "model_merge", "model_converter",
+    "pixel_art", "color_enhance", "fsr_upscale", "person_mask", "remove_background", "depthmap2mask", "inpaint_background",
 }
 
 

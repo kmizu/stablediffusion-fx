@@ -20,3 +20,5 @@ onnxruntime==1.23.2  # WD14 tagger (Caption plugin, method wd14)
 # controlnet_aux==0.0.10
 # optional: ADetailer YOLO detectors (face_yolov8n.pt etc.; "opencv_face" works without it):
 #   pip install ultralytics==8.4.66
+# optional: background removal models for the "Remove background" extras plugin:
+#   pip install rembg==2.0.69

@@ -124,6 +124,35 @@ class BaseEngine:
                 except OSError:
                     pass
 
+    def image_tool(self, params: dict, ctx: JobContext) -> dict:
+        """Non-diffusion image tools (sdfx.image_tools): {tool, image_path, output_dir, ...tool params}."""
+        from . import image_tools
+        from .images import load_rgb, next_output_path, save_png
+        tool = str(params.get("tool", ""))
+        if tool not in image_tools.TOOLS:
+            raise EngineError(INVALID_PARAMS, f"unknown image tool '{tool}'")
+        src = params.get("image_path")
+        if not src:
+            raise EngineError(INVALID_PARAMS, "image_path is required")
+        from PIL import Image
+        img = Image.open(src)
+        img = img.convert("RGBA") if img.mode in ("RGBA", "LA", "P") else load_rgb(src)
+        dev = "cuda" if getattr(self, "cuda", False) else "cpu"
+        try:
+            out, extra = image_tools.run(tool, img if tool != "remove_background" else img.convert("RGB"), params, dev)
+        except ImportError as e:
+            raise EngineError(UNSUPPORTED, f"{tool} needs an optional package: {e}")
+        except (ValueError, FileNotFoundError) as e:
+            raise EngineError(INVALID_PARAMS, f"{tool}: {e}")
+        od = params.get("output_dir") or "."
+        res = {"path": save_png(out, next_output_path(od, tool)), "outputs": {}, "info": {}}
+        for k, v in extra.items():
+            if hasattr(v, "save"):
+                res["outputs"][k] = save_png(v, next_output_path(od, f"{tool}-{k}"))
+            else:
+                res["info"][k] = v
+        return res
+
     def merge_models(self, params: dict, ctx: JobContext) -> dict:
         from . import model_tools
         a, b, c = params.get("model_a"), params.get("model_b"), params.get("model_c") or None

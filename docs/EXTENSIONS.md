@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 69, todo 233, na 51.
+Totals: done 83, todo 219, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-fx | Why not applicable |
 |---|---|---|---|---|---|
@@ -68,10 +68,10 @@ Totals: done 69, todo 233, na 51.
 | 59 | [Batch Face Swap](https://github.com/kex0/batch-face-swap.git) | 333 | todo | `batch_face_swap` |  |
 | 60 | [Depth Maps](https://github.com/thygate/stable-diffusion-webui-depthmap-script.git) | 1855 | todo | `depth_maps` |  |
 | 61 | [multi-subject-render](https://github.com/Extraltodeus/multi-subject-render.git) | 376 | todo | `multi_subject_render` |  |
-| 62 | [depthmap2mask](https://github.com/Extraltodeus/depthmap2mask.git) | 360 | todo | `depthmap2mask` |  |
-| 63 | [ABG_extension](https://github.com/KutsuyaYuki/ABG_extension.git) | 245 | todo | `remove_background` |  |
-| 64 | [Pixel](https://github.com/Leodotpy/sd-pixel.git) | 51 | todo | `pixel_art` |  |
-| 65 | [Pixelization](https://github.com/AUTOMATIC1111/stable-diffusion-webui-pixelization.git) | 636 | todo | `pixelization` |  |
+| 62 | [depthmap2mask](https://github.com/Extraltodeus/depthmap2mask.git) | 360 | done | `depthmap2mask` |  |
+| 63 | [ABG_extension](https://github.com/KutsuyaYuki/ABG_extension.git) | 245 | done | `remove_background` |  |
+| 64 | [Pixel](https://github.com/Leodotpy/sd-pixel.git) | 51 | done | `pixel_art` |  |
+| 65 | [Pixelization](https://github.com/AUTOMATIC1111/stable-diffusion-webui-pixelization.git) | 636 | done | `pixel_art` |  |
 | 66 | [haku-img](https://github.com/KohakuBlueleaf/a1111-sd-webui-haku-img.git) | 198 | todo | `haku_img` |  |
 | 67 | [Asymmetric Tiling](https://github.com/tjm35/asymmetric-tiling-sd-webui.git) | 216 | done | `asymmetric_tiling` |  |
 | 68 | [Latent Mirroring](https://github.com/dfaker/SD-latent-mirroring.git) | 111 | done | `latent_mirroring` |  |
@@ -117,7 +117,7 @@ Totals: done 69, todo 233, na 51.
 | 108 | [Corridor Crawler Outpainting](https://github.com/brick2face/corridor-crawler-outpainting.git) | 35 | todo | `corridor_crawler` |  |
 | 109 | [Panorama Viewer](https://github.com/GeorgLegato/sd-webui-panorama-viewer.git) | 179 | todo | `core:panorama-viewer` |  |
 | 110 | [db-storage1111](https://github.com/takoyaro/db-storage1111.git) | 49 | na | `account` | needs a third-party account / paid API key and posts data to that service |
-| 111 | [stable-diffusion-webui-rembg](https://github.com/AUTOMATIC1111/stable-diffusion-webui-rembg.git) | 1366 | todo | `remove_background` |  |
+| 111 | [stable-diffusion-webui-rembg](https://github.com/AUTOMATIC1111/stable-diffusion-webui-rembg.git) | 1366 | done | `remove_background` |  |
 | 112 | [sd-webui-tunnels](https://github.com/Bing-su/sd-webui-tunnels.git) | 87 | na | `server-ops` | operating a shared web server (tunnels, TLS, multi-instance, kill buttons) |
 | 113 | [3D Openpose Editor](https://github.com/nonnonstop/sd-webui-3d-open-pose-editor.git) | 808 | todo | `openpose_editor` |  |
 | 114 | [sd-webui-enable-checker](https://github.com/shirayu/sd-webui-enable-checker.git) | 59 | na | `webui-css` | styles / JavaScript tweaks of the Gradio web page; the JavaFX UI has its own theme and layout |
@@ -131,7 +131,7 @@ Totals: done 69, todo 233, na 51.
 | 122 | [Abysz LAB](https://github.com/AbyszOne/Abysz-LAB-Ext.git) | 148 | todo | `abysz_lab` |  |
 | 123 | [Negative Prompt Weight](https://github.com/muerrilla/stable-diffusion-NPW.git) | 111 | done | `negative_prompt_weight` |  |
 | 124 | [Discord - Dynamic Rich Presence](https://github.com/davehornik/sd-discord-rich_presence.git) | 23 | na | `account` | needs a third-party account / paid API key and posts data to that service |
-| 125 | [PBRemTools](https://github.com/mattyamonaca/PBRemTools.git) | 369 | todo | `remove_background` |  |
+| 125 | [PBRemTools](https://github.com/mattyamonaca/PBRemTools.git) | 369 | done | `remove_background` |  |
 | 126 | [a1111-sd-webui-lycoris](https://github.com/KohakuBlueleaf/a1111-sd-webui-lycoris.git) | 884 | na | `obsolete` | superseded: the feature is in the base app (A1111 >= 1.5) or the extension is deprecated |
 | 127 | [sd-canvas-editor](https://github.com/jtydhr88/sd-canvas-editor.git) | 157 | todo | `outpaint_canvas` |  |
 | 128 | [Infinite Zoom](https://github.com/v8hid/infinite-zoom-automatic1111-webui.git) | 670 | todo | `infinite_zoom` |  |
@@ -174,10 +174,10 @@ Totals: done 69, todo 233, na 51.
 | 165 | [Inpaint Anything](https://github.com/Uminosachi/sd-webui-inpaint-anything.git) | 1298 | todo | `inpaint_anything` |  |
 | 166 | [QR Code Generator](https://github.com/missionfloyd/webui-qrcode-generator.git) | 47 | todo | `qr_code` |  |
 | 167 | [sd-webui-roop](https://github.com/s0md3v/sd-webui-roop) | 3561 | todo | `face_swap` |  |
-| 168 | [sd-webui-color-enhance](https://git.mmaker.moe/mmaker/sd-webui-color-enhance.git) | None | todo | `color_enhance` |  |
+| 168 | [sd-webui-color-enhance](https://git.mmaker.moe/mmaker/sd-webui-color-enhance.git) | None | done | `color_enhance` |  |
 | 169 | [sd-webui-bluescape](https://github.com/Bluescape/sd-webui-bluescape) | 29 | na | `account` | needs a third-party account / paid API key and posts data to that service |
 | 170 | [sd-webui-prompt_history](https://github.com/namkazt/sd-webui-prompt-history) | 106 | done | `core:gallery` |  |
-| 171 | [Pixel art](https://github.com/mrreplicart/sd-webui-pixelart.git) | 210 | todo | `pixel_art` |  |
+| 171 | [Pixel art](https://github.com/mrreplicart/sd-webui-pixelart.git) | 210 | done | `pixel_art` |  |
 | 172 | [Lobe Theme](https://github.com/canisminor1990/sd-webui-lobe-theme.git) | 2716 | na | `webui-css` | styles / JavaScript tweaks of the Gradio web page; the JavaFX UI has its own theme and layout |
 | 173 | [Kitchen Theme](https://github.com/canisminor1990/sd-webui-kitchen-theme-legacy.git) | 29 | na | `webui-css` | styles / JavaScript tweaks of the Gradio web page; the JavaFX UI has its own theme and layout |
 | 174 | [IF_prompt_MKR](https://github.com/if-ai/IF_prompt_MKR.git) | 108 | todo | `llm_prompt` |  |
@@ -190,7 +190,7 @@ Totals: done 69, todo 233, na 51.
 | 181 | [Civitai Shortcut](https://github.com/sunnyark/civitai-shortcut.git) | 152 | todo | `model_downloader` |  |
 | 182 | [WD 1.4 Tagger](https://github.com/picobyte/stable-diffusion-webui-wd14-tagger.git) | 687 | done | `caption` |  |
 | 183 | [Loopback Scaler](https://github.com/Elldreth/loopback_scaler.git) | 178 | todo | `loopback_scaler` |  |
-| 184 | [Mask2Background](https://github.com/limithit/Mask2Background.git) | 47 | todo | `mask2background` |  |
+| 184 | [Mask2Background](https://github.com/limithit/Mask2Background.git) | 47 | done | `inpaint_background` |  |
 | 185 | [ComfyUI](https://github.com/ModelSurge/sd-webui-comfyui.git) | 535 | na | `external-app` | bridge to a specific external application (Photoshop, Krita, ComfyUI, ...) |
 | 186 | [GPU temperature protection](https://github.com/w-e-w/stable-diffusion-webui-GPU-temperature-protection.git) | 36 | todo | `gpu_temperature_guard` |  |
 | 187 | [zoom-image](https://github.com/viyiviyi/stable-diffusion-webui-zoomimage.git) | 23 | done | `core:zoom` |  |
@@ -234,7 +234,7 @@ Totals: done 69, todo 233, na 51.
 | 225 | [sd-webui-mov2mov](https://github.com/Scholar01/sd-webui-mov2mov.git) | 2157 | todo | `mov2mov` |  |
 | 226 | [EasyPhoto](https://github.com/aigc-apps/sd-webui-EasyPhoto.git) | 5144 | todo | `easyphoto` |  |
 | 227 | [sd-webui-rich-text](https://github.com/songweige/sd-webui-rich-text.git) | 122 | todo | `rich_text` |  |
-| 228 | [sd-webui-bg-mask](https://github.com/Scholar01/sd-webui-bg-mask.git) | 39 | todo | `remove_background` |  |
+| 228 | [sd-webui-bg-mask](https://github.com/Scholar01/sd-webui-bg-mask.git) | 39 | done | `remove_background` |  |
 | 229 | [Ranbooru](https://github.com/Inzaniak/sd-webui-ranbooru.git) | 77 | todo | `booru_prompt` |  |
 | 230 | [CivBrowser](https://github.com/SignalFlagZ/sd-webui-civbrowser.git) | 117 | todo | `model_downloader` |  |
 | 231 | [NSFW Blurrer-NSFWJS](https://github.com/aria1th/sd-webui-nsfw-filter.git) | 21 | todo | `nsfw_checker` |  |
@@ -257,7 +257,7 @@ Totals: done 69, todo 233, na 51.
 | 248 | [sd-webui-extended-style-saver](https://github.com/harukei-tech/sd-webui-extended-style-saver.git) | 9 | todo | `core:styles-editor` |  |
 | 249 | [Semantic Guidance](https://github.com/v0xie/sd-webui-semantic-guidance.git) | 68 | todo | `semantic_guidance` |  |
 | 250 | [SD Web UI Modal Info](https://github.com/luminouspear/sd-webui-modal-info.git) | 10 | done | `core:png-info` |  |
-| 251 | [A Person Mask Generator](https://github.com/djbielejeski/a-person-mask-generator.git) | 407 | todo | `person_mask` |  |
+| 251 | [A Person Mask Generator](https://github.com/djbielejeski/a-person-mask-generator.git) | 407 | done | `person_mask` |  |
 | 252 | [Style variables](https://github.com/SirVeggie/extension-style-vars) | 23 | done | `style_variables` |  |
 | 253 | [SD-WebUI API Payload Display](https://github.com/huchenlei/sd-webui-api-payload-display.git) | 201 | todo | `core:api-payload` |  |
 | 254 | [µ Detection Detailer](https://github.com/wkpark/uddetailer.git) | 83 | done | `adetailer` |  |
@@ -280,7 +280,7 @@ Totals: done 69, todo 233, na 51.
 | 271 | [Thumbnailizer](https://github.com/MNeMoNiCuZ/sd-webui-thumbnailizer.git) | 24 | todo | `model_organizer` |  |
 | 272 | [GPT-4 Vision Image Captioner](https://github.com/SleeeepyZhou/sd-webui-GPT4V-Image-Captioner.git) | 108 | na | `account` | needs a third-party account / paid API key and posts data to that service |
 | 273 | [Video in Extras tab](https://github.com/light-and-ray/sd-webui-video-extras-tab.git) | 20 | todo | `video_extras` |  |
-| 274 | [Inpaint background](https://github.com/John-WL/sd-webui-inpaint-background.git) | 63 | todo | `inpaint_background` |  |
+| 274 | [Inpaint background](https://github.com/John-WL/sd-webui-inpaint-background.git) | 63 | done | `inpaint_background` |  |
 | 275 | [DAAM](https://github.com/kousw/stable-diffusion-webui-daam.git) | 175 | todo | `daam` |  |
 | 276 | [ControlNet Preprocessor in extras tab](https://github.com/light-and-ray/sd-webui-cn-in-extras-tab.git) | 17 | todo | `controlnet_preprocess_extras` |  |
 | 277 | [Stable Diffusion Database Manager](https://github.com/nicholas-ooi/stable-diffusion-database-manager.git) | 11 | na | `account` | needs a third-party account / paid API key and posts data to that service |
@@ -338,13 +338,13 @@ Totals: done 69, todo 233, na 51.
 | 329 | [Manga Inpainting](https://github.com/light-and-ray/sd-webui-manga-inpainting.git) | 14 | todo | `manga_inpainting` |  |
 | 330 | [sd-queue](https://github.com/nmygle/sd-queue.git) | 8 | na | `webui-api` | adds HTTP routes to the A1111 server for other tools; this app's integration surface is MCP |
 | 331 | [chara-searcher](https://github.com/NON906/chara-searcher.git) | 38 | todo | `chara_searcher` |  |
-| 332 | [AMD FSR 1.0 integration](https://github.com/AndreyRGW/sd-webui-fsr-integration.git) | 12 | todo | `fsr_upscale` |  |
+| 332 | [AMD FSR 1.0 integration](https://github.com/AndreyRGW/sd-webui-fsr-integration.git) | 12 | done | `fsr_upscale` |  |
 | 333 | [stupid-nsfw-card-blur-a1111](https://github.com/CurtisDS/stupid-nsfw-card-blur-a1111.git) | 4 | todo | `core:nsfw-card-blur` |  |
 | 334 | [extra-network-side-panel-for-a1111](https://github.com/CurtisDS/extra-network-side-panel-for-a1111.git) | 7 | na | `webui-ux` | Gradio page behaviour (tabs, buttons, dialogs); the desktop UI provides the equivalent natively |
 | 335 | [Face manipulations - extras](https://github.com/light-and-ray/sd-webui-face-manipulation-extras.git) | 19 | todo | `face_manipulation` |  |
 | 336 | [Stable Diffusion PNGINFO Injection extension](https://github.com/bluelovers/sd-webui-pnginfo-injection.git) | 14 | todo | `pnginfo_injection` |  |
 | 337 | [sd-webui-decadetw-auto-prompt-llm](https://github.com/xlinx/sd-webui-decadetw-auto-prompt-llm.git) | 72 | todo | `llm_prompt` |  |
-| 338 | [GeekyRemB](https://github.com/GeekyGhost/Automatic1111-Geeky-Remb.git) | 17 | todo | `remove_background` |  |
+| 338 | [GeekyRemB](https://github.com/GeekyGhost/Automatic1111-Geeky-Remb.git) | 17 | done | `remove_background` |  |
 | 339 | [img2img-hires-fix](https://github.com/Amadeus-AI/img2img-hires-fix.git) | 48 | todo | `img2img_hires_fix` |  |
 | 340 | [Diffusion Cocktail (Ditail)](https://github.com/MAPS-research/sd-webui-ditail.git) | 19 | todo | `ditail` |  |
 | 341 | [sd-webui-live-portrait](https://github.com/dimitribarbot/sd-webui-live-portrait.git) | 79 | todo | `live_portrait` |  |
