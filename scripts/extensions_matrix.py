@@ -130,7 +130,7 @@ IMPLEMENTED = {
     "composable_lora", "core:system-info",
     "core:styles-editor",
     "core:image-compare", "vae_tools",
-    "core:prevent-interrupt", "core:hardware-info",
+    "core:prevent-interrupt", "core:hardware-info", "core:api-payload",
 }
 
 

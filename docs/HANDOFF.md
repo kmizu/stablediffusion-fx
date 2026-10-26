@@ -20,8 +20,8 @@ server, 40 rewrites of the reForge built-ins. Repo: private GitHub `kmizu/stable
 
 | | Count |
 |---|---|
-| Index entries done | 100 |
-| Index entries todo | 202 (138 distinct targets) |
+| Index entries done | 101 |
+| Index entries todo | 201 (137 distinct targets) |
 | Not applicable (web-UI CSS/UX only, accounts, obsolete, external apps, server ops) | 51 |
 
 `scripts/extensions_matrix.py` is the single ledger. Its `S` dict maps each index entry to `done:<plugin id>`,
@@ -29,7 +29,17 @@ server, 40 rewrites of the reForge built-ins. Repo: private GitHub `kmizu/stable
 share one target (for example every background remover maps to `remove_background`). To merge a target into another,
 edit its `S` entry (done for `pixelization -> pixel_art`, `mask2background -> inpaint_background`).
 
-**Latest verified wave (Codex,2026-10-26):** index320 `core:prevent-interrupt` and index309 `core:hardware-info` are
+**Latest verified wave (Codex,2026-10-27):** index253 `core:api-payload` is implemented. Each generation mode has a
+collapsed entry to one shared native inspector, with exact submitted request bodies, separate submitted/model
+context and optional bounded image diagnostics. Script sub-generations have distinct identities and terminal
+states. History, tree traversal, raw previews and diagnostic delivery are bounded; explicit Copy preserves the
+whole selected document. Original init-image contents remain omitted even when image diagnostics are enabled.
+Final source passed725 Scala tests,867 Python tests/1skip and397 noTorch tests/82skips, assembly, an offline
+native pane check and actual CPU18/SD1.5 14/SDXL14 native acceptance checks. Both model runs preserve exact fixed-seed
+RGB/body parity. Safe clipboard checks passed and restored the formats captured in these runs. Read the precise
+limits, source pins, artifact hash and paths in `docs/VERIFICATION.md`; the353-entry goal remains unfinished.
+
+**Previous verified wave (Codex,2026-10-26):** index320 `core:prevent-interrupt` and index309 `core:hardware-info` are
 integrated. The footer protection is process-global/defaultOff and covers actual native/MCP running cancellation
 and explicit user restart without blocking shutdown/health recovery or pending-only clearing. Hardware metadata
 has native opt-in/remark controls, compact actual-device facts, per-image batch timing, Extras provenance and
@@ -37,8 +47,7 @@ bounded informational Restore/Send-to notices with no offline engine startup. So
 license limitations are recorded in the owned plans and128-project notices; no unlicensed upstream code was copied.
 Final integrated checks:596Scala tests plus assembly,867Python/1skip,397noTorch/82skips, six actual native helpers
 (CPU+SD1.5+SDXL for each feature), all successful. Reports/logs and precise limits are in `docs/VERIFICATION.md`.
-The next source-audited target is index253 `core:api-payload`; its full implementation plan is prepared under
-`docs/superpowers/plans/2026-10-26-core-api-payload.md`. It is still pending. The353-entry goal remains unfinished.
+The completed API payload plan is `docs/superpowers/plans/2026-10-26-core-api-payload.md`.
 
 Done in this session, all GPU-verified unless marked:
 
@@ -120,9 +129,10 @@ it compares existing real-model images without changing them. VAE Tools has Full
 TAESD/TAESDXL evidence, exact failed decoder-input recovery, quantized image formats and explicit download gates.
 Keep codec roundtrip, image reconstruction and approximate previews distinct. See their plans and VERIFICATION.
 
-**Next action:** finish the approved index253 `core:api-payload` plan. Local isolated implementation work is in
-`.worktrees/core-api-payload`, with context/tree/pane/path sub-worktrees and the plan's ignored SDD ledger there.
-These unfinished changes are not published or counted done; preserve real-model/UI/notice/regression gates.
+**Next action:** audit the complete source scopes for `core:presets` and `core:prompt-tools`, then write their
+implementation plans. Read-only audits are complete under `outputs/next-core-presets-audit*` and
+`outputs/next-core-prompt-tools-audit*`; no implementation or promotion of those targets is implied. API payload
+release reports and its assembled jar are in `.worktrees/api-payload-integration/outputs` and `target`.
 Neutral Prompt is now marked implemented after an explicit original-scope
 acceptance audit; see `docs/superpowers/plans/2026-10-26-neutral-prompt.md` and the closing VERIFICATION section.
 All operators, nesting/signed weights, CFG rescale, schedules, native form/formatter/replay and actual AppServices
@@ -134,7 +144,7 @@ composed Neutral prompts remain explicitly unsupported in `neutral_runtime.valid
 original Runtime task permits clear unsupported combinations; later agent-added notes making every combination
 a promotion prerequisite are superseded by the documented acceptance clarification. No original Neutral operator
 or model/UI/notice gate was omitted. Keep the seven guards until their own implementations are verified.
-The overall 353-entry goal remains active; 202 accepted entries are unfinished. Do not treat this promotion as
+The overall 353-entry goal remains active; 201 accepted entries are unfinished. Do not treat this promotion as
 completion of that goal or reclassify remaining entries to make it appear complete.
 
 ## Remaining targets, most-starred first
@@ -146,7 +156,7 @@ stable_sr, cn_animation, unprompted, llul, dataset_tag_editor, deoldify, dreamar
 lcm, stylepile, clip_interrogator, prompt_generator, style_selector, aesthetic_gradients, latent_couple,
 outpaint_canvas, fabric, manga_maker, model_downloader, multi_subject_render, batch_face_swap, video_loopback,
 core:presets, model_organizer, model_keyword, shap_e, prompt_travel, lora_control,
-gif2gif, replacer, cd_tuner, riffusion, core:api-payload, smart_process, haku_img, infinity_grid,
+gif2gif, replacer, cd_tuner, riffusion, smart_process, haku_img, infinity_grid,
 core:panorama-viewer, loopback_scaler, daam, text2prompt, prompt_translate, prompt_gallery,
 refiner, incantations, old_photo_restoration, abysz_lab, aesthetic_score, steps_animation,
 nsfw_checker, image_editor, embedding_merge, rich_text, mosaic_outpaint, cross_attention_viz, hypernetwork_training,
@@ -163,7 +173,7 @@ pnginfo_injection, masked_content_extras, metadata_utils, waifu2x, core:nsfw-car
 
 Suggested next steps, by value and fit with what exists:
 
-1. **Native tools**: finish core:api-payload, then core:presets and core:prompt-tools, preserving each source scope.
+1. **Native tools**: core:presets and core:prompt-tools, preserving each source scope.
 2. **Regional prompting**: regional_prompter and latent_couple, via attention-level region masks.
    tiled_diffusion can largely reuse the existing `multidiffusion` hook plus noise inversion and region prompts.
 3. **Small, cheap ones**: img2img/custom/conditioning hires fix variants, color_correction,
@@ -220,8 +230,8 @@ Suggested next steps, by value and fit with what exists:
 
 | What | Command / file |
 |---|---|
-| Scala tests | `sbt.bat -batch test` (latest: 483 passed, 2026-10-26) |
-| Python tests | `python/.venv-smoke/Scripts/python.exe -m pytest` (latest: 615 passed, 4 torchsde endpoint warnings) and `.venv-test` (260 passed, 37 skipped) |
+| Scala tests | `sbt.bat -batch test` (latest: 725 passed, 2026-10-27) |
+| Python tests | `python/.venv-smoke/Scripts/python.exe -m pytest` with `CUDA_VISIBLE_DEVICES=-1` (867 passed, 1 skipped) and `.venv-test` (397 passed, 82 skipped), 2026-10-27 |
 | Dry-run smoke | `scripts/smoke.ps1` / `scripts/smoke.sh` |
 | Engine on GPU, one case per process | `scripts/dev/gpu_check.py <venv python> <out dir> <case>`; cases `sched_*`, `ext_*`, `ad_*`, `image_*`, `weight_*`, `negpip_*` |
 | Script plugins through the real app over MCP | `scripts/dev/write_settings.py`, then `scripts/dev/mcp_scripts.py "C:\Program Files\Java\jdk-21\bin\java.exe" <script ids>` |

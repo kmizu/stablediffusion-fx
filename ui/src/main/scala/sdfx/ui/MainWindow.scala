@@ -20,7 +20,8 @@ import java.nio.file.{Files, Path}
 import scala.util.control.NonFatal
 
 /** Builds the main window and wires views, view models and services together. */
-final class MainWindow(val stage: Stage, val services: AppServices, initial: UiState, opts: CliOptions):
+final class MainWindow(val stage: Stage, val services: AppServices, initial: UiState, opts: CliOptions,
+    payloadClipboardWriter: String => Unit = RequestPayloadPane.systemClipboard):
   val catalogVM = new CatalogVM
   val ctx = new UiContext(services, catalogVM, stage)
   val model = new ModelVM
@@ -90,7 +91,8 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
     def delete(path: Path): Unit = MainWindow.this.delete(path)
 
   val panels: Map[Mode, GenerationPanel] =
-    Mode.values.map(m => m -> new GenerationPanel(ctx, vms(m), plugins(m), initial.expanded, () => lastSeed)).toMap
+    Mode.values.map(m => m -> new GenerationPanel(ctx, vms(m), plugins(m), initial.expanded,
+      () => lastSeed, openPayload)).toMap
   val preview = new PreviewPane(ctx, actions)
   val gallery = new GalleryView(ctx, galleryVM, actions, it => preview.show(it.path, it.parameters))
   val pngInfo = new PngInfoTab(ctx, actions)
@@ -169,6 +171,27 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   val root = new StackPane(layout, ctx.toaster.layer)
   val scene = new Scene(root, initial.window.width, initial.window.height)
   Theme.apply(scene, services.settings.theme)
+
+  private var payloadStage: Stage = null
+  private var payloadPane: RequestPayloadPane = null
+
+  /** Stable native acceptance seam. Opening only reads the memory-only store and never starts inference. */
+  def payloadInspectorStage: Option[Stage] = Option(payloadStage)
+  def openPayload(mode: Mode): Unit =
+    if !disposed then
+      if payloadPane == null then
+        payloadPane = new RequestPayloadPane(ctx, payloadClipboardWriter)
+        payloadStage = new Stage()
+        payloadStage.initOwner(stage)
+        payloadStage.setTitle("API payload inspector")
+        payloadStage.setMinWidth(720)
+        payloadStage.setMinHeight(540)
+        val inspectorScene = new Scene(payloadPane.node, 1040, 740)
+        Theme.apply(inspectorScene, services.settings.theme)
+        payloadStage.setScene(inspectorScene)
+      payloadPane.openMode(mode.key)
+      payloadStage.show()
+      payloadStage.toFront()
 
   private def refreshComparisonOptions(): Unit =
     preview.comparisonButton(if activeMode == Mode.Txt2Img then services.settings.comparisonTxtButton else services.settings.comparisonSendButtons)
@@ -262,13 +285,13 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   services.catalog.addListener(snap => Fx.run(catalogVM.update(snap, services.catalog.choices)))
   services.supervisor.addStateListener(_ => Fx.run(refreshChip()))
   services.addLogListener(line => Fx.run(statusBar.log(line)))
-  services.queue.addListener {
-    // file stat on the job thread, not the FX thread
-    case e: JobEvent.ImageSaved =>
-      val size = try Files.size(e.image.path) catch case NonFatal(_) => 0L
-      Fx.run(onImageSaved(e, size))
-    case e => Fx.run(onJobEvent(e))
-  }
+  services.queue.addListener(e => QueueEventFxDispatch.forward(e, r => Fx.run(r()),
+    // File stat stays on the job thread; only its small result crosses to FX.
+    saved => {
+      val size = try Files.size(saved.image.path) catch case NonFatal(_) => 0L
+      Fx.run(onImageSaved(saved, size))
+    },
+    onJobEvent))
   progress.state.addListener((_, _, _) => refreshChip())
 
   private def refreshChip(): Unit =
@@ -344,7 +367,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
       ctx.error("No checkpoint available.\nPut .safetensors in models/checkpoints or add folders in Settings.")
       return
     def submit(tempFiles: Seq[Path]): Unit =
-      val job = JobBuilder.build(vm, plugins(mode))
+      val job = JobBuilder.build(vm, plugins(mode), sdfx.engine.CaptureOptions(services.settings.apiPayloadIncludeImageContents))
       ctx.temps.registerJob(job.id, tempFiles)
       services.queue.submit(job).failed.foreach(_ => ())(using scala.concurrent.ExecutionContext.parasitic)
       if queueOnly && progress.get.running then ctx.info(s"Queued (${progress.get.pendingCount + 1} waiting)")
@@ -703,6 +726,11 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   def dispose(): Unit =
     interruptionControls.dispose()
     disposed = true
+    if payloadPane != null then
+      payloadPane.dispose()
+      payloadStage.close()
+      payloadPane = null
+      payloadStage = null
     systemInfo.dispose()
     stylesEditor.dispose()
     vramPoll.stop()

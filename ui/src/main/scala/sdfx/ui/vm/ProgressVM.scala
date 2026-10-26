@@ -59,6 +59,7 @@ object ProgressVM:
 
   /** Pure reducer of the job event stream. */
   def reduce(s: ProgressState, e: JobEvent): ProgressState = e match
+    case _: JobEvent.PayloadCaptured | _: JobEvent.PayloadLifecycle => s
     case JobEvent.JobQueued(job, _) =>
       if s.current.contains(job.id) || s.pending.contains(job.id) then s else s.copy(pending = s.pending :+ job.id)
     case JobEvent.JobStarted(job) =>

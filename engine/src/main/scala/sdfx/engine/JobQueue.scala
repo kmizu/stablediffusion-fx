@@ -6,6 +6,7 @@ import sdfx.core.infotext.{ImageFacts, Infotext}
 import sdfx.core.png.PngMetadata
 import sdfx.core.plugins.api.*
 import sdfx.core.protocol.*
+import sdfx.core.payload.*
 
 import java.nio.file.{Files, Path}
 import java.util.UUID
@@ -24,7 +25,9 @@ final case class Job(
     script: Option[(Plugin, Values)] = None,
     alwaysOn: Seq[(Plugin, Values)] = Nil,
     origin: String = "ui",
-    limits: JobLimits = JobLimits()
+    limits: JobLimits = JobLimits(),
+    submittedContext: Option[SubmittedPayloadContext] = None,
+    captureOptions: Option[CaptureOptions] = None
 )
 
 object Job:
@@ -47,6 +50,10 @@ object JobEvent:
   final case class Preview(jobId: String, jpegB64: String, step: Int) extends JobEvent
   final case class ImageSaved(jobId: String, image: OutputImage, grid: Boolean) extends JobEvent
   final case class Log(jobId: String, message: String) extends JobEvent
+  final case class PayloadCaptured(snapshot: PayloadSnapshot) extends JobEvent:
+    def jobId: String = snapshot.key.jobId
+  final case class PayloadLifecycle(key: PayloadKey, state: PayloadState, completionJson: Option[String]) extends JobEvent:
+    def jobId: String = key.jobId
   final case class JobFinished(jobId: String, output: JobOutput) extends JobEvent
   final case class JobFailed(jobId: String, error: Throwable) extends JobEvent:
     def message: String = Option(error.getMessage).getOrElse(error.toString)
@@ -109,11 +116,17 @@ final class JobQueue(generator: Generator, interruptEngine: Option[String] => Fu
     }
 
   def submit(job: Job): Future[JobOutput] =
-    val e = new Entry(job, Promise[JobOutput]())
+    // ujson hook values are the mutable part of GenerationParams. Freeze them once at submission,
+    // without preparation, style expansion, model calls or a second draw of the generation seeds.
+    val frozen = job.copy(params = job.params.copy(hooks = job.params.hooks.map { (key, value) =>
+      key -> ujson.read(RequestPayload.freeze(value))
+    }), submittedContext = Some(PayloadCaptureContext.submitted(job)),
+      captureOptions = Some(job.captureOptions.getOrElse(generator.defaultCaptureOptions)))
+    val e = new Entry(frozen, Promise[JobOutput]())
     if stopped then e.promise.failure(new IllegalStateException("job queue is shut down"))
     else
       queue.put(e)
-      emit(JobEvent.JobQueued(job, queue.size() + (if running.isDefined then 1 else 0)))
+      emit(JobEvent.JobQueued(frozen, queue.size() + (if running.isDefined then 1 else 0)))
     e.promise.future
 
   /** Jobs waiting to run (excluding the current one). */
@@ -166,6 +179,7 @@ final class JobQueue(generator: Generator, interruptEngine: Option[String] => Fu
     else
       val cancelled = queue.asScala.find(_.job.id == jobId) match
         case Some(e) if queue.remove(e) =>
+          settlePayloads(e.job, PayloadState.Cancelled)
           e.promise.tryFailure(JobCancelledException(jobId, JobOutput(Nil)))
           emit(JobEvent.JobCancelled(jobId, JobOutput(Nil)))
           true
@@ -179,6 +193,7 @@ final class JobQueue(generator: Generator, interruptEngine: Option[String] => Fu
     val drained = new java.util.ArrayList[Entry]()
     queue.drainTo(drained)
     drained.asScala.foreach { e =>
+      settlePayloads(e.job, PayloadState.Cancelled)
       e.promise.tryFailure(JobCancelledException(e.job.id, JobOutput(Nil)))
       emit(JobEvent.JobCancelled(e.job.id, JobOutput(Nil)))
     }
@@ -220,8 +235,16 @@ final class JobQueue(generator: Generator, interruptEngine: Option[String] => Fu
     @volatile var statusText = ""
     @volatile var done = 0
     @volatile var total = 0
+    val payloadSequence = new java.util.concurrent.atomic.AtomicInteger(0)
     val listener = new GenerationListener:
       override def interruptionOwner: Option[String] = Some(e.interruptionOwner)
+      override private[engine] def payloadJobId: Option[String] = Some(id)
+      override private[engine] def submittedPayloadContext: Option[SubmittedPayloadContext] = e.job.submittedContext
+      override private[engine] def payloadCaptureOptions: Option[CaptureOptions] = e.job.captureOptions
+      override private[engine] def nextPayloadKey(): PayloadKey = PayloadKey(id, payloadSequence.incrementAndGet())
+      override def onPreparedRequest(snapshot: PayloadSnapshot): Unit = emit(JobEvent.PayloadCaptured(snapshot))
+      override def onPayloadLifecycle(key: PayloadKey, state: PayloadState, completionJson: Option[String]): Unit =
+        emit(JobEvent.PayloadLifecycle(key, state, completionJson))
       override def onProgress(p: EngineEvent.Progress): Unit = emit(JobEvent.Progress(id, p, statusText, done, total))
       override def onPreview(p: EngineEvent.Preview): Unit = emit(JobEvent.Preview(id, p.jpegB64, p.step))
       override def onLog(message: String): Unit = emit(JobEvent.Log(id, message))
@@ -252,24 +275,49 @@ final class JobQueue(generator: Generator, interruptEngine: Option[String] => Fu
       if flag.get() then
         val o = if out.all.nonEmpty then out else partial
         cleanup(o)
+        settlePayloads(e.job, PayloadState.Cancelled)
         emit(JobEvent.JobCancelled(id, o))
         e.promise.tryFailure(JobCancelledException(id, o))
       else
         cleanup(out)
+        settlePayloads(e.job, PayloadState.Succeeded)
         emit(JobEvent.JobFinished(id, out))
         e.promise.trySuccess(out)
     catch
       case ex: Throwable if ex.isInstanceOf[InterruptedException] || (NonFatal(ex) && (flag.get() || JobRunner.isInterruption(ex))) =>
         val o = partial
         cleanup(o)
+        settlePayloads(e.job, PayloadState.Cancelled)
         emit(JobEvent.JobCancelled(id, o))
         e.promise.tryFailure(JobCancelledException(id, o))
       case ex: Throwable =>
         // Includes fatal errors (OutOfMemoryError, LinkageError): fail the job, keep the queue alive.
         try
           cleanup(partial)
+          settlePayloads(e.job, PayloadState.Failed)
           emit(JobEvent.JobFailed(id, ex))
         finally e.promise.tryFailure(ex)
     finally
       try cleanup(partial)
       finally running = None
+
+  private def settlePayloads(job: Job, state: PayloadState): Unit =
+    // These are diagnostics: a broken viewer/context cannot turn cleanup into a failed job.
+    try
+      val own = generator.payloads.snapshots.filter(_.key.jobId == job.id)
+      if own.isEmpty then
+        val submitted = job.submittedContext.getOrElse(PayloadCaptureContext.submitted(job))
+        val limits = PayloadJsonBudget.Limits(maxBytes = math.min(generator.payloads.limits.maxEntryBytes, Int.MaxValue.toLong - 1).toInt)
+        val context = PayloadCaptureContext.document(submitted, limits).flatMap(PayloadJsonBudget.write(_, limits)).toOption
+        val snapshot = PayloadSnapshot(PayloadKey(job.id, 0), if job.params.isImg2Img then "img2img" else "txt2img",
+          None, System.currentTimeMillis(), contextJson = context, state = state,
+          warnings = Vector("No retained generation body is available for this job") ++
+            Option.when(context.isEmpty)("Submitted context unavailable: diagnostic JSON limit or parse failure"), sourceMode = submitted.sourceMode)
+        generator.payloads.put(snapshot)
+        generator.payloads.snapshots.find(_.key == snapshot.key).foreach(s => emit(JobEvent.PayloadCaptured(s)))
+      else
+        generator.payloads.finishJob(job.id, state)
+        own.filterNot(_.state.isTerminal).foreach(s => emit(JobEvent.PayloadLifecycle(s.key, state, None)))
+    catch
+      case error: InterruptedException => System.err.println(s"[sdfx] Payload settlement failed: ${error.getClass.getSimpleName}")
+      case NonFatal(error) => System.err.println(s"[sdfx] Payload settlement failed: ${error.getClass.getSimpleName}")

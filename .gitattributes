@@ -2,3 +2,5 @@
 *.bat text eol=crlf
 *.png binary
 *.jpg binary
+licenses/huchenlei__sd-webui-api-payload-display.txt -text whitespace=cr-at-eol
+licenses/summerstyle__jsonTreeViewer.txt -text

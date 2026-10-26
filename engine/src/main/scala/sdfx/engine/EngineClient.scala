@@ -2,8 +2,13 @@ package sdfx.engine
 
 import sdfx.core.json.SnakePickle
 import sdfx.core.protocol.*
+import sdfx.core.payload.RequestPayload
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
+
+/** Frozen native protocol params, not an envelope or evidence that the worker executed the request. */
+private[engine] final case class GenerationBody(requestType: String, bodyJson: String, capturedAtMillis: Long)
 
 /** A running txt2img / img2img request. */
 final class GenerationHandle(val result: Future[GenerationResult], interruptFn: () => Unit):
@@ -55,10 +60,26 @@ final class EngineClient(val supervisor: EngineSupervisor):
     generateOwned(req, mode, listener, None)
 
   private[engine] def generateOwned(req: GenerationRequest, mode: String, listener: EngineEvent => Unit,
-                                    owner: Option[String]): GenerationHandle =
+                                    owner: Option[String], observer: GenerationBody => Unit = _ => (),
+                                    beforeDispatch: () => Unit = () => ()): GenerationHandle =
     require(mode == GenerationMode.Txt2Img || mode == GenerationMode.Img2Img, s"bad mode $mode")
     val requestOwner = owner.orElse(Some(java.util.UUID.randomUUID().toString))
-    new GenerationHandle(call[GenerationResult](mode, Json.toJs(req), listener, requestOwner),
+    // Serialize the actual typed request exactly once. Both freezing and private transport parsing are
+    // required conversion work and retain ordinary failure semantics; only observation is optional.
+    val bodyJson = RequestPayload.freeze(Json.toJs(req))
+    val transportBody = ujson.read(bodyJson)
+    val body = GenerationBody(mode, bodyJson, System.currentTimeMillis())
+    try observer(body)
+    catch
+      // This is optional diagnostic work, not the job's owner/listener cancellation signal.
+      case error: InterruptedException =>
+        System.err.println(s"[sdfx] Generation payload observer failed: ${error.getClass.getSimpleName}")
+      case NonFatal(error) =>
+        System.err.println(s"[sdfx] Generation payload observer failed: ${error.getClass.getSimpleName}")
+    // Required admission check: optional diagnostic work may have taken long enough for the
+    // actual job's cancellation flag to change. Its failure must escape the observer isolation.
+    beforeDispatch()
+    new GenerationHandle(call[GenerationResult](mode, transportBody, listener, requestOwner),
       () => supervisor.interruptOwned(requestOwner))
 
   def upscale(req: UpscaleRequest): Future[ImagePathResult] = call[ImagePathResult](Protocol.Types.Upscale, Json.toJs(req))

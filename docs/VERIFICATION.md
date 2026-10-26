@@ -1071,3 +1071,82 @@ no dummy plugin was introduced and the registry assertion was not relaxed. Proto
 The existing20-case BuiltinsSuite passed after regeneration (`.worktrees/hardware-ledger-fix/outputs/hardware-core-ledger-green.log`,
 2026-10-26 23:50:22). Totals remain100done/202todo/51NA. This is a ledger/documentation correction with no
 generation/runtime code change. Future promotion must rerun the ledger/registry check after regenerating status.
+
+## Native API payload inspector (2026-10-27)
+
+Index253 `core:api-payload` independently reimplements huchenlei/sd-webui-api-payload-display at
+`2d3332d94ffac0943bd35a1943924ed4650c6e63`. The MIT notice retains Chenlei Hu's2023 copyright. The separately
+copyrighted vendored tree's interactions are independently reimplemented; Vera Lobacheva's2017 MIT license is
+also preserved from summerstyle/jsonTreeViewer license pin `6abfcc1202396af12e2806d129bcae0e75b37365`. No upstream
+JavaScript/CSS is copied. Both license Git blobs match the pinned originals, SHA256 respectively
+`990b5c560b655fb8623874940f1ac02cd21c3c76c714c997dff0ec3fa8c744fb` and
+`0e6f8814a1368da259cdca5d218c422fcb278b3579651c55079d774799ae7692`. The130-project notice table can be regenerated
+with `python scripts/third_party.py --use-archived-licenses`; this checks the two pinned files and reuses older
+archived license labels, rather than claiming a fresh network review of every older project.
+
+The actual typed generation body is serialized once at EngineClient's dispatch boundary. A private body copy
+goes to transport; optional observation cannot change it or cause another prepare/seed draw. UI, MCP and direct
+generation retain honest origins, per-subrequest identity, submitted forms/options and independent lifecycle.
+Capture-time model reports are snapshots; actually reported completion facts remain separate. Pending queued-job
+cancellation before preparation has an absent body; cancellation during observation may retain its prepared body.
+Later job failure cannot rewrite an earlier successful subrequest.
+
+Image diagnostics use an explicit whitelist and capture before temporary-mask cleanup, off FX. Init-image
+contents are always omitted, even with opt-in enabled. Source reads are bounded16MiB, dimensions8192 per side /
+32million pixels before raster decode, PNG output4MiB and the final image document16MiB. Store limits are50captures,
+8MiB body,24MiB per entry and32MiB total, including retained identity/documents/warnings. Oversized identities
+are rejected with a count; optional documents are dropped visibly before an in-limit exact body. No full capture
+event enters the general FX queue: the dedicated store/pane path coalesces delivery and reads current state.
+
+The shared inspector has collapsed per-mode entries, mode/All history, separate body/context/image selection,
+literal typed tree, recursive/mark/path and accessible actions, bounded warning details, explicit exact Copy and
+three-second feedback. Raw preview is at most64KiB UTF-8. Structural admission limits100000 lexical tokens/depth512;
+derived paths, labels and aggregate path bytes are separately bounded. Tree publication uses1000-row FX slices,
+at most10000 attached items and depth128 with explicit Root/Back/continuation; source JSON remains exact-copyable.
+Only the global image preference persists, and affects future submissions. Opening the viewer starts no engine.
+
+Final production code was `475220b9e417dbba2245e52ffe53409facd9cbfd` before documentation/ledger promotion.
+Test-only commit `1360a17` subsequently strengthened the explicit closed/open/closed inspector comparison;
+the final native runs below use that helper with unchanged production code and jar.
+Root-owned evidence is in `.worktrees/api-payload-integration/outputs`:
+
+- Full Scala **725 passed**: core266, engine151, plugins132, MCP45 and UI131. Assembly succeeded.
+  `api-payload-release-gates.log` records the terminal test/assembly results and all subsequent native runs.
+  The separate2-case deferred-FX regression also passed; it is included in the725, not counted twice.
+- Full Python **867 passed/1 skipped**, with `CUDA_VISIBLE_DEVICES=-1` verified to hide CUDA for CPU fixture tests;
+  **397 passed/82 skipped** without torch. Logs/JUnit: `api-payload-python-cpu-final.*` and
+  `api-payload-python-notorch.*`. The API wave changes no Python inference/tests. An initial empty environment
+  value failed to hide CUDA in this shell, exposing19 CPU-fixture device mismatches; that run is not a pass.
+- Final actual native runs all terminated normally: offline pane smoke, CPU **18checks**, SD1.5 animekawa_v10
+  **14checks**, and SDXL waiIllustriousSDXL_v170 **14checks**. Reports and screens are in
+  `verify-api-pane-release` and `verify-api-native-{cpu,sd15,sdxl}-final`, with terminal log
+  `api-payload-native-final.log`. Native Generate/Queue, identical repeats,
+  transient/final selected scripts, inactive/active AlwaysOn forms, queued form edits, old-mode completion, hires,
+  img2img, Inpaint, temporary mask cleanup, mask SHA/decoded pixels and independent documents are checked.
+  CPU additionally checks actual second-subrequest failure, enclosing-script failure, pending cancellation and
+  over64KiB raw preview/full Copy. Actual stdio equality is independently pinned by the fake-engine request echo
+  suites; the manual inspector capture is not described as independent transport sniffing.
+- Both trained models retain exact fixed-seed body/RGB parity with the inspector closed before baseline, open
+  during the repeat and closed after use, including image-preference changes.
+  These3-step256/384px checks establish neutrality/routing, not image quality. Root inspected all20 trained-model
+  outputs; the low-step SDXL outputs are abstract/striped, and are not presented as a quality benchmark.
+- Actual Copy passed for body/context/image documents and restored the formats captured in each final run.
+  CPU also passed untruncated long Copy. The helper preflights every advertised format and skips mutation if any
+  cannot be safely restored. This does not retroactively establish restoration of the earlier Styles-run clipboard.
+- Native screenshots await settled sizes and assert saved PNG dimensions. Main model helper images are exactly
+ 1280x800 or1600x1000 scene pixels. Warning-heavy offline checks name both outer window and actual client sizes
+  (1280x800 window /1264x761 client;1600x1000 window /1584x961 client). Earlier immediate-resize screenshots had
+  stale dimensions; they are superseded by these release checks. JavaFX21 emitted nonfatal CSS-lookup warnings
+  during the final hide/reopen cycle; root inspected the resulting tree/path/mark screen and verified its controls.
+- Jar SHA256: `6D7C76AEF2F0534214C0F0838BDAA29B10435C0431F175E7EF699749E93E6C8B`.
+  The assembled file is `.worktrees/api-payload-integration/target/stablediffusion-fx.jar`.
+
+Independent component reviews and a whole-feature audit approved the implementation after deterministic
+RED/GREEN fixes for capture/store accounting, ordered callbacks, cancellation admission, tree frontier/path/FX
+budgets, latest input, warning-heavy layout and the general FX-event bridge. Reports include
+`api-payload-whole-integration-{audit,rereview}.md`. No source scope was replaced by a smaller UI-only feature.
+Post-promotion registry consistency passed **20 tests** after regenerating the ledger
+(`api-payload-promoted-registry.log`,2026-10-27 00:41:58). The controller's complete decision record is
+[`2026-10-26-core-api-payload-decisions.md`](superpowers/plans/2026-10-26-core-api-payload-decisions.md).
+
+Result: **101 done /201 todo /51 not applicable**,137 distinct pending targets. The overall353-entry goal remains active.

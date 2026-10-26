@@ -190,3 +190,10 @@ Per-plugin evidence of the final real-model runs (which run, duration, result): 
   Queue wait, model preloading and final file publication are excluded. Restore/Send to can show up to two
   informational device-difference notices per window; they never change the local device and work offline without
   starting an engine. Unavailable hardware facts are recorded as unknown rather than invented.
+- **API payload** opens a shared read-only inspector from the collapsed section in each generation mode. It
+  retains the exact native request body plus separate submitted/model context and image diagnostics, with distinct
+  job/sub-generation history. Tree actions include recursive expansion, marks and JSON paths; raw preview is capped
+  at64KiB, while explicit Copy uses the complete selected retained document. The shared image-content preference
+  affects future submissions only; init-image contents are always omitted. Limits produce visible diagnostics or
+  continuation, and captured model facts are labelled snapshots rather than proof of execution identity. Opening
+  the inspector never starts the engine. History is memory-only; this is not an HTTP request or replay editor.

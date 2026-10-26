@@ -12,7 +12,8 @@ final class GenerationPanel(
     val vm: GenerationVM,
     val plugins: PluginsVM,
     expanded: Map[String, Boolean],
-    lastSeed: () => Long
+    lastSeed: () => Long,
+    openPayload: Mode => Unit
 ):
   val mode: Mode = vm.mode
   /** Titled panes by persistence key ("<mode>.<section>"). */
@@ -132,6 +133,17 @@ final class GenerationPanel(
     val f = W.form().add("Seed", W.hbox(6, W.hgrow(field), dice, recycle))
     W.card("Seed", f.grid, varPane)
 
+  private def payloadSection: TitledPane =
+    val open = W.button("Inspect latest API payload", "Open this mode's latest captured request in the shared inspector") {
+      openPayload(mode)
+    }
+    open.setId(s"payload-open-${mode.key}")
+    val hint = W.label("Inspect the submitted native request body, context and optional image diagnostic. Captures remain in memory only.", "hint")
+    hint.setWrapText(true)
+    val pane = W.section("API payload", new VBox(7, hint, open), false)
+    pane.setId(s"payload-entry-${mode.key}")
+    pane
+
   // ---- assembly ----------------------------------------------------------------------------------------
   val content: VBox =
     val v = new VBox(10)
@@ -141,6 +153,7 @@ final class GenerationPanel(
     v.getChildren.add(W.card("Prompt", prompts.view))
     imageSection.foreach(v.getChildren.add)
     v.getChildren.addAll(sampling, size, seed)
+    v.getChildren.add(track("apiPayload", payloadSection))
     if mode == Mode.Txt2Img then v.getChildren.add(track("hires", ExtraSections.hires(ctx, vm, isExpanded("hires", false))))
     v.getChildren.add(track("controlnet", ExtraSections.controlNet(ctx, vm, isExpanded("controlnet", false))))
     v.getChildren.add(W.card("Script", PluginForm.scriptSection(ctx, plugins)))

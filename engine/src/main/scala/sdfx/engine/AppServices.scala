@@ -57,7 +57,8 @@ final class AppServices(
   )
   val client: EngineClient = new EngineClient(supervisor)
   val catalog: ModelCatalog = new ModelCatalog(client, home, () => _settings)
-  val generator: Generator = new Generator(client, catalog, home, () => _settings, timeouts = timeouts)
+  val payloads: RequestPayloadStore = new RequestPayloadStore()
+  val generator: Generator = new Generator(client, catalog, home, () => _settings, timeouts = timeouts, payloads = payloads)
   val queue: JobQueue = new JobQueue(generator, owner => supervisor.requestInterrupt(owner))
   /** Global user interrupt: capture owned queue work or the actual nonqueue request
     * now, then perform admission I/O off the caller/FX thread. Queue-specific APIs
@@ -149,3 +150,4 @@ final class AppServices(
     try supervisor.close()
     catch case NonFatal(_) => ()
     registry.close()
+    payloads.close()

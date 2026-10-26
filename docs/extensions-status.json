@@ -1521,7 +1521,7 @@
 "index": 253,
 "name": "SD-WebUI API Payload Display",
 "url": "https://github.com/huchenlei/sd-webui-api-payload-display.git",
-"status": "todo:core:api-payload"
+"status": "done:core:api-payload"
 },
 {
 "index": 254,

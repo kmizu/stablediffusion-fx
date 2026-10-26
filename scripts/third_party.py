@@ -1,12 +1,16 @@
 """Collects the licenses of every project stablediffusion-fx ports code from, re-implements, or depends on.
 
   python scripts/third_party.py        (needs the GitHub CLI `gh`, logged in)
+  python scripts/third_party.py --use-archived-licenses
+                                       (no network; requires existing notice labels and archived license files)
 
 Writes licenses/<owner>__<repo>.txt (the upstream license text, verbatim) and THIRD_PARTY_NOTICES.md.
 Sources: the hand-written BASE list below + the repository of every extension-index entry marked `done`
 (docs/extensions-status.json), so new plugins pick up their notice automatically.
 """
+import argparse
 import base64
+import hashlib
 import json
 import os
 import re
@@ -79,6 +83,14 @@ BASE = [
      "remark, Extras provenance and informational paste notices -> `core:hardware-info`; independently implemented, "
      "no upstream code copied; "
      "[source 784a0dd](https://github.com/light-and-ray/sd-webui-hardware-info-in-metadata/tree/784a0dd8521108815aff007d7a4807ac6f98d251)"),
+    ("huchenlei/sd-webui-api-payload-display", "reimplemented", "API payload display behaviour -> `core:api-payload`; "
+     "independently reimplemented in Scala/JavaFX from "
+     "[source 2d3332d](https://github.com/huchenlei/sd-webui-api-payload-display/tree/2d3332d94ffac0943bd35a1943924ed4650c6e63); "
+     "no upstream JavaScript or CSS copied"),
+    ("summerstyle/jsonTreeViewer", "reimplemented", "JSON tree interactions referenced by the vendored viewer in "
+     "huchenlei/sd-webui-api-payload-display; behaviour independently reimplemented in Scala/JavaFX; "
+     "no vendored JavaScript or CSS copied; "
+     "[license source 6abfcc1](https://github.com/summerstyle/jsonTreeViewer/blob/6abfcc1202396af12e2806d129bcae0e75b37365/LICENSE)"),
     ("kohya-ss/sd-scripts", "ported", "ControlNet-LLLite module layout"),
     ("lllyasviel/Fooocus", "ported", "Fooocus inpaint patch / head application"),
     ("threestudio-project/threestudio", "reimplemented", "Zero123 diffusers layout and sampling"),
@@ -108,6 +120,18 @@ BASE = [
     ("AUTOMATIC1111/stable-diffusion-webui-extensions", "data", "extension index snapshot (docs/extensions-index.json)"),
 ]
 
+# The extension and its separately copyrighted vendored viewer are pinned even though no
+# JavaScript/CSS is copied. Keep their original LICENSE bytes; do not normalize newlines.
+# (commit, license path, SHA-256, SPDX)
+PINNED_LICENSES = {
+    "huchenlei/sd-webui-api-payload-display": (
+        "2d3332d94ffac0943bd35a1943924ed4650c6e63", "LICENSE",
+        "990b5c560b655fb8623874940f1ac02cd21c3c76c714c997dff0ec3fa8c744fb", "MIT"),
+    "summerstyle/jsonTreeViewer": (
+        "6abfcc1202396af12e2806d129bcae0e75b37365", "LICENSE",
+        "0e6f8814a1368da259cdca5d218c422fcb278b3579651c55079d774799ae7692", "MIT"),
+}
+
 
 def repo_of(url: str):
     m = re.match(r"https?://github\.com/([^/]+)/([^/#?]+?)(?:\.git)?/?$", url.strip())
@@ -115,6 +139,14 @@ def repo_of(url: str):
 
 
 def gh_license(repo: str):
+    if repo in PINNED_LICENSES:
+        pin, path, expected, spdx = PINNED_LICENSES[repo]
+        out = subprocess.run(["gh", "api", f"repos/{repo}/contents/{path}?ref={pin}"],
+                             capture_output=True, text=True, timeout=60, check=True)
+        raw = base64.b64decode(json.loads(out.stdout)["content"])
+        if hashlib.sha256(raw).hexdigest() != expected:
+            raise RuntimeError(f"pinned license hash mismatch for {repo}@{pin}")
+        return spdx, raw
     error = ""
     for _ in range(3):
         try:
@@ -135,7 +167,24 @@ def gh_license(repo: str):
     raise RuntimeError(f"could not retrieve license for {repo}: {error}")
 
 
+def archived_license_labels():
+    """Reuse the existing table's SPDX labels without refetching unrelated projects."""
+    path = os.path.join(ROOT, "THIRD_PARTY_NOTICES.md")
+    labels = {}
+    with open(path, encoding="utf-8") as notice:
+        for line in notice:
+            match = re.match(r"\| \[([^]]+)\]\(https://github\.com/[^)]+\) \| [^|]+ \| ([^|]+) \|", line)
+            if match:
+                labels[match.group(1)] = match.group(2).strip()
+    return labels
+
+
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--use-archived-licenses", action="store_true",
+                        help="regenerate notices from checked-in license files and existing SPDX labels; no network")
+    args = parser.parse_args()
+    archived = archived_license_labels() if args.use_archived_licenses else {}
     status = json.load(open(os.path.join(ROOT, "docs", "extensions-status.json"), encoding="utf-8"))
     entries = list(BASE)
     seen = {r for r, _, _ in BASE}
@@ -156,17 +205,37 @@ def main():
     os.makedirs(os.path.join(ROOT, "licenses"), exist_ok=True)
     rows = []
     for repo, how, what in entries:
-        spdx, text = gh_license(repo)
         fname = repo.replace("/", "__") + ".txt"
-        if text:
-            open(os.path.join(ROOT, "licenses", fname), "w", encoding="utf-8", newline="\n").write(text)
-            lic = f"{spdx} ([text](licenses/{fname}))"
-        elif os.path.isfile(os.path.join(ROOT, "licenses", fname)):
-            lic = f"upstream file unavailable; archived license ([text](licenses/{fname}))"
+        license_path = os.path.join(ROOT, "licenses", fname)
+        if args.use_archived_licenses:
+            if repo in PINNED_LICENSES:
+                _, _, expected, spdx = PINNED_LICENSES[repo]
+                with open(license_path, "rb") as source:
+                    if hashlib.sha256(source.read()).hexdigest() != expected:
+                        raise RuntimeError(f"pinned archived license hash mismatch for {repo}")
+                lic = f"{spdx} ([text](licenses/{fname}))"
+            elif repo in archived:
+                lic = archived[repo]
+                if "([text](licenses/" in lic and not os.path.isfile(license_path):
+                    raise RuntimeError(f"archived license missing for {repo}")
+            else:
+                raise RuntimeError(f"no archived license label for {repo}; run full collector")
         else:
-            lic = "no license file published"
+            spdx, source_text = gh_license(repo)
+            if source_text:
+                if isinstance(source_text, bytes):
+                    with open(license_path, "wb") as output:
+                        output.write(source_text)
+                else:
+                    with open(license_path, "w", encoding="utf-8", newline="\n") as output:
+                        output.write(source_text)
+                lic = f"{spdx} ([text](licenses/{fname}))"
+            elif os.path.isfile(license_path):
+                lic = f"upstream file unavailable; archived license ([text](licenses/{fname}))"
+            else:
+                lic = "no license file published"
         rows.append(f"| [{repo}](https://github.com/{repo}) | {how} | {lic} | {what} |")
-        print(f"{repo:60s} {spdx}")
+        print(f"{repo:60s} {lic.split(' ', 1)[0]}")
     md = [
         "# Third-party notices",
         "",

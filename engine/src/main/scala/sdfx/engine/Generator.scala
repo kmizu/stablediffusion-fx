@@ -7,6 +7,7 @@ import sdfx.core.model.*
 import sdfx.core.plugins.api.*
 import sdfx.core.png.PngMetadata
 import sdfx.core.protocol.*
+import sdfx.core.payload.*
 
 import java.awt.image.BufferedImage
 import java.nio.file.{Files, Path, Paths}
@@ -19,6 +20,12 @@ import scala.util.control.NonFatal
 trait GenerationListener:
   /** Private transport identity for queued work; never part of GenerationParams or image metadata. */
   def interruptionOwner: Option[String] = None
+  private[engine] def payloadJobId: Option[String] = None
+  private[engine] def submittedPayloadContext: Option[SubmittedPayloadContext] = None
+  private[engine] def payloadCaptureOptions: Option[CaptureOptions] = None
+  private[engine] def nextPayloadKey(): PayloadKey = PayloadKey(s"direct-${java.util.UUID.randomUUID()}", 1)
+  def onPreparedRequest(snapshot: PayloadSnapshot): Unit = ()
+  def onPayloadLifecycle(key: PayloadKey, state: PayloadState, completionJson: Option[String]): Unit = ()
   def onProgress(p: EngineEvent.Progress): Unit = ()
   def onPreview(p: EngineEvent.Preview): Unit = ()
   def onLog(message: String): Unit = ()
@@ -83,12 +90,14 @@ final class Generator(
     settings: () => Settings,
     styles: () => Seq[PromptStyle] = null,
     random: Random = new Random(),
-    timeouts: EngineTimeouts = EngineTimeouts()
+    timeouts: EngineTimeouts = EngineTimeouts(),
+    val payloads: RequestPayloadStore = new RequestPayloadStore()
 ) extends PluginContext:
 
   private val styleSource: () => Seq[PromptStyle] = Option(styles).getOrElse(() => Styles.load(home.stylesFile))
 
   def outputsDir: Path = home.outputs(settings())
+  private[engine] def defaultCaptureOptions: CaptureOptions = CaptureOptions(settings().apiPayloadIncludeImageContents)
 
   // ---- PluginContext (unscoped) ---------------------------------------------------------------------------
   def generate(p: GenerationParams): Seq[OutputImage] = generateWith(p, GenerationListener.none)
@@ -122,6 +131,13 @@ final class Generator(
           throw e
     val scopedListener: GenerationListener = new GenerationListener:
       override def interruptionOwner: Option[String] = listener.interruptionOwner
+      override private[engine] def payloadJobId: Option[String] = listener.payloadJobId
+      override private[engine] def submittedPayloadContext: Option[SubmittedPayloadContext] = listener.submittedPayloadContext
+      override private[engine] def payloadCaptureOptions: Option[CaptureOptions] = listener.payloadCaptureOptions
+      override private[engine] def nextPayloadKey(): PayloadKey = listener.nextPayloadKey()
+      override def onPreparedRequest(snapshot: PayloadSnapshot): Unit = listener.onPreparedRequest(snapshot)
+      override def onPayloadLifecycle(key: PayloadKey, state: PayloadState, completionJson: Option[String]): Unit =
+        listener.onPayloadLifecycle(key, state, completionJson)
       override def onProgress(p: EngineEvent.Progress): Unit = listener.onProgress(p)
       override def onPreview(p: EngineEvent.Preview): Unit = listener.onPreview(p)
       override def onLog(m: String): Unit = listener.onLog(m)
@@ -388,14 +404,73 @@ final class Generator(
     ensureModel(prep.recorded, listener)
     if listener.isInterrupted then throw interruptedError
     val activity = new java.util.concurrent.atomic.AtomicLong(System.nanoTime())
-    val handle = client.generateOwned(prep.request, prep.mode, { ev =>
-      activity.set(System.nanoTime())
-      ev match
-        case e: EngineEvent.Progress => listener.onProgress(e)
-        case e: EngineEvent.Preview  => listener.onPreview(e)
-        case EngineEvent.Log(_, m)   => listener.onLog(m)
-    }, listener.interruptionOwner)
-    val result = awaitActive(handle.result, activity)
+    val jsonLimits = PayloadJsonBudget.Limits(maxBytes = math.min(payloads.limits.maxEntryBytes, Int.MaxValue.toLong - 1).toInt)
+    var captureKey: Option[PayloadKey] = None
+    def diagnostic(action: => Unit): Unit =
+      try action
+      catch
+        case error: InterruptedException => System.err.println(s"[sdfx] Payload diagnostic failed: ${error.getClass.getSimpleName}")
+        case NonFatal(error) => System.err.println(s"[sdfx] Payload diagnostic failed: ${error.getClass.getSimpleName}")
+    def lifecycle(state: PayloadState, completion: Option[String] = None): Unit = captureKey.foreach { key =>
+      diagnostic(payloads.transition(key, state, completion))
+      diagnostic(listener.onPayloadLifecycle(key, state, completion))
+    }
+    val result = try
+      val handle = client.generateOwned(prep.request, prep.mode, { ev =>
+        activity.set(System.nanoTime())
+        ev match
+          case e: EngineEvent.Progress => listener.onProgress(e)
+          case e: EngineEvent.Preview  => listener.onPreview(e)
+          case EngineEvent.Log(_, m)   => listener.onLog(m)
+      }, listener.interruptionOwner, body => {
+        val key = listener.nextPayloadKey()
+        captureKey = Some(key)
+        val submitted = listener.submittedPayloadContext.getOrElse(SubmittedPayloadContext("direct"))
+        val model = client.supervisor.loadedModel
+        val options = listener.payloadCaptureOptions.getOrElse(defaultCaptureOptions)
+        var warnings = Vector.empty[String]
+        val context = try
+          PayloadCaptureContext.captured(submitted, p, body.capturedAtMillis, model, jsonLimits) match
+            case Right(json) => Some(json)
+            case Left(reason) =>
+              warnings :+= s"Submitted context unavailable: $reason"
+              None
+          catch
+            case NonFatal(_) =>
+              warnings :+= "Submitted context unavailable: invalid diagnostic JSON"
+              None
+        val assets =
+          if RequestPayloadStore.utf8Size(body.bodyJson, payloads.limits.maxBodyBytes) > payloads.limits.maxBodyBytes then
+            warnings :+= "Image diagnostic unavailable: exact body exceeds capture byte limit"
+            None
+          else
+            try
+              val result = PayloadAssets.collect(body.bodyJson, options.includeImageContents)
+              warnings ++= result.warnings
+              Some(result.assetsJson)
+            catch
+              case NonFatal(_) =>
+                warnings :+= "Image diagnostic unavailable: input inspection failed"
+                None
+        val snapshot = PayloadSnapshot(key, body.requestType, Some(body.bodyJson), body.capturedAtMillis,
+          context, assets, PayloadState.Prepared, warnings, submitted.sourceMode)
+        payloads.put(snapshot)
+        payloads.snapshots.find(_.key == key).foreach(s => diagnostic(listener.onPreparedRequest(s)))
+      }, () => if listener.isInterrupted then throw interruptedError)
+      lifecycle(PayloadState.Submitted)
+      val completed = awaitActive(handle.result, activity)
+      val completion = PayloadCaptureContext.completion(completed, jsonLimits) match
+        case Right(json) => json
+        case Left(reason) =>
+          captureKey.foreach(key => diagnostic(payloads.warn(key, s"Completion context unavailable: $reason")))
+          None
+      lifecycle(PayloadState.Succeeded, completion)
+      completed
+    catch
+      case error: InterruptedException => lifecycle(PayloadState.Cancelled); throw error
+      case NonFatal(error) =>
+        lifecycle(if JobRunner.isInterruption(error) then PayloadState.Cancelled else PayloadState.Failed)
+        throw error
     result.images.foreach(i => listener.onTempFile(Paths.get(i.path)))
     result.warnings.foreach(listener.onLog)
     result.vaeRecovery.foreach(a => listener.onLog(s"VAE decode recovery: ${a("latent_path").str}"))

@@ -61,7 +61,8 @@ case class Settings(
     comparisonMouseSend: Boolean = false,
     comparisonMouseAuto: Boolean = false,
     hardwareInfoEnabled: Boolean = false,
-    hardwareInfoRemark: String = ""
+    hardwareInfoRemark: String = "",
+    apiPayloadIncludeImageContents: Boolean = false
 ) derives RW
 
 object Settings:

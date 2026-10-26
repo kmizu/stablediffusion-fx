@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 100, todo 202, na 51.
+Totals: done 101, todo 201, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-fx | Why not applicable |
 |---|---|---|---|---|---|
@@ -259,7 +259,7 @@ Totals: done 100, todo 202, na 51.
 | 250 | [SD Web UI Modal Info](https://github.com/luminouspear/sd-webui-modal-info.git) | 10 | done | `core:png-info` |  |
 | 251 | [A Person Mask Generator](https://github.com/djbielejeski/a-person-mask-generator.git) | 407 | done | `person_mask` |  |
 | 252 | [Style variables](https://github.com/SirVeggie/extension-style-vars) | 23 | done | `style_variables` |  |
-| 253 | [SD-WebUI API Payload Display](https://github.com/huchenlei/sd-webui-api-payload-display.git) | 201 | todo | `core:api-payload` |  |
+| 253 | [SD-WebUI API Payload Display](https://github.com/huchenlei/sd-webui-api-payload-display.git) | 201 | done | `core:api-payload` |  |
 | 254 | [µ Detection Detailer](https://github.com/wkpark/uddetailer.git) | 83 | done | `adetailer` |  |
 | 255 | [Lora Queue Helper](https://github.com/Yinzo/sd-webui-Lora-queue-helper.git) | 35 | done | `lora_queue` |  |
 | 256 | [Deep Shrink Hires.fix](https://github.com/wcde/sd-webui-kohya-hiresfix.git) | 222 | done | `kohya_hrfix` |  |

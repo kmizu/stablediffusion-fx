@@ -4,6 +4,7 @@ import javafx.beans.property.{SimpleStringProperty, StringProperty}
 import sdfx.core.image.GridNumbers
 import sdfx.core.infotext.Infotext
 import sdfx.core.plugins.api.*
+import sdfx.core.payload.PayloadJsonBudget
 
 /** How a declarative [[Control]] is rendered by the generic plugin form. */
 enum Widget:
@@ -68,6 +69,18 @@ final class PluginsVM(val mode: Mode, scripts: Seq[Plugin], alwaysOnPlugins: Seq
     scriptForms.find(_.plugin.id == selectedScript.get).map(f => f.plugin -> f.values)
 
   def alwaysOnJob: Seq[(Plugin, Values)] = alwaysOnForms.filter(_.isActive).map(f => f.plugin -> f.values)
+
+  /** All applicable AlwaysOn forms, including disabled values, frozen on actual queue submission. */
+  def payloadConfigurationJson(limits: PayloadJsonBudget.Limits = PayloadJsonBudget.Limits()): String =
+    def form(f: PluginValuesVM): ujson.Obj =
+      val values = f.values
+      ujson.Obj("id" -> f.plugin.id, "title" -> f.plugin.name,
+        "values" -> ujson.Obj.from(values.map.toSeq.sortBy(_._1).map((k, v) => k -> ujson.Str(v))),
+        "active" -> f.plugin.isActive(values))
+    val configuration = ujson.Obj("ui_forms" -> "available",
+      "selected_script" -> scriptForms.find(_.plugin.id == selectedScript.get).map(form).getOrElse(ujson.Null),
+      "always_on" -> ujson.Arr.from(alwaysOnForms.map(form)))
+    PayloadJsonBudget.write(configuration, limits).getOrElse("{\"status\":\"unavailable_limits\"}")
 
   /** Restore native display controls from PNG parameters. GenerationVM deliberately clears extra fields;
     * the form must own restored values so both its checkboxes and the next queued job agree.
