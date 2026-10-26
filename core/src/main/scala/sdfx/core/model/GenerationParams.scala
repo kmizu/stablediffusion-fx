@@ -3,7 +3,17 @@ package sdfx.core.model
 import sdfx.core.json.SnakePickle.{ReadWriter => RW, *}
 
 /** A LoRA reference extracted from `<lora:name:weight>` prompt syntax. */
-case class LoraRef(name: String, weight: Double = 1.0) derives RW
+/** A LoRA to apply. `weight` is the text-encoder multiplier and, unless `unet` is set, the U-Net one too (A1111
+  * `<lora:name:te:unet>`). `lbw`, `start`, `stop` are LoRA Block Weight's `lbw=`, `start=`, `stop=` arguments.
+  */
+case class LoraRef(
+    name: String,
+    weight: Double = 1.0,
+    unet: Option[Double] = None,
+    lbw: Option[String] = None,
+    start: Option[Double] = None,
+    stop: Option[Double] = None
+) derives RW
 
 /** Hires fix (second pass) settings. Field meaning follows A1111's hr_* parameters. */
 case class HiresParams(

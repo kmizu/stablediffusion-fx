@@ -80,7 +80,7 @@ class ProtocolSuite extends munit.FunSuite:
     )
     val js = Json.toJs(req)
     assertEquals(js.obj.keys.toSet, Set("params", "output_dir", "lora_paths", "embedding_paths", "controlnet_paths",
-      "upscaler_paths", "preview_every", "preview_method"))
+      "upscaler_paths", "preview_every", "preview_method", "lbw_presets"))
     assertEquals(js("params")("negative_prompt").str, "n")
     assertEquals(js("params")("cfg_scale").num, 6.0)
     assertEquals(js("lora_paths").obj.keys.toSeq, Seq("foo"))

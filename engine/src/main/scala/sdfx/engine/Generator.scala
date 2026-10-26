@@ -234,7 +234,8 @@ final class Generator(
       controlnetPaths = cnPaths,
       upscalerPaths = upPaths,
       previewEvery = s.previewEvery,
-      previewMethod = s.previewMethod
+      previewMethod = s.previewMethod,
+      lbwPresets = if sent.loras.exists(_.lbw.nonEmpty) then Generator.lbwPresets(home.configDir) else Map.empty
     )
     PreparedGeneration(recorded, req, if recorded.isImg2Img then GenerationMode.Img2Img else GenerationMode.Txt2Img, warnings.result())
 
@@ -435,3 +436,17 @@ final class Generator(
     val out = OutputImage(dst, params, infotext, params.seed)
     listener.onImageSaved(out, grid = k.contains("grid"))
     out
+
+object Generator:
+  /** LoRA Block Weight user presets, `config/lbwpresets.txt`: one `NAME:w1,w2,...` per line (`#` comments). */
+  def lbwPresets(configDir: java.nio.file.Path): Map[String, String] =
+    val f = configDir.resolve("lbwpresets.txt")
+    if !java.nio.file.Files.isRegularFile(f) then Map.empty
+    else
+      import scala.jdk.CollectionConverters.*
+      java.nio.file.Files.readAllLines(f, java.nio.charset.StandardCharsets.UTF_8).asScala.toSeq
+        .map(_.trim).filter(l => l.nonEmpty && !l.startsWith("#") && l.contains(':'))
+        .map { l =>
+          val i = l.indexOf(':')
+          l.take(i).trim -> l.drop(i + 1).trim
+        }.filter(_._1.nonEmpty).toMap

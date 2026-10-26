@@ -69,7 +69,8 @@ case class GenerationRequest(
     controlnetPaths: Map[String, String] = Map.empty,
     upscalerPaths: Map[String, String] = Map.empty,
     previewEvery: Int = 2,
-    previewMethod: String = "approx"
+    previewMethod: String = "approx",
+    lbwPresets: Map[String, String] = Map.empty
 ) derives RW
 
 case class GeneratedImage(path: String, seed: Long, subseed: Long = -1L, width: Int = 0, height: Int = 0) derives RW

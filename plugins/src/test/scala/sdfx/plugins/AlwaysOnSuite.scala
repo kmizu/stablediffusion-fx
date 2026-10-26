@@ -7,7 +7,7 @@ import sdfx.core.plugins.api.*
 class AlwaysOnSuite extends munit.FunSuite:
   def on(p: Plugin, kv: (String, String)*) = Values(Values.defaults(p.controls).map ++ kv + ("enabled" -> "true"))
   val NeedsInput = Set("reference", "revision", "ip_adapter", "controllllite", "fooocus_inpaint", "photomaker", "face_restore",
-    "neveroom")
+    "neveroom", "lora_block_weight")
 
   test("all AlwaysOn plugins are disabled by default and declare their engine feature") {
     StandardPlugins.alwaysOn.foreach { p =>

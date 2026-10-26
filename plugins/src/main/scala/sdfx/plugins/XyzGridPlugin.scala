@@ -54,7 +54,7 @@ object XyzGridPlugin:
     val prompt =
       if re.findFirstIn(p.prompt).isDefined then re.replaceAllIn(p.prompt, m => Regex.quoteReplacement(s"<${m.group(1)}:$name:$w${m.group(2)}>"))
       else s"${p.prompt} <lora:$name:$w>".trim
-    p.copy(prompt = prompt, loras = p.loras.map(l => if l.name == name then LoraRef(name, wd) else l))
+    p.copy(prompt = prompt, loras = p.loras.map(l => if l.name == name then l.copy(weight = wd) else l))
 
   def builtinAxes: Seq[AxisDef] = Seq(
     AxisDef("Nothing", ValueKind.Str, (p, _) => p, showLabel = false),

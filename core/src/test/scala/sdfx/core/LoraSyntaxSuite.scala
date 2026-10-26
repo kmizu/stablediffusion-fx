@@ -16,15 +16,15 @@ class LoraSyntaxSuite extends munit.FunSuite:
     assertEquals(extract("<lora:a>").loras, Seq(LoraRef("a", 1.0)))
     assertEquals(extract("<lora:b:>").loras, Seq(LoraRef("b", 1.0)))
     assertEquals(extract("<lora:c: >").loras, Seq(LoraRef("c", 1.0)))
-    assertEquals(extract("<lora:d:unet=0.5>").loras, Seq(LoraRef("d", 1.0)))
+    assertEquals(extract("<lora:d:unet=0.5>").loras, Seq(LoraRef("d", 1.0, unet = Some(0.5))))
   }
 
   test("lyco tags are recognized") {
     assertEquals(extract("x <lyco:loha_style:0.6>").loras, Seq(LoraRef("loha_style", 0.6)))
   }
 
-  test("te:unet weights use the first (te) value") {
-    assertEquals(extract("<lora:foo:0.7:0.3>").loras, Seq(LoraRef("foo", 0.7)))
+  test("te:unet weights: the first is the text encoder (and default U-Net) multiplier, the second the U-Net one") {
+    assertEquals(extract("<lora:foo:0.7:0.3>").loras, Seq(LoraRef("foo", 0.7, unet = Some(0.3))))
   }
 
   test("names with spaces, dots, dashes and non-ASCII") {

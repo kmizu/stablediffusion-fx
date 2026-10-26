@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 61, todo 241, na 51.
+Totals: done 62, todo 240, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-fx | Why not applicable |
 |---|---|---|---|---|---|
@@ -29,7 +29,7 @@ Totals: done 61, todo 241, na 51.
 | 20 | [Merge Block Weighted](https://github.com/bbc-mc/sdweb-merge-block-weighted-gui.git) | 320 | todo | `model_merge` |  |
 | 21 | [Embedding Merge](https://github.com/klimaleksus/stable-diffusion-webui-embedding-merge.git) | 122 | todo | `embedding_merge` |  |
 | 22 | [SuperMerger](https://github.com/hako-mikan/sd-webui-supermerger.git) | 837 | todo | `model_merge` |  |
-| 23 | [LoRA Block Weight](https://github.com/hako-mikan/sd-webui-lora-block-weight.git) | 1167 | todo | `lora_block_weight` |  |
+| 23 | [LoRA Block Weight](https://github.com/hako-mikan/sd-webui-lora-block-weight.git) | 1167 | done | `lora_block_weight` |  |
 | 24 | [Image browser](https://github.com/AlUlkesh/stable-diffusion-webui-images-browser.git) | 648 | done | `core:gallery` |  |
 | 25 | [Infinite image browsing](https://github.com/zanllp/sd-webui-infinite-image-browsing.git) | 1363 | done | `core:gallery` |  |
 | 26 | [Inspiration](https://github.com/yfszzx/stable-diffusion-webui-inspiration.git) | 113 | todo | `inspiration` |  |

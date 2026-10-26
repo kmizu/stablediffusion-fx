@@ -141,7 +141,7 @@
 "index": 23,
 "name": "LoRA Block Weight",
 "url": "https://github.com/hako-mikan/sd-webui-lora-block-weight.git",
-"status": "todo:lora_block_weight"
+"status": "done:lora_block_weight"
 },
 {
 "index": 24,

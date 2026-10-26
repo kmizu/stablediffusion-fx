@@ -24,7 +24,11 @@ def _f8(v: int) -> int:
 @dataclass
 class LoraRef:
     name: str = ""
-    weight: float = 1.0
+    weight: float = 1.0          # text encoder multiplier, and U-Net multiplier unless `unet` is given
+    unet: Optional[float] = None
+    lbw: Optional[str] = None    # LoRA Block Weight: preset name or comma separated block weights
+    start: Optional[float] = None
+    stop: Optional[float] = None
 
 
 @dataclass
@@ -181,6 +185,7 @@ class GenerationRequest:
     upscaler_paths: Dict[str, str] = field(default_factory=dict)
     preview_every: int = 2
     preview_method: str = "approx"
+    lbw_presets: Dict[str, str] = field(default_factory=dict)   # LoRA Block Weight user presets (NAME -> weights)
 
 
 @dataclass

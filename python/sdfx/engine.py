@@ -23,7 +23,7 @@ import diffusers  # noqa: F401
 from . import controlnet as cn_mod
 from . import hires as hires_mod
 from . import hooks as hooks_mod
-from . import adapters, extras, inpaint, models, preview, prompt, prompt_schedule, schedulers, upscalers
+from . import adapters, extras, inpaint, lora_blocks, models, preview, prompt, prompt_schedule, schedulers, upscalers
 from . import extensions as ext_mod
 from .base import LATENT_UPSCALERS, BaseEngine
 from .images import Image, load_mask, load_rgb, next_output_path, resize_image, save_png
@@ -466,12 +466,26 @@ class Engine(BaseEngine):
         hashes: dict = {}
         pipe = self.pipe
         want = []
+        self._lora_windows = []
+        self._lora_key = None
         for lr in gp.loras:
             path = req.lora_paths[lr.name]
             if not os.path.isfile(path):
                 ctx.warn(f"LoRA file not found: {path}")
                 continue
-            want.append((lr.name, path, float(lr.weight)))
+            te = float(lr.weight)
+            unet = float(lr.unet) if lr.unet is not None else te
+            if lr.lbw:
+                try:
+                    bw = lora_blocks.parse_weights(lr.lbw, self.sdxl, req.lbw_presets)
+                except ValueError as e:
+                    raise EngineError(INVALID_PARAMS, f"LoRA '{lr.name}': {e}")
+                scale = lora_blocks.diffusers_scales(bw, self.sdxl, unet, te)
+            elif lr.unet is not None or lr.start is not None or lr.stop is not None:
+                scale = lora_blocks.plain_scales(self.sdxl, unet, te)
+            else:
+                scale = te
+            want.append((lr.name, path, scale, lr.start, lr.stop))
             hashes[lr.name] = models.short_hash(path)
         if not want:
             if self.loaded_loras:
@@ -481,7 +495,7 @@ class Engine(BaseEngine):
                     pass
             return hashes
         names, weights = [], []
-        for name, path, w in want:
+        for name, path, w, start, stop in want:
             adapter = "l" + hashlib.sha1(os.path.abspath(path).encode()).hexdigest()[:12]
             if adapter in self.loaded_loras:
                 self.loaded_loras.move_to_end(adapter)
@@ -495,6 +509,8 @@ class Engine(BaseEngine):
                     continue
             names.append(adapter)
             weights.append(w)
+            if start is not None or stop is not None:
+                self._lora_windows.append((len(names) - 1, start, stop))
         stale = [a for a in self.loaded_loras if a not in names]
         while len(self.loaded_loras) > MAX_LORAS and stale:
             a = stale.pop(0)
@@ -508,7 +524,11 @@ class Engine(BaseEngine):
                 pipe.enable_lora()
             except Exception:
                 pass
-            pipe.set_adapters(names, adapter_weights=weights)
+            try:
+                pipe.set_adapters(names, adapter_weights=weights)
+            except (ValueError, KeyError, TypeError) as e:
+                raise EngineError(INVALID_PARAMS, f"LoRA block weights could not be applied: {e}")
+            self._lora_state = (names, weights)
         elif self.loaded_loras:
             try:
                 pipe.disable_lora()
@@ -631,6 +651,25 @@ class Engine(BaseEngine):
         out = ScheduledEmbeds(variants[0][1])
         out.schedule = variants
         return out
+
+    def _set_lora_step(self, step: int, total: int):
+        """LoRA Block Weight start/stop: U-Net part of windowed adapters on only inside their window."""
+        names, weights = self._lora_state
+        cur = list(weights)
+        for idx, start, stop in self._lora_windows:
+            if not lora_blocks.active(step, total, start, stop):
+                cur[idx] = lora_blocks.zero_unet(weights[idx], self.sdxl)
+        key = tuple(i for i, w in enumerate(cur) if w is not weights[i])
+        if key != getattr(self, "_lora_key", None):
+            self.pipe.set_adapters(names, adapter_weights=cur)
+            self._lora_key = key
+
+    def _lora_window_callback(self):
+        def cb(pipe, i, t, d):
+            total = int(getattr(pipe, "_num_timesteps", 0) or 1)
+            self._set_lora_step(i + 2, total)  # applies to the next step
+            return d
+        return cb
 
     def _schedule_swapper(self, schedule: list):
         """callback_on_step_end that swaps the (CFG / PAG concatenated) text embeddings when the prompt changes."""
@@ -874,6 +913,9 @@ class Engine(BaseEngine):
                 raise EngineError(INVALID_PARAMS, f"PhotoMaker: put the trigger word '{pm.get('trigger_word', 'img')}' after "
                                                   "the class word in the prompt, e.g. 'a man img'")
 
+        if getattr(self, "_lora_windows", None):
+            ext_mod._chain_callback(kw, self._lora_window_callback())
+            self._set_lora_step(1, max(int(expected_steps or steps), 1))  # state for the first step
         sch = getattr(embeds, "schedule", None)
         if sch and "prompt_embeds" in kw:
             ext_mod._chain_callback(kw, self._schedule_swapper(sch))
