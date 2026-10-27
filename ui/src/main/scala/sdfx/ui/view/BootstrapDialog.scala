@@ -19,7 +19,7 @@ final class BootstrapDialog(home: AppHome, settings: Settings, stylesheets: Seq[
 
   def show(done: Result => Unit): Unit =
     val stage = new Stage()
-    stage.setTitle("SDFX — first start")
+    stage.setTitle("SDNUI — first start")
     var finished = false
     def finish(r: Result): Unit =
       if !finished then
@@ -29,7 +29,7 @@ final class BootstrapDialog(home: AppHome, settings: Settings, stylesheets: Seq[
 
     val title = W.label("Set up the image generation engine", "dialog-title")
     val text = W.label(
-      "SDFX runs Stable Diffusion in a local Python environment (python/.venv).\n" +
+      "SDNUI runs Stable Diffusion in a local Python environment (python/.venv).\n" +
         "Install downloads PyTorch with CUDA and diffusers — several GB, this can take 5–20 minutes.\n\n" +
         "• Install — create the environment now (needs Python 3.10–3.12 on PATH)\n" +
         "• Use dry-run — try the UI with placeholder images, no GPU or downloads\n" +
