@@ -396,8 +396,11 @@ final class Generator(
     val root = Paths.get(spec.outputParent).resolve(spec.outputName).toAbsolutePath.normalize()
     val validated = WdBatchSafety.validatePaths(result, root)
     val output = validated.map { (row, image, path) =>
-      val effective = prepared.recorded.copy(prompt = row.positive.get, negativePrompt = row.negative.get)
-      OutputImage(path, effective, Infotext.write(effective, ImageFacts(seed = image.seed)), image.seed)
+      val text = PngMetadata.readParameters(path).getOrElse(
+        throw EngineError(Protocol.ErrorCodes.Internal, "WD batch PNG is missing persisted generation parameters"))
+      val base = prepared.recorded.copy(img2img = prepared.recorded.img2img.map(_.copy(initImage = row.input)))
+      val effective = Infotext.toParams(Infotext.parse(text), base)
+      OutputImage(path, effective, text, image.seed)
     }
     result.rows.filter(_.status == "error").foreach(row => listener.onLog(s"WD batch failed for ${row.input}: ${row.error.get}"))
     output.foreach(saved => listener.onImageSaved(saved, grid = false))

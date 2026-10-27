@@ -126,9 +126,9 @@ def test_wd_cleanup_failure_keeps_batch_unpublished_for_all_exit_paths(tmp_path,
     output = tmp_path / "out"; output.mkdir()
     class Engine:
         def img2img(self, request, ctx):
-            path = Path(request["output_dir"]) / "result.png"; path.write_bytes(b"generated")
+            path = Path(request["output_dir"]) / "result.png"; Image.new("RGB", (64, 64)).save(path)
             generated.append(path)
-            return {"images": [{"path": str(path)}]}
+            return {"images": [{"path": str(path), "seed": 123, "width": 64, "height": 64}]}
     class Publish(Context):
         def publish(self, action): publications.append(1); return action()
     registry = BackendRegistry({"wd_ext": WdV3Provider(good, tag_pin, tmp_path)})
@@ -160,8 +160,8 @@ def test_registered_batch_returns_wd_model_identity_with_actual_prompt(tmp_path,
     output = tmp_path / "out"; output.mkdir()
     class Engine:
         def img2img(self, request, ctx):
-            path = Path(request["output_dir"]) / "image.png"; path.write_bytes(b"fake")
-            return {"images": [{"path": str(path)}]}
+            path = Path(request["output_dir"]) / "image.png"; Image.new("RGB", (64, 64)).save(path)
+            return {"images": [{"path": str(path), "seed": 123, "width": 64, "height": 64}]}
     class Publish(Context):
         def publish(self, action): return action()
     result = run_registered_batch(Engine(), [item], {"params": {"prompt": "base"}}, ["wd_ext"],

@@ -290,8 +290,8 @@ def test_registered_runner_unloads_before_publication_and_on_preflight_failure(t
         def img2img(self, request, ctx):
             from pathlib import Path
             path = Path(request["output_dir"]) / "result.png"
-            path.write_bytes(b"output")
-            return {"images": [{"path": str(path)}]}
+            Image.new("RGB", (64, 64)).save(path)
+            return {"images": [{"path": str(path), "seed": 123, "width": 64, "height": 64}]}
     class Publish(Context):
         def publish(self, action):
             assert provider.unloaded == 1

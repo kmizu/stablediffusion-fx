@@ -238,7 +238,7 @@ class OwnedBatchTransaction:
                 if count > MAX_OUTPUT_FILES or size > MAX_OUTPUT_BYTES:
                     raise TransactionFailure("generated outputs exceed limit")
 
-    def publish(self, results):
+    def publish(self, results, generation=None, provenance=None):
         result = deepcopy(results)
         expected = set()
         count = size = 0
@@ -270,6 +270,19 @@ class OwnedBatchTransaction:
         allowed = {self.inputs_dir, *self.directories.values()}
         if set(self.transaction.staging.iterdir()) != allowed:
             raise ValueError("unexpected entry in batch staging directory")
+        # Validate every generated path before touching metadata. The existing
+        # transaction owns both the rewrite and final publication/rollback.
+        if generation is not None:
+            from .batch_png_metadata import parameters, write_parameters
+            for index, row in enumerate(results):
+                if row.get("status") != "complete":
+                    continue
+                facts = dict(row, input_sha256=self.items[index].identity.sha256)
+                for image in row["result"]["images"]:
+                    self.ctx.check_interrupt()
+                    text = parameters(generation, facts, image, row["result"], provenance)
+                    write_parameters(_absolute(image["path"]), text, self.ctx.check_interrupt)
+            self.check_output_budget()
         for path in self.bound.values():
             if os.path.lexists(path):
                 _reject_links(path)
@@ -337,7 +350,7 @@ def run_owned_batch(engine, inputs, generation, models, options, backend, output
         if any(row["status"] == "complete" for row in rows):
             if _terminal_check is not None:
                 _terminal_check()
-            return owner.publish(rows)
+            return owner.publish(rows, generation if _provenance is not None else None, _provenance)
     # Empty batches still claim the same cancellation/terminal ownership. The
     # owned staging has already been cleaned before claiming that boundary.
     if _terminal_check is not None:

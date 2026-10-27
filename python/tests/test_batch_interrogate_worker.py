@@ -27,8 +27,8 @@ class Engine(BaseEngine):
         self._batch_interrogate_service = BatchInterrogateService(
             BackendRegistry({"wd_ext": WdV3Provider(model, tags, Path("fake-temp"))}))
     def img2img(self, request, ctx):
-        path = Path(request["output_dir"]) / "fake.png"; path.write_bytes(b"fake")
-        return {"images": [{"path": str(path)}]}
+        path = Path(request["output_dir"]) / "fake.png"; Image.new("RGB", (64, 64)).save(path)
+        return {"images": [{"path": str(path), "seed": 123, "width": 64, "height": 64}]}
 
 
 @pytest.fixture(autouse=True)
@@ -63,6 +63,12 @@ def test_real_server_prepares_worker_owned_snapshot_and_executes_once(tmp_path):
     result = invoke(server, stream, "run", "batch_interrogate_execute", {"token": token})
     assert result["type"] == "result" and result["result"]["rows"][0]["positive"] == "caption, base"
     assert (output / "result" / "item-0000" / "fake.png").exists()
+    with Image.open(output / "result" / "item-0000" / "fake.png") as image:
+        text = image.info["parameters"]
+        assert text.startswith("caption, base\n")
+        assert "Seed: 123" in text and "WD interrogators:" in text
+        from sdfx.wd_v3_runtime import _MODEL_IDENTITY, _TAGS_IDENTITY
+        assert _MODEL_IDENTITY[1] in text and _TAGS_IDENTITY[1] in text
     replay = invoke(server, stream, "again", "batch_interrogate_execute", {"token": token})
     assert replay["type"] == "error"
 

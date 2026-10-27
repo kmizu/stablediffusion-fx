@@ -61,6 +61,8 @@ final class GenerationVM(val mode: Mode, val shared: ModelVM = new ModelVM):
   val scheduler = new SimpleStringProperty("Automatic")
   val steps = new SimpleIntegerProperty(20)
   val cfgScale = new SimpleDoubleProperty(7.0)
+  // Retain an imported sampler eta even though the main form has no eta slider.
+  val eta = new SimpleObjectProperty[Option[Double]](None)
   val width = new SimpleIntegerProperty(512)
   val height = new SimpleIntegerProperty(512)
   val batchCount = new SimpleIntegerProperty(1)
@@ -148,6 +150,7 @@ final class GenerationVM(val mode: Mode, val shared: ModelVM = new ModelVM):
       scheduler = scheduler.get,
       steps = steps.get,
       cfgScale = cfgScale.get,
+      eta = eta.get,
       width = width.get,
       height = height.get,
       batchSize = batchSize.get,
@@ -184,6 +187,7 @@ final class GenerationVM(val mode: Mode, val shared: ModelVM = new ModelVM):
     scheduler.set(p.scheduler)
     steps.set(p.steps)
     cfgScale.set(p.cfgScale)
+    eta.set(p.eta)
     width.set(p.width)
     height.set(p.height)
     batchSize.set(p.batchSize)

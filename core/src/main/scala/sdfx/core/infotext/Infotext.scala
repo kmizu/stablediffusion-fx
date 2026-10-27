@@ -63,6 +63,10 @@ object Infotext:
       "CFG scale" -> Some(num(p.cfgScale)),
       "Seed" -> Some(f.seed.toString),
       "Size" -> Some(s"${p.width}x${p.height}"),
+      "Batch size" -> Option.when(p.batchSize != 1)(p.batchSize.toString),
+      "Batch count" -> Option.when(p.nIter != 1)(p.nIter.toString),
+      "Eta" -> p.eta.map(num),
+      "Resize mode" -> p.img2img.filter(_.resizeMode != 0).map(_.resizeMode.toString),
       "Model hash" -> f.modelHash,
       "Model" -> f.modelName,
       "VAE hash" -> f.vaeHash,
@@ -132,7 +136,7 @@ object Infotext:
     "Steps", "Sampler", "Schedule type", "CFG scale", "Seed", "Size", "Model hash", "Model", "VAE hash", "VAE",
     "Variation seed", "Variation seed strength", "Denoising strength", "Mask mode", "Mask blur", "Inpaint area",
     "Masked area padding", "Masked content",
-    "Clip skip", "Hires upscale", "Hires resize", "Hires steps", "Hires upscaler", "Hires sampler", "Hires schedule type",
+    "Clip skip", "Batch size", "Batch count", "Eta", "Resize mode", "Hires upscale", "Hires resize", "Hires steps", "Hires upscaler", "Hires sampler", "Hires schedule type",
     "Hires prompt", "Hires negative prompt", "Hires CFG Scale", "Lora hashes", "Version", "TI hashes"
   )
 
@@ -179,6 +183,9 @@ object Infotext:
       seed = l("Seed").getOrElse(base.seed),
       width = w,
       height = h,
+      batchSize = i("Batch size").getOrElse(base.batchSize),
+      nIter = i("Batch count").getOrElse(base.nIter),
+      eta = if f.contains("Eta") then d("Eta") else base.eta,
       subseed = l("Variation seed").getOrElse(-1L),
       subseedStrength = subStrength,
       clipSkip = i("Clip skip").getOrElse(1),
@@ -193,6 +200,7 @@ object Infotext:
       img2img = base.img2img.map(ii =>
         ii.copy(
           denoisingStrength = if hrOn then ii.denoisingStrength else d("Denoising strength").getOrElse(ii.denoisingStrength),
+          resizeMode = i("Resize mode").getOrElse(ii.resizeMode),
           maskBlur = i("Mask blur").getOrElse(ii.maskBlur),
           inpaintFullRes = f.get("Inpaint area").contains("Only masked"),
           inpaintFullResPadding = i("Masked area padding").getOrElse(32),
