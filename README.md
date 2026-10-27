@@ -76,7 +76,7 @@ reForge の標準スクリプトと内蔵拡張をすべて書き直して同梱
 - ビルドする場合は sbt(jar が既にあれば不要)
 - Windows / Linux / macOS(JavaFX は OS ごとの jar をビルド時に取り込みます。別 OS 用の jar はその OS でビルドしてください)
 
-## Windows 配布版 v0.03
+## Windows 配布版（改名後の v0.03 は準備中）
 
 Windows x64 の `SDNUI-v0.03-windows-x64.zip` を入手したら、書き込み可能なフォルダに展開し、`SDNUI\SDNUI.exe` を起動します。
 Java ランタイムは同梱されています。Python 3.10〜3.12 は別途必要で、初回の通常起動時に専用環境と依存パッケージをセットアップできます。モデルは同梱されません。Settings → Model folders → **Add A1111/reForge install...** から既存のモデルフォルダを利用できます。詳しい手順は [Windows 配布版](docs/WINDOWS_RELEASE.md) を参照してください。
