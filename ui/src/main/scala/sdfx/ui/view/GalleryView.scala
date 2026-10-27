@@ -5,7 +5,10 @@ import javafx.scene.control.*
 import javafx.scene.image.{Image, ImageView}
 import javafx.scene.input.{ClipboardContent, KeyCode, TransferMode}
 import javafx.scene.layout.{Priority, StackPane, VBox}
+import javafx.stage.FileChooser
+import javafx.util.StringConverter
 import sdfx.core.gallery.GalleryItem
+import sdfx.ui.{Fx, GalleryZipExporter}
 import sdfx.ui.vm.{GalleryVM, Mode}
 
 import java.nio.file.Path
@@ -111,16 +114,57 @@ final class GalleryView(ctx: UiContext, vm: GalleryVM, actions: ImageActions, on
   search.getStyleClass.add("search-field")
   W.tip(search, "Filter the gallery by prompt text or file name (all words must match)")
   private val count = W.label("", "hint")
+  val generationChoice = new ComboBox[String](vm.generations)
+  generationChoice.setConverter(new StringConverter[String]:
+    override def toString(id: String): String =
+      if id == null || id.isEmpty then "All images" else s"Generation ${id.take(8)}"
+    override def fromString(s: String): String = s
+  )
+  generationChoice.valueProperty.bindBidirectional(vm.selectedGeneration)
+  generationChoice.setPrefWidth(190)
+  W.tip(generationChoice, "Choose a generation from this session to view and save all of its individual images")
+  val saveZipButton = new Button("Save ZIP…")
+  private var exporting = false
+  private def refreshExport(): Unit =
+    saveZipButton.setDisable(exporting || vm.selectedGenerationPaths.isEmpty)
+    saveZipButton.setText(if exporting then "Saving ZIP…" else s"Save ZIP… (${vm.selectedGenerationPaths.size})")
+  W.tip(saveZipButton, "Save every individual image from the selected generation, including images hidden by search; excludes grids")
+  saveZipButton.setOnAction(_ =>
+    val paths = vm.selectedGenerationPaths.toVector
+    if paths.nonEmpty && !exporting then
+      val chooser = new FileChooser()
+      chooser.setTitle("Save generation images as ZIP")
+      chooser.getExtensionFilters.add(new FileChooser.ExtensionFilter("ZIP archive", "*.zip"))
+      chooser.setInitialFileName(s"generation-${vm.selectedGeneration.get.take(8)}.zip")
+      Option(chooser.showSaveDialog(ctx.stage)).foreach { file =>
+        exporting = true
+        refreshExport()
+        Fx.async(GalleryZipExporter.write(paths, file.toPath)) { n =>
+          exporting = false
+          refreshExport()
+          ctx.success(s"Saved $n images to ${file.getName}")
+        } { error =>
+          exporting = false
+          refreshExport()
+          ctx.error(s"Cannot save ZIP: ${Fx.message(error)}")
+        }
+      }
+  )
   private def updateCount(): Unit =
     val n = vm.filtered.size
-    count.setText(if vm.query.get.trim.isEmpty then s"$n image${if n == 1 then "" else "s"}" else s"$n / ${vm.items.size}")
+    val total = if Option(vm.selectedGeneration.get).forall(_.isEmpty) then vm.items.size else vm.selectedGenerationPaths.size
+    count.setText(if vm.query.get.trim.isEmpty then s"$n image${if n == 1 then "" else "s"}" else s"$n / $total")
+    refreshExport()
   vm.filtered.addListener((_: javafx.collections.ListChangeListener.Change[? <: GalleryItem]) => updateCount())
+  vm.selectedGeneration.addListener((_, _, _) => updateCount())
+  vm.selectedGenerationCount.addListener((_, _, _) => updateCount())
   updateCount()
 
   val node: VBox =
     val header = W.hbox(8, W.label("Gallery", "pane-title"), count, W.spacer(), W.hgrow(search))
+    val tools = W.hbox(8, generationChoice, saveZipButton)
     search.setMaxWidth(320)
-    val v = new VBox(6, header, list)
+    val v = new VBox(6, header, tools, list)
     v.getStyleClass.add("gallery-box")
     v.setPadding(new Insets(6, 10, 8, 10))
     VBox.setVgrow(list, Priority.ALWAYS)
