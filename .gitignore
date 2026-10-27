@@ -1,4 +1,5 @@
 target/
+dist/
 project/target/
 project/project/
 .bsp/
