@@ -155,6 +155,10 @@ object RealV003GenerationCheck:
       require(parsed.prompt == before.prompt && parsed.negativePrompt == before.negativePrompt)
       require(parsed.get("Seed").contains(before.seed.toString) && parsed.get("Steps").contains("2"))
       eventually("native gallery result") { fx { window.galleryVM.items.asScala.exists(_.path == image.path) } }
+      eventually("final preview pixels loaded") { fx {
+        val shown = window.preview.zoom.image
+        window.preview.currentPath.contains(image.path) && shown != null && !shown.isError && shown.getProgress >= 1
+      } }
       fx { screenshot("03-generated-result.png") }
       val hash = MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(image.path)).map(b => f"${b & 255}%02x").mkString
       Files.writeString(run.resolve("report.json"), ujson.write(ujson.Obj("status" -> "passed", "family" -> loaded.kind,
