@@ -10,6 +10,29 @@ To use existing Civitai downloads, place the model files in the corresponding `m
 
 `LICENSE`, `THIRD_PARTY_NOTICES.md`, `DISTRIBUTION_NOTICES.md` and the referenced `licenses/*.txt` cover the app and listed dependencies; the bundled runtime's own notices are in `runtime/legal`. This is a portable app-image, not an installer; deleting its extracted folder removes its local data as well.
 
+
+## WD v3 batch interrogation (partial)
+
+This optional Img2Img workflow tags each input image using a local WD v3 model before generating. It does not implement all backends or options of the original batch interrogator. Models are not bundled or downloaded automatically.
+
+1. In the **same Python environment selected in Settings → Engine**, install the optional ONNX inspection package and ensure ONNX Runtime is installed. For the app-created Windows environment, from the extracted `SDFX` folder run:
+
+   ```powershell
+   & .\python\.venv\Scripts\python.exe -m pip install onnx==1.21.0 onnxruntime==1.23.2
+   ```
+
+   If Settings specifies a different Python executable, use that executable instead. `onnxruntime==1.23.2` is also in the standard requirements; the explicit command above installs or verifies both packages. Installing them requires network access or locally supplied wheels.
+2. Obtain the two files from the fixed official revision of `SmilingWolf/wd-vit-tagger-v3`: [model.onnx](https://huggingface.co/SmilingWolf/wd-vit-tagger-v3/resolve/7f6b584d0bd3f55c4531f14ba3d4761b2bccdc0f/model.onnx) and [selected_tags.csv](https://huggingface.co/SmilingWolf/wd-vit-tagger-v3/resolve/7f6b584d0bd3f55c4531f14ba3d4761b2bccdc0f/selected_tags.csv). The accepted SHA-256 values are:
+
+   - `model.onnx`: `35f23693620b668f4d53fd3c62bf65e40af739bc52c7eb0fbc49258b58d065b6`
+   - `selected_tags.csv`: `298633d94d0031d2081c0893f29c82eab7f0df00b08483ba8f29d1e979441217`
+
+   These hashes identify the locally reviewed candidate; they have not been independently authenticated against the publisher. In PowerShell, check each file with `Get-FileHash -Algorithm SHA256 <path>`. The worker checks both hashes at startup.
+3. Keep both as regular local files in ordinary folders. Hugging Face cache snapshot paths can be symbolic links; copy the target bytes into normal `.onnx` and `.csv` files and select those copies. Paths containing links or junctions are rejected.
+4. In **Settings → WD v3 (partial)** select the two files and restart the engine. Reopen Settings to see whether the worker reported WD v3 configured at its last start. Then open **Img2Img → WD v3 batch (partial)**, enable it, choose an image folder and a new output folder name, and submit. Existing output folders are not replaced.
+
+The configured status confirms the files and dependencies passed startup checks; it does not guarantee that ONNX Runtime can load or execute on the machine. Scripts, other extensions, LoRA, ControlNet, masks and hires are unsupported for this batch mode.
+
 ## Build the distribution
 
 Build on Windows x64 with Git, PowerShell and a Windows x64 JDK 21. First assemble the final, verified Windows JavaFX fat JAR from the intended source revision (`sbt -batch ui/assembly`); packaging does not build or download anything. Then, from any working directory:

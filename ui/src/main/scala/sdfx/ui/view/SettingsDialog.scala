@@ -141,7 +141,7 @@ final class SettingsDialog(owner: Stage, initial: Settings, initialTab: Int = 0,
     val update = () => status.setText(WdSettingsState.status(wdModel.get, wdTags.get))
     wdModel.addListener((_, _, _) => update())
     wdTags.addListener((_, _, _) => update())
-    val note = W.label("Partial support: WD v3 only. No models are downloaded. The batch UI is not yet available. Restart the engine to check the selected files.", "hint")
+    val note = W.label("Partial support: WD v3 only. Select local files and restart the engine, then use the WD v3 batch section in Img2Img. No models are downloaded.", "hint")
     note.setWrapText(true)
     val worker = W.label(WdSettingsState.workerStatus(wdWorkerReported), "hint")
     worker.setId("wd-v3-worker-status")

@@ -33,6 +33,10 @@ Requirements: JDK 17+, Python 3.10-3.12, an NVIDIA GPU is recommended. Quick sta
 - プラグイン(下記)
 - MCP サーバー(stdio / HTTP)
 
+### WD v3 バッチ（部分対応）
+
+Img2Img の **WD v3 batch (partial)** は、入力フォルダの画像ごとに WD v3 のタグを作ってから img2img を実行します。モデルは同梱・自動ダウンロードしません。Settings で使う Python 環境に `onnx==1.21.0` と `onnxruntime==1.23.2` が必要です。モデルとタグ CSV の固定バージョン、ハッシュ、設定・再起動手順は [Windows 配布版の説明](docs/WINDOWS_RELEASE.md#wd-v3-batch-interrogation-partial) を参照してください。元のバッチ拡張の全機能には対応していません。
+
 ### Temporal Lab
 
 Temporal Lab は、生成済みの連番画像を参照画像に合わせて安定化する DFI のほか、Deflicker、画像列の Fuse、動画からのフレーム抽出を行います。[Abysz LAB](https://github.com/AbyszOne/Abysz-LAB-Ext/tree/deff0d4b4a208f862299b14b93e088f613373153) の画面とアルゴリズムを参照しており、ライセンスと参照元は [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) に記載しています。
@@ -64,7 +68,7 @@ reForge の標準スクリプトと内蔵拡張をすべて書き直して同梱
 - ビルドする場合は sbt(jar が既にあれば不要)
 - Windows / Linux / macOS(JavaFX は OS ごとの jar をビルド時に取り込みます。別 OS 用の jar はその OS でビルドしてください)
 
-## Windows 配布版 v0.01
+## Windows 配布版 v0.02
 
 Windows x64 の配布 ZIP を入手したら、書き込み可能なフォルダに展開し、`SDFX\SDFX.exe` を起動します。
 Java ランタイムは同梱されています。Python 3.10〜3.12 は別途必要で、初回の通常起動時に専用環境と依存パッケージをセットアップできます。モデルは同梱されません。Settings → Model folders → **Add A1111/reForge install...** から既存のモデルフォルダを利用できます。詳しい手順は [Windows 配布版](docs/WINDOWS_RELEASE.md) を参照してください。
