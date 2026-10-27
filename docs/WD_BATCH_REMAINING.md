@@ -1,6 +1,6 @@
 # Remaining work: batch interrogation (#7)
 
-The next release provides only local WD v3 interrogation before Img2Img. This is a draft for a future issue; no external issue has been created by this document.
+The next release provides only local WD v3 interrogation before Img2Img. The remaining work is tracked in [issue #140](https://github.com/kmizu/stablediffusion-fx/issues/140), split from #7 when the next-release scope was narrowed. Full original extension parity is not claimed by v0.02.
 
 - Implement and verify the original extension's other interrogator backends, including CLIP and Deepbooru, and the remaining WD variants. Keep model identities, license terms and download consent explicit.
 - Complete original controls, backend selection, ordering, filtering, replacements and weighting where still absent from the native UI; compare against the pinned original and document deliberate differences, including alpha and preprocessing.
