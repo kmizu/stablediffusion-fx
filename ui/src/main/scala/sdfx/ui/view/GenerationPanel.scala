@@ -176,6 +176,12 @@ final class GenerationPanel(
     }
     val presets = new MenuButton("▦")
     presets.getStyleClass.add("icon-button")
+    // Keep the slider and numeric fields aligned despite the menu's arrow.
+    Seq(swap, presets).foreach { button =>
+      button.setMinWidth(60)
+      button.setPrefWidth(60)
+      button.setMaxWidth(60)
+    }
     W.tip(presets, "Size presets (SD1.5: 512–768, SDXL: ~1 megapixel)")
     GenerationVM.SizePresets.foreach { (w, h) =>
       val mi = new MenuItem(s"$w × $h")
