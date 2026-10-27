@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Stable Diffusion FX launcher. Prints nothing to stdout itself (MCP stdio mode uses stdout).
+# Stable Diffusion NUI launcher. Prints nothing to stdout itself (MCP stdio mode uses stdout).
 set -u
 cd "$(dirname "$0")" || exit 1
 HOME_DIR="$(pwd)"
@@ -13,9 +13,9 @@ MAJOR="${VER%%.*}"
 case "$MAJOR" in ''|*[!0-9]*) MAJOR=0;; esac
 if [ "$MAJOR" -lt 17 ]; then echo "[sdfx] Java 17 or newer is required (found \"$VER\" at $JAVA)." >&2; exit 1; fi
 
-JAR="$HOME_DIR/target/stablediffusion-fx.jar"
+JAR="$HOME_DIR/target/stablediffusion-nui.jar"
 if [ ! -f "$JAR" ]; then
-  echo "[sdfx] target/stablediffusion-fx.jar is missing, building it with sbt (or run scripts/build.sh)..." >&2
+  echo "[sdfx] target/stablediffusion-nui.jar is missing, building it with sbt (or run scripts/build.sh)..." >&2
   if ! command -v sbt >/dev/null 2>&1; then echo "[sdfx] sbt was not found. Install sbt, then run scripts/build.sh." >&2; exit 1; fi
   sbt -batch ui/assembly 1>&2 || { echo "[sdfx] build failed." >&2; exit 1; }
 fi

@@ -47,8 +47,8 @@ lazy val ui = project
     run / javaOptions ++= Seq("-Dprism.allowhidpi=true", "-Xmx2g", "-Dfile.encoding=UTF-8"),
     Test / javaOptions ++= Seq("-Djava.awt.headless=true"),
     assembly / mainClass := Some("sdfx.ui.Launcher"),
-    assembly / assemblyJarName := "stablediffusion-fx.jar",
-    assembly / assemblyOutputPath := (ThisBuild / baseDirectory).value / "target" / "stablediffusion-fx.jar",
+    assembly / assemblyJarName := "stablediffusion-nui.jar",
+    assembly / assemblyOutputPath := (ThisBuild / baseDirectory).value / "target" / "stablediffusion-nui.jar",
     assembly / assemblyMergeStrategy := {
       case PathList("META-INF", "services", _*) => MergeStrategy.concat
       case PathList("META-INF", _*)              => MergeStrategy.discard
@@ -59,4 +59,4 @@ lazy val ui = project
 
 lazy val root = (project in file("."))
   .aggregate(core, engine, plugins, mcp, ui)
-  .settings(name := "stablediffusion-fx", publish / skip := true)
+  .settings(name := "stablediffusion-nui", publish / skip := true)

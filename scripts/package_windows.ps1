@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [string]$JdkHome = $env:JAVA_HOME,
-    [string]$Jar = (Join-Path $PSScriptRoot '../target/stablediffusion-fx.jar'),
+    [string]$Jar = (Join-Path $PSScriptRoot '../target/stablediffusion-nui.jar'),
     [ValidatePattern('^\d{1,3}(\.\d{1,3}){1,2}$')]
     [string]$Version = '0.02',
     [string]$OutputRoot = ''
@@ -39,14 +39,14 @@ $inputDir = Join-Path $run 'input'
 $imageDest = Join-Path $run 'image'
 [IO.Directory]::CreateDirectory($inputDir) | Out-Null
 [IO.Directory]::CreateDirectory($imageDest) | Out-Null
-Copy-Item -LiteralPath $jarPath -Destination (Join-Path $inputDir 'stablediffusion-fx.jar')
+Copy-Item -LiteralPath $jarPath -Destination (Join-Path $inputDir 'stablediffusion-nui.jar')
 
-& $jpackage --type app-image --name SDFX --app-version $Version --dest $imageDest `
-    --input $inputDir --main-jar stablediffusion-fx.jar --main-class sdfx.ui.Launcher `
+& $jpackage --type app-image --name SDNUI --description "Stable Diffusion NUI" --app-version $Version --dest $imageDest `
+    --input $inputDir --main-jar stablediffusion-nui.jar --main-class sdfx.ui.Launcher `
     --java-options '-Dsdfx.home=$APPDIR\..' --java-options '-Dprism.allowhidpi=true' --java-options '-Xmx2g' --java-options '-Dfile.encoding=UTF-8'
 if ($LASTEXITCODE -ne 0) { throw "jpackage failed (exit $LASTEXITCODE); staging retained at $run" }
-$image = Join-Path $imageDest 'SDFX'
-foreach ($required in @('SDFX.exe', 'app/stablediffusion-fx.jar', 'runtime/legal')) {
+$image = Join-Path $imageDest 'SDNUI'
+foreach ($required in @('SDNUI.exe', 'app/stablediffusion-nui.jar', 'runtime/legal')) {
     if (-not (Test-Path -LiteralPath (Join-Path $image $required))) { throw "Missing packaged component: $required" }
 }
 
@@ -71,7 +71,7 @@ foreach ($relative in @('python/requirements.txt', 'python/requirements-torch.tx
     Copy-Item -LiteralPath $source -Destination $destination
 }
 Copy-Item -LiteralPath (Join-Path $repo 'docs/WINDOWS_RELEASE.md') -Destination (Join-Path $image 'WINDOWS_RELEASE.md')
-$zipName = "SDFX-v$Version-windows-x64.zip"
+$zipName = "SDNUI-v$Version-windows-x64.zip"
 $zip = Join-Path $run $zipName
 Compress-Archive -LiteralPath $image -DestinationPath $zip -CompressionLevel Optimal
 $hash = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
