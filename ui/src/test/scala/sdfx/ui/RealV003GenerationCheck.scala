@@ -7,7 +7,7 @@ import javafx.application.Platform
 import javafx.embed.swing.SwingFXUtils
 import javafx.event.Event
 import javafx.scene.Node
-import javafx.scene.control.{Button, ButtonType, DialogPane, ListView, TextField}
+import javafx.scene.control.{Button, ButtonType, DialogPane, ListView, TextArea, TextField}
 import javafx.scene.input.{KeyCode, KeyEvent}
 import javafx.stage.{Stage, Window}
 import javax.imageio.ImageIO
@@ -127,7 +127,13 @@ object RealV003GenerationCheck:
       } }
       fx {
         val pane = Window.getWindows.asScala.filter(_.isShowing).flatMap(w => Option(w.getScene))
-          .map(_.getRoot).collectFirst { case p: DialogPane => p }.getOrElse(sys.error("Restore did not reach confirmation"))
+          .map(_.getRoot).collectFirst { case p: DialogPane => p }.getOrElse {
+            val status = control[TextArea]("generation-states-status").getText
+            val detail = control[TextArea]("generation-states-detail").getText
+            Files.writeString(run.resolve("restore-blocked-status.txt"), status)
+            Files.writeString(run.resolve("restore-blocked-detail.txt"), detail)
+            sys.error(s"Restore did not reach confirmation. Status:\n$status\nDetail:\n$detail")
+          }
         pane.lookupButton(ButtonType.OK).asInstanceOf[Button].fire()
       }
       restore.get(30, TimeUnit.SECONDS)
