@@ -114,9 +114,11 @@ object RealBatchWorkflowCheck:
         val image = ImageIO.read(new ByteArrayInputStream(Base64.getDecoder.decode(e.jpegB64)))
         require(image != null, "Invalid preview JPEG")
         if real then
-          require(image.getWidth == 256 && image.getHeight == 256, "Expected a 2x2 batch preview grid")
+          require(image.getWidth == 512 && image.getHeight == 512, "Expected a readable 2x2 batch preview grid")
+          val tileWidth = image.getWidth / 2
+          val tileHeight = image.getHeight / 2
           val tiles = for y <- 0 until 2; x <- 0 until 2 yield
-            image.getRGB(x * 128, y * 128, 128, 128, null, 0, 128).toSeq
+            image.getRGB(x * tileWidth, y * tileHeight, tileWidth, tileHeight, null, 0, tileWidth).toSeq
           require(tiles.distinct.size >= 2, "Live batch grid repeats the same image in every tile")
         (image.getWidth, image.getHeight)
       }
