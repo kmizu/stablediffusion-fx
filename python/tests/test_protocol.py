@@ -12,7 +12,8 @@ def test_envelopes():
     assert P.error_msg("r1", "weird", "x")["code"] == "internal"
     p = P.progress_msg("r1", 5, 20, "hires", 1.23456, 0, 2)
     assert p == {"id": "r1", "type": "event", "event": "progress", "step": 5, "total": 20, "pass": "hires",
-                 "eta_s": 1.235, "image": 0, "images": 2}
+                 "eta_s": 1.235, "image": 0, "images": 2, "batch_size": 1}
+    assert P.progress_msg("r1", 1, 20, image=4, images=20, batch_size=4)["batch_size"] == 4
     assert P.preview_msg("r1", "abc", 3) == {"id": "r1", "type": "event", "event": "preview", "jpeg_b64": "abc", "step": 3}
     assert P.log_msg(None, "warn", "m") == {"id": None, "type": "event", "event": "log", "level": "warn", "message": "m"}
     assert P.log_msg(None, "bogus", "m")["level"] == "info"

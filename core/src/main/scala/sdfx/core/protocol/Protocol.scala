@@ -152,7 +152,7 @@ case class TokenizeResult(inputMode: String, streams: Seq[TokenStream]) derives 
 
 sealed trait EngineEvent
 object EngineEvent:
-  case class Progress(step: Int, total: Int, pass: String = "base", etaS: Double = 0, image: Int = 0, images: Int = 1) extends EngineEvent
+  case class Progress(step: Int, total: Int, pass: String = "base", etaS: Double = 0, image: Int = 0, images: Int = 1, batchSize: Int = 1) extends EngineEvent
   case class Preview(jpegB64: String, step: Int) extends EngineEvent
   case class Log(level: String, message: String) extends EngineEvent
 
@@ -164,7 +164,8 @@ object EngineEvent:
       str("event") match
         case Some("progress") =>
           Some(Progress(num("step").fold(0)(_.toInt), num("total").fold(0)(_.toInt), str("pass").getOrElse("base"),
-            num("eta_s").getOrElse(0.0), num("image").fold(0)(_.toInt), num("images").fold(1)(_.toInt)))
+            num("eta_s").getOrElse(0.0), num("image").fold(0)(_.toInt), num("images").fold(1)(_.toInt),
+            math.max(1, num("batch_size").fold(1)(_.toInt))))
         case Some("preview") => str("jpeg_b64").map(v => Preview(v, num("step").fold(0)(_.toInt)))
         case Some("log")     => Some(Log(str("level").getOrElse("info"), str("message").getOrElse("")))
         case _               => None

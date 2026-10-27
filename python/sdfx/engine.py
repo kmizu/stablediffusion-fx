@@ -815,7 +815,8 @@ class Engine(BaseEngine):
                 raise EngineError(INTERRUPTED, "interrupted")
             total = int(getattr(pipe, "_num_timesteps", 0) or steps_hint)
             step = i + 1
-            ctx.progress(step, total, pass_, image=image, images=images)
+            ctx.progress(step, total, pass_, image=image, images=images,
+                         batch_size=int(kw["latents"].shape[0]) if kw.get("latents") is not None else 1)
             if every > 0 and method != "none" and step % every == 0 and step < total:
                 lat = kw.get("latents")
                 if lat is not None:
@@ -824,14 +825,14 @@ class Engine(BaseEngine):
                         if method == "taesd":
                             b64 = self.taesd.decode_b64(lat, self.sdxl, self.device, self.dtype)
                         if b64 is None:
-                            b64 = preview.latent_preview_b64(lat[:1, :4].float().cpu().numpy(), self.sdxl)
+                            b64 = preview.latent_preview_b64(lat[:, :4].float().cpu().numpy(), self.sdxl)
                         if b64:
                             ctx.preview(b64, step)
                     except Exception as e:  # never fail a generation because of a preview
                         log.debug("preview failed: %s", e)
                         if method == 'taesd':
                             try:
-                                b64 = preview.latent_preview_b64(lat[:1, :4].float().cpu().numpy(), self.sdxl)
+                                b64 = preview.latent_preview_b64(lat[:, :4].float().cpu().numpy(), self.sdxl)
                                 if b64:
                                     ctx.preview(b64, step)
                             except Exception as fallback_error:

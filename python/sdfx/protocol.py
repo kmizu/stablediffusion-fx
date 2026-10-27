@@ -75,9 +75,9 @@ def event_msg(req_id: Optional[str], event: str, **fields: Any) -> dict:
     return d
 
 
-def progress_msg(req_id, step: int, total: int, pass_: str = "base", eta_s: float = 0.0, image: int = 0, images: int = 1) -> dict:
+def progress_msg(req_id, step: int, total: int, pass_: str = "base", eta_s: float = 0.0, image: int = 0, images: int = 1, batch_size: int = 1) -> dict:
     return event_msg(req_id, "progress", step=int(step), total=int(total), **{"pass": pass_}, eta_s=round(float(eta_s), 3),
-                     image=int(image), images=int(images))
+                     image=int(image), images=int(images), batch_size=max(1, int(batch_size)))
 
 
 def preview_msg(req_id, jpeg_b64: str, step: int) -> dict:
@@ -166,11 +166,11 @@ class JobContext:
     def start_pass(self) -> None:
         self._pass_start = time.monotonic()
 
-    def progress(self, step: int, total: int, pass_: str = "base", image: int = 0, images: int = 1, eta_s: Optional[float] = None) -> None:
+    def progress(self, step: int, total: int, pass_: str = "base", image: int = 0, images: int = 1, eta_s: Optional[float] = None, batch_size: int = 1) -> None:
         if eta_s is None:
             elapsed = time.monotonic() - self._pass_start
             eta_s = (elapsed / step) * max(0, total - step) if step > 0 else 0.0
-        self.latest_progress = progress_msg(self.req_id, step, total, pass_, eta_s, image, images)
+        self.latest_progress = progress_msg(self.req_id, step, total, pass_, eta_s, image, images, batch_size)
         self.emitter.emit(self.latest_progress)
 
     def preview(self, jpeg_b64: str, step: int) -> None:

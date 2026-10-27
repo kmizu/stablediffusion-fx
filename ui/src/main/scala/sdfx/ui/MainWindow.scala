@@ -441,15 +441,17 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
     if !e.grid then
       val mode = if !img.params.isImg2Img then Mode.Txt2Img else if img.params.isInpaint then Mode.Inpaint else Mode.Img2Img
       comparisonHistory.recordResult(e.jobId, img.path, mode)
-    galleryVM.addNewest(GalleryItem(img.path, System.currentTimeMillis(), size, Some(img.infotext)))
+    galleryVM.addResult(e.jobId, GalleryItem(img.path, System.currentTimeMillis(), size, Some(img.infotext)), e.grid)
     // selecting shows it (one decode); a gallery filter may hide it, then show directly
-    if !gallery.select(img.path) then preview.show(img.path, Some(img.infotext))
+    if !e.grid && !gallery.select(img.path) then preview.show(img.path, Some(img.infotext))
 
   private def onJobEvent(e: JobEvent): Unit =
     progress.accept(e)
     e match
       case JobEvent.Preview(_, b64, _) if progress.get.running => preview.showLive(b64)
-      case JobEvent.JobStarted(_)     => persistAsync()
+      case JobEvent.JobStarted(job)   =>
+        galleryVM.beginGeneration(job.id)
+        persistAsync()
       case JobEvent.Log(_, msg)       => statusBar.log(msg)
       case f: JobEvent.JobFailed      =>
         preview.stopLive()
