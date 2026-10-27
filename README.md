@@ -1,5 +1,11 @@
 # Stable Diffusion FX
 
+ローカルのモデルを、ネイティブUIで。画像生成からバッチプレビュー、ギャラリー、ZIP保存まで。
+
+![SDFXのネイティブ画面。左にプロンプトと生成設定、右に生成画像と20枚のギャラリー、ZIP保存ボタン。](docs/images/sdfx-desktop.png)
+
+*実際のSDFX画面：4枚同時 × 5回のバッチ生成結果。*
+
 **English summary.** Stable Diffusion FX is a standalone desktop app for local Stable Diffusion image generation:
 a Scala 3 + JavaFX 21 UI, an MCP server so AI agents (Claude Code etc.) can generate images, and a Python
 `diffusers` engine that the UI drives over a JSON Lines protocol. It lives entirely in this folder and does not
