@@ -758,7 +758,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
 
   // ---- window state ------------------------------------------------------------------------------------
   def show(): Unit =
-    stage.setTitle(s"SDNUI — Stable Diffusion${if services.dryRun then " (dry run)" else ""}")
+    stage.setTitle(s"Stable Diffusion NUI${if services.dryRun then " (dry run)" else ""}")
     stage.setScene(scene)
     stage.setMinWidth(1280)
     stage.setMinHeight(800)
