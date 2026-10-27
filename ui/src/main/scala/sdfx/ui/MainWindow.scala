@@ -504,7 +504,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
         statusBar.log(message)
         ctx.info(message)
       else if result.interrupted then statusBar.log("[ui] interrupt requested")
-      else ctx.info("Nothing is running")
+      else ctx.info(result.message.getOrElse("Nothing is running"))
     }(e => ctx.error("Cannot request interruption: " + Fx.message(e)))
 
   def clearQueue(): Unit =

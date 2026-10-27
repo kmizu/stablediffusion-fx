@@ -139,3 +139,12 @@ class TemporalLabCancellationSuite extends FunSuite:
       release.countDown()
       sup.close()
   }
+
+  test("too-late publication leaves the request in flight without reporting protection") {
+    val late = InterruptionDecision(accepted = false, blocked = false, protection = disabled,
+      affected = false, message = Some("Output publication is in progress"), tooLate = true)
+    val gate = new TemporalLabCancelGate("owner", _ => () => Future.successful(late))
+    gate.dispatched()
+    val decision = Await.result(gate.cancel(), 3.seconds)
+    assert(decision.tooLate && !decision.accepted && !decision.blocked && !decision.affected)
+  }

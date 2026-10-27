@@ -83,6 +83,10 @@ private[engine] final class TemporalLabCancelGate(
                     phase = Phase.Terminal
                     p.tryFailure(error)
                     result.tryFailure(error)
+                  case scala.util.Success(decision) if decision.tooLate =>
+                    phase = Phase.Writing
+                    result.trySuccess(decision)
+                    p.trySuccess(true)
                   case scala.util.Success(decision) if decision.blocked =>
                     phase = Phase.Writing
                     result.trySuccess(decision)

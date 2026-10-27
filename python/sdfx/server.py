@@ -144,9 +144,15 @@ class Server:
                     # independently observed after the native queue changed jobs.
                     if (self.current_id is not None and (target is None or target == self.current_id)
                             and (expected_owner is None or expected_owner == self.current_owner)):
-                        self.interrupt.set()
-                        data['affected'] = True
-                        data['active_id'] = self.current_id
+                        if self.current_ctx is not None and self.current_ctx.publication_state != "open":
+                            data['accepted'] = False
+                            data['too_late'] = True
+                            data['message'] = ('Output publication is in progress' if self.current_ctx.publication_state == "committing"
+                                               else 'This job has already committed its output')
+                        else:
+                            self.interrupt.set()
+                            data['affected'] = True
+                            data['active_id'] = self.current_id
                     else:
                         queued_target = next((item for item in self.queued
                             if (target is None or target == item)
@@ -159,7 +165,8 @@ class Server:
                 self.emitter.emit(log_msg(rid, 'warn', data['message']))
             self.emitter.emit(result_msg(rid, data))
         elif typ == "shutdown":
-            self.interrupt.set()
+            with self.lock:
+                self.interrupt.set()
             self.emitter.emit(result_msg(rid, {}))
             return False
         elif typ in QUEUED_TYPES:
@@ -211,7 +218,7 @@ class Server:
             self.current_owner = owner
             self.current_type = typ
             self.interrupt.clear()
-        ctx = JobContext(self.emitter, rid, self.interrupt)
+        ctx = JobContext(self.emitter, rid, self.interrupt, publication_lock=self.lock)
         with self.lock:
             self.current_ctx = ctx
         try:

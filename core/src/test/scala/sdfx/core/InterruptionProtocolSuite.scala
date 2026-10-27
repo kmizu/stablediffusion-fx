@@ -15,3 +15,12 @@ class InterruptionProtocolSuite extends munit.FunSuite:
   test("untyped old interrupt response cannot accidentally authorize a destructive action") {
     intercept[Exception](Json.fromJs[InterruptionDecision](ujson.Obj()))
   }
+
+  test("publication too-late admission is distinct from protection") {
+    val raw = ujson.Obj("accepted" -> false, "blocked" -> false, "too_late" -> true,
+      "affected" -> false, "protection" -> ujson.Obj("enabled" -> false, "revision" -> 0),
+      "message" -> "Output publication is in progress")
+    val decision = Json.fromJs[InterruptionDecision](raw)
+    assert(decision.tooLate && !decision.blocked && !decision.accepted && !decision.affected)
+    assertEquals(Json.fromJs[InterruptionDecision](Json.toJs(decision)), decision)
+  }

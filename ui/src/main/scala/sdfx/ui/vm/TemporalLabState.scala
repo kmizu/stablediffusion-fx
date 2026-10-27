@@ -67,7 +67,7 @@ final class TemporalLabState:
       if ticket.revision == revision then { value = None; text = message }
   def cancelDecision(ticket: Ticket, decision: InterruptionDecision): Unit =
     if !closed && current.contains(ticket) && ticket.revision == revision then
-      text = if decision.blocked then "Cancellation blocked" else if !decision.affected then "No matching active request" else "Cancellation requested"
+      text = if decision.tooLate then decision.message.getOrElse("Output publication is in progress") else if decision.blocked then "Cancellation blocked" else if !decision.affected then "No matching active request" else "Cancellation requested"
   def dispose(): Unit = { closed = true; current = None; value = None }
 
 /** Lightweight byte-budgeted LRU for playback assets; no decoded images held in the cache. */

@@ -211,7 +211,7 @@ def _dfi(params, ctx):
             prior_ref = current_ref
             ctx.progress(idx + 1, count, pass_="dfi")
         ctx.check_interrupt()
-        result_dir = tx.commit()
+        result_dir = ctx.publish(tx.commit)
     return {"operation": "dfi", "output_dir": str(result_dir), "frame_count": count,
             "dimensions": list(generated.dimensions), "output_bytes": used,
             "reference_aligned": reference.dimensions != generated.dimensions}
@@ -295,7 +295,7 @@ def _deflicker(params, ctx):
             used = _writer(tx, current, idx + 1, used)
             ctx.progress(idx + 1, sequence.count, pass_="deflicker")
         ctx.check_interrupt()
-        output = tx.commit()
+        output = ctx.publish(tx.commit)
     return {"operation": "deflicker", "output_dir": str(output), "frame_count": sequence.count,
             "dimensions": list(sequence.dimensions), "output_bytes": used}
 
@@ -315,7 +315,7 @@ def _fuse(params, ctx):
             used = _writer(tx, fused, idx + 1, used)
             ctx.progress(idx + 1, video.count, pass_="fuse")
         ctx.check_interrupt()
-        output = tx.commit()
+        output = ctx.publish(tx.commit)
     return {"operation": "fuse", "output_dir": str(output), "frame_count": video.count,
             "dimensions": list(video.dimensions), "resized_style": style.dimensions != video.dimensions,
             "output_bytes": used}
@@ -374,7 +374,7 @@ def _extract(params, ctx):
             if not written:
                 raise ValueError("no frames extracted")
             ctx.check_interrupt()
-            output = tx.commit()
+            output = ctx.publish(tx.commit)
         return {"operation": "extract", "output_dir": str(output), "frame_count": written,
                 "dimensions": [width, height], "fps": fps, "source_fps": source_fps,
                 "duration": expected / source_fps, "output_bytes": used}

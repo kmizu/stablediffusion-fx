@@ -158,7 +158,7 @@ final class JobQueue(generator: Generator, interruptEngine: Option[String] => Fu
     // Queue-only cancellation retains its immutable entry-owner restriction.
     val dispatch = fallback.getOrElse(() => interruptEngine(Some(owner)))
     () => dispatch().map { decision =>
-      require(decision.accepted != decision.blocked, "Invalid interruption admission response")
+      require(decision.validAdmission, "Invalid interruption admission response")
       val same = captured.exists { (entry, flag) =>
         val current = running.exists((active, _) => active eq entry)
         if decision.accepted && current then flag.set(true)

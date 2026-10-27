@@ -26,6 +26,10 @@ class Context:
         if self.interrupt_after is not None and self.calls >= self.interrupt_after:
             raise EngineError(INTERRUPTED, "interrupted")
 
+    def publish(self, operation):
+        self.check_interrupt()
+        return operation()
+
     def progress(self, step, total, pass_="base", **kwargs):
         self.events.append((step, total, pass_))
 

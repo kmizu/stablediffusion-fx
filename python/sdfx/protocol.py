@@ -122,10 +122,13 @@ class Emitter:
 class JobContext:
     """Per-request handle passed to engine methods: emits events and checks for interruption."""
 
-    def __init__(self, emitter: Emitter, req_id: Optional[str], interrupt_event: Optional[threading.Event] = None):
+    def __init__(self, emitter: Emitter, req_id: Optional[str], interrupt_event: Optional[threading.Event] = None,
+                 publication_lock=None):
         self.emitter = emitter
         self.req_id = req_id
         self.interrupt_event = interrupt_event or threading.Event()
+        self._publication_lock = publication_lock
+        self.publication_state = "open"
         self.warnings: list[str] = []
         self._pass_start = time.monotonic()
         self._last_step = 0
@@ -139,6 +142,25 @@ class JobContext:
     def check_interrupt(self) -> None:
         if self.interrupted:
             raise EngineError(INTERRUPTED, "interrupted")
+
+    def publish(self, operation):
+        """Atomically claim publication without holding the lock during I/O."""
+        if self._publication_lock is None:
+            raise EngineError(INTERNAL, "atomic publication ownership is unavailable")
+        with self._publication_lock:
+            self.check_interrupt()
+            if self.publication_state != "open":
+                raise EngineError(INTERNAL, "publication already in progress or committed")
+            self.publication_state = "committing"
+        try:
+            result = operation()
+        except BaseException:
+            with self._publication_lock:
+                self.publication_state = "open"
+            raise
+        with self._publication_lock:
+            self.publication_state = "committed"
+        return result
 
     # -- events ------------------------------------------------------------
     def start_pass(self) -> None:

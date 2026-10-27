@@ -404,9 +404,9 @@ final class EngineSupervisor(
         owner.foreach(value => params("owner_id") = value)
         p.request(Protocol.Types.Interrupt, params).map { raw =>
           val decision = Json.fromJs[InterruptionDecision](raw)
-          require(decision.accepted != decision.blocked, "Invalid interruption admission response")
+          require(decision.validAdmission, "Invalid interruption admission response")
           if decision.blocked then log(decision.message.getOrElse("Interruptions are blocked"))
-          else target.filter { (id, _) =>
+          else if decision.accepted && decision.affected then target.filter { (id, _) =>
             // A queued request is cancelled immediately in reader state but may
             // await unrelated active work before its error envelope is emitted.
             // Only actual active admission may arm a forced-restart grace timer.

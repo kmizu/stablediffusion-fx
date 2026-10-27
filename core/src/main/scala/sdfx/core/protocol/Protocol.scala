@@ -53,7 +53,10 @@ case class InterruptionProtection(enabled: Boolean = false, revision: Long = 0) 
 
 /** Admission is evaluated before any native cancellation flag or escalation timer may be changed. */
 case class InterruptionDecision(accepted: Boolean, blocked: Boolean, protection: InterruptionProtection,
-    affected: Boolean = false, message: Option[String] = None) derives RW
+    affected: Boolean = false, message: Option[String] = None, tooLate: Boolean = false) derives RW:
+  def validAdmission: Boolean =
+    if tooLate then !accepted && !blocked && !affected
+    else accepted != blocked
 
 case class EngineHello(
     protocol: Int,
