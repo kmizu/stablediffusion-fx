@@ -27,6 +27,8 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
     payloadClipboardWriter: String => Unit = RequestPayloadPane.systemClipboard,
     presetFileDialogs: NativePresetFileDialogs = NativePresetFileDialogs.system):
   val catalogVM = new CatalogVM
+  // A window may be opened after the services have already scanned/loaded a model.
+  catalogVM.update(services.catalog.snapshot, services.catalog.choices)
   val ctx = new UiContext(services, catalogVM, stage)
   val model = new ModelVM
   val progress = new ProgressVM

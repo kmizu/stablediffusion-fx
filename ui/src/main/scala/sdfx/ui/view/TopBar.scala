@@ -132,6 +132,7 @@ final class TopBar(
     }
 
   private val title = W.label("SDNUI", "app-title")
+  title.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE)
 
   val node: HBox =
     val h = new HBox(

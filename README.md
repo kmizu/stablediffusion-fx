@@ -37,6 +37,8 @@ Requirements: JDK 17+, Python 3.10-3.12, an NVIDIA GPU is recommended. Quick sta
 - Styles、バリエーションシード、バッチ、キュー、生成中のライブプレビュー(approx / taesd)
 - ギャラリー、PNG Info(画像に埋め込まれた生成パラメータの読み出しと各タブへの送信)、Extras(アップスケール)
 - プロンプト編集: A1111 の `(強調:1.2)` 記法、`BREAK`、75 トークン単位のチャンク、Ctrl+上下で重み調整
+- [タグ補完](docs/tag-autocomplete.md): ローカルCSVから候補を表示し、Enter / Tabで入力中のタグだけを補完
+- [名前付き生成設定](docs/generation-states.md): モード別に保存・一覧・復元・削除。設定プリセットとは別の保存先
 - ダーク/ライトテーマ
 - プラグイン(下記)
 - MCP サーバー(stdio / HTTP)
@@ -76,7 +78,7 @@ reForge の標準スクリプトと内蔵拡張をすべて書き直して同梱
 - ビルドする場合は sbt(jar が既にあれば不要)
 - Windows / Linux / macOS(JavaFX は OS ごとの jar をビルド時に取り込みます。別 OS 用の jar はその OS でビルドしてください)
 
-## Windows 配布版（改名後の v0.03 は準備中）
+## Windows 配布版 v0.03
 
 Windows x64 の `SDNUI-v0.03-windows-x64.zip` を入手したら、書き込み可能なフォルダに展開し、`SDNUI\SDNUI.exe` を起動します。
 Java ランタイムは同梱されています。Python 3.10〜3.12 は別途必要で、初回の通常起動時に専用環境と依存パッケージをセットアップできます。モデルは同梱されません。Settings → Model folders → **Add A1111/reForge install...** から既存のモデルフォルダを利用できます。詳しい手順は [Windows 配布版](docs/WINDOWS_RELEASE.md) を参照してください。

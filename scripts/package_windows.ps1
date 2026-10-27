@@ -3,7 +3,7 @@ param(
     [string]$JdkHome = $env:JAVA_HOME,
     [string]$Jar = (Join-Path $PSScriptRoot '../target/stablediffusion-nui.jar'),
     [ValidatePattern('^\d{1,3}(\.\d{1,3}){1,2}$')]
-    [string]$Version = '0.02',
+    [string]$Version = '0.03',
     [string]$OutputRoot = ''
 )
 $ErrorActionPreference = 'Stop'

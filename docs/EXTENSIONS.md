@@ -4,7 +4,7 @@ Snapshot of the official extension index (353 extensions), the list reForge's Ex
 
 Totals: done 105, todo 197, na 51.
 
-| # | Extension | Stars | Status | stablediffusion-fx | Why not applicable |
+| # | Extension | Stars | Status | stablediffusion-nui | Scope / notes |
 |---|---|---|---|---|---|
 | 0 | [Agent Scheduler](https://github.com/ArtVentureX/sd-webui-agent-scheduler.git) | 690 | done | `core:job-queue` |  |
 | 1 | [TemporalKit](https://github.com/CiaraStrawberry/TemporalKit) | 1955 | todo | `temporal_kit` |  |
@@ -47,7 +47,7 @@ Totals: done 105, todo 197, na 51.
 | 38 | [Dynamic Prompts](https://github.com/adieyal/sd-dynamic-prompts.git) | 2298 | done | `dynamic_prompts` |  |
 | 39 | [Unprompted](https://github.com/ThereforeGames/unprompted.git) | 805 | todo | `unprompted` |  |
 | 40 | [StylePile](https://github.com/some9000/StylePile.git) | 571 | todo | `stylepile` |  |
-| 41 | [Booru tag autocompletion](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete.git) | 2811 | todo | `core:tag-autocomplete` |  |
+| 41 | [Booru tag autocompletion](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete.git) | 2811 | todo | `core:tag-autocomplete` | v0.03: local CSV tag/alias completion and native keyboard/IME guards; upstream extras remain under #24. See tag-autocomplete.md. |
 | 42 | [novelai-2-local-prompt](https://github.com/animerl/novelai-2-local-prompt.git) | 73 | done | `novelai_prompt` |  |
 | 43 | [tokenizer](https://github.com/AUTOMATIC1111/stable-diffusion-webui-tokenizer.git) | 171 | done | `tokenizer` |  |
 | 44 | [Randomize](https://github.com/innightwolfsleep/stable-diffusion-webui-randomize.git) | 25 | done | `randomize` |  |
@@ -268,7 +268,7 @@ Totals: done 105, todo 197, na 51.
 | 259 | [Kohaku-NAI](https://github.com/KohakuBlueleaf/Kohaku-NAI) | 93 | na | `account` | needs a third-party account / paid API key and posts data to that service |
 | 260 | [Replacer - fast inpaint](https://github.com/light-and-ray/sd-webui-replacer.git) | 242 | todo | `replacer` |  |
 | 261 | [Color Correction Extras](https://github.com/light-and-ray/sd-webui-color-correction-extras.git) | 21 | todo | `color_correction` |  |
-| 262 | [State Manager](https://github.com/SenshiSentou/sd-webui-state-manager.git) | 68 | todo | `core:state-manager` |  |
+| 262 | [State Manager](https://github.com/SenshiSentou/sd-webui-state-manager.git) | 68 | todo | `core:state-manager` | v0.03: per-mode named generation settings save/list/restore/delete; upstream history and other extras remain under #23. See generation-states.md. |
 | 263 | [Agent Attention](https://github.com/v0xie/sd-webui-agentattention.git) | 44 | todo | `agent_attention` |  |
 | 264 | [Deepdanbooru object recognition](https://github.com/Jibaku789/sd-webui-deepdanbooru-object-recognition.git) | 37 | todo | `deepdanbooru` |  |
 | 265 | [Deepdanbooru Tag2Folder](https://github.com/Jibaku789/sd-webui-deepdanbooru-tag2folder) | 9 | todo | `deepdanbooru` |  |

@@ -1,9 +1,7 @@
-# Stable Diffusion NUI v0.03 — scope and evidence draft
+# Stable Diffusion NUI v0.03 — scope and evidence
 
-This records the user-approved implementation scope and evidence available on
-2026-10-27. It is **not a release-completion or publication claim**. Final native
-generation, fresh-session PNG Info/Restore and packaged EXE outcomes must be
-filled by the release coordinator from completed runs.
+This records the user-approved implementation scope and measured evidence on
+2026-10-27. Broad upstream extension parity is not claimed.
 
 ## Included scope
 
@@ -49,19 +47,36 @@ It does not test a physical Japanese IME. The native state reopen check creates
 a new window and services on the same app home; it is distinct from verifying a
 fresh packaged EXE process.
 
-## Release gates still to record
+## Integrated native acceptance
 
-- Final integrated native SD1.5 and SDXL tag completion → named-state Restore →
-  ordinary generation, including inspection of decoded final preview/screenshots.
-- Native PNG Info/Restore of real WD outputs after a fresh application session,
-  including effective prompts, actual seeds, model/VAE and retained image inputs.
-- Final renamed assembly, package contents/notices and hashes; clean-path ZIP
-  extraction; bundled-JVM `SDNUI.exe` startup and real generation.
-- Final source/remote/tag agreement, uploaded assets and downloaded SHA-256.
+- `outputs/v003-native-fixed.log`: both actual SD1.5 and SDXL paths passed CSV
+  keyboard completion → named-state Save/Restore → ordinary generation.
+  The complete restored and submitted GenerationParams matched; final PNGs and
+  decoded previews were checked. Screenshots inspected in
+  `outputs/v003-native-sd15-fixed/v003-generation-14301691867765445334/` and
+  `outputs/v003-native-sdxl/v003-generation-1935703245528370447/`.
+- Fresh JavaFX processes reopened each real WD output in PNG Info, read its
+  complete persisted text and restored effective prompts and seed while retaining
+  the user-selected init image. PNG bytes remained unchanged. Screenshots inspected
+  in `outputs/v003-png-sd15/tag-mainwindow-12338315818217576372/` and
+  `outputs/v003-png-sdxl/tag-mainwindow-15196549638798809754/`.
+- This caught a late-created-window bug: a MainWindow opened after model loading
+  lacked the existing catalog snapshot. Initializing its catalog before controls
+  fixes restore validation without bypassing unavailable-resource checks.
+- Renamed assembly passed. JAR SHA-256:
+  `72b881fbfcce31e6291d98bc3083e63e8ee0294ea59fd755added0464c0861bd`.
 
-No result is inferred from a started log or the existence of a screenshot. The
-coordinator should replace these pending items with concrete artifact paths and
-observed outcomes once the corresponding run finishes.
+## Windows artifact
+
+`SDNUI-v0.03-windows-x64.zip` SHA-256:
+`75fca7e13167e0e5846d78904653bdc41710ebd04863a6c84fb82e577c5ea396`.
+The extracted bundled-JVM EXE passed both no-system-Java startup/dry generation
+and actual SD1.5 generation (256×256, two steps, seed 7303), exit 0. The PNG
+prompt/model/settings and packaged JAR hash were checked; screenshot inspected.
+Evidence: `outputs/v003-package-check.log`, `outputs/v003-package-real.log` and
+`outputs/v003-package-real/real-package-6c2f4455336c46e7a7562500b0d31904/real-generation-report.json`.
+The ZIP contains the new original MIT notices; weights and Python environments
+are excluded. Publication/download verification is reported in the release.
 
 ## Issue and ledger disposition
 

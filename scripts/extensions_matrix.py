@@ -135,6 +135,12 @@ IMPLEMENTED = {
 }
 
 
+SCOPE_NOTES = {
+    "core:tag-autocomplete": "v0.03: local CSV tag/alias completion and native keyboard/IME guards; upstream extras remain under #24. See tag-autocomplete.md.",
+    "core:state-manager": "v0.03: per-mode named generation settings save/list/restore/delete; upstream history and other extras remain under #23. See generation-states.md.",
+}
+
+
 def status(i: int) -> str:
     st = S[i]
     kind, _, target = st.partition(":")
@@ -152,14 +158,14 @@ def main():
         st = status(i)
         kind, _, target = st.partition(":")
         counts[kind] += 1
-        note = NA_REASONS.get(target, "") if kind == "na" else ""
+        note = NA_REASONS.get(target, "") if kind == "na" else SCOPE_NOTES.get(target, "")
         rows.append(f"| {i} | [{e['name']}]({e['url']}) | {e['stars']} | {kind} | `{target}` | {note} |")
     md = ["# A1111 / reForge extension index coverage", "",
           f"Snapshot of the official extension index ({len(idx)} extensions), the list reForge's Extensions > Available "
           "tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not "
           "apply to a standalone desktop app.", "",
           f"Totals: done {counts['done']}, todo {counts['todo']}, na {counts['na']}.", "",
-          "| # | Extension | Stars | Status | stablediffusion-fx | Why not applicable |", "|---|---|---|---|---|---|"] + rows
+          "| # | Extension | Stars | Status | stablediffusion-nui | Scope / notes |", "|---|---|---|---|---|---|"] + rows
     md += ["", "Reason codes for `na`:", ""] + [f"- `{k}`: {v}" for k, v in NA_REASONS.items()]
     open(os.path.join(root, "docs", "EXTENSIONS.md"), "w", encoding="utf-8", newline="\n").write("\n".join(md) + "\n")
     status_json = [{"index": i, "name": e["name"], "url": e["url"], "status": status(i)} for i, e in enumerate(idx)]
