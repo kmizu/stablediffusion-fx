@@ -59,6 +59,32 @@ class WdBatchSafetySuite extends FunSuite:
     intercept[EngineError](WdBatchSafety.validatePaths(WdBatchResult(Seq(duplicate), true), parent))
   }
 
+  test("ordinary published file is accepted even when file keys are unavailable") {
+    val parent = java.nio.file.Files.createTempDirectory("wd-ordinary-path")
+    val item = java.nio.file.Files.createDirectory(parent.resolve("item-0000"))
+    val valid = java.nio.file.Files.writeString(item.resolve("good.png"), "ordinary")
+    val row = WdBatchItem("complete", "/source", Some("p"), Some("n"),
+      Some(GenerationResult(Seq(GeneratedImage(valid.toString, 1)))))
+    val result = WdBatchSafety.validatePaths(WdBatchResult(Seq(row), true), parent)
+    assertEquals(result.size, 1)
+    assert(java.nio.file.Files.isSameFile(result.head._3, valid))
+  }
+
+  test("hardlinked output aliases are rejected when supported") {
+    val parent = java.nio.file.Files.createTempDirectory("wd-hardlink-path")
+    val item = java.nio.file.Files.createDirectory(parent.resolve("item-0000"))
+    val first = java.nio.file.Files.writeString(item.resolve("first.png"), "ordinary")
+    val second = item.resolve("second.png")
+    val created = try
+      java.nio.file.Files.createLink(second, first)
+      true
+    catch case _: java.io.IOException | _: UnsupportedOperationException | _: SecurityException => false
+    assume(created, "hardlinks unavailable")
+    val row = WdBatchItem("complete", "/source", Some("p"), Some("n"),
+      Some(GenerationResult(Seq(GeneratedImage(first.toString, 1), GeneratedImage(second.toString, 2)))))
+    intercept[EngineError](WdBatchSafety.validatePaths(WdBatchResult(Seq(row), true), parent))
+  }
+
   test("stale timeout cannot restart a replacement supervisor process") {
     import FakeEngine.*
     val sup = new EngineSupervisor(() => launch())

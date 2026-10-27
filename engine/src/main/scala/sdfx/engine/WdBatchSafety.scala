@@ -47,6 +47,8 @@ private[engine] object WdBatchSafety:
       throw EngineError(Protocol.ErrorCodes.Internal, "WD batch output directory is unavailable")
     val seenPaths = scala.collection.mutable.HashSet.empty[Path]
     val seenKeys = scala.collection.mutable.HashSet.empty[AnyRef]
+    val seenAll = scala.collection.mutable.ArrayBuffer.empty[Path]
+    val seenWithoutKey = scala.collection.mutable.ArrayBuffer.empty[Path]
     result.rows.filter(_.status == "complete").flatMap { row =>
       row.result.toSeq.flatMap(_.images).map { image =>
         val path = try Paths.get(image.path).toAbsolutePath.normalize()
@@ -57,9 +59,19 @@ private[engine] object WdBatchSafety:
             Files.isSymbolicLink(path) || !Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS) || !seenPaths.add(path) then
           throw EngineError(Protocol.ErrorCodes.Internal, "WD batch returned an invalid or duplicate image path")
         val key = try Files.readAttributes(path, classOf[BasicFileAttributes], LinkOption.NOFOLLOW_LINKS).fileKey()
-          catch case scala.util.control.NonFatal(_) => null
-        if key == null || !seenKeys.add(key) then
+          catch case scala.util.control.NonFatal(_) =>
+            throw EngineError(Protocol.ErrorCodes.Internal, "WD batch could not inspect published image identity")
+        // Some Windows providers do not return fileKey. Compare all prior
+        // paths in that case; if a previous key was unavailable, compare it
+        // even when this file has a key. Fail closed if comparison fails.
+        val compare = if key == null then seenAll else seenWithoutKey
+        val alias = try compare.exists(previous => Files.isSameFile(previous, path))
+          catch case scala.util.control.NonFatal(_) =>
+            throw EngineError(Protocol.ErrorCodes.Internal, "WD batch could not compare published image identities")
+        if alias || (key != null && !seenKeys.add(key)) then
           throw EngineError(Protocol.ErrorCodes.Internal, "WD batch returned an aliased or unverifiable image")
+        seenAll += path
+        if key == null then seenWithoutKey += path
         (row, image, path)
       }
     }
