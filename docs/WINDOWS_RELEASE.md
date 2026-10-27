@@ -1,8 +1,8 @@
-# Windows v0.01 package
+# Windows v0.02 package
 
 ## Use
 
-Extract `SDFX-v0.01-windows-x64.zip` to a writable folder (for example, under your user profile), then run `SDFX\SDFX.exe`. The bundled Java runtime needs no separately installed Java. Keep the extracted directory together: `app`, `runtime`, `python`, and `models` sit next to the executable. The launcher defaults the app home to this extracted SDFX directory, even if the current directory or `SDFX_HOME` points to another checkout. An explicit `--home DIR` overrides that default. Do not run directly inside the ZIP. A writeable location is needed for settings, outputs and the Python environment.
+Extract `SDFX-v0.02-windows-x64.zip` to a writable folder (for example, under your user profile), then run `SDFX\SDFX.exe`. The bundled Java runtime needs no separately installed Java. Keep the extracted directory together: `app`, `runtime`, `python`, and `models` sit next to the executable. The launcher defaults the app home to this extracted SDFX directory, even if the current directory or `SDFX_HOME` points to another checkout. An explicit `--home DIR` overrides that default. Do not run directly inside the ZIP. A writable location is needed for settings, outputs and the Python environment.
 
 Python 3.10–3.12 is needed for the engine; Python and torch are not included. On the first normal launch, the setup dialog can create a virtual environment and download dependencies, or use a Python environment you choose. The torch download is large and uses the CUDA 12.8 wheel index. `SDFX.exe --dry-run` exercises the UI with placeholder generation but still needs a working Python interpreter. NVIDIA GPU and appropriate drivers are recommended for real generation.
 
@@ -15,12 +15,12 @@ To use existing Civitai downloads, place the model files in the corresponding `m
 Build on Windows x64 with Git, PowerShell and a Windows x64 JDK 21. First assemble the final, verified Windows JavaFX fat JAR from the intended source revision (`sbt -batch ui/assembly`); packaging does not build or download anything. Then, from any working directory:
 
 ```powershell
-& 'path\to\stablediffusion-fx\scripts\package_windows.ps1' -JdkHome 'C:\Program Files\Java\jdk-21' -Jar 'path\to\stablediffusion-fx\target\stablediffusion-fx.jar' -OutputRoot 'path\to\release-output'
+& 'path\to\stablediffusion-fx\scripts\package_windows.ps1' -Version '0.02' -JdkHome 'C:\Program Files\Java\jdk-21' -Jar 'path\to\stablediffusion-fx\target\stablediffusion-fx.jar' -OutputRoot 'path\to\release-output'
 ```
 
-`-JdkHome` defaults to `JAVA_HOME`; `-Jar` defaults to this checkout's `target/stablediffusion-fx.jar`; `-OutputRoot` defaults to `dist/windows-v0.01` in this checkout. Paths with spaces are supported. Each invocation creates a fresh `build-<UUID>` directory inside the output root and retains its staging files. Its ZIP and `SHA256SUMS.txt` are the release assets. Only tracked Python source/licence files, tracked model README skeletons and tracked `licenses/*.txt` files are copied, along with the requirement files and app and JVM distribution notices; no model weights, venv, settings or outputs are copied. Review the source checkout and JAR before packaging; this script does not verify their provenance.
+`-Version` defaults to `0.02` and accepts two or three numeric components of one to three digits each; `-JdkHome` defaults to `JAVA_HOME`; `-Jar` defaults to this checkout's `target/stablediffusion-fx.jar`; `-OutputRoot` defaults to `dist/windows-v<Version>` in this checkout. Paths with spaces are supported. Each invocation creates a fresh `build-<UUID>` directory inside the output root and retains its staging files. Its versioned ZIP and `SHA256SUMS.txt` are the release assets. Only tracked Python source/licence files, tracked model README skeletons and tracked `licenses/*.txt` files are copied, along with the requirement files and app and JVM distribution notices; no model weights, venv, settings or outputs are copied. Review the source checkout and JAR before packaging; this script does not verify their provenance.
 
-jpackage creates a classpath app-image and its default linked runtime; the package version is `0.01`, while the release tag and ZIP use `v0.01`. Refer to [Oracle's JDK 21 packaging overview](https://docs.oracle.com/en/java/javase/21/jpackage/packaging-overview.html). This script does not sign binaries or publish a release.
+jpackage creates a classpath app-image and its default linked runtime; the default package version is `0.02`, while the intended release tag and ZIP use `v0.02`. Passing another `-Version` changes the jpackage version, output directory default and ZIP name; it does not modify the Git tag. Refer to [Oracle's JDK 21 packaging overview](https://docs.oracle.com/en/java/javase/21/jpackage/packaging-overview.html). This script does not sign binaries or publish a release.
 
 ## Release verification
 

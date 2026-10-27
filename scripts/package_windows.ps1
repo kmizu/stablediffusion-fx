@@ -2,11 +2,14 @@
 param(
     [string]$JdkHome = $env:JAVA_HOME,
     [string]$Jar = (Join-Path $PSScriptRoot '../target/stablediffusion-fx.jar'),
-    [string]$OutputRoot = (Join-Path $PSScriptRoot '../dist/windows-v0.01')
+    [ValidatePattern('^\d{1,3}(\.\d{1,3}){1,2}$')]
+    [string]$Version = '0.02',
+    [string]$OutputRoot = ''
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $repo = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+if (-not $OutputRoot) { $OutputRoot = Join-Path $PSScriptRoot "../dist/windows-v$Version" }
 if (-not $JdkHome) { throw 'Set JAVA_HOME or pass -JdkHome to a Windows x64 JDK 21.' }
 $jpackage = Join-Path ([IO.Path]::GetFullPath($JdkHome)) 'bin/jpackage.exe'
 $java = Join-Path ([IO.Path]::GetFullPath($JdkHome)) 'bin/java.exe'
@@ -38,7 +41,7 @@ $imageDest = Join-Path $run 'image'
 [IO.Directory]::CreateDirectory($imageDest) | Out-Null
 Copy-Item -LiteralPath $jarPath -Destination (Join-Path $inputDir 'stablediffusion-fx.jar')
 
-& $jpackage --type app-image --name SDFX --app-version 0.01 --dest $imageDest `
+& $jpackage --type app-image --name SDFX --app-version $Version --dest $imageDest `
     --input $inputDir --main-jar stablediffusion-fx.jar --main-class sdfx.ui.Launcher `
     --java-options '-Dsdfx.home=$APPDIR\..' --java-options '-Dprism.allowhidpi=true' --java-options '-Xmx2g' --java-options '-Dfile.encoding=UTF-8'
 if ($LASTEXITCODE -ne 0) { throw "jpackage failed (exit $LASTEXITCODE); staging retained at $run" }
@@ -68,10 +71,11 @@ foreach ($relative in @('python/requirements.txt', 'python/requirements-torch.tx
     Copy-Item -LiteralPath $source -Destination $destination
 }
 Copy-Item -LiteralPath (Join-Path $repo 'docs/WINDOWS_RELEASE.md') -Destination (Join-Path $image 'WINDOWS_RELEASE.md')
-$zip = Join-Path $run 'SDFX-v0.01-windows-x64.zip'
+$zipName = "SDFX-v$Version-windows-x64.zip"
+$zip = Join-Path $run $zipName
 Compress-Archive -LiteralPath $image -DestinationPath $zip -CompressionLevel Optimal
 $hash = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
-[IO.File]::WriteAllText((Join-Path $run 'SHA256SUMS.txt'), "$hash  SDFX-v0.01-windows-x64.zip`n", [Text.UTF8Encoding]::new($false))
+[IO.File]::WriteAllText((Join-Path $run 'SHA256SUMS.txt'), "$hash  $zipName`n", [Text.UTF8Encoding]::new($false))
 Write-Host "Package: $zip"
 Write-Host "SHA-256: $hash"
 Write-Host "Staging retained: $run"
