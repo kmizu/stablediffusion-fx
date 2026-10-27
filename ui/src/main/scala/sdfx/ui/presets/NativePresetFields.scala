@@ -215,7 +215,8 @@ final class NativePresetFields(vm: GenerationVM, plugins: PluginsVM, catalog: Ca
               val opts = c match
                 case ch: Control.Choice => choice(ch.options)
                 case dc: Control.DynamicChoice =>
-                  () => PluginValuesVM.options(dc, s => list(catalog.choices(s))).map(PresetAtom.Text.apply).toVector.distinct
+                  () => ((if namedState then Seq("") else Seq.empty) ++
+                    PluginValuesVM.options(dc, s => list(catalog.choices(s)))).map(PresetAtom.Text.apply).toVector.distinct
                 case _ => () => Vector.empty[PresetAtom]
               val kind = c match
                 case _: Control.Check => PresetFieldKind.Flag

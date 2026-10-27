@@ -42,7 +42,7 @@ class NamedGenerationStatesSuite extends munit.FunSuite:
     plugins.form(extension.id).get.prop("text").get.set("inactive saved")
     val record = NamedGenerationStates.capture("Japanese 日本語", fields).toOption.get
     val directory = Files.createTempDirectory("sdfx-named-state-")
-    val store = new PresetStore(directory)
+    val store = new PresetStore(directory, PresetLimits())
     val saved = store.save(PresetRevision(None), NamedGenerationStates.put(empty, Mode.Txt2Img, record)).toOption.get
     val loaded = store.load().toOption.get
     assertEquals(loaded.library, saved.library)
@@ -97,4 +97,22 @@ class NamedGenerationStatesSuite extends munit.FunSuite:
     val deleted = NamedGenerationStates.remove(replacement, Mode.Txt2Img, "one")
     assert(NamedGenerationStates.collection(deleted, Mode.Txt2Img).presets.isEmpty)
     assertEquals(NamedGenerationStates.collection(deleted, Mode.Inpaint).presets.size, 1)
+  }
+
+  test("blank dynamic-choice draft restores exactly after selecting a model") {
+    val dynamic = new Plugin:
+      val id = "draft-model"
+      val name = "Draft model"
+      val kind = PluginKind.AlwaysOn
+      override val controls = Seq(Control.DynamicChoice("model", "Model", ChoiceSource.Loras))
+    val vm = new GenerationVM(Mode.Txt2Img)
+    val plugins = new PluginsVM(Mode.Txt2Img, Nil, Seq(dynamic), _ => Values.empty)
+    val catalog = new CatalogVM
+    catalog.choices(ChoiceSource.Loras).add("selected-model")
+    val fields = new NativePresetFields(vm, plugins, catalog, new SimpleBooleanProperty(false), namedState = true)
+    val saved = NamedGenerationStates.capture("blank draft", fields).toOption.get
+    plugins.form(dynamic.id).get.prop("model").get.set("selected-model")
+    val plan = NamedGenerationStates.preflight(saved, fields).fold(e => fail(e.toString), identity)
+    assert(fields.write(plan.changes).isRight)
+    assertEquals(plugins.form(dynamic.id).get.prop("model").get.get, "")
   }
