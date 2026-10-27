@@ -1,5 +1,5 @@
 @echo off
-rem Stable Diffusion FX launcher. Prints nothing to stdout itself (MCP stdio mode uses stdout).
+rem Stable Diffusion NUI launcher. Prints nothing to stdout itself (MCP stdio mode uses stdout).
 setlocal EnableExtensions
 cd /d "%~dp0"
 
@@ -22,9 +22,9 @@ if %SDFX_MAJORN% LSS 17 (
   exit /b 1
 )
 
-set "SDFX_JAR=%~dp0target\stablediffusion-fx.jar"
+set "SDFX_JAR=%~dp0target\stablediffusion-nui.jar"
 if not exist "%SDFX_JAR%" (
-  >&2 echo [sdfx] target\stablediffusion-fx.jar is missing, building it with sbt ^(or run scripts\build.bat^)...
+  >&2 echo [sdfx] target\stablediffusion-nui.jar is missing, building it with sbt ^(or run scripts\build.bat^)...
   where sbt >nul 2>nul
   if errorlevel 1 (
     >&2 echo [sdfx] sbt was not found. Install sbt, then run scripts\build.bat.

@@ -6,8 +6,8 @@ import sys
 import threading
 import time
 
-HOME = r"D:\stable-diffusion-webui-reForge\stablediffusion-fx"
-JAR = os.path.join(HOME, "target", "stablediffusion-fx.jar")
+HOME = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+JAR = os.path.join(HOME, "target", "stablediffusion-nui.jar")
 JAVA = sys.argv[1]
 ONLY = set(sys.argv[2].split(",")) if len(sys.argv) > 2 and sys.argv[2] else None
 OUTS = os.path.join(HOME, "outputs")
