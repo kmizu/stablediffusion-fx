@@ -13,7 +13,9 @@ class TemporalPublicationIntegrationSuite extends munit.FunSuite:
 
   test("held Temporal Lab publication reports too-late without blocking control") {
     import FakeEngine.*
-    val python = sys.env.getOrElse("SDFX_TEST_PYTHON", sys.error("SDFX_TEST_PYTHON is required"))
+    val pythonSetting = sys.env.get("SDFX_TEST_PYTHON").filter(_.trim.nonEmpty)
+    assume(pythonSetting.nonEmpty, "Set SDFX_TEST_PYTHON to a Python with the Temporal Lab dependencies to run this integration test")
+    val python = pythonSetting.get
     val project = Paths.get("").toAbsolutePath.normalize()
     val helper = Paths.get(this.getClass.getResource("/temporal_real_publication_worker.py").toURI)
     val dir = Files.createTempDirectory("sdfx-temporal-publication-")
