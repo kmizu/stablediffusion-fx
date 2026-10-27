@@ -7,7 +7,7 @@ plugin, with licence notices), progress, the next task, environment paths and ve
 
 ## Project
 
-stablediffusion-fx is a standalone Stable Diffusion app with four parts:
+Stable Diffusion NUI (`stablediffusion-nui`, formerly Stable Diffusion FX / SDFX) is a standalone Stable Diffusion app with four parts:
 
 - `core/`, `engine/`, `mcp/`, `plugins/`, `ui/`: the Scala 3 + JavaFX client, built with sbt.
 - `python/sdfx/`: the diffusers engine. The client starts it as `python -m sdfx` and talks JSON Lines over stdio
@@ -17,10 +17,14 @@ stablediffusion-fx is a standalone Stable Diffusion app with four parts:
 
 The parent directory (reForge) is reference material only. Never import or launch it.
 
+The Windows package uses `SDNUI/SDNUI.exe`; the v0.03 ZIP is `SDNUI-v0.03-windows-x64.zip`.
+Keep internal `sdfx` packages, `SDFX_*` environment variables and existing settings compatible.
+Historical release names and verification paths retain their original spelling.
+
 ## Commands
 
 - Scala tests: `%LOCALAPPDATA%\Coursier\data\bin\sbt.bat -batch test`
-- Fat jar: `sbt.bat -batch ui/assembly`, which writes `target/stablediffusion-fx.jar` (run it with Java 21).
+- Fat jar: `sbt.bat -batch ui/assembly`, which writes `target/stablediffusion-nui.jar` (run it with Java 21).
 - Python tests:
   - `python/.venv-smoke/Scripts/python.exe -m pytest` (GPU venv, torch).
   - `python/.venv-test/Scripts/python.exe -m pytest` (no torch).
@@ -37,4 +41,4 @@ The parent directory (reForge) is reference material only. Never import or launc
   target done.
 - **Line endings**: write files with LF (`.gitattributes`).
 - **Commits**: one commit per wave, saying what was added and how it was verified. Push to `main` of the private
-  repo `kmizu/stablediffusion-fx`.
+  repo `kmizu/stablediffusion-nui`.

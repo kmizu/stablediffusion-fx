@@ -1,12 +1,14 @@
-# Stable Diffusion FX
+# Stable Diffusion NUI
 
 ローカルのモデルを、ネイティブUIで。画像生成からバッチプレビュー、ギャラリー、ZIP保存まで。
 
-![SDFXのネイティブ画面。左にプロンプトと生成設定、右に生成画像と20枚のギャラリー、ZIP保存ボタン。](docs/images/sdfx-desktop.png)
+リポジトリ: [kmizu/stablediffusion-nui](https://github.com/kmizu/stablediffusion-nui)。旧名は Stable Diffusion FX / SDFX。
 
-*実際のSDFX画面：4枚同時 × 5回のバッチ生成結果。*
+![改名前のSDFXのネイティブ画面。左にプロンプトと生成設定、右に生成画像と20枚のギャラリー、ZIP保存ボタン。](docs/images/sdfx-desktop.png)
 
-**English summary.** Stable Diffusion FX is a standalone desktop app for local Stable Diffusion image generation:
+*改名前の SDFX で撮影した旧版の画面：4枚同時 × 5回のバッチ生成結果。現在の製品名は Stable Diffusion NUI。*
+
+**English summary.** Stable Diffusion NUI is a standalone desktop app for local Stable Diffusion image generation:
 a Scala 3 + JavaFX 21 UI, an MCP server so AI agents (Claude Code etc.) can generate images, and a Python
 `diffusers` engine that the UI drives over a JSON Lines protocol. It lives entirely in this folder and does not
 need the parent reForge/A1111 repository (it can optionally *read* an existing A1111/reForge models folder).
@@ -22,7 +24,7 @@ Requirements: JDK 17+, Python 3.10-3.12, an NVIDIA GPU is recommended. Quick sta
 - UI: Scala 3 + JavaFX 21(`ui` モジュール)
 - MCP サーバー: AI エージェントから画像生成を呼べる(`mcp` モジュール)
 - 推論エンジン: Python + diffusers(`python/sdfx`)。UI/MCP から子プロセスとして起動され、stdin/stdout の JSON Lines で通信します
-- ビルド: sbt 1.10.11 + sbt-assembly(fat jar 1 本 `target/stablediffusion-fx.jar`)
+- ビルド: sbt 1.10.11 + sbt-assembly(fat jar 1 本 `target/stablediffusion-nui.jar`)
 
 このフォルダだけで完結します。親ディレクトリの reForge には依存しません。
 
@@ -74,15 +76,17 @@ reForge の標準スクリプトと内蔵拡張をすべて書き直して同梱
 - ビルドする場合は sbt(jar が既にあれば不要)
 - Windows / Linux / macOS(JavaFX は OS ごとの jar をビルド時に取り込みます。別 OS 用の jar はその OS でビルドしてください)
 
-## Windows 配布版 v0.02
+## Windows 配布版 v0.03
 
-Windows x64 の配布 ZIP を入手したら、書き込み可能なフォルダに展開し、`SDFX\SDFX.exe` を起動します。
+Windows x64 の `SDNUI-v0.03-windows-x64.zip` を入手したら、書き込み可能なフォルダに展開し、`SDNUI\SDNUI.exe` を起動します。
 Java ランタイムは同梱されています。Python 3.10〜3.12 は別途必要で、初回の通常起動時に専用環境と依存パッケージをセットアップできます。モデルは同梱されません。Settings → Model folders → **Add A1111/reForge install...** から既存のモデルフォルダを利用できます。詳しい手順は [Windows 配布版](docs/WINDOWS_RELEASE.md) を参照してください。
+
+旧版 v0.01 / v0.02 の配布物は旧名 SDFX のままです。互換性のため、Python モジュール `sdfx`、`SDFX_HOME` / `SDFX_MCP_*`、`-Dsdfx.home` と既存の設定ファイル名は変更していません。
 
 ## クイックスタート
 
 ```
-# 1. ビルド(target/stablediffusion-fx.jar ができる)
+# 1. ビルド(target/stablediffusion-nui.jar ができる)
 scripts\build.bat          # Linux/macOS: scripts/build.sh   (中身は sbt -batch ui/assembly)
 
 # 2. 起動
@@ -210,11 +214,11 @@ GUI なしで専用エンジンを起動します。`run.bat --mcp` は JavaFX �
 stdout には JSON-RPC だけを出します(ログは stderr)。
 
 ```
-claude mcp add stablediffusion-fx -- D:/path/to/stablediffusion-fx/run.bat --mcp
+claude mcp add stablediffusion-nui -- D:/path/to/stablediffusion-nui/run.bat --mcp
 # jar を直接
-claude mcp add stablediffusion-fx -- java -cp D:/path/to/stablediffusion-fx/target/stablediffusion-fx.jar sdfx.mcp.McpMain --home D:/path/to/stablediffusion-fx
+claude mcp add stablediffusion-nui -- java -cp D:/path/to/stablediffusion-nui/target/stablediffusion-nui.jar sdfx.mcp.McpMain --home D:/path/to/stablediffusion-nui
 # GPU なしで試す
-claude mcp add stablediffusion-fx-dry -- D:/path/to/stablediffusion-fx/run.bat --mcp --dry-run
+claude mcp add stablediffusion-nui-dry -- D:/path/to/stablediffusion-nui/run.bat --mcp --dry-run
 ```
 
 `.mcp.json` に書く場合は `.mcp.json.example` を参照してください。`McpMain` のオプション: `--home DIR`、`--dry-run`、
@@ -227,8 +231,8 @@ Settings → MCP で **Enable MCP HTTP server** を有効にし(ポート既定 
 エンドポイントは `http://127.0.0.1:7861/mcp`(127.0.0.1 のみ)。ジョブは GUI のキューを通るので、プレビューとギャラリーに出ます。
 
 ```
-claude mcp add --transport http stablediffusion-fx-gui http://127.0.0.1:7861/mcp
-claude mcp add --transport http stablediffusion-fx-gui http://127.0.0.1:7861/mcp --header "Authorization: Bearer <token>"
+claude mcp add --transport http stablediffusion-nui-gui http://127.0.0.1:7861/mcp
+claude mcp add --transport http stablediffusion-nui-gui http://127.0.0.1:7861/mcp --header "Authorization: Bearer <token>"
 ```
 
 共有マシンではトークンを必ず設定してください(未設定だと同じマシンの他プロセスが生成・キュー操作・許可フォルダの画像読み出しをできます)。
@@ -243,7 +247,7 @@ base64 / `data:` URI は常に使えます。
 ## アーキテクチャ
 
 ```
- +------------------------ target/stablediffusion-fx.jar (sbt assembly) -------------------------+
+ +------------------------ target/stablediffusion-nui.jar (sbt assembly) -------------------------+
  |                                                                                               |
  |   ui (Scala 3 + JavaFX 21)            mcp (stdio / Streamable HTTP, sdfx.mcp.McpMain)         |
  |     sdfx.ui.Launcher                    |                                                      |
