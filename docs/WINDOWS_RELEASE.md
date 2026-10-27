@@ -1,6 +1,6 @@
 # Stable Diffusion NUI — Windows v0.03 package
 
-These instructions describe the v0.03 package under the new product name. Earlier
+These instructions describe the planned v0.03 package under the new product name. Earlier
 v0.01 / v0.02 assets retain their original names (for example,
 `SDFX-v0.02-windows-x64.zip` and `SDFX/SDFX.exe`). Internal Python/Scala `sdfx`
 names, `SDFX_HOME`, `SDFX_MCP_*` and existing configuration files remain compatible.
