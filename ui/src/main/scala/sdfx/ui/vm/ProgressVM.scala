@@ -22,6 +22,7 @@ final case class ProgressState(
     hiresSeen: Boolean = false,
     image: Int = 0,
     images: Int = 1,
+    batchSize: Int = 1,
     etaS: Double = 0,
     status: String = "",
     done: Int = 0,
@@ -43,7 +44,10 @@ final case class ProgressState(
       val parts = Seq(
         Option.when(base.total > 0)(s"Step ${base.text}"),
         Option.when(hiresSeen && hires.total > 0)(s"Hires ${hires.text}"),
-        Option.when(images > 1)(s"image ${image + 1}/$images"),
+        Option.when(images > 1)(
+          if batchSize > 1 then
+            s"Batch ${image / batchSize + 1}/${(images + batchSize - 1) / batchSize} · images ${image + 1}–${math.min(images, image + batchSize)}/$images"
+          else s"image ${image + 1}/$images"),
         Option.when(etaS > 0)(s"ETA ${ProgressVM.formatEta(etaS)}")
       ).flatten
       parts.mkString(" · ")
@@ -72,7 +76,7 @@ object ProgressVM:
           val hires = if s.hires.isDone then PassProgress(0, s.hires.total) else s.hires
           s.copy(base = PassProgress(p.step, p.total), hires = hires)
       val st = if text.nonEmpty then withPass.copy(status = text, done = done, total = total) else withPass
-      st.copy(image = p.image, images = math.max(1, p.images), etaS = p.etaS)
+      st.copy(image = p.image, images = math.max(1, p.images), batchSize = math.max(1, p.batchSize), etaS = p.etaS)
     case JobEvent.Status(id, text, done, total) if s.current.contains(id) =>
       s.copy(status = text, done = done, total = total)
     case JobEvent.Preview(id, b64, _) if s.current.contains(id) =>

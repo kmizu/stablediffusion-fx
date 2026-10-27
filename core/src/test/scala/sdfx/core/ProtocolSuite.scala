@@ -40,6 +40,12 @@ class ProtocolSuite extends munit.FunSuite:
     assertEquals(ev("""{"event":"preview","jpeg_b64":null}"""), None)
   }
 
+  test("EngineEvent.parse: actual batch size with legacy and invalid fallback") {
+    assertEquals(ev("""{"event":"progress","step":3,"total":20,"image":4,"images":20,"batch_size":4}"""),
+      Some(Progress(3, 20, image = 4, images = 20, batchSize = 4)))
+    assertEquals(ev("""{"event":"progress","batch_size":0}"""), Some(Progress(0, 0)))
+  }
+
   test("EngineEvent.parse: log") {
     assertEquals(ev("""{"event":"log","level":"warning","message":"VRAM low"}"""), Some(Log("warning", "VRAM low")))
     assertEquals(ev("""{"event":"log"}"""), Some(Log("info", "")))

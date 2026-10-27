@@ -108,3 +108,14 @@ class ProgressVMSuite extends munit.FunSuite:
     assertEquals(ProgressVM.formatEta(65.4), "1:05")
     assertEquals(ProgressVM.formatEta(3725), "1:02:05")
   }
+
+  test("batched inference labels all simultaneous images and each iteration") {
+    var state = ProgressVM.reduce(ProgressState(), JobEvent.JobStarted(j1))
+    for iteration <- 0 until 5 do
+      state = ProgressVM.reduce(state, JobEvent.Progress("j1",
+        EngineEvent.Progress(2, 20, image = iteration * 4, images = 20, batchSize = 4), "", 0, 0))
+      assertEquals(state.stepText, s"Step 2/20 · Batch ${iteration + 1}/5 · images ${iteration * 4 + 1}–${iteration * 4 + 4}/20")
+    // A subsequent single-image refinement is reported as single, even within a batch job.
+    state = ProgressVM.reduce(state, prog(1, 10, image = 17, images = 20))
+    assertEquals(state.stepText, "Step 1/10 · image 18/20")
+  }
