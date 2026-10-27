@@ -72,7 +72,8 @@ case class Settings(
     modelPreviewOverrides: Map[String, String] = Map.empty,
     modelPreviewFolders: Map[String, Seq[String]] = Map.empty,
     wdV3Model: Option[String] = None,
-    wdV3Tags: Option[String] = None
+    wdV3Tags: Option[String] = None,
+    tagAutocompleteCsv: Option[String] = None
 ) derives RW
 
 case class SettingsRecovery(reason: String, originalSha256: Option[String])

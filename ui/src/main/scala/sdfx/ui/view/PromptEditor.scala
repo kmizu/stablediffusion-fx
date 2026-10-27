@@ -14,6 +14,9 @@ final class PromptEditor(ctx: UiContext, prompt: StringProperty, negative: Strin
   val promptArea: TextArea = area(prompt, "Prompt — what you want to see (Ctrl+Enter to generate)", 4)
   val negativeArea: TextArea = area(negative, "Negative prompt — what to avoid", 2)
   private var lastFocused: TextArea = promptArea
+  private val tagEditors = Seq(promptArea, negativeArea).map(a => new TagAutocomplete(a, ctx.tagDictionary))
+  def isComposingInput: Boolean = tagEditors.exists(_.isComposing)
+  def completionVisible: Boolean = tagEditors.exists(_.isShowing)
 
   Seq(promptArea, negativeArea).foreach(a => a.focusedProperty.addListener((_, _, f) => if f then lastFocused = a))
 
@@ -144,6 +147,7 @@ final class PromptEditor(ctx: UiContext, prompt: StringProperty, negative: Strin
     6,
     W.button("✚ LoRA", "Insert a <lora:name:1> tag at the caret (searchable list)")(loraPopup.show(loraButtonAnchor)),
     W.button("Networks…", "Browse network previews")(openNetworks()),
+    W.button("Tags…", "Configure local CSV tag suggestions")(ctx.tagDictionary.configure()),
     W.spacer(),
     styleBox,
     W.iconButton("⤓", "Apply the selected style to the prompts")(applyStyle()),
