@@ -2,7 +2,7 @@ package sdfx.core.config
 
 import java.nio.file.{Files, Path, Paths}
 
-/** The application root (`stablediffusion-fx/`). Everything the app owns lives below it. */
+/** The application root (`stablediffusion-nui/`). Everything the app owns lives below it. */
 final case class AppHome(root: Path):
   def resolve(p: String): Path =
     val path = Paths.get(p)
@@ -19,13 +19,14 @@ final case class AppHome(root: Path):
     d
 
 object AppHome:
-  /** Resolution order: -Dsdfx.home, SDFX_HOME, the working directory (or its stablediffusion-fx child), jar location. */
+  /** Keep legacy settings keys and folder support when discovering the renamed application. */
   def detect(): AppHome =
     def valid(p: Path) = Files.isDirectory(p.resolve("python").resolve("sdfx"))
     val candidates = Seq(
       Option(System.getProperty("sdfx.home")).map(Paths.get(_)),
       Option(System.getenv("SDFX_HOME")).map(Paths.get(_)),
       Some(Paths.get("").toAbsolutePath),
+      Some(Paths.get("").toAbsolutePath.resolve("stablediffusion-nui")),
       Some(Paths.get("").toAbsolutePath.resolve("stablediffusion-fx")),
       jarDir.map(_.getParent),
       jarDir

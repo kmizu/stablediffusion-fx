@@ -131,7 +131,7 @@ final class TopBar(
       W.tip(mcpChip, s"MCP HTTP server listening on $u (Streamable HTTP). Configure it in Settings › MCP.")
     }
 
-  private val title = W.label("SDFX", "app-title")
+  private val title = W.label("SDNUI", "app-title")
 
   val node: HBox =
     val h = new HBox(

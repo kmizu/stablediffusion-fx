@@ -48,7 +48,7 @@ class McpServerSuite extends munit.FunSuite:
     val r = s.handle(request("initialize", ujson.Obj("protocolVersion" -> "1999-01-01")), _ => ()).get("result")
     assertEquals(r("protocolVersion").str, "2025-06-18")
     assertEquals(r("capabilities")("tools")("listChanged").bool, false)
-    assertEquals(r("serverInfo")("name").str, "stablediffusion-fx")
+    assertEquals(r("serverInfo")("name").str, "stablediffusion-nui")
     assert(r("instructions").str.contains("txt2img"))
     assertEquals(s.handle(ujson.Obj("jsonrpc" -> "2.0", "method" -> "notifications/initialized"), _ => ()), None)
     assert(s.initialized)

@@ -65,7 +65,7 @@ trait McpTool:
       "idempotentHint" -> idempotent, "openWorldHint" -> false)
     o
 
-final case class ServerInfo(name: String = "stablediffusion-fx", version: String = Version.app, instructions: String = McpServer.DefaultInstructions)
+final case class ServerInfo(name: String = "stablediffusion-nui", version: String = Version.app, instructions: String = McpServer.DefaultInstructions)
 
 /** Transport-agnostic MCP server (one instance per client session).
   *
@@ -194,7 +194,7 @@ final class McpServer(tools: Seq[McpTool], val info: ServerInfo = ServerInfo()):
     ujson.Obj(
       "protocolVersion" -> v,
       "capabilities" -> ujson.Obj("tools" -> ujson.Obj("listChanged" -> false)),
-      "serverInfo" -> ujson.Obj("name" -> info.name, "title" -> "Stable Diffusion FX", "version" -> info.version),
+      "serverInfo" -> ujson.Obj("name" -> info.name, "title" -> "Stable Diffusion NUI", "version" -> info.version),
       "instructions" -> info.instructions
     )
 
@@ -260,7 +260,7 @@ object McpServer:
   val CancelMemoryMillis: Long = 60_000
 
   val DefaultInstructions: String =
-    """Stable Diffusion FX: local image generation (SD1.5 / SDXL checkpoints, LoRA, hires fix, img2img / inpaint, X/Y/Z grids).
+    """Stable Diffusion NUI: local image generation (SD1.5 / SDXL checkpoints, LoRA, hires fix, img2img / inpaint, X/Y/Z grids).
       |Typical flow: get_status -> list_models (set_model if needed) -> txt2img with a descriptive prompt.
       |Images are saved as PNG with A1111-style "parameters" infotext under the app's outputs directory. Results contain
       |downscaled previews (max_image_side) plus the full-size file path, seed and infotext; reuse a seed to reproduce or vary.
