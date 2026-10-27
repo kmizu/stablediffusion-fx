@@ -350,7 +350,8 @@ def main():
             result(rid, {})
         elif typ == "get_state":
             result(rid, {"loaded": state["loaded"], "vae": state["vae"], "last_generation": state["last_generation"],
-                         "load_count": state["load_count"], "pid": os.getpid(), "last_extra": state["last_extra"]})
+                         "load_count": state["load_count"], "pid": os.getpid(), "last_extra": state["last_extra"],
+                         "requests": list(state["requests"])})
         elif typ == "list_models":
             result(rid, {"models": [dict(f, kind="sd15") for f in list_dir(params.get("dirs", []), {".safetensors", ".ckpt"})]})
         elif typ == "list_files" and opt("--fail-list") == params.get("kind"):

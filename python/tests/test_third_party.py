@@ -2,6 +2,8 @@
 import base64
 import importlib.util
 import json
+import subprocess
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -43,8 +45,32 @@ def test_missing_upstream_file_preserves_archived_notice(tmp_path, monkeypatch):
     monkeypatch.setattr(tp, "ROOT", str(tmp_path))
     monkeypatch.setattr(tp, "BASE", [("example/project", "reimplemented", "test")])
     monkeypatch.setattr(tp, "gh_license", lambda repo: (None, None))
+    monkeypatch.setattr(sys, "argv", ["pytest", "-q", "--unrelated-option"])
     tp.main()
     row = next(line for line in (tmp_path / "THIRD_PARTY_NOTICES.md").read_text().splitlines()
                if line.startswith("| [example/project]"))
     assert "[text](licenses/example__project.txt)" in row
     assert archived.read_text() == "previously retrieved licence"
+
+
+def test_explicit_archived_option_uses_local_pinned_license(tmp_path, monkeypatch):
+    import hashlib
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs/extensions-status.json").write_text("[]", encoding="utf-8")
+    (tmp_path / "licenses").mkdir()
+    (tmp_path / "licenses/example__project.txt").write_bytes(b"pinned")
+    (tmp_path / "THIRD_PARTY_NOTICES.md").write_text("", encoding="utf-8")
+    monkeypatch.setattr(tp, "ROOT", str(tmp_path))
+    monkeypatch.setattr(tp, "BASE", [("example/project", "reimplemented", "test")])
+    monkeypatch.setattr(tp, "PINNED_LICENSES", {"example/project": (
+        "commit", "LICENSE", hashlib.sha256(b"pinned").hexdigest(), "MIT")})
+    monkeypatch.setattr(tp, "gh_license", lambda repo: pytest.fail("network called"))
+    tp.main(["--use-archived-licenses"])
+    assert "MIT ([text](licenses/example__project.txt))" in (tmp_path / "THIRD_PARTY_NOTICES.md").read_text()
+
+
+def test_cli_help_receives_real_process_arguments():
+    result = subprocess.run([sys.executable, str(Path(tp.__file__)), "--help"],
+                            capture_output=True, text=True, timeout=30)
+    assert result.returncode == 0
+    assert "--use-archived-licenses" in result.stdout

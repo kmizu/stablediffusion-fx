@@ -14,6 +14,10 @@ private[engine] final case class GenerationBody(requestType: String, bodyJson: S
 final class GenerationHandle(val result: Future[GenerationResult], interruptFn: () => Unit):
   def interrupt(): Unit = interruptFn()
 
+/** One Temporal Lab operation and its scoped cancellation. */
+final class TemporalLabHandle(val result: Future[TemporalLabResult], interruptFn: () => Future[InterruptionDecision]):
+  def interrupt(): Future[InterruptionDecision] = interruptFn()
+
 object GenerationMode:
   val Txt2Img: String = Protocol.Types.Txt2Img
   val Img2Img: String = Protocol.Types.Img2Img
@@ -83,6 +87,16 @@ final class EngineClient(val supervisor: EngineSupervisor):
       () => supervisor.interruptOwned(requestOwner))
 
   def upscale(req: UpscaleRequest): Future[ImagePathResult] = call[ImagePathResult](Protocol.Types.Upscale, Json.toJs(req))
+
+  /** A unique owner prevents stale controls from interrupting another generation or window. */
+  def temporalLab(req: TemporalLabRequest, listener: EngineEvent => Unit = _ => ()): TemporalLabHandle =
+    val owner = java.util.UUID.randomUUID().toString
+    val gate = new TemporalLabCancelGate(owner, id => supervisor.captureInterrupt(Some(id)))
+    val result = supervisor.requestTemporal(req.params, listener, owner,
+      () => gate.beforeDispatch(), () => gate.dispatched())
+      .map(Json.fromJs[TemporalLabResult](_))
+    result.onComplete(_ => gate.completed())(using ExecutionContext.parasitic)
+    new TemporalLabHandle(result, () => gate.cancel())
 
   def preprocess(req: PreprocessRequest): Future[ImagePathResult] = call[ImagePathResult](Protocol.Types.Preprocess, Json.toJs(req))
 

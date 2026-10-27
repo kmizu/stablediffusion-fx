@@ -194,6 +194,8 @@ class Engine(BaseEngine):
             f.append("controlnet")
         if cn_mod.has_controlnet_aux():
             f.append("controlnet_aux")
+        if cn_mod._has("cv2"):
+            f.append("temporal_lab")
         if upscalers.has_spandrel():
             f.append("spandrel")
         if hasattr(diffusers, "AutoencoderTiny"):

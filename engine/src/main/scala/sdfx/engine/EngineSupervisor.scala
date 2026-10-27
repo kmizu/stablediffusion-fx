@@ -45,7 +45,8 @@ final class EngineSupervisor(
 
   /** Requests that make the engine "busy" (everything that may take long). */
   val heavyTypes: Set[String] = Set(Protocol.Types.Txt2Img, Protocol.Types.Img2Img, Protocol.Types.Upscale,
-    Protocol.Types.Preprocess, Protocol.Types.LoadModel, Protocol.Types.SetVae, Protocol.Types.SystemBenchmark, Protocol.Types.VaeTools)
+    Protocol.Types.Preprocess, Protocol.Types.LoadModel, Protocol.Types.SetVae, Protocol.Types.SystemBenchmark, Protocol.Types.VaeTools,
+    Protocol.Types.TemporalLab)
   private val readerTypes: Set[String] = Set(Protocol.Types.Ping, Protocol.Types.Interrupt,
     Protocol.Types.InterruptionProtection, Protocol.Types.RestartAuthorization, Protocol.Types.SystemStatus, Protocol.Types.Shutdown)
   private val loadTypes: Set[String] = Set(Protocol.Types.LoadModel, Protocol.Types.SetVae)
@@ -294,6 +295,24 @@ final class EngineSupervisor(
         if heavy then markBusy(-1, p)
         r
       }(using ExecutionContext.parasitic)
+    }
+
+  /** Inform the cancellation gate only after the owned envelope has been written. */
+  private[engine] def requestTemporal(params: ujson.Value, onEvent: EngineEvent => Unit,
+                                      owner: String, beforeDispatch: () => Future[Boolean],
+                                      onDispatched: () => Unit): Future[ujson.Value] =
+    ensureStarted().flatMap { p =>
+      beforeDispatch().flatMap { admitted =>
+        if !admitted then Future.failed(EngineError(Protocol.ErrorCodes.Interrupted, "interrupted before start"))
+        else
+          markBusy(+1, p)
+          val result = p.requestOwned(Protocol.Types.TemporalLab, params, onEvent, Some(owner))
+          onDispatched()
+          result.transform { r =>
+            markBusy(-1, p)
+            r
+          }(using ExecutionContext.parasitic)
+      }
     }
 
   /** Reader controls bypass the worker/reload future and never block the calling (possibly FX) thread. */

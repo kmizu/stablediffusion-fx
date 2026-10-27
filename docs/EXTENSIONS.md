@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 104, todo 198, na 51.
+Totals: done 105, todo 197, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-fx | Why not applicable |
 |---|---|---|---|---|---|
@@ -128,7 +128,7 @@ Totals: done 104, todo 198, na 51.
 | 119 | [Regional Prompter](https://github.com/hako-mikan/sd-webui-regional-prompter.git) | 1815 | todo | `regional_prompter` |  |
 | 120 | [Auto Translate](https://github.com/hyd998877/stable-diffusion-webui-auto-translate-language.git) | 34 | todo | `prompt_translate` |  |
 | 121 | [Prompt Translator](https://github.com/ParisNeo/prompt_translator.git) | 163 | todo | `prompt_translate` |  |
-| 122 | [Abysz LAB](https://github.com/AbyszOne/Abysz-LAB-Ext.git) | 148 | todo | `abysz_lab` |  |
+| 122 | [Abysz LAB](https://github.com/AbyszOne/Abysz-LAB-Ext.git) | 148 | done | `core:temporal-lab` |  |
 | 123 | [Negative Prompt Weight](https://github.com/muerrilla/stable-diffusion-NPW.git) | 111 | done | `negative_prompt_weight` |  |
 | 124 | [Discord - Dynamic Rich Presence](https://github.com/davehornik/sd-discord-rich_presence.git) | 23 | na | `account` | needs a third-party account / paid API key and posts data to that service |
 | 125 | [PBRemTools](https://github.com/mattyamonaca/PBRemTools.git) | 369 | done | `remove_background` |  |

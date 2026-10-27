@@ -29,6 +29,10 @@ BASE = [
      "Kohya HRFix, MultiDiffusion, Latent Modifier, Never OOM, IP-Adapter, ControlLLLite, PhotoMaker, Fooocus inpaint, SVD, "
      "Z123, preprocessors)"),
     ("comfyanonymous/ComfyUI", "ported", "sigma schedules, APG / Mahiro / RescaleCFG guidance math, Deep Shrink, FreeU"),
+    ("AbyszOne/Abysz-LAB-Ext", "ported", "Temporal Lab DFI, deflicker, fuse and frame-extraction controls and "
+     "algorithms informed by the pinned implementation; numerical equivalence is not claimed. Native Inter Blur "
+     "is active, video sampling uses frame-index timestamps, and output is staged into a new directory; "
+     "[source deff0d4](https://github.com/AbyszOne/Abysz-LAB-Ext/tree/deff0d4b4a208f862299b14b93e088f613373153)"),
     ("crowsonkb/k-diffusion", "ported", "Karras / exponential / polyexponential sigma schedules"),
     ("mcmonkeyprojects/sd-dynamic-thresholding", "ported", "Dynamic Thresholding (CFG-Fix) math"),
     ("tfernd/HyperTile", "ported", "HyperTile attention tiling"),
@@ -131,6 +135,9 @@ BASE = [
 # Keep these source-pinned original LICENSE bytes; do not normalize newlines.
 # (commit, license path, SHA-256, SPDX)
 PINNED_LICENSES = {
+    "AbyszOne/Abysz-LAB-Ext": (
+        "deff0d4b4a208f862299b14b93e088f613373153", "LICENSE",
+        "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986", "GPL-3.0"),
     "CurtisDS/stupid-nsfw-card-blur-a1111": (
         "b2cdcebf97d1074278fb84e0a6eec3006dab0fe1", "LICENSE.txt",
         "e6b9326517557ffdbf4a4a2a9f10ab20a037e95dd08645412e64a8baf7549742", "MIT"),
@@ -199,11 +206,11 @@ def archived_license_labels():
     return labels
 
 
-def main():
+def main(argv=()):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--use-archived-licenses", action="store_true",
                         help="regenerate notices from checked-in license files and existing SPDX labels; no network")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     archived = archived_license_labels() if args.use_archived_licenses else {}
     status = json.load(open(os.path.join(ROOT, "docs", "extensions-status.json"), encoding="utf-8"))
     entries = list(BASE)
@@ -283,4 +290,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])

@@ -72,6 +72,11 @@ class BaseEngine:
     def features(self) -> list[str]:
         return ["prevent_interrupt"]
 
+    def temporal_lab(self, params: dict, ctx: JobContext) -> dict:
+        """Run an owned, serialized native frame-processing request."""
+        from . import temporal_lab
+        return temporal_lab.run(params, ctx)
+
     def preprocessors(self) -> list[str]:
         return ["none"]
 

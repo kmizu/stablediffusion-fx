@@ -15,12 +15,18 @@ from . import inpaint, models, schedulers
 
 try:  # warm optional imports on the main thread: a first numpy import inside the worker thread can stall
     import numpy  # noqa: F401  (for many seconds on Windows when stdio are pipes)
+    HAVE_NUMPY = True
 except ImportError:
-    pass
+    HAVE_NUMPY = False
 from .base import LATENT_UPSCALERS, BaseEngine
 from .images import (HAVE_PIL, Image, ImageFilter, ImageOps, load_mask, load_rgb, next_output_path, png_size,
                      resize_image, save_png, to_jpeg_b64, write_png_rgb)
-from . import sampling_ext
+# The sampling hooks use NumPy; dry-run itself still starts without it.
+if HAVE_NUMPY:
+    from . import sampling_ext
+    SAMPLING_HOOKS = tuple(sampling_ext.HOOKS)
+else:
+    SAMPLING_HOOKS = ()
 from .params import hires_steps, img2img_steps, resolve_seed
 from .protocol import INVALID_PARAMS, MODEL_LOAD_FAILED, UNSUPPORTED, EngineError, JobContext
 
@@ -72,8 +78,47 @@ class FakeEngine(BaseEngine):
         return ["freeu", "dynamic_thresholding", "hypertile", "pag", "controlnet", "apg", "mahiro", "rescale_cfg",
                 "model_sampling", "kohya_hrfix", "multidiffusion", "latent_modifier", "soft_inpainting", "sag", "neveroom",
                 "reference", "revision", "ip_adapter", "controllllite", "fooocus_inpaint", "photomaker", "img2imgalt",
-                "face_restore", "caption", "img2vid", "novel_view", "ldsr", "marigold", "adetailer", "weight_gradient", "negpip", "neutral_prompt", "prompt_fusion", "save_intermediate", "latent_upscale", "composable_lora", "system_info", "prevent_interrupt"] + list(sampling_ext.HOOKS) + (
+                "face_restore", "caption", "img2vid", "novel_view", "ldsr", "marigold", "adetailer", "weight_gradient", "negpip", "neutral_prompt", "prompt_fusion", "save_intermediate", "latent_upscale", "composable_lora", "system_info", "prevent_interrupt"] + list(SAMPLING_HOOKS) + (
+                    ["temporal_lab"] if HAVE_NUMPY and HAVE_PIL else []) + (
                     ["custom_code"] if os.environ.get("SDFX_ALLOW_CODE") == "1" else [])
+
+    def temporal_lab(self, params: dict, ctx: JobContext) -> dict:
+        """Validate synthetic requests only: do not read or write user files."""
+        if not HAVE_NUMPY or not HAVE_PIL:
+            raise EngineError(UNSUPPORTED, "Temporal Lab dry-run requires NumPy and Pillow; install the Python dependencies")
+        from .temporal_lab import _dfi_options, _number, _path, _transaction
+        if not isinstance(params, dict):
+            raise EngineError(INVALID_PARAMS, "Temporal Lab parameters must be an object")
+        operation = params.get("operation")
+        if not isinstance(operation, str) or operation not in ("dfi", "preview", "deflicker", "fuse", "extract"):
+            raise EngineError(INVALID_PARAMS, "unknown Temporal Lab operation")
+        try:
+            ctx.check_interrupt()
+            if operation in ("dfi", "preview"):
+                _dfi_options(params)
+                sources = [_path(params, "reference_dir"), _path(params, "generated_dir")]
+                if operation == "preview":
+                    _number(params, "frame_index", 1, 1, 9999, integer=True)
+            elif operation == "deflicker":
+                sources = [_path(params, "frames_dir")]
+                _number(params, "blend", 0, 0, 1)
+                _number(params, "overlay", 0, 0, 1)
+                if not isinstance(params.get("normalize", False), bool):
+                    raise ValueError("normalize must be boolean")
+            elif operation == "fuse":
+                sources = [_path(params, "style_dir"), _path(params, "video_dir")]
+                _number(params, "strength", 0.5, 0.1, 1)
+            else:
+                sources = [_path(params, "video_path")]
+                _number(params, "fps", 0, 0, 1000)
+            if operation != "preview":
+                _transaction(params, sources)  # validates names and path form, never enters or writes
+            ctx.check_interrupt()
+            return {"operation": operation, "dry_run": True}
+        except EngineError:
+            raise
+        except (ValueError, OSError) as exc:
+            raise EngineError(INVALID_PARAMS, str(exc)) from exc
 
     def preprocessors(self) -> list[str]:
         return (["none", "canny", "depth", "invert", "inpaint", "recolor_luminance", "recolor_intensity", "tile_resample",

@@ -165,6 +165,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
       }
   val comparison = new ImageComparisonTab(ctx, comparisonSource, () => preview.currentPath)
   val tokenizer = new TokenizerTab(ctx, () => vms(activeMode).prompt.get)
+  val temporalLab = new TemporalLabTab(ctx)
   val systemInfo = new SystemInfoTab(ctx)
   val stylesEditor = new StylesEditorTab(ctx)
   val vaeTools = new VaeToolsTab(ctx)
@@ -181,6 +182,8 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   Mode.values.foreach(m => tabs.getTabs.add(modeTabs(m)))
   private val pngTab = new Tab("PNG Info", pngInfo.node)
   private val extrasTab = new Tab("Extras", extras.node)
+  private val temporalLabTab = new Tab("Temporal Lab", temporalLab.node)
+  temporalLabTab.setId("temporal-lab-tab")
   private val tokenizerTab = new Tab("Tokenizer", tokenizer.node)
   tokenizerTab.setId("tokenizer-tab")
   private val systemInfoTab = new Tab("System Info", systemInfo.node)
@@ -191,7 +194,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   stylesTab.setId("styles-editor-tab")
   private val comparisonTab = new Tab("Comparison", comparison.node)
   comparisonTab.setId("comparison-tab")
-  tabs.getTabs.addAll(pngTab, extrasTab, tokenizerTab, systemInfoTab, stylesTab, comparisonTab, vaeToolsTab)
+  tabs.getTabs.addAll(pngTab, extrasTab, tokenizerTab, temporalLabTab, systemInfoTab, stylesTab, comparisonTab, vaeToolsTab)
   private var comparisonDivider = initial.dividers.get("main").flatMap(_.headOption).getOrElse(.42)
   private var lastMode: Mode = Mode.Txt2Img
   tabs.getSelectionModel.selectedItemProperty.addListener((_, previous, t) =>
@@ -762,6 +765,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
       if t == "pnginfo" then tabs.getSelectionModel.select(pngTab)
       if t == "extras" then tabs.getSelectionModel.select(extrasTab)
       if t == "tokenizer" then tabs.getSelectionModel.select(tokenizerTab)
+      if t == "temporal_lab" then tabs.getSelectionModel.select(temporalLabTab)
       if t == "systeminfo" then tabs.getSelectionModel.select(systemInfoTab)
       if t == "styles" then tabs.getSelectionModel.select(stylesTab)
       if t == "comparison" then tabs.getSelectionModel.select(comparisonTab)
@@ -778,6 +782,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
       case Some(t) if t eq pngTab    => "pnginfo"
       case Some(t) if t eq extrasTab => "extras"
       case Some(t) if t eq tokenizerTab => "tokenizer"
+      case Some(t) if t eq temporalLabTab => "temporal_lab"
       case Some(t) if t eq systemInfoTab => "systeminfo"
       case Some(t) if t eq stylesTab => "styles"
       case Some(t) if t eq comparisonTab => "comparison"
@@ -843,6 +848,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
       "preset session" -> (() => if presetSession != null then presetSession.close()),
       "preset stage" -> (() => if presetStage != null then presetStage.close()),
       "system information" -> (() => systemInfo.dispose()),
+      "temporal lab" -> (() => temporalLab.dispose()),
       "styles editor" -> (() => stylesEditor.dispose()),
       "VRAM timer" -> (() => vramPoll.stop()),
       "MCP controller" -> (() => mcpExec.execute(() => mcp.close())),

@@ -20,11 +20,13 @@ server, 40 rewrites of the reForge built-ins. Repo: private GitHub `kmizu/stable
 
 | | Count |
 |---|---|
-| Index entries done | 104 |
-| Index entries todo | 198 (138 distinct targets) |
+| Index entries done | 105 |
+| Index entries todo | 197 |
 | Not applicable (web-UI CSS/UX only, accounts, obsolete, external apps, server ops) | 51 |
 
-**Latest verified wave (2026-10-27):** index 333 `core:nsfw-card-blur` is accepted as native card
+**Latest verified wave (2026-10-27):** index 122 `core:temporal-lab` provides DFI, deflicker, fuse and frame extraction in a native workspace. The integrated CPU worker, native UI, model-image smoke, Scala and Python checks are recorded in `docs/VERIFICATION.md`, together with source attribution and limitations. The remaining extension issues and final release are separate ongoing work.
+
+**Previous verified wave (2026-10-27):** index 333 `core:nsfw-card-blur` is accepted as native card
 previews with shared Show/Blur/Hide. The reduced core gate passed offline, CPU dry-run and actual SD1.5/SDXL
 checks; the broad Scala run's two fixture timeouts passed focused serial rechecks. See
 [`VERIFICATION.md`](VERIFICATION.md) for precise scope, evidence and limits. For the Windows v0.01 runtime ZIP, release tag and remaining-issue tracker, check the GitHub release and issues.
@@ -310,3 +312,10 @@ broken (pseudo-inverse colour directions were too large). The ridge-regularised 
   both targets.
 - **Licences**: the app is AGPL-3.0 because it ports AGPL (A1111, Forge, reForge) and GPL (ComfyUI, Fooocus) code.
   `THIRD_PARTY_NOTICES.md` explains which projects were ported, re-implemented, depended on or used as data.
+
+
+### Temporal Lab delivery candidate
+
+Temporal Lab implements reference-guided DFI, deflicker, fuse, frame extraction, previews and playback in the native UI. Source algorithms and controls were informed by AbyszOne/Abysz-LAB-Ext at `deff0d4b4a208f862299b14b93e088f613373153`; the pinned GPL-3.0 license is archived under `licenses/AbyszOne__Abysz-LAB-Ext.txt`, and the notice collector records the source. See `docs/VERIFICATION.md` for bounded evidence and limits. Inter Blur is active here, video frame timestamps are computed from frame indices, and complete results use a new directory; full numerical parity with the upstream extension is not claimed.
+
+This isolated issue candidate was assembled from the reviewed Temporal Lab work. Its final integrated checkout and regenerated notices/extension matrix require their own verification before release. Avoid concurrent hostile replacement of path ancestors during processing; video codec allocations can occur before the decoded-frame guard, so the working-memory estimate is not a hard process-memory cap.

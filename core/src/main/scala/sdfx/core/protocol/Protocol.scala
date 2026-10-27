@@ -33,6 +33,7 @@ object Protocol:
     val Tokenize = "tokenize"
     val SystemInfo = "system_info"
     val VaeTools = "vae_tools"
+    val TemporalLab = "temporal_lab"
     val SystemStatus = "system_status"
     val SystemBenchmark = "system_benchmark"
     val Shutdown = "shutdown"

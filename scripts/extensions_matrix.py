@@ -51,7 +51,7 @@ S = {
     106: "todo:tiled_diffusion", 107: "todo:openpose_editor", 108: "todo:corridor_crawler", 109: "todo:core:panorama-viewer",
     110: "na:account", 111: "todo:remove_background", 112: "na:server-ops", 113: "todo:openpose_editor", 114: "na:webui-css",
     115: "done:core:ui-state", 116: "todo:text2video", 117: "done:core:size-presets", 118: "done:core:mask-canvas",
-    119: "todo:regional_prompter", 120: "todo:prompt_translate", 121: "todo:prompt_translate", 122: "todo:abysz_lab",
+    119: "todo:regional_prompter", 120: "todo:prompt_translate", 121: "todo:prompt_translate", 122: "todo:core:temporal-lab",
     123: "todo:negative_prompt_weight", 124: "na:account", 125: "todo:remove_background", 126: "na:obsolete",
     127: "todo:outpaint_canvas", 128: "todo:infinite_zoom", 129: "todo:adetailer", 130: "todo:core:localization",
     131: "todo:core:localization", 132: "todo:core:localization", 133: "todo:core:localization",
@@ -116,7 +116,7 @@ S = {
 
 # plugin ids / core features that are implemented: their `todo:` entries are reported as `done:`
 IMPLEMENTED = {
-    "core:config-presets", "core:preset-utilities", "core:nsfw-card-blur",
+    "core:config-presets", "core:preset-utilities", "core:nsfw-card-blur", "core:temporal-lab",
     "dynamic_prompts", "randomize", "prompt_format", "prompt_filter", "negative_prompt_weight", "novelai_prompt",
     "style_variables", "test_my_prompt", "scramble_prompts", "tweak_weights", "lora_queue", "batch_checkpoints_prompts",
     "seed_travel", "shift_attention", "one_button_prompt",

@@ -33,6 +33,12 @@ Requirements: JDK 17+, Python 3.10-3.12, an NVIDIA GPU is recommended. Quick sta
 - プラグイン(下記)
 - MCP サーバー(stdio / HTTP)
 
+### Temporal Lab
+
+Temporal Lab は、生成済みの連番画像を参照画像に合わせて安定化する DFI のほか、Deflicker、画像列の Fuse、動画からのフレーム抽出を行います。[Abysz LAB](https://github.com/AbyszOne/Abysz-LAB-Ext/tree/deff0d4b4a208f862299b14b93e088f613373153) の画面とアルゴリズムを参照しており、ライセンスと参照元は [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) に記載しています。
+
+元の実装との完全な数値一致は保証していません。Inter Blur はこのアプリでは処理に反映されます。動画抽出はフレーム番号に基づく時刻を使い、結果は既存の出力を上書きせず新しいフォルダに保存します。処理時には画像サイズやフレーム数などの上限があります。
+
 ### 標準プラグイン
 
 reForge の標準スクリプトと内蔵拡張をすべて書き直して同梱しています。対応表は [docs/PLUGINS.md](docs/PLUGINS.md)。
