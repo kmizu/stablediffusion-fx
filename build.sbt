@@ -1,5 +1,5 @@
 ThisBuild / scalaVersion := "3.3.6"
-ThisBuild / version := "0.01"
+ThisBuild / version := "0.02"
 ThisBuild / organization := "sdfx"
 ThisBuild / scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked", "-encoding", "utf8")
 
