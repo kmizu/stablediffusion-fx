@@ -150,7 +150,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
 
   val panels: Map[Mode, GenerationPanel] =
     Mode.values.map(m => m -> new GenerationPanel(ctx, vms(m), plugins(m), initial.expanded,
-      () => lastSeed, openPayload, openPresets)).toMap
+      () => lastSeed, openPayload, openPresets, openGenerationStates)).toMap
   ctx.commitPresetEditors = m => panels(m).commitPresetEditors()
   val preview = new PreviewPane(ctx, actions)
   val gallery = new GalleryView(ctx, galleryVM, actions, it => preview.show(it.path, it.parameters))
@@ -239,6 +239,39 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   private var presetStage: Stage = null
   private var presetPane: NativePresetsPane = null
   private var presetSession: NativePresetsSession = null
+
+  private var generationStatesStage: Stage = null
+  private var generationStatesPane: NamedGenerationStatesPane = null
+  private var generationStatesSession: NativePresetsSession = null
+
+  def namedStatesStage: Option[Stage] = Option(generationStatesStage)
+
+  def openGenerationStates(mode: Mode): Unit =
+    if !disposed then
+      if generationStatesPane == null then
+        val fields = Mode.values.map { m =>
+          val panel = panels(m)
+          m -> new NativePresetFields(vms(m), plugins(m), catalogVM,
+            panel.sections(s"${m.key}.variation").expandedProperty, namedState = true,
+            batchFields = Option.when(m == Mode.Img2Img)((panel.wdBatchEnabled, panel.wdBatchInput, panel.wdBatchOutputName)))
+        }.toMap
+        val controllers = fields.map((m, f) => m -> new NativePresetsController(f, () => exportGate.isBusy))
+        generationStatesSession = new NativePresetsSession(services.home.configDir.resolve("generation-states"), controllers,
+          result => if generationStatesPane != null then generationStatesPane.acceptResult(result),
+          thunk => Fx.run(thunk()), true)
+        generationStatesPane = new NamedGenerationStatesPane(ctx, generationStatesSession, fields, controllers)
+        generationStatesStage = new Stage()
+        generationStatesStage.initOwner(stage)
+        generationStatesStage.setTitle("Named generation states")
+        generationStatesStage.setMinWidth(760)
+        generationStatesStage.setMinHeight(600)
+        val statesScene = new Scene(generationStatesPane.node, 960, 780)
+        Theme.apply(statesScene, services.settings.theme)
+        generationStatesStage.setScene(statesScene)
+        generationStatesSession.reload()
+      generationStatesPane.openMode(mode)
+      generationStatesStage.show()
+      generationStatesStage.toFront()
 
   def presetsInspectorStage: Option[Stage] = Option(presetStage)
 
@@ -869,6 +902,9 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
       "card gate" -> (() => cardGate.dispose()),
       "payload pane" -> (() => if payloadPane != null then payloadPane.dispose()),
       "payload stage" -> (() => if payloadStage != null then payloadStage.close()),
+      "generation states pane" -> (() => if generationStatesPane != null then generationStatesPane.dispose()),
+      "generation states session" -> (() => if generationStatesSession != null then generationStatesSession.close()),
+      "generation states stage" -> (() => if generationStatesStage != null then generationStatesStage.close()),
       "preset pane" -> (() => if presetPane != null then presetPane.dispose()),
       "preset session" -> (() => if presetSession != null then presetSession.close()),
       "preset stage" -> (() => if presetStage != null then presetStage.close()),

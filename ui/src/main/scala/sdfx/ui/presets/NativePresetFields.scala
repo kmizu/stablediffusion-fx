@@ -15,7 +15,9 @@ import scala.util.control.NonFatal
 
 /** The editable native form, read directly from its properties. No job, service or plugin is run here. */
 final class NativePresetFields(vm: GenerationVM, plugins: PluginsVM, catalog: CatalogVM,
-                               variationExpanded: BooleanProperty):
+                               variationExpanded: BooleanProperty,
+                               namedState: Boolean = false,
+                               batchFields: Option[(BooleanProperty, StringProperty, StringProperty)] = None):
   private case class Binding(
     key: FieldKey,
     label: String,
@@ -249,6 +251,25 @@ final class NativePresetFields(vm: GenerationVM, plugins: PluginsVM, catalog: Ca
       }
     }
 
+  if namedState then
+    stringChoice(key("model", "checkpoint"), "Checkpoint", vm.shared.checkpoint, "",
+      choice("" +: catalog.snapshot.get.checkpoints.map(_.name)))
+    stringChoice(key("model", "vae"), "VAE", vm.shared.vae, "Automatic", choice(list(catalog.vaes)))
+    integer(key("model", "clipSkip"), "Clip skip", vm.shared.clipSkip, 1, 1, 12)
+    add(Binding(key("generation", "eta"), "Eta (blank = sampler default)", PresetFieldKind.Text,
+      t(""), () => Vector.empty, None, None,
+      () => t(vm.eta.get.map(_.toString).getOrElse("")), a => {
+        val raw = a.asInstanceOf[PresetAtom.Text].value.trim
+        val parsed = Option.when(raw.nonEmpty)(raw.toDouble)
+        require(parsed.forall(n => java.lang.Double.isFinite(n) && n >= 0), "Eta must be finite and nonnegative")
+        vm.eta.set(parsed)
+      }))
+    batchFields.foreach { (enabled, input, output) =>
+      flag(key("batch", "enabled"), "WD batch enabled", enabled, false)
+      text(key("batch", "input"), "WD batch input folder", input, "")
+      text(key("batch", "output"), "WD batch output folder name", output, "")
+    }
+
   generation()
   controlNet()
   pluginControls()
@@ -284,6 +305,22 @@ final class NativePresetFields(vm: GenerationVM, plugins: PluginsVM, catalog: Ca
       case Mode.Img2Img => PresetMode.Img2Img
       case Mode.Inpaint => PresetMode.Inpaint
     PresetSchema(mode, revision, specs, bindingIssues)
+
+  /** Named states also retain prompt LoRA references; surface missing names before any form writes. */
+  def namedStateResourceIssues(saved: Map[FieldKey, PresetAtom]): Vector[PresetIssue] =
+    if !namedState then Vector.empty
+    else
+      def resourceName(raw: String): String =
+        raw.replace('\\', '/').split('/').lastOption.getOrElse(raw).replaceFirst("\\.[^.]+$", "").toLowerCase(java.util.Locale.ROOT)
+      val available = catalog.snapshot.get.loras.flatMap(e => Seq(resourceName(e.name), resourceName(e.path))).toSet
+      Vector("prompt", "negativePrompt", "hiresPrompt", "hiresNegative").flatMap { field =>
+        saved.get(key("generation", field)).toVector.flatMap {
+          case PresetAtom.Text(prompt) => sdfx.core.model.LoraSyntax.extract(prompt).loras.filterNot(l => available(resourceName(l.name))).map { l =>
+            PresetIssue("missing-lora", s"generation.$field", s"LoRA is absent from the current catalog: ${l.name}")
+          }
+          case _ => Vector.empty
+        }
+      }
 
   def capture(): FieldSnapshot =
     val values = bindings.map(b => b.key -> b.read()).toMap

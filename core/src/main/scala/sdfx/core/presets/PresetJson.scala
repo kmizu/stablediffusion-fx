@@ -328,7 +328,7 @@ object PresetJson:
   private def collection(node: Node, path: String, text: String, limits: PresetLimits): PresetCollection =
     val o = obj(node, path)
     val id = idString(required(o, "id", path), path + ".id", limits)
-    if !Set("config-txt2img", "config-img2img", "utilities")(id) then reject("id", path, "unknown collection")
+    if !Set("config-txt2img", "config-img2img", "utilities", "state-txt2img", "state-img2img", "state-inpaint")(id) then reject("id", path, "unknown collection")
     val tracked = arr(required(o, "tracked", path), path + ".tracked").map(x => key(str(x, path + ".tracked"), path + ".tracked", limits))
     if tracked.size > limits.maxRegisteredFieldsPerMode then reject("limit", path, "too many tracked fields")
     if tracked.distinct.size != tracked.size then reject("duplicate-key", path, "duplicate tracked field")

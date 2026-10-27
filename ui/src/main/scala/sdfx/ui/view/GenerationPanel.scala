@@ -18,7 +18,8 @@ final class GenerationPanel(
     expanded: Map[String, Boolean],
     lastSeed: () => Long,
     openPayload: Mode => Unit,
-    openPresets: Mode => Unit
+    openPresets: Mode => Unit,
+    openStates: Mode => Unit = _ => ()
 ):
   val mode: Mode = vm.mode
   /** Titled panes by persistence key ("<mode>.<section>"). */
@@ -288,6 +289,9 @@ final class GenerationPanel(
     imageSection.foreach(v.getChildren.add)
     if mode == Mode.Img2Img then v.getChildren.add(wdBatchSection)
     v.getChildren.addAll(sampling, size, seed)
+    val states = W.button("Named generation states…", "Save or restore a complete named settings snapshot") { openStates(mode) }
+    states.setId(s"generation-states-open-${mode.key}")
+    v.getChildren.add(states)
     v.getChildren.add(track("presets", presetsSection))
     v.getChildren.add(track("apiPayload", payloadSection))
     if mode == Mode.Txt2Img then v.getChildren.add(track("hires", ExtraSections.hires(ctx, vm, isExpanded("hires", false))))
