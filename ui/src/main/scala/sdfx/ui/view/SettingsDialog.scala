@@ -7,12 +7,12 @@ import javafx.scene.control.*
 import javafx.scene.layout.{HBox, Priority, VBox}
 import javafx.stage.{DirectoryChooser, FileChooser, Stage}
 import sdfx.core.config.{ModelDirs, Settings}
-import sdfx.ui.vm.VramModes
+import sdfx.ui.vm.{VramModes, WdSettingsState}
 
 import scala.jdk.CollectionConverters.*
 
 /** Settings editor. Returns the edited settings; the caller applies them. */
-final class SettingsDialog(owner: Stage, initial: Settings, initialTab: Int = 0):
+final class SettingsDialog(owner: Stage, initial: Settings, initialTab: Int = 0, wdWorkerReported: Option[Boolean] = None):
   private val kinds = Seq("Checkpoints", "VAE", "LoRA", "ControlNet", "Embeddings", "Upscalers", "Face restore", "SVD",
     "Zero123", "PhotoMaker")
   private val dirs: Map[String, ObservableList[String]] =
@@ -33,6 +33,8 @@ final class SettingsDialog(owner: Stage, initial: Settings, initialTab: Int = 0)
   private val theme = new SimpleStringProperty(initial.theme)
   private val cardDefault = new SimpleStringProperty(initial.nsfwCardBlurDefault)
   private val allowCode = new SimpleBooleanProperty(initial.allowCustomCode)
+  private val wdModel = new SimpleStringProperty(initial.wdV3Model.getOrElse(""))
+  private val wdTags = new SimpleStringProperty(initial.wdV3Tags.getOrElse(""))
 
   // ---- model folders -----------------------------------------------------------------------------------
   private val kindList = new ListView[String](FXCollections.observableArrayList(kinds*))
@@ -133,7 +135,28 @@ final class SettingsDialog(owner: Stage, initial: Settings, initialTab: Int = 0)
     )
   )
 
-  private val tabs = new TabPane(modelsTab, generalTab, engineTab, mcpTab)
+  private val wdTab =
+    val status = W.label(WdSettingsState.status(wdModel.get, wdTags.get), "hint")
+    status.setId("wd-v3-status")
+    val update = () => status.setText(WdSettingsState.status(wdModel.get, wdTags.get))
+    wdModel.addListener((_, _, _) => update())
+    wdTags.addListener((_, _, _) => update())
+    val note = W.label("Partial support: WD v3 only. No models are downloaded. The batch UI is not yet available. Restart the engine to check the selected files.", "hint")
+    note.setWrapText(true)
+    val worker = W.label(WdSettingsState.workerStatus(wdWorkerReported), "hint")
+    worker.setId("wd-v3-worker-status")
+    worker.setWrapText(true)
+    val content = page(W.form()
+      .full(note)
+      .add("Model (.onnx)", browseRow(wdModel, false, "Choose local WD v3 model"), "Select the local WD v3 ONNX file")
+      .add("Tags (.csv)", browseRow(wdTags, false, "Choose local WD v3 tags"), "Select the matching local selected_tags.csv")
+      .full(status)
+      .full(worker))
+    val scroll = new ScrollPane(content)
+    scroll.setFitToWidth(true)
+    new Tab("WD v3 (partial)", scroll)
+
+  private val tabs = new TabPane(modelsTab, generalTab, engineTab, mcpTab, wdTab)
   tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE)
   tabs.setPrefSize(720, 440)
   tabs.getSelectionModel.select(initialTab.max(0).min(tabs.getTabs.size - 1))
@@ -167,7 +190,9 @@ final class SettingsDialog(owner: Stage, initial: Settings, initialTab: Int = 0)
           mcpToken = Option(mcpToken.get).map(_.trim).filter(_.nonEmpty),
           theme = theme.get,
           nsfwCardBlurDefault = cardDefault.get,
-          allowCustomCode = allowCode.get
+          allowCustomCode = allowCode.get,
+          wdV3Model = Option(wdModel.get).map(_.trim).filter(_.nonEmpty),
+          wdV3Tags = Option(wdTags.get).map(_.trim).filter(_.nonEmpty)
         )
       )
     else None

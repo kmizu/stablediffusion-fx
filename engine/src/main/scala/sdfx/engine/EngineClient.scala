@@ -114,6 +114,35 @@ final class EngineClient(val supervisor: EngineSupervisor):
   def tokenize(text: String, inputMode: String = "text"): Future[TokenizeResult] =
     call[TokenizeResult](Protocol.Types.Tokenize, ujson.Obj("text" -> text, "input_mode" -> inputMode))
 
+  /** A single Extras batch owns its requests and never interrupts other jobs. */
+  def extrasBatch(listener: EngineEvent => Unit = _ => ()): ExtrasBatchHandle =
+    val owner = java.util.UUID.randomUUID().toString
+    val control = new ExtrasBatchControl(() => supervisor.interruptAfterStartupOwned(owner), () => interruptionProtection())
+    extrasBatchOwned(owner, control, listener)
+
+  private[engine] def extrasBatchOwned(owner: String, control: ExtrasBatchControl,
+                                      listener: EngineEvent => Unit = _ => (),
+                                      onProcess: EngineProcess => Unit = _ => (),
+                                      restartOnTimeout: Boolean = true): ExtrasBatchHandle =
+    new ExtrasBatchHandle(control, (kind, params) =>
+      val gate = new TemporalLabCancelGate(owner, id => supervisor.captureInterrupt(Some(id), restartOnTimeout))
+      val result = supervisor.requestExtras(kind, params, listener, owner,
+        () => control.attach(gate, finalStage = kind == "batch_interrogate_execute"), () => gate.dispatched(), onProcess, () => !control.cancellationAccepted)
+      result.onComplete { _ => gate.completed(); control.detach(gate) }(using ExecutionContext.parasitic)
+      result)
+
+  /** Internal WD v3 partial job: no model download, one owner across both worker requests. */
+  def wdBatch(prepare: WdBatchPrepareRequest, listener: EngineEvent => Unit = _ => ()): WdBatchHandle =
+    val owner = java.util.UUID.randomUUID().toString
+    val control = new ExtrasBatchControl(() => supervisor.interruptAfterStartupOwned(owner, restartOnTimeout = false), () => interruptionProtection())
+    wdBatchOwned(prepare, owner, control, listener)
+
+  private[engine] def wdBatchOwned(prepare: WdBatchPrepareRequest, owner: String, control: ExtrasBatchControl,
+                                   listener: EngineEvent => Unit = _ => ()): WdBatchHandle =
+    val process = new java.util.concurrent.atomic.AtomicReference[EngineProcess]()
+    val transport = extrasBatchOwned(owner, control, listener, p => process.set(p), restartOnTimeout = false)
+    new WdBatchHandle(WdBatchFlow.run(transport, Json.toJs(prepare)).map(Json.fromJs[WdBatchResult](_)), transport, process)
+
   def interruptionProtection(enabled: Option[Boolean] = None): Future[InterruptionProtection] =
     supervisor.readerControl(Protocol.Types.InterruptionProtection,
       enabled.fold(ujson.Obj())(v => ujson.Obj("enabled" -> v))).map(Json.fromJs[InterruptionProtection](_))

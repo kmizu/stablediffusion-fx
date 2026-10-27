@@ -229,11 +229,11 @@ final class GenerationVM(val mode: Mode, val shared: ModelVM = new ModelVM):
     restored
 
   /** Validation of the form; empty when the job can be submitted. Also updates [[problems]]. */
-  def validate(fileExists: String => Boolean = p => Files.isRegularFile(Paths.get(p))): List[String] =
+  def validate(fileExists: String => Boolean = p => Files.isRegularFile(Paths.get(p)), batchImages: Boolean = false): List[String] =
     val init = Option(initImage.get).map(_.trim).getOrElse("")
     val modeProblems = List(
-      Option.when(mode.usesInitImage && init.isEmpty)("Choose an init image (drop, paste or open a file)"),
-      Option.when(mode.usesInitImage && init.nonEmpty && !fileExists(init))(s"Init image not found: $init"),
+      Option.when(mode.usesInitImage && !batchImages && init.isEmpty)("Choose an init image (drop, paste or open a file)"),
+      Option.when(mode.usesInitImage && !batchImages && init.nonEmpty && !fileExists(init))(s"Init image not found: $init"),
       Option.when(mode == Mode.Inpaint && !hasMask.get)("Paint a mask over the area to inpaint"),
       Option.when(controlNet.exists(u => u.enabled.get && !u.isUsable))("A ControlNet unit is enabled without a model"),
       Option.when(controlNet.exists(u => u.isUsable && u.image.get.isEmpty && !mode.usesInitImage))("A ControlNet unit needs a control image"),

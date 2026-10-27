@@ -16,6 +16,7 @@ import os
 import re
 import time
 import traceback
+import uuid
 from typing import Any, Optional
 
 import torch  # noqa: F401  (ImportError here -> degraded engine)
@@ -188,6 +189,7 @@ class Engine(BaseEngine):
 
     def features(self) -> list[str]:
         f = ["freeu", "dynamic_thresholding", "hypertile", "system_info", "vae_tools", "prevent_interrupt"]
+        f += self._batch_features()
         if hasattr(diffusers, "StableDiffusionXLPAGPipeline"):
             f.append("pag")
         if hasattr(diffusers, "ControlNetModel"):
@@ -368,7 +370,7 @@ class Engine(BaseEngine):
             self._free()
             raise EngineError(MODEL_LOAD_FAILED, f"failed to move model to device: {e}", traceback.format_exc())
         self.model = {"name": models.model_name(req.path), "path": req.path, "kind": kind,
-                      "hash": models.short_hash(req.path)}
+                      "hash": models.short_hash(req.path), "model_token": uuid.uuid4().hex}
         return self._loaded(int((time.monotonic() - t0) * 1000))
 
     def _loaded(self, ms: int = 0) -> dict:

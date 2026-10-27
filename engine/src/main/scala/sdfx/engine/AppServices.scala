@@ -93,7 +93,8 @@ final class AppServices(
   val modelCards: ModelCardCatalog = new ModelCardCatalog(home, () => _settings, () => catalog.snapshot)
   val payloads: RequestPayloadStore = new RequestPayloadStore()
   val generator: Generator = new Generator(client, catalog, home, () => _settings, timeouts = timeouts, payloads = payloads)
-  val queue: JobQueue = new JobQueue(generator, owner => supervisor.requestInterrupt(owner))
+  val queue: JobQueue = new JobQueue(generator, owner => supervisor.requestInterrupt(owner),
+    Some(owner => supervisor.interruptAfterStartupOwned(owner, restartOnTimeout = false)), () => client.interruptionProtection())
   /** Global user interrupt: capture owned queue work or the actual nonqueue request
     * now, then perform admission I/O off the caller/FX thread. Queue-specific APIs
     * continue to affect only the native entry they captured.

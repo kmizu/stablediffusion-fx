@@ -13,7 +13,7 @@ import sdfx.core.model.ExtendedStyle
 import sdfx.core.modelcards.{CardId, LocalPreviewFiles}
 import sdfx.core.infotext.HardwareInfo
 import sdfx.core.plugins.api.Plugin
-import sdfx.engine.{AppServices, EngineState, JobEvent}
+import sdfx.engine.{AppServices, EngineState, JobEvent, WdBatchSpec}
 import sdfx.core.presets.{LoadedPresets, PresetError}
 import sdfx.ui.presets.{NativePresetFields, NativePresetFileDialogs, NativePresetsController, NativePresetsSession}
 import sdfx.ui.view.*
@@ -451,9 +451,17 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
     // a value typed into a spinner but not committed yet (Ctrl+Enter is consumed before focus moves)
     Option(scene.getFocusOwner).foreach(W.commitEnclosingSpinner)
     if Option(tabs.getSelectionModel.getSelectedItem).flatMap(modeOf).isEmpty then select(mode)
+    val panel = panels(mode)
+    val wdEnabled = mode == Mode.Img2Img && panel.wdBatchEnabled.get
+    val wdAvailable = services.supervisor.hello.exists(_.features.contains("batch_interrogate_wd_v3_partial"))
+    val wdChoice = WdBatchUiState.validate(wdEnabled, wdAvailable, panel.wdBatchInput.get, panel.wdBatchOutputName.get) match
+      case Left(message) =>
+        ctx.error(message)
+        return
+      case Right(value) => value
     // never reuse a mask exported for an earlier job: it is re-exported from the canvas below
     vm.maskImage.set("")
-    val problems = vm.validate()
+    val problems = vm.validate(batchImages = wdChoice.nonEmpty)
     if problems.nonEmpty then
       ctx.error(problems.mkString("\n"))
       return
@@ -467,7 +475,22 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
       ctx.error("No checkpoint available.\nPut .safetensors in models/checkpoints or add folders in Settings.")
       return
     def submit(tempFiles: Seq[Path]): Unit =
-      val job = JobBuilder.build(vm, plugins(mode), sdfx.engine.CaptureOptions(services.settings.apiPayloadIncludeImageContents))
+      val ordinary = JobBuilder.build(vm, plugins(mode), sdfx.engine.CaptureOptions(services.settings.apiPayloadIncludeImageContents))
+      val job = wdChoice match
+        case None => ordinary
+        case Some((input, name)) =>
+          val spec = try
+            val source = Path.of(input).toAbsolutePath.normalize()
+            if !Files.isDirectory(source) then throw new IllegalArgumentException("Input image folder does not exist")
+            val output = services.home.outputs(services.settings).toAbsolutePath.normalize()
+            Files.createDirectories(output)
+            if Files.exists(output.resolve(name)) then throw new IllegalArgumentException("Output folder already exists")
+            WdBatchSpec(source.toString, output.toString, name)
+          catch
+            case NonFatal(e) =>
+              ctx.error(s"Cannot prepare WD batch: ${Fx.message(e)}")
+              return
+          ordinary.copy(wdBatch = Some(spec))
       ctx.temps.registerJob(job.id, tempFiles)
       services.queue.submit(job).failed.foreach(_ => ())(using scala.concurrent.ExecutionContext.parasitic)
       if queueOnly && progress.get.running then ctx.info(s"Queued (${progress.get.pendingCount + 1} waiting)")
@@ -669,7 +692,8 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
 
   def openSettings(tab: Int = 0): Unit =
     val before = services.settings
-    new SettingsDialog(stage, before, tab).showAndWait().foreach { edited =>
+    val wdReported = services.supervisor.hello.map(_.features.contains("batch_interrogate_wd_v3_partial"))
+    new SettingsDialog(stage, before, tab, wdReported).showAndWait().foreach { edited =>
       services.updateSettingsChecked(cur => SettingsMerge(cur, edited)) match
         case Left(reason) => ctx.error(reason)
         case Right(s) =>
@@ -680,7 +704,8 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
             services.resetGallery()
             reloadGallery()
           val engineChanged = s.pythonExe != before.pythonExe || s.dtype != before.dtype || s.vramMode != before.vramMode ||
-            s.vaeTiling != before.vaeTiling || s.hfOffline != before.hfOffline
+            s.vaeTiling != before.vaeTiling || s.hfOffline != before.hfOffline ||
+            WdSettingsState.restartRequired(before, s)
           if engineChanged then
             val a = new Alert(Alert.AlertType.CONFIRMATION, "Engine settings changed. Restart the engine now?", ButtonType.NO, ButtonType.YES)
             a.initOwner(stage)

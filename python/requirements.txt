@@ -28,3 +28,6 @@ onnxruntime==1.23.2  # WD14 tagger (Caption plugin, method wd14)
 # https://ffmpeg.org/download.html ; upstream licensing overview: https://github.com/FFmpeg/FFmpeg/blob/master/LICENSE.md
 # Optional System Info driver query: preinstalled nvidia-smi, supplied by the NVIDIA driver.
 # This is not a pip dependency; the app does not install or redistribute the driver utility.
+
+# Optional local WD v3 batch model structure validation (install explicitly):
+# onnx==1.21.0

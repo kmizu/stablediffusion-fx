@@ -5,6 +5,8 @@ import javafx.scene.{Node, Parent}
 import javafx.scene.control.*
 import javafx.scene.layout.{GridPane, HBox, Priority, VBox}
 import javafx.beans.property.LongProperty
+import javafx.beans.property.{SimpleBooleanProperty, SimpleStringProperty}
+import javafx.stage.DirectoryChooser
 import scala.util.control.NonFatal
 import sdfx.ui.vm.{GenerationVM, Mode, PluginsVM}
 
@@ -103,6 +105,32 @@ final class GenerationPanel(
     p
 
   val prompts = new PromptEditor(ctx, vm.prompt, vm.negativePrompt, mode.key)
+  val wdBatchEnabled = new SimpleBooleanProperty(false)
+  val wdBatchInput = new SimpleStringProperty("")
+  val wdBatchOutputName = new SimpleStringProperty("")
+
+  private def wdBatchSection: Node =
+    val enabled = new CheckBox("Interrogate each image with WD v3 before Img2Img")
+    enabled.setId("wd-batch-enabled")
+    enabled.selectedProperty.bindBidirectional(wdBatchEnabled)
+    val input = W.textField(wdBatchInput)
+    input.setId("wd-batch-input")
+    val browse = W.iconButton("…", "Choose an input image folder") {
+      val chooser = new DirectoryChooser()
+      chooser.setTitle("Choose WD batch image folder")
+      Option(chooser.showDialog(ctx.stage)).foreach(f => wdBatchInput.set(f.getAbsolutePath))
+    }
+    val output = W.textField(wdBatchOutputName)
+    output.setId("wd-batch-output-name")
+    input.disableProperty.bind(wdBatchEnabled.not())
+    browse.disableProperty.bind(wdBatchEnabled.not())
+    output.disableProperty.bind(wdBatchEnabled.not())
+    val note = W.label("Partial support: local WD v3 only. Configure its model and tags in Settings, then restart. Images are inspected when the queued job starts; results go into a new folder under Outputs. Scripts, extensions, LoRA and ControlNet are not supported.", "hint")
+    note.setWrapText(true)
+    val fields = W.form().full(enabled).full(note)
+      .add("Image folder", W.hbox(6, W.hgrow(input), browse), "Images to interrogate and process")
+      .add("New output folder", output, "A new folder name under Outputs; existing folders are never replaced")
+    W.card("WD v3 batch (partial)", fields.grid)
 
   // ---- validation banner -------------------------------------------------------------------------------
   private val problems = new VBox(2)
@@ -258,6 +286,7 @@ final class GenerationPanel(
     v.getChildren.add(problems)
     v.getChildren.add(W.card("Prompt", prompts.view))
     imageSection.foreach(v.getChildren.add)
+    if mode == Mode.Img2Img then v.getChildren.add(wdBatchSection)
     v.getChildren.addAll(sampling, size, seed)
     v.getChildren.add(track("presets", presetsSection))
     v.getChildren.add(track("apiPayload", payloadSection))

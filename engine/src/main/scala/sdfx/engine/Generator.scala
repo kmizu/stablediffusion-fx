@@ -20,6 +20,7 @@ import scala.util.control.NonFatal
 trait GenerationListener:
   /** Private transport identity for queued work; never part of GenerationParams or image metadata. */
   def interruptionOwner: Option[String] = None
+  private[engine] def wdBatchControl: Option[ExtrasBatchControl] = None
   private[engine] def payloadJobId: Option[String] = None
   private[engine] def submittedPayloadContext: Option[SubmittedPayloadContext] = None
   private[engine] def payloadCaptureOptions: Option[CaptureOptions] = None
@@ -363,6 +364,45 @@ final class Generator(
     }
 
   /** Runs one generation and saves every image under outputs/<txt2img|img2img>/<date>/. */
+  private[engine] def runWdBatch(p: GenerationParams, spec: WdBatchSpec, listener: GenerationListener, limits: JobLimits): JobOutput =
+    if listener.isInterrupted then throw interruptedError
+    limits.check(p, 1)
+    WdBatchSafety.validateResolved(p)
+    ensureModel(p, listener)
+    if listener.isInterrupted then throw interruptedError
+    val token = client.supervisor.loadedModel.flatMap(_.modelToken).filter(_.nonEmpty)
+      .getOrElse(throw EngineError(Protocol.ErrorCodes.Unsupported, "WD batch requires a loaded checkpoint identity"))
+    val owner = listener.interruptionOwner.getOrElse(throw new IllegalStateException("WD batch requires queue ownership"))
+    val control = listener.wdBatchControl.getOrElse(throw new IllegalStateException("WD batch cancellation gate unavailable"))
+    val prepared = prepare(p)
+    WdBatchSafety.validateResolved(prepared.request.params)
+    if LoraSyntax.extract(prepared.recorded.prompt).loras.nonEmpty then
+      throw EngineError(Protocol.ErrorCodes.Unsupported, "WD batch does not support prompt LoRA tags")
+    prepared.warnings.foreach(listener.onLog)
+    val body = WdBatchPrepareRequest(spec.imagesRoot, prepared.request.copy(vaeRecoveryDir = ""),
+      spec.outputParent, spec.outputName, token)
+    listener.onStatus("WD v3 batch: preparing images", 0, 0)
+    val activity = new java.util.concurrent.atomic.AtomicLong(System.nanoTime())
+    val handle = client.wdBatchOwned(body, owner, control, { event =>
+      activity.set(System.nanoTime())
+      event match
+        case value: EngineEvent.Progress => listener.onProgress(value)
+        case value: EngineEvent.Preview => listener.onPreview(value)
+        case value: EngineEvent.Log => listener.onLog(value.message)
+    })
+    val result = WdBatchSafety.awaitActive(handle.result, activity, timeouts.generationInactivity, () => {
+      WdBatchSafety.timeoutAction(handle, control, client.supervisor)
+    })
+    val root = Paths.get(spec.outputParent).resolve(spec.outputName).toAbsolutePath.normalize()
+    val validated = WdBatchSafety.validatePaths(result, root)
+    val output = validated.map { (row, image, path) =>
+      val effective = prepared.recorded.copy(prompt = row.positive.get, negativePrompt = row.negative.get)
+      OutputImage(path, effective, Infotext.write(effective, ImageFacts(seed = image.seed)), image.seed)
+    }
+    result.rows.filter(_.status == "error").foreach(row => listener.onLog(s"WD batch failed for ${row.input}: ${row.error.get}"))
+    output.foreach(saved => listener.onImageSaved(saved, grid = false))
+    JobOutput(output)
+
   def generateWith(p: GenerationParams, listener: GenerationListener): Seq[OutputImage] =
     val (prep, result) = runEngine(p, listener)
     saveResult(prep, result, listener)

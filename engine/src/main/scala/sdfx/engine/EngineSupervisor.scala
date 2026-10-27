@@ -315,6 +315,23 @@ final class EngineSupervisor(
       }
     }
 
+  private[engine] def requestExtras(kind: String, params: ujson.Value, onEvent: EngineEvent => Unit,
+      owner: String, beforeDispatch: () => Future[Boolean], onDispatched: () => Unit,
+      onProcess: EngineProcess => Unit = _ => (), beforeWrite: () => Boolean = () => true): Future[ujson.Value] =
+    ensureStarted().flatMap { p =>
+      beforeDispatch().flatMap { admitted =>
+        if !admitted then Future.failed(EngineError(Protocol.ErrorCodes.Interrupted, "Extras cancelled before start").markWorkerResponse())
+        else
+          onProcess(p)
+          if !beforeWrite() then Future.failed(EngineError(Protocol.ErrorCodes.Interrupted, "Extras cancelled before write").markWorkerResponse())
+          else
+            markBusy(+1, p)
+            val result = p.requestOwned(kind, params, onEvent, Some(owner))
+            onDispatched()
+            result.transform { r => markBusy(-1, p); r }(using ExecutionContext.parasitic)
+      }
+    }
+
   /** Reader controls bypass the worker/reload future and never block the calling (possibly FX) thread. */
   private[engine] def readerControl(tpe: String, params: ujson.Value): Future[ujson.Value] =
     require(tpe == Protocol.Types.InterruptionProtection)
@@ -384,10 +401,13 @@ final class EngineSupervisor(
   def requestInterrupt(owner: Option[String] = None): Future[InterruptionDecision] =
     captureInterrupt(owner)()
 
+  private[engine] def interruptAfterStartupOwned(owner: String, restartOnTimeout: Boolean = true): Future[InterruptionDecision] =
+    ensureStarted().flatMap(_ => captureInterrupt(Some(owner), restartOnTimeout)())
+
   /** Capture before asynchronous dispatch: neither a later request nor a replacement
     * process can become the target of this already initiated user action.
     */
-  private[engine] def captureInterrupt(owner: Option[String] = None): () => Future[InterruptionDecision] =
+  private[engine] def captureInterrupt(owner: Option[String] = None, restartOnTimeout: Boolean = true): () => Future[InterruptionDecision] =
     val captured = proc.filter(_.isAlive).map { p =>
       val target = p.pendingIdsFor(owner).find((_, t) => !readerTypes.contains(t))
       (p, target)
@@ -406,7 +426,7 @@ final class EngineSupervisor(
           val decision = Json.fromJs[InterruptionDecision](raw)
           require(decision.validAdmission, "Invalid interruption admission response")
           if decision.blocked then log(decision.message.getOrElse("Interruptions are blocked"))
-          else if decision.accepted && decision.affected then target.filter { (id, _) =>
+          else if restartOnTimeout && decision.accepted && decision.affected then target.filter { (id, _) =>
             // A queued request is cancelled immediately in reader state but may
             // await unrelated active work before its error envelope is emitted.
             // Only actual active admission may arm a forced-restart grace timer.
@@ -417,7 +437,7 @@ final class EngineSupervisor(
               (() => {
                 if proc.contains(p) && p.isAlive && p.isPending(id) then
                   log(s"[sdfx] engine did not stop $tpe within $grace; restarting it")
-                  forceRestart(EngineError(Protocol.ErrorCodes.Interrupted, "generation interrupted (engine restarted)"))
+                  forceRestartIfCurrent(p, EngineError(Protocol.ErrorCodes.Interrupted, "generation interrupted (engine restarted)"))
               }): Runnable,
               grace.toMillis, TimeUnit.MILLISECONDS)
             p.futureOf(id) match
@@ -453,6 +473,26 @@ final class EngineSupervisor(
           catch case NonFatal(_) => ()
         )
       }.flatMap(_ => ensureStarted()).map(_.hello)
+
+  /** Stop only the process captured for an owned request; stale timeouts cannot kill replacements. */
+  private[engine] def processSnapshot: Option[EngineProcess] = lock.synchronized(proc.filter(_.isAlive))
+
+  private[engine] def forceRestartIfCurrent(expected: EngineProcess, reason: EngineError): Future[Boolean] =
+    val removed = lock.synchronized {
+      if stopped || !proc.contains(expected) then false
+      else
+        proc = None
+        inflight = 0
+        true
+    }
+    if !removed then Future.successful(false)
+    else
+      expected.kill(Some(reason))
+      gaveUp = false
+      Future {
+        try Await.ready(expected.exitFuture, 5.seconds)
+        catch case NonFatal(_) => ()
+      }.flatMap(_ => ensureStarted()).map(_ => true)
 
   /** Restarts the engine gracefully (e.g. after settings change). */
   def restart(): EngineHello =

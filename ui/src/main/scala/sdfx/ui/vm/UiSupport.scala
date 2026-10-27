@@ -95,8 +95,28 @@ object SettingsMerge:
       mcpToken = edited.mcpToken,
       theme = edited.theme,
       nsfwCardBlurDefault = edited.nsfwCardBlurDefault,
-      modelPreviewFolders = edited.modelPreviewFolders
+      modelPreviewFolders = edited.modelPreviewFolders,
+      wdV3Model = edited.wdV3Model,
+      wdV3Tags = edited.wdV3Tags
     )
+
+object WdSettingsState:
+  def status(model: String, tags: String): String =
+    val haveModel = Option(model).exists(_.trim.nonEmpty)
+    val haveTags = Option(tags).exists(_.trim.nonEmpty)
+    if !haveModel && !haveTags then "Not configured"
+    else if !haveModel || !haveTags then "Incomplete: choose both files"
+    else "Files selected"
+
+  def workerStatus(reported: Option[Boolean]): String = reported match
+    case Some(true) => "Worker reported WD v3 configured at last start; this may differ from current selections."
+    case Some(false) => "Worker reported WD v3 not configured at last start."
+    case None => "Worker status unknown; start or restart the engine to check."
+
+  def restartRequired(before: Settings, after: Settings): Boolean =
+    def configured(s: Settings) = s.wdV3Model.exists(_.trim.nonEmpty) && s.wdV3Tags.exists(_.trim.nonEmpty)
+    before.wdV3Model != after.wdV3Model || before.wdV3Tags != after.wdV3Tags ||
+      (before.outputDir != after.outputDir && (configured(before) || configured(after)))
 
 /** At most one asynchronous operation at a time (e.g. mask export before submit). The flag is always released:
   * by the `finish` callback, or when `start` throws synchronously (then `onError` gets the exception).

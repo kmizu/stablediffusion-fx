@@ -70,12 +70,38 @@ class BaseEngine:
         }
 
     def features(self) -> list[str]:
-        return ["prevent_interrupt"]
+        return ["prevent_interrupt", *self._batch_features()]
+
+    def _batch_features(self) -> list[str]:
+        if self.dry_run:
+            return []
+        service = getattr(self, "_batch_interrogate_service", None)
+        if service is None:
+            return []
+        from .batch_interrogate_worker import BatchInterrogateService
+        if isinstance(service, BatchInterrogateService) and service.available():
+            return ["batch_interrogate_wd_v3_partial"]
+        return []
 
     def temporal_lab(self, params: dict, ctx: JobContext) -> dict:
         """Run an owned, serialized native frame-processing request."""
         from . import temporal_lab
         return temporal_lab.run(params, ctx)
+
+    def _batch_service(self):
+        service = getattr(self, "_batch_interrogate_service", None)
+        if self.dry_run or service is None:
+            raise EngineError(UNSUPPORTED, "no trusted WD batch service is configured")
+        from .batch_interrogate_worker import BatchInterrogateService
+        if not isinstance(service, BatchInterrogateService):
+            raise EngineError(UNSUPPORTED, "no trusted WD batch service is configured")
+        return service
+
+    def batch_interrogate_prepare(self, params: dict, ctx: JobContext) -> dict:
+        return self._batch_service().prepare(self, params, ctx)
+
+    def batch_interrogate_execute(self, params: dict, ctx: JobContext) -> dict:
+        return self._batch_service().execute(self, params, ctx)
 
     def preprocessors(self) -> list[str]:
         return ["none"]

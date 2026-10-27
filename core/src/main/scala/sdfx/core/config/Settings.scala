@@ -70,7 +70,9 @@ case class Settings(
     apiPayloadIncludeImageContents: Boolean = false,
     nsfwCardBlurDefault: String = "Blur",
     modelPreviewOverrides: Map[String, String] = Map.empty,
-    modelPreviewFolders: Map[String, Seq[String]] = Map.empty
+    modelPreviewFolders: Map[String, Seq[String]] = Map.empty,
+    wdV3Model: Option[String] = None,
+    wdV3Tags: Option[String] = None
 ) derives RW
 
 case class SettingsRecovery(reason: String, originalSha256: Option[String])

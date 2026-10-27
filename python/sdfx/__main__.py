@@ -30,6 +30,9 @@ def parse_args(argv=None):
                     choices=["DEBUG", "INFO", "WARNING", "ERROR", "debug", "info", "warning", "error"])
     ap.add_argument("--dry-run-delay-ms", type=int, default=int(os.environ.get("SDFX_DRY_RUN_DELAY_MS", "0")),
                     help="sleep per fake sampling step (dry run only)")
+    ap.add_argument("--wd-v3-model", help="explicit local WD v3 candidate model path")
+    ap.add_argument("--wd-v3-tags", help="explicit local matching WD v3 tags CSV path")
+    ap.add_argument("--wd-v3-temp", help="existing private temporary directory for WD v3")
     return ap.parse_args(argv)
 
 
@@ -42,7 +45,9 @@ def main(argv=None) -> int:
     os.environ.setdefault("TQDM_DISABLE", "1")
     _reset_inherited_windows_dll_directory()
     from .server import main as server_main
-    return server_main(dry_run=args.dry_run, delay_ms=args.dry_run_delay_ms)
+    wd_paths = (args.wd_v3_model, args.wd_v3_tags, args.wd_v3_temp)
+    return server_main(dry_run=args.dry_run, delay_ms=args.dry_run_delay_ms,
+                       wd_paths=wd_paths if any(wd_paths) else None)
 
 
 if __name__ == "__main__":

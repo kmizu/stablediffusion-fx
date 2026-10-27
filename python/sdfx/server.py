@@ -23,7 +23,8 @@ log = logging.getLogger("sdfx.server")
 QUEUED_TYPES = ("list_models", "list_files", "list_samplers", "load_model", "set_vae", "txt2img", "img2img",
                 "preprocess", "upscale", "unload", "memory", "restore_faces", "caption", "run_code", "img2vid",
                 "novel_view", "merge_models", "convert_model", "image_tool", "tokenize", "system_info",
-                "system_benchmark", "system_submission_preview", "system_submit", "vae_tools", "temporal_lab")
+                "system_benchmark", "system_submission_preview", "system_submit", "vae_tools", "temporal_lab",
+                "batch_interrogate_prepare", "batch_interrogate_execute")
 
 
 def classify_exception(e: BaseException) -> tuple[str, str, str]:
@@ -219,6 +220,7 @@ class Server:
             self.current_type = typ
             self.interrupt.clear()
         ctx = JobContext(self.emitter, rid, self.interrupt, publication_lock=self.lock)
+        ctx.owner_id = owner
         with self.lock:
             self.current_ctx = ctx
         try:
@@ -275,22 +277,32 @@ def setup_stdio() -> Emitter:
     return Emitter(out)
 
 
-def build_engine(dry_run: bool, delay_ms: int = 0):
+def build_engine(dry_run: bool, delay_ms: int = 0, wd_paths=None):
     if dry_run:
         from .dryrun import FakeEngine
         return FakeEngine(delay_ms)
     try:
         from .engine import Engine
-        return Engine()
+        engine = Engine()
     except Exception as e:  # ImportError, but also OSError (DLL load), RuntimeError (CUDA init), AttributeError ...
         log.error("real engine unavailable; starting degraded:\n%s", traceback.format_exc())
         from .unavailable import UnavailableEngine
         return UnavailableEngine(f"{type(e).__name__}: {e}")
+    if wd_paths is not None:
+        try:
+            from .wd_service_config import WdLocalConfig, configure_wd_service
+            status = configure_wd_service(engine, WdLocalConfig(*wd_paths))
+            if not status.available:
+                log.warning("WD v3 partial service unavailable: %s", status.reason)
+        except Exception as exc:
+            engine._batch_interrogate_service = None
+            log.warning("WD v3 optional configuration failed: %s", type(exc).__name__)
+    return engine
 
 
-def main(dry_run: bool = False, delay_ms: int = 0) -> int:
+def main(dry_run: bool = False, delay_ms: int = 0, wd_paths=None) -> int:
     emitter = setup_stdio()
-    engine = build_engine(dry_run, delay_ms)
+    engine = build_engine(dry_run, delay_ms, wd_paths)
     server = Server(engine, emitter)
     code = server.run(sys.stdin.buffer)
     try:

@@ -75,7 +75,7 @@ case class ModelEntry(name: String, path: String, kind: String, sizeMb: Double =
 case class FileEntry(name: String, path: String, sizeMb: Double = 0) derives RW
 
 case class LoadModelRequest(path: String, dtype: String = "fp16", vramMode: String = "gpu", vaePath: Option[String] = None, vaeTiling: Boolean = false) derives RW
-case class LoadedModel(name: String, path: String, kind: String, hash: String, loadedMs: Long = 0, vaeName: Option[String] = None, vaeHash: Option[String] = None) derives RW
+case class LoadedModel(name: String, path: String, kind: String, hash: String, loadedMs: Long = 0, vaeName: Option[String] = None, vaeHash: Option[String] = None, modelToken: Option[String] = None) derives RW
 
 case class SamplerInfo(name: String, supported: Boolean = true, defaultScheduler: String = "Uniform") derives RW
 case class SamplerList(samplers: Seq[SamplerInfo], schedulers: Seq[String], upscalers: Seq[String] = Nil, preprocessors: Seq[String] = Nil) derives RW
@@ -95,6 +95,22 @@ case class GenerationRequest(
     vaeRecoveryDir: String = "",
     hardwareInfo: HardwareInfo.Options = HardwareInfo.Options()
 ) derives RW
+
+/** Partial WD v3 worker preparation; the worker owns image snapshots and assets. */
+case class WdBatchPrepareRequest(imagesRoot: String, generation: GenerationRequest, outputParent: String,
+                                 outputName: String, checkpointToken: String) derives RW
+
+case class WdInterrogatorIdentity(backend: String, modelId: Option[String] = None,
+    modelSha256: Option[String] = None, tagsSha256: Option[String] = None,
+    threshold: Option[Double] = None, ratingThreshold: Option[Double] = None,
+    removeUnderscores: Option[Boolean] = None, appendRatings: Option[Boolean] = None,
+    preprocessing: Option[String] = None) derives RW
+
+case class WdBatchItem(status: String, input: String, positive: Option[String] = None,
+    negative: Option[String] = None, result: Option[GenerationResult] = None,
+    error: Option[String] = None, interrogators: Seq[WdInterrogatorIdentity] = Nil) derives RW
+
+case class WdBatchResult(rows: Seq[WdBatchItem], partial: Boolean) derives RW
 
 case class GeneratedImage(path: String, seed: Long, subseed: Long = -1L, width: Int = 0, height: Int = 0,
     hardwareInfo: Option[HardwareInfo.Record] = None) derives RW
@@ -155,6 +171,13 @@ object EngineEvent:
     case _ => None
 
 final case class EngineError(code: String, message: String, detail: String = "") extends Exception(s"[$code] $message"):
+  @volatile private var confirmedWorkerResponse = false
+  private[sdfx] def workerResponseConfirmed: Boolean = confirmedWorkerResponse
+  /** Return a distinct marked instance: never mark a shared local/restart error. */
+  private[sdfx] def markWorkerResponse(): EngineError =
+    val marked = copy()
+    marked.confirmedWorkerResponse = true
+    marked
   def isInterrupted: Boolean = code == Protocol.ErrorCodes.Interrupted
 
 object Json:

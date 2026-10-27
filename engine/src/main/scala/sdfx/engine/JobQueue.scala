@@ -27,8 +27,12 @@ final case class Job(
     origin: String = "ui",
     limits: JobLimits = JobLimits(),
     submittedContext: Option[SubmittedPayloadContext] = None,
-    captureOptions: Option[CaptureOptions] = None
+    captureOptions: Option[CaptureOptions] = None,
+    wdBatch: Option[WdBatchSpec] = None
 )
+
+/** Explicit partial WD operation: folder and a new destination directory. */
+final case class WdBatchSpec(imagesRoot: String, outputParent: String, outputName: String)
 
 object Job:
   private val counter = new AtomicLong(0)
@@ -65,6 +69,10 @@ object JobRunner:
     * Script jobs: the script receives the raw params and every `ctx.generate` it makes gets AlwaysOn processing.
     */
   def run(job: Job, generator: Generator, listener: GenerationListener): JobOutput =
+    if job.wdBatch.nonEmpty then
+      if job.script.nonEmpty || job.alwaysOn.nonEmpty then
+        throw EngineError(Protocol.ErrorCodes.Unsupported, "WD batch does not support scripts or active extensions")
+      return generator.runWdBatch(job.params, job.wdBatch.get, listener, job.limits)
     val ctx = generator.forJob(listener, job.alwaysOn, job.limits)
     job.script match
       case Some((plugin, values)) => plugin.run(job.params, values, ctx)
@@ -96,9 +104,13 @@ final case class QueueCancellation(cancelled: Boolean, blocked: Boolean,
     protection: Option[InterruptionProtection] = None, message: Option[String] = None)
 
 /** FIFO job queue with a single worker thread. */
-final class JobQueue(generator: Generator, interruptEngine: Option[String] => Future[InterruptionDecision]):
+final class JobQueue(generator: Generator, interruptEngine: Option[String] => Future[InterruptionDecision],
+                     interruptWdIdle: Option[String => Future[InterruptionDecision]] = None,
+                     readProtection: () => Future[InterruptionProtection] = () => Future.failed(new IllegalStateException("Protection state unavailable"))):
   private final class Entry(val job: Job, val promise: Promise[JobOutput]):
     val interruptionOwner: String = UUID.randomUUID().toString
+    val wdControl = job.wdBatch.map(_ => new ExtrasBatchControl(() =>
+      interruptWdIdle.fold(Future.failed[InterruptionDecision](new IllegalStateException("WD cooperative cancellation unavailable")))(_(interruptionOwner)), readProtection))
 
   private val queue = new LinkedBlockingQueue[Entry]()
   private val listeners = new CopyOnWriteArrayList[JobEvent => Unit]()
@@ -156,15 +168,18 @@ final class JobQueue(generator: Generator, interruptEngine: Option[String] => Fu
     // A global action targets the captured actual backend request even when a
     // native entry is waiting behind other work; its loop flag is independent.
     // Queue-only cancellation retains its immutable entry-owner restriction.
-    val dispatch = fallback.getOrElse(() => interruptEngine(Some(owner)))
+    val dispatch = captured.flatMap(_._1.wdControl) match
+      case Some(control) => () => control.cancel()
+      case None => fallback.getOrElse(() => interruptEngine(Some(owner)))
     () => dispatch().map { decision =>
       require(decision.validAdmission, "Invalid interruption admission response")
       val same = captured.exists { (entry, flag) =>
         val current = running.exists((active, _) => active eq entry)
-        if decision.accepted && current then flag.set(true)
+        if current && WdBatchSafety.markQueueCancelled(decision, entry.wdControl) then flag.set(true)
         current
       }
-      QueueInterruption(decision.accepted && (same || decision.affected), decision.blocked,
+      val admitted = WdBatchSafety.markQueueCancelled(decision, captured.flatMap(_._1.wdControl))
+      QueueInterruption(admitted && (same || decision.affected), decision.blocked,
         decision.protection, decision.message)
     }(using ExecutionContext.parasitic)
 
@@ -238,6 +253,7 @@ final class JobQueue(generator: Generator, interruptEngine: Option[String] => Fu
     val payloadSequence = new java.util.concurrent.atomic.AtomicInteger(0)
     val listener = new GenerationListener:
       override def interruptionOwner: Option[String] = Some(e.interruptionOwner)
+      override private[engine] def wdBatchControl: Option[ExtrasBatchControl] = e.wdControl
       override private[engine] def payloadJobId: Option[String] = Some(id)
       override private[engine] def submittedPayloadContext: Option[SubmittedPayloadContext] = e.job.submittedContext
       override private[engine] def payloadCaptureOptions: Option[CaptureOptions] = e.job.captureOptions

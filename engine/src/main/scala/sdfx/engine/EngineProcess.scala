@@ -168,7 +168,7 @@ final class EngineProcess private (proc: Process, log: String => Unit, onExit: (
       case "error" =>
         def s(k: String) = o.value.get(k).collect { case ujson.Str(v) => v }.getOrElse("")
         val code = if s("code").nonEmpty then s("code") else Protocol.ErrorCodes.Internal
-        val err = EngineError(code, s("message"), s("detail"))
+        val err = EngineError(code, s("message"), s("detail")).markWorkerResponse()
         id.flatMap(i => Option(pending.remove(i))) match
           case Some(p) => p.promise.tryFailure(err)
           case None    => safeLog(s"[engine] error: ${err.getMessage}")

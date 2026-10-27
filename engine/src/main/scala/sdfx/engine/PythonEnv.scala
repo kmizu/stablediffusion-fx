@@ -117,7 +117,21 @@ object PythonEnv:
       throw new IllegalStateException(configuredProblem(settings).getOrElse(
         "no Python interpreter found (set python_exe in settings or install Python 3.10+)"))
     )
-    py ++ Seq("-m", "sdfx") ++ (if dryRun then Seq("--dry-run") else Nil)
+    py ++ Seq("-m", "sdfx") ++ (if dryRun then Seq("--dry-run") else Nil) ++ wdArguments(home, settings, dryRun)
+
+  private[engine] def wdArguments(home: AppHome, settings: Settings, dryRun: Boolean): Seq[String] =
+    val model = settings.wdV3Model.map(_.trim).filter(_.nonEmpty)
+    val tags = settings.wdV3Tags.map(_.trim).filter(_.nonEmpty)
+    if dryRun then Nil
+    else (model, tags) match
+      case (Some(m), Some(t)) =>
+        // A bad output path or inaccessible temp directory must not stop
+        // ordinary engine startup; leave the optional WD service unconfigured.
+        try
+          val tmp = home.tmpDir(settings)
+          Seq("--wd-v3-model", m, "--wd-v3-tags", t, "--wd-v3-temp", tmp.toAbsolutePath.toString)
+        catch case NonFatal(_) => Nil
+      case _ => Nil
 
   def engineEnv(settings: Settings): Map[String, String] =
     Map("PYTHONUNBUFFERED" -> "1", "PYTHONIOENCODING" -> "utf-8") ++

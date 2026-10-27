@@ -116,7 +116,9 @@ BASE = [
     ("pytorch/pytorch", "dependency", "tensor runtime"),
     ("opencv/opencv-python", "dependency", "image processing (canny, face detection)"),
     ("python-pillow/Pillow", "dependency", "images"),
-    ("microsoft/onnxruntime", "dependency", "WD14 tagger"),
+    ("Alvi-alvarez/sd-Img2img-batch-interrogator", "ported", "Per-image prompt composition, including source-derived emoticon exceptions, MIT; partial WD v3 batch only; [source ed91cec](https://github.com/Alvi-alvarez/sd-Img2img-batch-interrogator/tree/ed91cec663bcddd7ca5514264a61483c7d80f8d2)"),
+    ("onnx/onnx", "dependency", "Optional local WD v3 model structure inspection"),
+    ("microsoft/onnxruntime", "dependency", "WD14 tagger and optional local WD v3 batch inference"),
     ("ultralytics/ultralytics", "dependency", "YOLO detectors for ADetailer (optional Python package)"),
     ("danielgatis/rembg", "dependency", "background removal models (optional Python package)"),
     ("FFmpeg/FFmpeg", "dependency", "Optional external ffmpeg executable for Save Intermediate video export; "
