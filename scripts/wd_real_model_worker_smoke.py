@@ -57,7 +57,7 @@ def main():
                            "sampler": "Euler", "denoising_strength": .75, "vram_mode": args.vram_mode},
               "limits": ["single 256x256 two-step img2img result, not a quality evaluation",
                          "WD v3 CPU only; no full batch extension parity",
-                         "PNG prompt metadata is not written by this worker; effective prompts are recorded in this report",
+                         "PNG metadata is checked here; native PNG Info and Restore require a separate check",
                          "HF offline flags are library controls, not an OS network sandbox"],
               "failure": ""}
     process = None
@@ -142,9 +142,14 @@ def main():
             with Image.open(generated) as result_image:
                 if result_image.size != (256, 256): raise RuntimeError("unexpected output dimensions")
                 report["png_text"] = {str(k): str(v) for k, v in result_image.info.items() if isinstance(v, str)}
+                persisted = result_image.info.get("parameters", "")
+                if not persisted.startswith(row["positive"] + "\n") or row["negative"] not in persisted:
+                    raise RuntimeError("effective prompts missing from PNG metadata")
+                if before["wd_model"] not in persisted or "Seed: 12345" not in persisted:
+                    raise RuntimeError("WD identity or actual seed missing from PNG metadata")
             report["generated"] = {"path": str(generated), "sha256": digest(generated),
                                    "effective_positive": row["positive"], "effective_negative": row["negative"],
-                                   "prompt_record_location": "worker result / JSON report", "provenance": row["interrogators"]}
+                                   "prompt_record_location": "PNG parameters / worker result / JSON report", "provenance": row["interrogators"]}
             report["memory_after_generation"] = request("memory-generated", "memory", {})
             request("unload", "unload", {})
             report["memory_after_unload"] = request("memory-unloaded", "memory", {})

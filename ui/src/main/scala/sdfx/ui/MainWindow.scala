@@ -583,13 +583,22 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
     val mode = if activeMode == Mode.Txt2Img && sdfx.plugins.LatentUpscalePlugin.replay(parsed.fields).nonEmpty then Mode.Img2Img else activeMode
     restorePlugins(mode, infotext, vms(mode).restoreInfotext(infotext))
     select(mode)
+    val vaeNotice = parsed.get("VAE").filter(_.nonEmpty).map { requested =>
+      val available = if requested == "Automatic" || requested == "None" then Some(requested)
+        else services.catalog.findVae(requested).map(_.name)
+      available match
+        case Some(value) => model.vae.set(value); ""
+        case None => s" · VAE '$requested' was not found; current selection retained"
+    }.getOrElse("")
     val parsedModel = sdfx.core.infotext.Infotext.parse(infotext).get("Model").filter(_.nonEmpty)
     parsedModel.flatMap(services.catalog.findCheckpoint).filter(_.name != model.checkpoint.get) match
       case Some(e) =>
         loadCheckpoint(e.name)
-        ctx.info(s"Parameters restored · switching checkpoint to ${e.name}")
+        ctx.info(s"Parameters restored · switching checkpoint to ${e.name}$vaeNotice")
       case None =>
-        ctx.success(s"Parameters restored into ${mode.label}")
+        val modelNotice = parsedModel.filter(name => services.catalog.findCheckpoint(name).isEmpty)
+          .map(name => s" · Checkpoint '$name' was not found; current selection retained").getOrElse("")
+        ctx.success(s"Parameters restored into ${mode.label}$vaeNotice$modelNotice")
 
   private val hardwareNotices = new HardwareInfo.PasteNotices
   private var disposed = false
@@ -754,10 +763,11 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
 
   scene.addEventFilter(KeyEvent.KEY_PRESSED, (e: KeyEvent) =>
     val k = e.getCode
-    if k == KeyCode.ENTER && e.isShortcutDown then
+    val promptEditor = panels(activeMode).prompts
+    if k == KeyCode.ENTER && e.isShortcutDown && !promptEditor.isComposingInput then
       generate(queueOnly = e.isShiftDown)
       e.consume()
-    else if k == KeyCode.ESCAPE && progress.get.running then
+    else if k == KeyCode.ESCAPE && progress.get.running && !promptEditor.isComposingInput && !promptEditor.completionVisible then
       interrupt()
       e.consume()
     else if e.isShortcutDown && k == KeyCode.V && !typing && activeMode.usesInitImage && tabs.getSelectionModel.getSelectedItem == modeTabs(activeMode) then
