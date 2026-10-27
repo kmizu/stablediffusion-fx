@@ -85,6 +85,8 @@ object RealV003GenerationCheck:
         window.ctx.tagDictionary.tags.size == 2 && window.panels(Mode.Txt2Img).prompts.promptArea.isFocused
       } }
       val before = fx {
+        require(window.catalogVM.snapshot.get.checkpoints.exists(_.name == loaded.name),
+          s"MainWindow did not initialize its catalog from the already loaded service: ${loaded.name}")
         val editor = window.panels(Mode.Txt2Img).prompts
         val area = editor.promptArea
         area.setText("blue, detailed portrait"); area.positionCaret(4)
