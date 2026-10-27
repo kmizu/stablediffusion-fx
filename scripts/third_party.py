@@ -21,6 +21,14 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # (repo, how it is used, what)
 BASE = [
+    ("SenshiSentou/sd-webui-state-manager", "reimplemented", "Manual named generation settings, per-mode list/inspect/restore/delete, "
+     "including shared model settings and inactive script/extension controls -> `core:state-manager`; independent Scala/JavaFX "
+     "implementation, no upstream code/assets copied; no history/autosave/thumbnail or upstream storage-format parity; "
+     "[source 2af62ec](https://github.com/SenshiSentou/sd-webui-state-manager/tree/2af62ecd5287438bbc309f7e840d34aa5c8e3cb6)"),
+    ("DominikDoom/a1111-sd-webui-tagcomplete", "reimplemented", "Local CSV tag/alias completion with keyboard selection "
+     "in native prompt editors -> `core:tag-autocomplete`; independent Scala/JavaFX implementation, no upstream code or tag "
+     "datasets copied; no wildcard/extra-network/chant/translation parity; "
+     "[source 4170882](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/tree/4170882f90b47be130a0ff9314f663c230b9153d)"),
     ("AUTOMATIC1111/stable-diffusion-webui", "ported", "infotext format, built-in scripts (X/Y/Z, prompt matrix, loopback, "
      "SD upscale, outpainting, img2img alternative, custom code, postprocessing), styles.csv, soft inpainting"),
     ("Panchovix/stable-diffusion-webui-reForge", "ported", "reference implementation; built-in extensions (APG, RescaleCFG, "
@@ -137,6 +145,12 @@ BASE = [
 # Keep these source-pinned original LICENSE bytes; do not normalize newlines.
 # (commit, license path, SHA-256, SPDX)
 PINNED_LICENSES = {
+    "SenshiSentou/sd-webui-state-manager": (
+        "2af62ecd5287438bbc309f7e840d34aa5c8e3cb6", "LICENSE",
+        "3fe9f2a7f539d60ed0e8edaab5f9645c0ee144f9df7f3cf29296153fc643bc4e", "MIT"),
+    "DominikDoom/a1111-sd-webui-tagcomplete": (
+        "4170882f90b47be130a0ff9314f663c230b9153d", "LICENSE",
+        "c1532c29734187eddd3948321379fa95ba79191bc3cb41d2787d7dff6e5913b5", "MIT"),
     "AbyszOne/Abysz-LAB-Ext": (
         "deff0d4b4a208f862299b14b93e088f613373153", "LICENSE",
         "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986", "GPL-3.0"),
