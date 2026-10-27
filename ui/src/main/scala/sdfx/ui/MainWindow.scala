@@ -10,6 +10,7 @@ import javafx.stage.{Screen, Stage}
 import javafx.util.Duration
 import sdfx.core.gallery.GalleryItem
 import sdfx.core.model.ExtendedStyle
+import sdfx.core.modelcards.{CardId, LocalPreviewFiles}
 import sdfx.core.infotext.HardwareInfo
 import sdfx.core.plugins.api.Plugin
 import sdfx.engine.{AppServices, EngineState, JobEvent}
@@ -34,14 +35,56 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   // overlapping model / VAE loads: the chip shows the latest one until all are done
   private var loads = Vector.empty[(Long, String)]
   private var loadSeq = 0L
+  private val cardWindowsPaths = LocalPreviewFiles.systemPlatform.windows
+  private def validateCardModel(id: CardId): scala.concurrent.Future[Either[String, Unit]] =
+    scala.concurrent.Future {
+      val path = Path.of(id.modelPath)
+      val directory = Files.isDirectory(path)
+      LocalPreviewFiles.scoped().validateModel(path, directory).map(_ => ())
+    }(using Fx.bg)
+  private lazy val cardGate = new CheckpointCardGate(
+    () => CardGateSnapshot(services.supervisor.state, services.queue.isIdle, loads.isEmpty,
+      ctx.extendedStyleApplying.get, services.catalog.snapshot),
+    validateCardModel,
+    run => Fx.run(run()),
+    name => {
+      val exact = services.catalog.snapshot.checkpoints.filter(_.name == name)
+      if exact.size != 1 || !services.catalog.findCheckpoint(name).contains(exact.head) then
+        throw new IllegalStateException("Checkpoint catalog resolution changed during validation")
+      startCheckpointLoad(name)
+    },
+    cardWindowsPaths
+  )
+  def cardSelectionRevision: javafx.beans.property.ReadOnlyLongProperty = cardGate.revision
+  def cardCheckpointAdmission(id: CardId): CheckpointCardAdmission = cardGate.state(id)
+  def admitCardCheckpoint(id: CardId): scala.concurrent.Future[Either[String, CheckpointAdmission]] = cardGate.admit(id)
+  lazy val modelCardActions = new ModelCardActions(ctx, cardCheckpointAdmission, admitCardCheckpoint, cardSelectionRevision,
+    validateCardModel, run => Fx.run(run()), cardWindowsPaths,
+    Some((id, name) => cardGate.admit(id, Some(name))))
+  private var browser: ModelBrowser = null
+  ctx.openModelBrowser = (kind, target) =>
+    modelCardActions.setTarget(target)
+    if browser != null then browser.dispose()
+    modelCardActions.setTarget(target)
+    browser = new ModelBrowser(ctx, modelCardActions, services.modelCards)
+    browser.show(kind)
+  private lazy val cardIdle = new CardIdleObserver(() => services.queue.isIdle, run => {
+    val timer = new javafx.animation.PauseTransition(Duration.millis(50))
+    timer.setOnFinished(_ => run())
+    timer.play()
+    () => timer.stop()
+  },
+    () => cardGate.stateChanged())
   private def loading: Option[String] = loads.lastOption.map(_._2)
   private def beginLoad(what: String): Long =
     loadSeq += 1
     loads = loads :+ (loadSeq -> what)
+    cardGate.stateChanged()
     refreshChip()
     loadSeq
   private def endLoad(id: Long): Unit =
     loads = loads.filterNot(_._1 == id)
+    cardGate.stateChanged()
     refreshChip()
   private val exportGate = new SingleFlight
   /** Native acceptance holds the real export admission gate without starting a job. */
@@ -330,16 +373,22 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   ctx.interruptRuntime = () => interrupt()
   ctx.loadStyles()
 
-  services.catalog.addListener(snap => Fx.run(catalogVM.update(snap, services.catalog.choices)))
-  services.supervisor.addStateListener(_ => Fx.run(refreshChip()))
+  services.catalog.addListener(snap => Fx.run { catalogVM.update(snap, services.catalog.choices); cardGate.stateChanged() })
+  services.supervisor.addStateListener(_ => Fx.run { refreshChip(); cardGate.stateChanged() })
+  ctx.extendedStyleApplying.addListener((_, _, _) => cardGate.stateChanged())
   services.addLogListener(line => Fx.run(statusBar.log(line)))
-  services.queue.addListener(e => QueueEventFxDispatch.forward(e, r => Fx.run(r()),
+  services.queue.addListener(e => { Fx.run {
+    cardGate.stateChanged()
+    e match
+      case _: JobEvent.JobFinished | _: JobEvent.JobCancelled | _: JobEvent.JobFailed => cardIdle.terminal()
+      case _ => ()
+  }; QueueEventFxDispatch.forward(e, r => Fx.run(r()),
     // File stat stays on the job thread; only its small result crosses to FX.
     saved => {
       val size = try Files.size(saved.image.path) catch case NonFatal(_) => 0L
       Fx.run(onImageSaved(saved, size))
     },
-    onJobEvent))
+    onJobEvent) })
   progress.state.addListener((_, _, _) => refreshChip())
 
   private def refreshChip(): Unit =
@@ -547,6 +596,10 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
     }
 
   def loadCheckpoint(name: String): Unit =
+    startCheckpointLoad(name)
+    ()
+
+  private def startCheckpointLoad(name: String): Long =
     model.checkpoint.set(name)
     val id = beginLoad(name)
     Fx.async(services.loadCheckpoint(name)) { m =>
@@ -556,6 +609,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
       endLoad(id)
       ctx.error(s"Cannot load checkpoint: ${friendly(Fx.message(e))}")
     }
+    id
 
   def setVae(v: String): Unit =
     val id = beginLoad(s"VAE $v")
@@ -613,23 +667,25 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   def openSettings(tab: Int = 0): Unit =
     val before = services.settings
     new SettingsDialog(stage, before, tab).showAndWait().foreach { edited =>
-      val s = services.updateSettings(cur => SettingsMerge(cur, edited))
-      if s.mcpHttpEnabled != before.mcpHttpEnabled || s.mcpHttpPort != before.mcpHttpPort || s.mcpToken != before.mcpToken then applyMcp(s)
-      if s.theme != before.theme then Theme.apply(scene, s.theme)
-      if s.modelDirs != before.modelDirs then refreshCatalog()
-      if s.outputDir != before.outputDir then
-        services.resetGallery()
-        reloadGallery()
-      val engineChanged = s.pythonExe != before.pythonExe || s.dtype != before.dtype || s.vramMode != before.vramMode ||
-        s.vaeTiling != before.vaeTiling || s.hfOffline != before.hfOffline
-      if engineChanged then
-        val a = new Alert(Alert.AlertType.CONFIRMATION, "Engine settings changed. Restart the engine now?", ButtonType.NO, ButtonType.YES)
-        a.initOwner(stage)
-        a.setHeaderText(null)
-        a.getDialogPane.getStylesheets.setAll(scene.getStylesheets)
-        val r = a.showAndWait()
-        if r.isPresent && r.get == ButtonType.YES then restartEngine()
-      ctx.success("Settings saved")
+      services.updateSettingsChecked(cur => SettingsMerge(cur, edited)) match
+        case Left(reason) => ctx.error(reason)
+        case Right(s) =>
+          if s.mcpHttpEnabled != before.mcpHttpEnabled || s.mcpHttpPort != before.mcpHttpPort || s.mcpToken != before.mcpToken then applyMcp(s)
+          if s.theme != before.theme then Theme.apply(scene, s.theme)
+          if s.modelDirs != before.modelDirs then refreshCatalog()
+          if s.outputDir != before.outputDir then
+            services.resetGallery()
+            reloadGallery()
+          val engineChanged = s.pythonExe != before.pythonExe || s.dtype != before.dtype || s.vramMode != before.vramMode ||
+            s.vaeTiling != before.vaeTiling || s.hfOffline != before.hfOffline
+          if engineChanged then
+            val a = new Alert(Alert.AlertType.CONFIRMATION, "Engine settings changed. Restart the engine now?", ButtonType.NO, ButtonType.YES)
+            a.initOwner(stage)
+            a.setHeaderText(null)
+            a.getDialogPane.getStylesheets.setAll(scene.getStylesheets)
+            val r = a.showAndWait()
+            if r.isPresent && r.get == ButtonType.YES then restartEngine()
+          ctx.success("Settings saved")
     }
 
   // ---- keyboard ----------------------------------------------------------------------------------------
@@ -772,26 +828,24 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
       services.updateSettings(st => st.copy(pluginValues = st.pluginValues ++ plugins(Mode.Txt2Img).snapshot))
     catch case NonFatal(e) => System.err.println(s"[sdfx] cannot save ui state: ${e.getMessage}")
 
+  private val cleanup = new UiCleanup
   def dispose(): Unit =
-    interruptionControls.dispose()
     disposed = true
-    if payloadPane != null then
-      payloadPane.dispose()
-      payloadStage.close()
-      payloadPane = null
-      payloadStage = null
-    if presetPane != null then
-      presetPane.dispose()
-      presetSession.close()
-      presetStage.close()
-      presetPane = null
-      presetSession = null
-      presetStage = null
-    systemInfo.dispose()
-    stylesEditor.dispose()
-    vramPoll.stop()
-    mcpExec.execute(() => mcp.close())
-    mcpExec.shutdown()
-    mcpExec.awaitTermination(3, java.util.concurrent.TimeUnit.SECONDS)
-    try ctx.temps.sweep(referencedImages)
-    catch case NonFatal(_) => ()
+    cleanup.run(Seq(
+      "interruptions" -> (() => interruptionControls.dispose()),
+      "card idle observer" -> (() => cardIdle.dispose()),
+      "model browser" -> (() => if browser != null then { val old = browser; browser = null; old.dispose() }),
+      "card actions" -> (() => modelCardActions.dispose()),
+      "card gate" -> (() => cardGate.dispose()),
+      "payload pane" -> (() => if payloadPane != null then payloadPane.dispose()),
+      "payload stage" -> (() => if payloadStage != null then payloadStage.close()),
+      "preset pane" -> (() => if presetPane != null then presetPane.dispose()),
+      "preset session" -> (() => if presetSession != null then presetSession.close()),
+      "preset stage" -> (() => if presetStage != null then presetStage.close()),
+      "system information" -> (() => systemInfo.dispose()),
+      "styles editor" -> (() => stylesEditor.dispose()),
+      "VRAM timer" -> (() => vramPoll.stop()),
+      "MCP controller" -> (() => mcpExec.execute(() => mcp.close())),
+      "MCP executor" -> (() => mcpExec.shutdown()),
+      "temporary files" -> (() => { ctx.temps.sweep(referencedImages); () })
+    ))

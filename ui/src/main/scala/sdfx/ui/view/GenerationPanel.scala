@@ -102,7 +102,7 @@ final class GenerationPanel(
     sections(s"${mode.key}.$key") = p
     p
 
-  val prompts = new PromptEditor(ctx, vm.prompt, vm.negativePrompt)
+  val prompts = new PromptEditor(ctx, vm.prompt, vm.negativePrompt, mode.key)
 
   // ---- validation banner -------------------------------------------------------------------------------
   private val problems = new VBox(2)

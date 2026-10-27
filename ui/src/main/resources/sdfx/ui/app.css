@@ -489,3 +489,6 @@
 .comparison-term { -fx-fill: -sdfx-text; }
 #comparison-canvas:focused { -fx-border-color: -sdfx-accent; -fx-border-width: 2; }
 #comparison-tool .text-flow { -fx-line-spacing: 3; }
+
+/* Native model browser */
+.model-browser-status { -fx-wrap-text: true; }

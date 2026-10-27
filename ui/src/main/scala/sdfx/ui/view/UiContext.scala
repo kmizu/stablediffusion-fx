@@ -5,7 +5,7 @@ import javafx.stage.Stage
 import sdfx.core.config.AtomicFiles
 import sdfx.core.model.{ExtendedStyle, GenerationParams, PromptStyle, StyleLibrary, Styles}
 import sdfx.engine.AppServices
-import sdfx.ui.vm.{CatalogVM, Mode}
+import sdfx.ui.vm.{CatalogVM, Mode, PromptInsertionTarget}
 
 import java.nio.file.{Files, Path}
 import scala.util.control.NonFatal
@@ -18,6 +18,7 @@ final class UiContext(val services: AppServices, val catalog: CatalogVM, val sta
   lazy val styleLibrary = new StyleLibrary(services.home.stylesFile)
   lazy val hardwareInfo = new sdfx.engine.HardwareInfoService(services)
   var openStylesEditor: () => Unit = () => ()
+  var openModelBrowser: (String, Option[PromptInsertionTarget]) => Unit = (_, _) => ()
   var currentGeneration: () => GenerationParams = () => GenerationParams()
   /** Commits the named mode's existing numeric editor drafts before preset capture/apply. */
   var commitPresetEditors: Mode => Either[String, Unit] =

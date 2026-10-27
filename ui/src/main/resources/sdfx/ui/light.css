@@ -39,3 +39,5 @@
     -fx-body-color: #ffffff;
     -fx-color: #ffffff;
 }
+
+.model-browser-status { -fx-text-fill: #4a5362; }

@@ -93,7 +93,9 @@ object SettingsMerge:
       mcpHttpEnabled = edited.mcpHttpEnabled,
       mcpHttpPort = edited.mcpHttpPort,
       mcpToken = edited.mcpToken,
-      theme = edited.theme
+      theme = edited.theme,
+      nsfwCardBlurDefault = edited.nsfwCardBlurDefault,
+      modelPreviewFolders = edited.modelPreviewFolders
     )
 
 /** At most one asynchronous operation at a time (e.g. mask export before submit). The flag is always released:
@@ -131,3 +133,36 @@ object VramModes:
     case _                            => "gpu"
   def index(v: String): Int = Modes.indexWhere(_._1 == normalize(v))
   def normalizeSettings(s: Settings): Settings = s.copy(vramMode = normalize(s.vramMode))
+
+/** Idempotent cleanup which attempts every owned resource even when one release fails. */
+private[ui] final class UiCleanup:
+  private var done = false
+  def run(steps: Seq[(String, () => Unit)]): Unit = synchronized {
+    if !done then
+      done = true
+      steps.foreach { (name, close) =>
+        try close()
+        catch case NonFatal(e) => System.err.println(s"[sdfx] $name cleanup failed: ${e.getMessage}")
+      }
+  }
+
+/** Process-owned final cleanup. Scheduling is nonjoining; every finalizer step is attempted once. */
+private[ui] final class FinalAppCleanup(loader: () => Unit, schedule: (() => Unit) => Unit,
+    services: () => Unit, exit: () => Unit):
+  private val start = new UiCleanup
+  private val finish = new UiCleanup
+  private def finalizeProcess(): Unit = finish.run(Seq(
+    "application services" -> services,
+    "application exit" -> exit
+  ))
+  def run(): Unit = start.run(Seq(
+    "process preview loader" -> loader,
+    "application finalizer scheduling" -> (() =>
+      try schedule(() => finalizeProcess())
+      catch
+        case NonFatal(e) =>
+          System.err.println(s"[sdfx] cannot schedule shutdown: ${e.getMessage}")
+          val fallback = new Thread(() => finalizeProcess(), "sdfx-shutdown-fallback")
+          fallback.setDaemon(false)
+          fallback.start())
+  ))

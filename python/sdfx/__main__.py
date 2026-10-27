@@ -8,6 +8,21 @@ import sys
 import warnings
 
 
+def _reset_inherited_windows_dll_directory() -> None:
+    if sys.platform != "win32":
+        return
+    # jpackage's launcher can set a DLL directory that Windows inherits into
+    # this child process. Restore the default before importing torch or server.
+    import ctypes
+
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    set_directory = kernel32.SetDllDirectoryW
+    set_directory.argtypes = [ctypes.c_wchar_p]
+    set_directory.restype = ctypes.c_int
+    if not set_directory(None):
+        raise ctypes.WinError(ctypes.get_last_error())
+
+
 def parse_args(argv=None):
     ap = argparse.ArgumentParser(prog="sdfx", description="stablediffusion-fx inference engine (JSON Lines on stdin/stdout)")
     ap.add_argument("--dry-run", action="store_true", help="fake engine: no torch/diffusers, writes placeholder images")
@@ -25,6 +40,7 @@ def main(argv=None) -> int:
     logging.captureWarnings(True)
     warnings.simplefilter("default")
     os.environ.setdefault("TQDM_DISABLE", "1")
+    _reset_inherited_windows_dll_directory()
     from .server import main as server_main
     return server_main(dry_run=args.dry_run, delay_ms=args.dry_run_delay_ms)
 

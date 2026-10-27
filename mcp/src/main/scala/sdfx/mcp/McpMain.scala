@@ -48,11 +48,13 @@ object McpMain:
     val log: String => Unit = s => System.err.println(s)
     val opts = parseArgs(args.toSeq)
     val home = opts.home.map(h => AppHome(Paths.get(h).toAbsolutePath.normalize())).getOrElse(AppHome.detect())
-    val settings = Settings.load(home.settingsFile)
+    val loaded = Settings.loadResult(home.settingsFile)
+    val settings = loaded.settings
     val allowed: Seq[Path] = PathPolicy.fromEnv() ++ opts.allowDirs.filterNot(PathPolicy.isNetworkPath).map(d => Paths.get(d).toAbsolutePath.normalize())
     log(s"[mcp] home=${home.root} dryRun=${opts.dryRun}${if allowed.nonEmpty then s" allowedDirs=${allowed.mkString(";")}" else ""}")
 
-    lazy val services: AppServices = new AppServices(home, settings, opts.dryRun, StandardPlugins.all(() => services.registry.xyzAxes))
+    lazy val services: AppServices = new AppServices(home, settings, opts.dryRun, StandardPlugins.all(() => services.registry.xyzAxes),
+      initialRecovery = loaded.recovery)
     services.addLogListener(log)
     val started = services.startAsync()
     started.failed.foreach(e => log(s"[mcp] engine start failed: ${e.getMessage}"))(using scala.concurrent.ExecutionContext.global)

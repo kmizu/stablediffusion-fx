@@ -76,7 +76,11 @@ class SettingsSuite extends munit.FunSuite with TempDir:
     val f = dir.resolve("s.json")
     Seq("{not json", "", "[]", "null", """{"mcp_http_port":"abc"}""", "\u0000\u0001garbage").foreach { c =>
       Files.writeString(f, c)
-      assertEquals(Settings.load(f), Settings(), c)
+      val original = Files.readAllBytes(f)
+      val result = Settings.loadResult(f)
+      assertEquals(result.settings, Settings(nsfwCardBlurDefault = "Hide"), c)
+      assert(result.recovery.nonEmpty, c)
+      assertEquals(Files.readAllBytes(f).toSeq, original.toSeq, c)
     }
   }
 

@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 103, todo 199, na 51.
+Totals: done 104, todo 198, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-fx | Why not applicable |
 |---|---|---|---|---|---|
@@ -339,7 +339,7 @@ Totals: done 103, todo 199, na 51.
 | 330 | [sd-queue](https://github.com/nmygle/sd-queue.git) | 8 | na | `webui-api` | adds HTTP routes to the A1111 server for other tools; this app's integration surface is MCP |
 | 331 | [chara-searcher](https://github.com/NON906/chara-searcher.git) | 38 | todo | `chara_searcher` |  |
 | 332 | [AMD FSR 1.0 integration](https://github.com/AndreyRGW/sd-webui-fsr-integration.git) | 12 | done | `fsr_upscale` |  |
-| 333 | [stupid-nsfw-card-blur-a1111](https://github.com/CurtisDS/stupid-nsfw-card-blur-a1111.git) | 4 | todo | `core:nsfw-card-blur` |  |
+| 333 | [stupid-nsfw-card-blur-a1111](https://github.com/CurtisDS/stupid-nsfw-card-blur-a1111.git) | 4 | done | `core:nsfw-card-blur` |  |
 | 334 | [extra-network-side-panel-for-a1111](https://github.com/CurtisDS/extra-network-side-panel-for-a1111.git) | 7 | na | `webui-ux` | Gradio page behaviour (tabs, buttons, dialogs); the desktop UI provides the equivalent natively |
 | 335 | [Face manipulations - extras](https://github.com/light-and-ray/sd-webui-face-manipulation-extras.git) | 19 | todo | `face_manipulation` |  |
 | 336 | [Stable Diffusion PNGINFO Injection extension](https://github.com/bluelovers/sd-webui-pnginfo-injection.git) | 14 | todo | `pnginfo_injection` |  |

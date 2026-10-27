@@ -4,6 +4,11 @@ import sdfx.core.json.SnakePickle
 import sdfx.core.json.SnakePickle.{ReadWriter => RW, *}
 
 import java.nio.file.{Files, Path, Paths, StandardCopyOption}
+import java.nio.charset.{CodingErrorAction, StandardCharsets}
+import java.nio.ByteBuffer
+import java.io.{ByteArrayOutputStream, InputStream}
+import java.security.MessageDigest
+import scala.util.control.NonFatal
 
 /** Directories searched for each model kind. All entries are absolute or relative to the app home. */
 case class ModelDirs(
@@ -62,21 +67,105 @@ case class Settings(
     comparisonMouseAuto: Boolean = false,
     hardwareInfoEnabled: Boolean = false,
     hardwareInfoRemark: String = "",
-    apiPayloadIncludeImageContents: Boolean = false
+    apiPayloadIncludeImageContents: Boolean = false,
+    nsfwCardBlurDefault: String = "Blur",
+    modelPreviewOverrides: Map[String, String] = Map.empty,
+    modelPreviewFolders: Map[String, Seq[String]] = Map.empty
 ) derives RW
 
-object Settings:
-  def load(file: Path): Settings =
-    if !Files.exists(file) then Settings()
-    else
-      // upickle reads a JSON `null` document as a null reference: treat it like any other unusable file.
-      try Option(SnakePickle.read[Settings](Files.readString(file))).getOrElse(Settings())
-      catch
-        case e: Exception =>
-          System.err.println(s"[sdfx] settings unreadable, using defaults: ${e.getMessage}")
-          Settings()
+case class SettingsRecovery(reason: String, originalSha256: Option[String])
+case class SettingsLoadResult(settings: Settings, recovery: Option[SettingsRecovery])
+enum SettingsSaveIntent:
+  case Explicit, Recover
 
-  def save(file: Path, s: Settings): Unit = AtomicFiles.writeString(file, SnakePickle.write(s, indent = 2))
+object Settings:
+  private val MaxInput = 16 * 1024 * 1024
+  private val MaxUnits = 1000000L
+  private val MaxEncoded = 4L * 1024 * 1024
+
+  private final class PreviewBudget:
+    private var units = 0L
+    private var bytes = 64L
+    def add(value: String, max: Int): Unit =
+      require(value != null && value.length <= max, "preview configuration string exceeds limit or is null")
+      units += value.length
+      bytes += ujson.write(value).getBytes(StandardCharsets.UTF_8).length + 16L
+      require(units <= MaxUnits && bytes <= MaxEncoded, "preview configuration aggregate limit exceeded")
+
+  /** Admission before producing a second JSON representation of the preview maps. */
+  def validatePreviewConfiguration(s: Settings): Either[String, Unit] =
+    try
+      val budget = new PreviewBudget
+      require(s.modelPreviewOverrides != null && s.modelPreviewFolders != null, "preview map is null")
+      require(s.modelPreviewOverrides.size <= 10000 && s.modelPreviewFolders.size <= 64, "preview map entry limit exceeded")
+      s.modelPreviewOverrides.foreach { (k, v) => budget.add(k, 8192); budget.add(v, 8192) }
+      var roots = 0
+      s.modelPreviewFolders.foreach { (kind, paths) =>
+        budget.add(kind, 128)
+        require(paths != null, "preview folder list is null")
+        paths.foreach { p =>
+          roots += 1
+          require(roots <= 256, "preview folder count exceeded")
+          budget.add(p, 8192)
+        }
+      }
+      Right(())
+    catch case NonFatal(e) => Left(Option(e.getMessage).getOrElse("invalid preview configuration"))
+
+  def load(file: Path): Settings = loadResult(file).settings
+
+  def loadResult(file: Path): SettingsLoadResult =
+    if Files.notExists(file) then return SettingsLoadResult(Settings(), None)
+    loadResultFromStream(() => Files.newInputStream(file))
+
+  private[core] def loadResultFromStream(open: () => InputStream): SettingsLoadResult =
+    val digest = MessageDigest.getInstance("SHA-256")
+    var hash: Option[String] = None
+    try
+      val buffer = new Array[Byte](8192)
+      val out = new ByteArrayOutputStream()
+      val in = open()
+      var total = 0
+      try
+        var eof = false
+        while total < MaxInput && !eof do
+          val n = in.read(buffer, 0, math.min(buffer.length, MaxInput - total))
+          if n < 0 then eof = true
+          else if n == 0 then
+            val one = in.read()
+            if one < 0 then eof = true
+            else
+              digest.update(one.toByte)
+              out.write(one)
+              total += 1
+          else
+            digest.update(buffer, 0, n)
+            out.write(buffer, 0, n)
+            total += n
+        if !eof && in.read() != -1 then throw new IllegalArgumentException("settings input exceeds 16 MiB")
+      finally in.close()
+      hash = Some(digest.digest().map(b => f"${b & 0xff}%02x").mkString)
+      val decoder = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT)
+      val preflight = SettingsPreviewPreflight(decoder.decode(ByteBuffer.wrap(out.toByteArray)).toString)
+      val json = ujson.read(preflight.json)
+      if !json.isInstanceOf[ujson.Obj] then throw new IllegalArgumentException("settings document must be an object")
+      val obj = json.obj
+      var problems = Vector.empty[String]
+      preflight.problem.foreach(p => problems :+= s"invalid preview configuration: $p")
+      obj.get("nsfw_card_blur_default").foreach {
+        case ujson.Str(v) if Set("Blur", "Hide", "Show").contains(v) => ()
+        case _ => obj("nsfw_card_blur_default") = ujson.Str("Hide"); problems :+= "invalid nsfw_card_blur_default"
+      }
+      val decoded = Option(SnakePickle.read[Settings](json)).getOrElse(throw new IllegalArgumentException("null settings"))
+      val settings = decoded.copy(modelPreviewOverrides = preflight.overrides, modelPreviewFolders = preflight.folders)
+      SettingsLoadResult(settings, Option.when(problems.nonEmpty)(SettingsRecovery(problems.mkString("; "), hash)))
+    catch
+      case NonFatal(e) =>
+        SettingsLoadResult(Settings(nsfwCardBlurDefault = "Hide"), Some(SettingsRecovery(s"settings unreadable: ${e.getMessage}", hash)))
+
+  def save(file: Path, s: Settings): Unit =
+    validatePreviewConfiguration(s).fold(reason => throw new IllegalArgumentException(reason), _ => ())
+    AtomicFiles.writeString(file, SnakePickle.write(s, indent = 2))
 
 object AtomicFiles:
   def writeString(file: Path, content: String): Unit =

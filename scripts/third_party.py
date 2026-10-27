@@ -79,6 +79,7 @@ BASE = [
      "-> `core:preset-utilities`; independently implemented from observed behaviour; no upstream code, prose, "
      "assets, or default JSON copied; [source e301734](https://github.com/Gerschel/sd_web_ui_preset_utils/tree/e301734567f37ac53c6225aec3a5c9858b357e7e) "
      "has no published license file in its tracked tree"),
+    ("CurtisDS/stupid-nsfw-card-blur-a1111", "reimplemented", "Native card preview show/blur/hide behaviour -> `core:nsfw-card-blur`; independently reimplemented in Scala/JavaFX, with native URI loading, blur, keyboard and image codec adaptations; no upstream CSS, JavaScript or icons copied; [source b2cdcebf97d1074278fb84e0a6eec3006dab0fe1](https://github.com/CurtisDS/stupid-nsfw-card-blur-a1111/tree/b2cdcebf97d1074278fb84e0a6eec3006dab0fe1)"),
     ("madebyollin/taesd", "dependency", "Optional separately downloaded TAESD/TAESDXL model weights for VAE Tools. "
      "Weights are not bundled; model repositories madebyollin/taesd and madebyollin/taesdxl on Hugging Face "
      "are revision-pinned by python/sdfx/vae_tools.py and download requires explicit enablement."),
@@ -130,6 +131,9 @@ BASE = [
 # Keep these source-pinned original LICENSE bytes; do not normalize newlines.
 # (commit, license path, SHA-256, SPDX)
 PINNED_LICENSES = {
+    "CurtisDS/stupid-nsfw-card-blur-a1111": (
+        "b2cdcebf97d1074278fb84e0a6eec3006dab0fe1", "LICENSE.txt",
+        "e6b9326517557ffdbf4a4a2a9f10ab20a037e95dd08645412e64a8baf7549742", "MIT"),
     "Zyin055/Config-Presets": (
         "e252e60288b1104a45ea12106d92a8d145364fa1", "LICENSE",
         "c19b98789c10ffe53568c46f4daae8a49024a02715cf2d4f05de04aa05d3a5f9", "MIT"),

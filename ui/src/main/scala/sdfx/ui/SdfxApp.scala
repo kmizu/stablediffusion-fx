@@ -5,11 +5,11 @@ import javafx.application.{Application, Platform}
 import javafx.embed.swing.SwingFXUtils
 import javafx.stage.Stage
 import javafx.util.Duration
-import sdfx.core.config.{AppHome, Settings}
+import sdfx.core.config.{AppHome, SettingsLoadResult}
 import sdfx.engine.{AppServices, PythonEnv}
 import sdfx.plugins.StandardPlugins
-import sdfx.ui.view.{BootstrapDialog, Theme}
-import sdfx.ui.vm.{UiState, VramModes}
+import sdfx.ui.view.{BootstrapDialog, PreviewImageLoader, Theme}
+import sdfx.ui.vm.{FinalAppCleanup, UiState, VramModes}
 
 import java.nio.file.{Files, Paths}
 import javax.imageio.ImageIO
@@ -21,34 +21,49 @@ final class SdfxApp extends Application:
   @volatile private var services: Option[AppServices] = None
   @volatile private var window: Option[MainWindow] = None
   @volatile private var closed = false
+  @volatile private var explicitExit = false
+  private lazy val finalCleanup = new FinalAppCleanup(
+    () => PreviewImageLoader.shutdownProcess(),
+    task => {
+      val thread = new Thread(() => task(), "sdfx-shutdown")
+      thread.setDaemon(false)
+      thread.start()
+    },
+    () => services.foreach(_.shutdown()),
+    () => if explicitExit then
+      try Platform.exit()
+      finally System.exit(0)
+  )
 
   override def start(stage: Stage): Unit =
     val opts = CliOptions.parse(getParameters.getRaw.asScala.toSeq)
     val home = opts.home.map(h => AppHome(Paths.get(h).toAbsolutePath.normalize())).getOrElse(AppHome.detect())
     // legacy VRAM modes (medvram / lowvram / cpu) are mapped to the engine's values
-    val settings = VramModes.normalizeSettings(Settings.load(home.settingsFile))
+    val loaded = sdfx.core.config.Settings.loadResult(home.settingsFile)
+    val normalized = loaded.copy(settings = VramModes.normalizeSettings(loaded.settings))
+    val settings = normalized.settings
     Platform.setImplicitExit(true)
     val needsSetup = !opts.dryRun && settings.pythonExe.forall(_.trim.isEmpty) &&
       (try PythonEnv.needsBootstrap(home) catch case NonFatal(_) => true)
     if needsSetup then
       val dlg = new BootstrapDialog(home, settings, Theme.stylesheets(settings.theme), Theme.themeClass(settings.theme))
       dlg.show {
-        case dlg.Result.Installed    => launch(stage, home, Settings.load(home.settingsFile), dryRun = false, opts)
-        case dlg.Result.DryRun       => launch(stage, home, settings, dryRun = true, opts)
+        case dlg.Result.Installed    => launch(stage, home, normalized, dryRun = false, opts)
+        case dlg.Result.DryRun       => launch(stage, home, normalized, dryRun = true, opts)
         case dlg.Result.UsePython(p) =>
-          val s = settings.copy(pythonExe = Some(p))
-          try Settings.save(home.settingsFile, s)
-          catch case NonFatal(e) => System.err.println(s"[sdfx] cannot save settings: ${e.getMessage}")
-          launch(stage, home, s, dryRun = false, opts)
+          launch(stage, home, normalized.copy(settings = settings.copy(pythonExe = Some(p))), dryRun = false, opts, saveBootstrapChoice = true)
         case dlg.Result.Cancelled => Platform.exit()
       }
       scheduleScreenshot(opts, stage, None)
-    else launch(stage, home, settings, opts.dryRun, opts)
+    else launch(stage, home, normalized, opts.dryRun, opts)
 
-  private def launch(stage: Stage, home: AppHome, settings: Settings, dryRun: Boolean, opts: CliOptions): Unit =
+  private def launch(stage: Stage, home: AppHome, loaded: SettingsLoadResult, dryRun: Boolean, opts: CliOptions,
+      saveBootstrapChoice: Boolean = false): Unit =
     var svc: AppServices = null
     // the X/Y/Z plot sees the axes of every enabled plugin (built-in and external)
-    svc = new AppServices(home, settings, dryRun, StandardPlugins.all(() => if svc == null then Nil else svc.registry.xyzAxes))
+    svc = new AppServices(home, loaded.settings, dryRun, StandardPlugins.all(() => if svc == null then Nil else svc.registry.xyzAxes),
+      initialRecovery = loaded.recovery)
+    if saveBootstrapChoice then svc.updateSettings(identity)
     services = Some(svc)
     val w = new MainWindow(stage, svc, UiState.load(UiState.file(home)), opts)
     window = Some(w)
@@ -112,23 +127,20 @@ final class SdfxApp extends Application:
   private def shutdown(): Unit =
     if !closed then
       closed = true
-      window.foreach { w =>
-        w.persist()
-        w.dispose()
-      }
-      val t = new Thread(() =>
-        services.foreach(s =>
-          try s.shutdown()
-          catch case NonFatal(e) => System.err.println(s"[sdfx] shutdown: ${e.getMessage}")
-        )
-        Platform.exit()
-        System.exit(0)
-      , "sdfx-shutdown")
-      t.setDaemon(false)
-      t.start()
+      explicitExit = true
+      try
+        window.foreach { w =>
+          try w.persist()
+          finally w.dispose()
+        }
+      finally finalCleanup.run()
 
   override def stop(): Unit =
     if !closed then
       closed = true
-      window.foreach(_.persist())
-      services.foreach(s => try s.shutdown() catch case NonFatal(_) => ())
+      try
+        window.foreach { w =>
+          try w.persist()
+          finally w.dispose()
+        }
+      finally finalCleanup.run()

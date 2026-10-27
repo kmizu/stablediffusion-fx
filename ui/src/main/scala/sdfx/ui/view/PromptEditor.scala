@@ -7,10 +7,10 @@ import javafx.scene.input.{KeyCode, KeyEvent}
 import javafx.scene.layout.{StackPane, VBox}
 import sdfx.core.model.{LoraSyntax, PromptStyle}
 import sdfx.engine.CatalogSnapshot
-import sdfx.ui.vm.PromptEdit
+import sdfx.ui.vm.{PromptEdit, PromptInsertionTarget}
 
 /** Prompt + negative prompt with token counters, Ctrl+Up/Down attention editing, LoRA picker and styles. */
-final class PromptEditor(ctx: UiContext, prompt: StringProperty, negative: StringProperty):
+final class PromptEditor(ctx: UiContext, prompt: StringProperty, negative: StringProperty, modeKey: String):
   val promptArea: TextArea = area(prompt, "Prompt — what you want to see (Ctrl+Enter to generate)", 4)
   val negativeArea: TextArea = area(negative, "Negative prompt — what to avoid", 2)
   private var lastFocused: TextArea = promptArea
@@ -76,6 +76,23 @@ final class PromptEditor(ctx: UiContext, prompt: StringProperty, negative: Strin
     a.requestFocus()
     a.selectRange(ed.selStart, ed.selEnd)
 
+  /** Capture the actual editor before the browser takes focus. */
+  def captureInsertionTarget(): PromptInsertionTarget =
+    val a = lastFocused
+    val captured = a.getText
+    val caret = a.getCaretPosition
+    PromptInsertionTarget(modeKey, a eq negativeArea, captured, caret,
+      () => (a.getText, a.getCaretPosition),
+      text =>
+        if a.getText == captured && a.getCaretPosition == caret then
+          val edit = PromptEdit.insertAt(captured, caret, text)
+          a.setText(edit.text)
+          a.requestFocus()
+          a.selectRange(edit.selStart, edit.selEnd)
+    )
+
+  def openNetworks(): Unit = ctx.openModelBrowser("lora", Some(captureInsertionTarget()))
+
   // ---- styles ------------------------------------------------------------------------------------------
 
   private val styleBox = new ComboBox[PromptStyle](ctx.styles)
@@ -126,6 +143,7 @@ final class PromptEditor(ctx: UiContext, prompt: StringProperty, negative: Strin
   val toolbar: javafx.scene.layout.HBox = W.hbox(
     6,
     W.button("✚ LoRA", "Insert a <lora:name:1> tag at the caret (searchable list)")(loraPopup.show(loraButtonAnchor)),
+    W.button("Networks…", "Browse network previews")(openNetworks()),
     W.spacer(),
     styleBox,
     W.iconButton("⤓", "Apply the selected style to the prompts")(applyStyle()),

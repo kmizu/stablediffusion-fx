@@ -42,3 +42,5 @@
     -fx-body-color: #34363c;
     -fx-color: #34363c;
 }
+
+.model-browser-status { -fx-text-fill: #bac4d3; }

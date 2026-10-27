@@ -1241,7 +1241,7 @@ Java 21 smoke are recorded above.
 The reviewer also found a classification error in this document set's 421-ID appendix; the seven built-in Config
 common routes per mode are now marked Conditional adapter, with source scope and 421 rows preserved.
 
-The Python source is unchanged from `4701ccc` (root diff 0). The correct repository invocation is
+At the presets checkpoint the Python source was unchanged from `4701ccc` (root diff 0). The correct repository invocation is
 `python -m pytest` without a `tests` argument. Earlier wrong-invocation logs and the first partial SD1.5 helper
 failure are retained as diagnostics, not counted as product failures or passes: two queued jobs shared a display
 name, so the helper mapped the second to the first. The `f4f9cc3` fixture fix uses unique names plus selected and
@@ -1275,5 +1275,73 @@ todo. Index 146 `model_presets` remains a distinct todo. `core:presets` was not 
 `151f0df0135ba0cbcc9b7960ac416c5e56de9f5c2a05e0120223c3f1a838e3de`, byte-identical to the reviewed
 notice text. Post-promotion BuiltinsSuite and NativePresetsCoverageSuite passed as recorded above; the latter's
 earlier pre-promotion 2 fail/2 pass was the expected old-ledger mismatch. The native presets plan for indices 30/31
-is complete. The overall 353-entry goal remains unfinished, with 199 todo entries; the remaining sources require
-their own implementation and verification.
+is complete. At that presets checkpoint, the overall 353-entry goal remained unfinished with 199 todo entries;
+the remaining sources required their own implementation and verification.
+
+
+## Native card previews / index 333 (2026-10-27)
+
+The independent Scala/JavaFX implementation of `core:nsfw-card-blur` adapts the pinned
+[CurtisDS source](https://github.com/CurtisDS/stupid-nsfw-card-blur-a1111/tree/b2cdcebf97d1074278fb84e0a6eec3006dab0fe1)
+for native URI loading, image codecs, blur and keyboard interaction; upstream CSS, JavaScript and icons were not
+copied. The original six audited files match `outputs/next-core-card-blur-audit/manifest.json` in the main checkout;
+the archived original `LICENSE.txt` is 1084 bytes, SHA-256
+`e6b9326517557ffdbf4a4a2a9f10ab20a037e95dd08645412e64a8baf7549742`. The S mapping remains
+`todo:core:nsfw-card-blur`; adding only that ID to `IMPLEMENTED` produces the done status. The target is native
+core, not a registered inference plugin. The regenerated 353-entry ledger is 104 done / 198 todo /
+51 not applicable, with 138 distinct pending targets; the index status diff changes only entry 333. Remaining
+model types and other targets need their own work. Root ran
+`python/.venv-test/Scripts/python.exe scripts/extensions_matrix.py` and
+`python/.venv-test/Scripts/python.exe scripts/third_party.py --use-archived-licenses`; the latter generated
+notices for 133 projects. Post-promotion Java 17 sbt launcher tasks `plugins/testOnly sdfx.plugins.BuiltinsSuite`
+passed 20 tests in 4 seconds at 08:47:45 and `ui/assembly` was up to date in 1 second at 08:47:46; the log is
+`outputs/card-preview-final-ledger-build.log` in the canonical worktree. The resulting jar retained SHA-256
+`DE3DE322185786733AFDD84FF451108BDE890730BE7412F45FCAD21F8B1FD6AC`.
+
+Production source checkpoint `1590dff` and independently reviewed core helper `54dbdd4` were integrated into
+`9122a3c`. Whole-branch review `outputs/card-preview-whole-branch-review.md` approved without findings;
+Task 6 round 2's original review also approved. The production v0.01 assembled jar at that checkpoint has
+SHA-256 `DE3DE322185786733AFDD84FF451108BDE890730BE7412F45FCAD21F8B1FD6AC`; the final package, tag,
+release and final artifact hash were pending at that checkpoint; see the package verification below.
+
+The canonical regression and assembly logs are in `.worktrees/next-card-blur-design/outputs/`:
+`card-preview-release-regression-assembly.log` and `card-preview-release-serial-recheck-assembly.log`.
+The broad Scala run covered 1177 cases: 1175 passed and two fixture timeouts occurred (5000-file cancellation
+and the 128-thumbnail fixture at 30 seconds). The affected scanner suite (35 cases, 52 seconds, 08:35:41)
+and loader suite (21 cases, 46 seconds, 08:36:26) passed serial rechecks; assembly passed in 4 seconds at
+08:36:30. Two separate NativeBulk cases passed in 151.133 and 161.313 seconds (319 seconds total, 08:01:48).
+Thus all 1177 broad cases are covered by broad plus focused runs, and the two separate bulk cases bring the
+unique total to 1179; this was not one clean 1179-case command. The 867 passed / 1 skipped and 397 passed /
+82 skipped Python results above belong to the prior presets wave. Python subsequently changed in `90f311d` to fix
+packaged Windows engine DLL startup. Root's new no-torch run passed 400 tests with 82 skipped, and the focused
+startup tests passed 3. The torch suite then passed 870 tests with 1 skipped and 8 warnings in 117.92 seconds;
+the log is `.worktrees/windows-python-dll-startup/outputs/windows-dll-full-torch.log`.
+
+The user-requested reduced core native acceptance was run at `f31e412af6beb9f5196b6892ea47a0bcb89df548`.
+Reports and referenced screenshots are in `.worktrees/card-preview-native-acceptance/outputs/verify-native-card-previews/`,
+under each of `offline-core`, `cpu-core`, `sd15-core` and `sdxl-core`, in `card-preview-report.json`:
+
+| Scope | Result |
+|---|---|
+| Offline | 5 checks passed, zero engine starts, eight memory samples |
+| CPU dry run | 8 checks passed, five dry-run generations |
+| SD1.5 | 7 checks passed, three real generations, 68 seconds, 08:35:56 |
+| SDXL | 7 checks passed, three real generations, 79 seconds, 08:39:27 |
+
+For each real model, the three fixed-seed results retained exact submitted bodies and decoded RGB across the
+control, running and waiting job comparisons. Actual job snapshots and queue order remained frozen through view
+actions; reports record zero cleanup errors and three close/reopen cycles with coarse RAM and device VRAM
+observations. Root inspected the offline Show/Blur/Hide screenshots and SD1.5 output. The 2-step 256-pixel
+images are smoke fixtures, not an image-quality benchmark. This core gate does not establish exhaustive DPI,
+theme, all-mode, stress or per-allocation GPU coverage. Earlier failed fixture logs remain diagnostic evidence,
+not clean passes.
+
+
+### Windows v0.01 package verification
+
+The Windows runtime ZIP SHA-256 is
+`6e4a182ff136f44f4be289d39ef61b4078a23e0d651ddf263a6a2d8a69942f8b`. Four packaged launches passed;
+root inspected the first-run Python bootstrap dialog screenshot and an actual SD1.5 20-step, 512-pixel teapot
+image (SHA-256 `919e7ce214e844f5783ce089ec04f7831b15c5dd0e959d82374ae8fca43155b9`). The package's
+106 archived license hashes matched; it contains a bundled JVM but no Python runtime, model weights, user
+configuration, venv or output files. Check GitHub for release and tag publication status.

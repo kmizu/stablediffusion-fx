@@ -139,6 +139,7 @@ final class TopBar(
       title,
       W.label("Checkpoint", "bar-label"),
       ckptBtn,
+      W.button("Models…", "Browse model previews")(ctx.openModelBrowser("checkpoint", None)),
       refreshBtn,
       W.label("VAE", "bar-label"),
       vae,

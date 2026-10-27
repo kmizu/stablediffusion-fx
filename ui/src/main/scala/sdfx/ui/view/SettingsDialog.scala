@@ -31,6 +31,7 @@ final class SettingsDialog(owner: Stage, initial: Settings, initialTab: Int = 0)
   private val mcpPort = new SimpleIntegerProperty(initial.mcpHttpPort)
   private val mcpToken = new SimpleStringProperty(initial.mcpToken.getOrElse(""))
   private val theme = new SimpleStringProperty(initial.theme)
+  private val cardDefault = new SimpleStringProperty(initial.nsfwCardBlurDefault)
   private val allowCode = new SimpleBooleanProperty(initial.allowCustomCode)
 
   // ---- model folders -----------------------------------------------------------------------------------
@@ -100,6 +101,7 @@ final class SettingsDialog(owner: Stage, initial: Settings, initialTab: Int = 0)
     page(
       W.form()
         .add("Output folder", browseRow(outputDir, true, "Choose the output folder"), "Where generated images are saved (relative = inside the app folder)")
+        .add("Named NSFW previews default", W.combo(FXCollections.observableArrayList("Blur", "Hide", "Show"), cardDefault), "Saved default for a new app session; changing it does not change the current temporary mode.")
         .add("Theme", W.combo(FXCollections.observableArrayList("dark", "light"), theme), "Color theme")
         .add("Live preview", W.intSlider(previewEvery, 0, 20), "Send a preview image every N sampling steps (0 = off)")
         .add("Preview method", W.combo(FXCollections.observableArrayList("approx", "taesd"), previewMethod), "approx: instant, rough colors · taesd: better quality, small extra cost")
@@ -164,6 +166,7 @@ final class SettingsDialog(owner: Stage, initial: Settings, initialTab: Int = 0)
           mcpHttpPort = mcpPort.get,
           mcpToken = Option(mcpToken.get).map(_.trim).filter(_.nonEmpty),
           theme = theme.get,
+          nsfwCardBlurDefault = cardDefault.get,
           allowCustomCode = allowCode.get
         )
       )

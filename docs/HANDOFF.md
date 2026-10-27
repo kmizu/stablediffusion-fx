@@ -20,11 +20,18 @@ server, 40 rewrites of the reForge built-ins. Repo: private GitHub `kmizu/stable
 
 | | Count |
 |---|---|
-| Index entries done | 103 |
-| Index entries todo | 199 (139 distinct targets) |
+| Index entries done | 104 |
+| Index entries todo | 198 (138 distinct targets) |
 | Not applicable (web-UI CSS/UX only, accounts, obsolete, external apps, server ops) | 51 |
 
-**Latest verified wave (2026-10-27):** index 30 `core:config-presets` and index 31 `core:preset-utilities` have
+**Latest verified wave (2026-10-27):** index 333 `core:nsfw-card-blur` is accepted as native card
+previews with shared Show/Blur/Hide. The reduced core gate passed offline, CPU dry-run and actual SD1.5/SDXL
+checks; the broad Scala run's two fixture timeouts passed focused serial rechecks. See
+[`VERIFICATION.md`](VERIFICATION.md) for precise scope, evidence and limits. For the Windows v0.01 runtime ZIP, release tag and remaining-issue tracker, check the GitHub release and issues.
+The requested stopping point is after the download release and issue tracking; this does not complete the
+353-entry goal.
+
+**Previous verified wave (2026-10-27):** index 30 `core:config-presets` and index 31 `core:preset-utilities` have
 separate native profiles. Config uses mode-specific collections, selected-field overlays and Reapply; Utilities
 uses a shared collection, Quick/Detailed save and a choice of current versus component-default apply. The
 complete MIT Config starter presets are included, while the unlicensed Utilities source supplies behaviour only.
@@ -140,12 +147,14 @@ it compares existing real-model images without changing them. VAE Tools has Full
 TAESD/TAESDXL evidence, exact failed decoder-input recovery, quantized image formats and explicit download gates.
 Keep codec roundtrip, image reconstruction and approximate previews distinct. See their plans and VERIFICATION.
 
-**Next work:** the native presets plan for indices 30/31 is complete. Do not restart it as the old shared
-`core:presets` target: that name would also mark three unfinished entries done. The 353-entry goal still has
-**199 todo entries** (139 distinct targets). Indices 203 `controlnet_fastload`, 221 `scenario_loader`, 262
-`core:state-manager` and 146 `model_presets` remain separate work. Index 333 `core:nsfw-card-blur` has a source
-audit and draft design in an isolated local worktree; it is neither implemented nor promoted. The independent
-`core:prompt-tools` audit is under `outputs/next-core-prompt-tools-audit*`.
+**Current wave:** the native presets plan for indices 30/31 is complete. Do not restart it as the old shared
+`core:presets` target: that name would also mark three unfinished entries done. Index 333 `core:nsfw-card-blur` is implemented and accepted in the native card preview wave.
+The 353-entry goal remains active: **104 done, 198 todo, 51 not applicable**, with 138 distinct pending
+targets after this promotion. Indices 203 `controlnet_fastload`, 221 `scenario_loader`, 262
+`core:state-manager` and 146 `model_presets` remain separate work. See VERIFICATION for core acceptance,
+limits and exact evidence. Finish the Windows v0.01 runtime ZIP and release, then document all remaining issues and stop;
+do not implement the remaining 198 entries as part of this wave. The independent `core:prompt-tools` audit is under
+`outputs/next-core-prompt-tools-audit*`.
 
 For the completed presets wave, the five-entry source audit and manifest remain in main
 `outputs/next-core-presets-audit*`, with the full ID map at `outputs/native-config-presets-field-map.md`.
@@ -166,7 +175,7 @@ composed Neutral prompts remain explicitly unsupported in `neutral_runtime.valid
 original Runtime task permits clear unsupported combinations; later agent-added notes making every combination
 a promotion prerequisite are superseded by the documented acceptance clarification. No original Neutral operator
 or model/UI/notice gate was omitted. Keep the seven guards until their own implementations are verified.
-The overall 353-entry goal remains active; 199 accepted entries are unfinished. Do not treat this promotion as
+The overall 353-entry goal remains active; 198 entries are unfinished. Do not treat this promotion as
 completion of that goal or reclassify remaining entries to make it appear complete.
 
 ## Remaining targets, most-starred first
@@ -191,12 +200,12 @@ panorama_tools, chara_searcher, lua_scripting, deepdanbooru, gpu_temperature_gua
 old_sd_firstpasser, temporal, batch_interrogate, token_downsampling, embedding_inspector, demofusion,
 prompt_expansion, color_correction, video_extras, clip_io, face_manipulation, ditail,
 minecraft_schematic, img2img_workflow, ocr, controlnet_preprocess_extras, triposr, manga_inpainting,
-pnginfo_injection, masked_content_extras, metadata_utils, waifu2x, core:nsfw-card-blur
+pnginfo_injection, masked_content_extras, metadata_utils, waifu2x
 
 Suggested next steps, by value and fit with what exists:
 
-1. **Native tools**: index 333 `core:nsfw-card-blur` has an audit/draft design; `core:prompt-tools` and the
-   remaining separate preset-audit targets still need implementation and source-scope verification.
+1. **Native tools**: `core:prompt-tools` and the remaining separate preset-audit targets still need
+   implementation and source-scope verification.
 2. **Regional prompting**: regional_prompter and latent_couple, via attention-level region masks.
    tiled_diffusion can largely reuse the existing `multidiffusion` hook plus noise inversion and region prompts.
 3. **Small, cheap ones**: img2img/custom/conditioning hires fix variants, color_correction,
@@ -217,8 +226,8 @@ Suggested next steps, by value and fit with what exists:
 - **Scala side**: AlwaysOn plugins extend `HookPlugin` (`hookFields`, `infotextKeys`, `xyzAxes`). Scripts extend
   `Plugin` with `run(p, values, ctx)` and Extras extend `ExtrasPlugin.transform`. Register each in
   `StandardPlugins.scala`.
-  - **Plugin id rule**: the plugin `id` must equal the matrix target name. `BuiltinsSuite` checks every
-    `done:<id>` in `docs/extensions-status.json` against the registered plugins.
+  - **Plugin id rule**: the plugin `id` must equal the matrix target name. `BuiltinsSuite` checks non-core
+    `done:<id>` entries in `docs/extensions-status.json` against registered plugins; `core:*` entries are not inference plugins.
   - **Infotext**: use the extension's own keys where it had them, so infotext stays compatible.
 - **Writing quality code**: re-implement from documented behaviour. Copy code only from permissively or AGPL/GPL
   licensed sources, and never from repositories without a licence (LoRA Block Weight was done from its README only).
