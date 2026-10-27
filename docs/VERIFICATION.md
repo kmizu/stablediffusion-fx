@@ -1,5 +1,16 @@
 # Real-model verification log
 
+## Partial WD v3 batch candidate (2026-10-27)
+
+The candidate was integrated from main for the next Windows release. This is a partial implementation of issue #7, not complete parity with the original batch interrogator. The observations below apply to the tested worktree and machine, not a packaged release.
+
+- Focused Python tests: 113 passed for the WD and batch components; a further 51 protocol, server, Temporal Lab and hardware regression tests passed. These are finite automated checks, not complete coverage.
+- Scala: `outputs/wd-release-integration.log` records core 2, engine 18 and UI 6 tests passed, followed by successful UI compilation. The WD Settings and controls also received a JavaFX smoke check with injected fields; this does not establish a submitted real generation.
+- Real worker CLI: one image per run through the actual local WD v3 CPU provider and real img2img generation, using `animekawa_v10` (SD1.5) and `waiIllustriousSDXL_v170` (SDXL). Both used Euler, 256×256, two steps, seed 12345 and an astronaut input. On an RTX 3090 with Python 3.10.11, torch 2.9.0+cu128 and Diffusers 0.32.2, both requests returned a completed row, produced a PNG and exited the worker with code 0. The operator inspected both images. The resulting SHA-256 values were `19b3c3bbde50138d6da52545c957b26b6302d49259ebd2359a290a6fd14f1c93` (SD1.5) and `b96a6a5d03bed7542b157af366c9f039d0c6e8860417a16528c0b793eb96022a` (SDXL). These small runs are functional smoke checks, not quality or performance benchmarks.
+- The reports record unchanged input, WD asset and checkpoint hashes before and after. Allocated/reserved VRAM after model unload was 9.1/22.0 MiB in each run; this is an observation from those processes, not a guarantee for all workloads. The local reports are `outputs/wd-real-sd15-j1h6n_4i/report.json` and `outputs/wd-real-sdxl-xp1hslhy/report.json`; output artifacts are not included in the release.
+
+The worker result includes the effective prompts and WD provenance, and the native gallery can show the effective prompt; this worker does **not** embed that prompt or WD provenance in generated PNG metadata. The only configured backend is the explicitly selected, fixed local WD v3 candidate; weights and tag files are external. CPU WD inference cannot necessarily be interrupted inside the native ONNX call. The full native UI submit test and final ZIP packaging checks were still in progress at this record; neither is claimed as passed here.
+
 ## Full pass (2026-10-26 06:32:11 – 07:13:39)
 
 One script run, final code, one log, stages in order. Each stage starts its own engine process(es); the run as a whole
