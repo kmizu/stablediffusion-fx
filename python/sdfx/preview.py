@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import math
 from typing import Optional
 
 import numpy as np
@@ -37,12 +38,45 @@ def latent_to_rgb(latent: np.ndarray, sdxl: bool = False) -> np.ndarray:
     return (rgb * 255.0 + 0.5).astype(np.uint8)
 
 
+def _preview_grid_b64(images, count: int, max_side: int = 256) -> str:
+    """Row-major grid: max_side per tile, at most 1024 px on either canvas edge.
+
+    Consume images one at a time so TAESD never retains a full decoded batch.
+    """
+    from PIL import Image
+    from .images import to_jpeg_b64
+    images = iter(images)
+    first = next(images)
+    if count == 1:
+        return to_jpeg_b64(first, max_side=max_side)
+    width, height = first.size
+    # Prefer a compact canvas, accounting for both tile aspect and empty cells.
+    def score(cols):
+        rows = math.ceil(count / cols)
+        return abs(math.log(cols * width / (rows * height))) + (cols * rows - count) / count
+    cols = min(range(1, count + 1), key=score)
+    rows = math.ceil(count / cols)
+    scale = min(max_side / max(width, height), 1024 / max(cols * width, rows * height))
+    tile_w, tile_h = max(1, int(width * scale)), max(1, int(height * scale))
+    canvas = Image.new("RGB", (cols * tile_w, rows * tile_h))
+    def paste(image, index):
+        tile = image.resize((tile_w, tile_h), Image.Resampling.BILINEAR)
+        canvas.paste(tile, ((index % cols) * tile_w, (index // cols) * tile_h))
+    paste(first, 0)
+    for index, image in enumerate(images, 1):
+        paste(image, index)
+    return to_jpeg_b64(canvas, max_side=max(canvas.size))
+
+
 def latent_preview_b64(latent, sdxl: bool = False, max_side: int = 256) -> Optional[str]:
-    from .images import HAVE_PIL, rgb_array_to_image, to_jpeg_b64
+    """Preview all batch members; max_side bounds each tile (canvas capped at 1024)."""
+    from .images import HAVE_PIL, rgb_array_to_image
     if not HAVE_PIL:
         return None
-    arr = latent_to_rgb(latent, sdxl)
-    return to_jpeg_b64(rgb_array_to_image(arr), max_side=max_side)
+    lat = np.asarray(latent)
+    batch = lat[None] if lat.ndim == 3 else lat
+    images = (rgb_array_to_image(latent_to_rgb(item, sdxl)) for item in batch)
+    return _preview_grid_b64(images, len(batch), max_side)
 
 
 class TaesdPreviewer:
@@ -64,11 +98,15 @@ class TaesdPreviewer:
                 repo = "madebyollin/taesdxl" if sdxl else "madebyollin/taesd"
                 m = AutoencoderTiny.from_pretrained(repo, torch_dtype=dtype).to(device)
                 self._models[key] = m
-            with torch.no_grad():
-                img = m.decode(latents[:1].to(device, dtype) / getattr(m.config, "scaling_factor", 1.0)).sample[0]
-            arr = ((img.float().clamp(-1, 1) + 1) * 127.5).permute(1, 2, 0).cpu().numpy().astype(np.uint8)
-            from .images import rgb_array_to_image, to_jpeg_b64
-            return to_jpeg_b64(rgb_array_to_image(arr))
+            from .images import rgb_array_to_image
+            def images():
+                for latent in latents:
+                    with torch.no_grad():
+                        img = m.decode(latent[None, :4].to(device, dtype) / getattr(m.config, "scaling_factor", 1.0)).sample[0]
+                        arr = ((img.float().clamp(-1, 1) + 1) * 127.5).permute(1, 2, 0).cpu().numpy().astype(np.uint8)
+                    del img
+                    yield rgb_array_to_image(arr)
+            return _preview_grid_b64(images(), len(latents))
         except Exception as e:  # network / missing weights
             log.warning("TAESD preview unavailable (%s); using approx", e)
             self._failed.add(key)
