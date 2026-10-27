@@ -81,6 +81,17 @@ final class NativePresetFields(vm: GenerationVM, plugins: PluginsVM, catalog: Ca
   private def list(xs: javafx.collections.ObservableList[String]): Vector[String] =
     xs.toArray(Array.empty[String]).toVector
 
+  /** Offline native generation controls already expose sampler/scheduler fallbacks.
+    * Named snapshots must use those same live lists for extension controls; once
+    * catalog.update replaces the lists, unavailable saved choices still fail.
+    */
+  private def pluginChoices(source: ChoiceSource): Vector[String] =
+    if namedState then source match
+      case ChoiceSource.Samplers => list(catalog.samplers)
+      case ChoiceSource.Schedulers => list(catalog.schedulers)
+      case _ => list(catalog.choices(source))
+    else list(catalog.choices(source))
+
   private val fresh = new GenerationVM(vm.mode)
   private val built = Vector.newBuilder[Binding]
   private val problems = Vector.newBuilder[PresetIssue]
@@ -216,7 +227,7 @@ final class NativePresetFields(vm: GenerationVM, plugins: PluginsVM, catalog: Ca
                 case ch: Control.Choice => choice(ch.options)
                 case dc: Control.DynamicChoice =>
                   () => ((if namedState then Seq("") else Seq.empty) ++
-                    PluginValuesVM.options(dc, s => list(catalog.choices(s)))).map(PresetAtom.Text.apply).toVector.distinct
+                    PluginValuesVM.options(dc, pluginChoices)).map(PresetAtom.Text.apply).toVector.distinct
                 case _ => () => Vector.empty[PresetAtom]
               val kind = c match
                 case _: Control.Check => PresetFieldKind.Flag

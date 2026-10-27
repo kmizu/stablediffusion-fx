@@ -116,3 +116,35 @@ class NamedGenerationStatesSuite extends munit.FunSuite:
     assert(fields.write(plan.changes).isRight)
     assertEquals(plugins.form(dynamic.id).get.prop("model").get.get, "")
   }
+
+  test("real ADetailer sampler defaults roundtrip offline without weakening live catalog checks") {
+    val vm = new GenerationVM(Mode.Img2Img)
+    val adetailer = new sdfx.plugins.AdetailerPlugin
+    val plugins = new PluginsVM(Mode.Img2Img, Nil, Seq(adetailer), _ => Values.empty)
+    val catalog = new CatalogVM
+    assert(catalog.choices(ChoiceSource.Samplers).isEmpty)
+    assert(catalog.samplers.contains("DPM++ 2M"))
+    val fields = new NativePresetFields(vm, plugins, catalog, new SimpleBooleanProperty(false), namedState = true)
+    val saved = NamedGenerationStates.capture("offline ADetailer", fields).toOption.get
+    val form = plugins.form(adetailer.id).get
+    form.prop("u1_sampler").get.set("Euler")
+    form.prop("u2_sampler").get.set("Euler a")
+    val plan = NamedGenerationStates.preflight(saved, fields).fold(e => fail(e.toString), identity)
+    assert(fields.write(plan.changes).isRight)
+    assertEquals(form.prop("u1_sampler").get.get, "DPM++ 2M")
+    assertEquals(form.prop("u2_sampler").get.get, "DPM++ 2M")
+
+    catalog.update(CatalogSnapshot(), {
+      case ChoiceSource.Samplers => Seq("Euler")
+      case _ => Nil
+    })
+    vm.prompt.set("keep this prompt")
+    form.prop("u1_sampler").get.set("Euler")
+    val blocked = NamedGenerationStates.preflight(saved, fields)
+    assert(blocked.isLeft)
+    val issues = blocked.swap.toOption.get.issues
+    assert(issues.exists(i => i.path == "plugin.adetailer.u1_sampler" && i.code == "unavailable-choice"))
+    assert(issues.exists(i => i.path == "plugin.adetailer.u2_sampler" && i.code == "unavailable-choice"))
+    assertEquals(form.prop("u1_sampler").get.get, "Euler")
+    assertEquals(vm.prompt.get, "keep this prompt")
+  }
