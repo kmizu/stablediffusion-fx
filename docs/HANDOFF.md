@@ -1,7 +1,16 @@
-# Handoff: bundling the A1111 extension index into stablediffusion-fx
+# Handoff: bundling the A1111 extension index into stablediffusion-nui
 
 Written 2026-10-26 when work moved from Claude Code to Codex. Read this first, then `AGENTS.md`, `README.md`,
 `docs/PLUGINS.md` and `docs/EXTENSIONS.md`.
+
+## Current product naming
+
+The product is **Stable Diffusion NUI**, repository `kmizu/stablediffusion-nui` (formerly Stable Diffusion FX / SDFX).
+Current builds produce `target/stablediffusion-nui.jar`; the v0.03 Windows package uses
+`SDNUI/SDNUI.exe` and `SDNUI-v0.03-windows-x64.zip`. Internal Scala/Python `sdfx` names,
+`SDFX_*` environment variables and existing settings stay compatible. Earlier release names,
+artifact hashes and verification evidence are historical records and must not be renamed retroactively.
+The naming change does not by itself establish that v0.03 acceptance or publication is complete.
 
 ## The goal
 
@@ -14,7 +23,7 @@ needs. The owner also asked for **high-quality implementation and UI** (「high 
 count. Every new plugin is GPU-checked on real models before it is marked done.
 
 The app itself is complete and working: Scala 3 + JavaFX client, Python diffusers engine over stdio JSON Lines, MCP
-server, 40 rewrites of the reForge built-ins. Repo: private GitHub `kmizu/stablediffusion-fx`, branch `main`.
+server, 40 rewrites of the reForge built-ins. Repo: private GitHub `kmizu/stablediffusion-nui`, branch `main`.
 
 ## Where things stand
 
@@ -246,7 +255,7 @@ Suggested next steps, by value and fit with what exists:
 - **sbt**: `%LOCALAPPDATA%\Coursier\data\bin\sbt.bat`. Not on Git Bash's PATH; call it by full path.
   - All tests: `sbt.bat -batch test`.
   - One suite: `sbt.bat -batch "plugins/testOnly sdfx.plugins.AdetailerSuite"`.
-  - Fat jar: `sbt.bat -batch ui/assembly` writes `target/stablediffusion-fx.jar`.
+  - Fat jar: `sbt.bat -batch ui/assembly` writes `target/stablediffusion-nui.jar`.
 - **Java 21**: `C:\Program Files\Java\jdk-21\bin\java.exe`. The `java` on PATH is 17 and is too old for the jar.
 - **Python venvs** (in `python/`):
   - `.venv-smoke` is the GPU venv: torch 2.9 cu128, diffusers, ultralytics, mediapipe, insightface, rembg. Use it
@@ -270,7 +279,7 @@ Suggested next steps, by value and fit with what exists:
 | Engine on GPU, one case per process | `scripts/dev/gpu_check.py <venv python> <out dir> <case>`; cases `sched_*`, `ext_*`, `ad_*`, `image_*`, `weight_*`, `negpip_*` |
 | Script plugins through the real app over MCP | `scripts/dev/write_settings.py`, then `scripts/dev/mcp_scripts.py "C:\Program Files\Java\jdk-21\bin\java.exe" <script ids>` |
 | LoRA Block Weight / merger checks | `scripts/dev/lbw_check.py`, `scripts/dev/merge_check.py` |
-| UI screenshot | `java -jar target/stablediffusion-fx.jar --dry-run --home <dir> --screenshot out.png --exit-after 8` (also writes `out-panel.png`, the full form). Expand a plugin by putting `{"expanded": {"txt2img.plugin.<id>": true}}` in `<home>/config/ui-state.json` |
+| UI screenshot | `java -jar target/stablediffusion-nui.jar --dry-run --home <dir> --screenshot out.png --exit-after 8` (also writes `out-panel.png`, the full form). Expand a plugin by putting `{"expanded": {"txt2img.plugin.<id>": true}}` in `<home>/config/ui-state.json` |
 
 The `scripts/dev/` files contain absolute paths of this machine; adjust them if anything moves. `write_settings.py`
 creates `config/settings.json` (gitignored); delete it afterwards.
