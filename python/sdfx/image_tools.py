@@ -18,7 +18,7 @@ from typing import Optional
 
 import numpy as np
 
-TOOLS = ("pixel_art", "color_enhance", "cas_upscale", "person_mask", "remove_background", "depth_mask")
+TOOLS = ("pixel_art", "color_enhance", "cas_upscale", "person_mask", "remove_background", "depth_mask", "color_correction")
 REMBG_MODELS = ("u2net", "u2netp", "u2net_human_seg", "isnet-general-use", "isnet-anime", "silueta")
 
 
@@ -179,6 +179,32 @@ def depth_mask(img, near: float = 0.5, far: float = 1.0, invert: bool = False, b
 
 def run(tool: str, img, params: dict, device: str = "cuda"):
     p = dict(params or {})
+    if tool == "color_correction":
+        from PIL import Image
+        from .color_correction import adain, wavelet, a1111
+        method = p.get("method", "AdaIN")
+        methods = {"A1111": a1111, "AdaIN": adain, "Wavelet": wavelet}
+        if method not in methods:
+            raise ValueError(f"unsupported color correction method '{method}'")
+        reference_path = p.get("reference_path")
+        if not reference_path:
+            raise ValueError("reference_path is required; the caller must supply the original input for fallback")
+        extra = {"method": method, "strength": float(p.get("strength", 1.0))}
+        try:
+            with Image.open(reference_path) as reference_file:
+                from PIL import ImageOps
+                reference = ImageOps.exif_transpose(reference_file).convert("RGB")
+        except OSError as exc:
+            raise ValueError(f"cannot read color reference: {exc}") from exc
+        try:
+            result = methods[method](img, reference, p.get("strength", 1.0))
+            if p.get("all_methods", False):
+                for name, transform in methods.items():
+                    if name != method:
+                        extra[name] = transform(img, reference, p.get("strength", 1.0))
+        finally:
+            reference.close()
+        return result, extra
     if tool == "pixel_art":
         return pixel_art(img, int(p.get("pixel_size", 8)), int(p.get("colors", 16)), float(p.get("dither", 0.0)),
                          bool(p.get("outline", False)), bool(p.get("upscale", True)), int(p.get("seed", 0)))

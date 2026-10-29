@@ -1,5 +1,11 @@
 # Handoff: bundling the A1111 extension index into stablediffusion-nui
 
+## 2026-10-30 update: color correction
+
+Index 261 / issue #15 now has native Extras and script/plugin `color_correction`: A1111, independently implemented AdaIN and Wavelet, optional original-input reference, independent comparison outputs and strength. Current generated ledger: 106 done, 196 todo, 51 not applicable. Read `color-correction-verification.md` for real SD1.5/SDXL and native button checks, broad regression results and numerical/visual limits. This is one issue toward the active twenty-issue release request; no new release has been published.
+
+The GPU/test venvs were recreated under `python/`. GPU runtime uses torch 2.7.1+cu128 and torchvision 0.22.1 with pinned requirements. Run whole Python tests with `CUDA_VISIBLE_DEVICES=-1`; actual model verification runs with GPU visible. License collector accepts only LF/CRLF variants of trusted pinned content, retaining digest checks. Existing test fixtures were updated for wdBatch and current startup/provenance contracts.
+
 Written 2026-10-26 when work moved from Claude Code to Codex. Read this first, then `AGENTS.md`, `README.md`,
 `docs/PLUGINS.md` and `docs/EXTENSIONS.md`.
 

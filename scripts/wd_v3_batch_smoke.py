@@ -52,7 +52,9 @@ class _SyntheticGenerator:
         metadata.add_text("sdfx_prompt", prompt)
         with Image.new("RGB", (64, 64), (72, 126, 169)) as frame:
             frame.save(path, format="PNG", pnginfo=metadata)
-        return {"images": [{"path": str(path)}], "generator": "synthetic"}
+        # This fixed synthetic fixture has no RNG; zero is its declared fixture
+        # seed, not a claim that Stable Diffusion generated the image.
+        return {"images": [{"path": str(path), "seed": 0}], "generator": "synthetic"}
 
 
 def _stages(parent, prefix):

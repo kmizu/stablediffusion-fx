@@ -40,7 +40,7 @@ class FrozenJobEvidenceSuite extends FunSuite:
   private def fields(p: Product): Set[String] = p.productElementNames.toSet
   test("schema guards detect added or removed product fields") {
     val j = fixture; val p = j.params
-    assertEquals(fields(j), Set("id", "params", "script", "alwaysOn", "origin", "limits", "submittedContext", "captureOptions"))
+    assertEquals(fields(j), Set("id", "params", "script", "alwaysOn", "origin", "limits", "submittedContext", "captureOptions", "wdBatch"))
     assertEquals(fields(p), Set("prompt", "negativePrompt", "seed", "subseed", "subseedStrength", "samplerName", "scheduler", "steps", "cfgScale", "width", "height", "batchSize", "nIter", "clipSkip", "eta", "hires", "img2img", "loras", "controlnet", "hooks", "styles", "checkpoint", "vae", "extra"))
     assertEquals(fields(p.hires), Set("enabled", "scale", "upscaler", "secondPassSteps", "resizeX", "resizeY", "denoisingStrength", "samplerName", "scheduler", "prompt", "negativePrompt", "cfgScale"))
     assertEquals(fields(p.img2img.get), Set("initImage", "mask", "denoisingStrength", "resizeMode", "maskBlur", "inpaintingFill", "inpaintFullRes", "inpaintFullResPadding", "inpaintingMaskInvert"))

@@ -31,3 +31,6 @@ onnxruntime==1.23.2  # WD14 tagger (Caption plugin, method wd14)
 
 # Optional local WD v3 batch model structure validation (install explicitly):
 # onnx==1.21.0
+# Optional A1111 reference color correction (Extras):
+# scikit-image==0.25.2
+# blendmodes==2025

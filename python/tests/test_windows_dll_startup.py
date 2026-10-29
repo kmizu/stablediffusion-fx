@@ -24,7 +24,7 @@ def test_entrypoint_clears_inherited_directory_before_server_import(tmp_path):
         "buffer = ctypes.create_unicode_buffer(32768)\n"
         "ctypes.windll.kernel32.GetDllDirectoryW(len(buffer), buffer)\n"
         "directory_at_import = buffer.value\n"
-        "def main(*, dry_run, delay_ms):\n"
+        "def main(*, dry_run, delay_ms, wd_paths=None):\n"
         "    print(json.dumps({'directory': directory_at_import, 'dry_run': dry_run}))\n"
         "    return 0\n",
         encoding="utf-8",

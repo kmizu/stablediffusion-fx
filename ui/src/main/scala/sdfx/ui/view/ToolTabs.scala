@@ -97,6 +97,21 @@ final class ExtrasTab(ctx: UiContext, initialUpscaler: String, initialScale: Dou
   resultView.setMinHeight(240)
   resultView.getStyleClass.add("result-view")
   private val resultInfo = W.label("", "hint")
+  private val correctionOutputs = new ComboBox[String]()
+  private var correctionPaths = Map.empty[String, Path]
+  private var inputRevision = 0L
+  correctionOutputs.setPromptText("Select correction output")
+  correctionOutputs.setMaxWidth(Double.MaxValue)
+  correctionOutputs.valueProperty.addListener((_, _, selected) => correctionPaths.get(selected).foreach(showResult))
+  image.addListener((_, _, _) => {
+    inputRevision += 1
+    result.set("")
+    resultInfo.setText("")
+    resultView.setImage(null)
+    resultView.setUserData(null)
+    correctionPaths = Map.empty
+    correctionOutputs.getItems.clear()
+  })
   private val spinner = new ProgressIndicator()
   spinner.setVisible(false)
   spinner.setPrefSize(22, 22)
@@ -116,15 +131,19 @@ final class ExtrasTab(ctx: UiContext, initialUpscaler: String, initialScale: Dou
       case (_, None) => ctx.info("Choose an upscaler (put ESRGAN models in models/upscalers)")
       case (Some(s), Some(u)) =>
         run.setDisable(true)
+        correct.setDisable(true)
         spinner.setVisible(true)
         val sc = scale.get
+        val submittedRevision = inputRevision
         Fx.async(ctx.services.generator.upscaleImage(Paths.get(s), u, sc)) { out =>
           run.setDisable(false)
+          correct.setDisable(false)
           spinner.setVisible(false)
-          showResult(out)
+          if inputRevision == submittedRevision then showResult(out)
           ctx.success("Upscaled")
         } { e =>
           run.setDisable(false)
+          correct.setDisable(false)
           spinner.setVisible(false)
           ctx.error(s"Upscale failed: ${Fx.message(e)}")
         }
@@ -141,8 +160,55 @@ final class ExtrasTab(ctx: UiContext, initialUpscaler: String, initialScale: Dou
     .add("Upscaler", upscalerBox, "ESRGAN / RealESRGAN models from models/upscalers")
     .add("Scale", W.doubleSlider(scale, 1, 8, 0.25), "Resize factor")
 
-  private val compareButton = W.button("Send to Comparison", "Compare upscale input and output") {
-    comparisonPair.fold(ctx.info("Upscale an image first"))((a, b) => ctx.comparePair(a, b))
+  private[ui] val correctionReference = new SimpleStringProperty("")
+  private val correctionDrop = new ImageDropZone(ctx, correctionReference, "Optional color reference (empty uses original input)", 160)
+  private val correctionMethod = new SimpleStringProperty("A1111")
+  private val correctionStrength = new SimpleDoubleProperty(1)
+  private val correctionAll = new CheckBox("Also output other methods")
+  private val correctionForm = W.form()
+    .add("Method", W.combo(FXCollections.observableArrayList("A1111", "Wavelet", "AdaIN"), correctionMethod))
+    .add("Strength", W.doubleSlider(correctionStrength, 0, 1, 0.05))
+  private lazy val correct: Button = W.button("Apply color correction", "Correct the current result, or the input when no result exists") {
+    Option(image.get).filter(_.nonEmpty) match
+      case None => ctx.info("Add an image first")
+      case Some(original) =>
+        val submittedRevision = inputRevision
+        val target = Option(result.get).filter(_.nonEmpty).getOrElse(original)
+        val reference = Option(correctionReference.get).filter(_.nonEmpty).getOrElse(original)
+        val values = sdfx.core.plugins.api.Values(Map("reference" -> reference,
+          "method" -> correctionMethod.get, "strength" -> correctionStrength.get.toString,
+          "all_methods" -> correctionAll.isSelected.toString))
+        val params = sdfx.core.model.GenerationParams(img2img = Some(sdfx.core.model.Img2ImgParams(target)))
+        correct.setDisable(true)
+        run.setDisable(true)
+        spinner.setVisible(true)
+        Fx.async(new sdfx.plugins.ColorCorrectionPlugin().run(params, values, ctx.services.generator)) { output =>
+          correct.setDisable(false)
+          run.setDisable(false)
+          spinner.setVisible(false)
+          if inputRevision == submittedRevision then
+            val entries = output.images.zipWithIndex.map { (o, index) =>
+              val method = Infotext.parse(o.infotext).fields.getOrElse("Color Correction",
+                if index == 0 then values.str("method") else s"Output ${index + 1}")
+              method -> o.path
+            }
+            correctionPaths = entries.toMap
+            correctionOutputs.getItems.setAll(entries.map(_._1)*)
+            entries.headOption.foreach { (method, path) =>
+              correctionOutputs.setValue(method)
+              showResult(path)
+            }
+          ctx.success(s"Color correction: saved ${output.images.size} image(s)")
+        } { e =>
+          correct.setDisable(false)
+          run.setDisable(false)
+          spinner.setVisible(false)
+          ctx.error(s"Color correction failed: ${Fx.message(e)}")
+        }
+  }
+
+  private val compareButton = W.button("Send to Comparison", "Compare original input and selected output") {
+    comparisonPair.fold(ctx.info("Process an image first"))((a, b) => ctx.comparePair(a, b))
   }
   def refreshComparisonOptions(): Unit =
     val option = ctx.services.settings.comparisonSendButtons
@@ -158,11 +224,18 @@ final class ExtrasTab(ctx: UiContext, initialUpscaler: String, initialScale: Dou
     W.iconButton("▤", "Show in folder")(Option(result.get).filter(_.nonEmpty).foreach(p => ImageActions.openFolder(Paths.get(p))))
   )
 
+  private val correctionHint = W.label("A1111: histogram + luminosity. AdaIN: global color statistics. Wavelet: local color; different reference layouts can cause halos. Outputs are RGB.", "hint")
+  correctionHint.setWrapText(true)
+  correctionHint.setMaxWidth(540)
+
   val node: ScrollPane =
     val v = new VBox(
       10,
       W.card("Image", drop.node, f.grid, W.hbox(8, run, spinner)),
-      W.card("Result", resultView, resultInfo, resultButtons)
+      W.card("Color correction", correctionDrop.node, correctionForm.grid,
+        correctionHint,
+        correctionAll, correct),
+      W.card("Result", correctionOutputs, resultView, resultInfo, resultButtons)
     )
     VBox.setVgrow(resultView, Priority.ALWAYS)
     v.setPadding(new Insets(10, 12, 16, 12))

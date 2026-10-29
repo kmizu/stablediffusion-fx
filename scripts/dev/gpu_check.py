@@ -1,5 +1,6 @@
 """One real-GPU check per engine process: python gpu_one.py <venv python> <out dir> <case>."""
 import json
+import atexit
 import os
 import subprocess
 import sys
@@ -34,10 +35,24 @@ def hf(repo, file):
 env = dict(os.environ, PYTHONUNBUFFERED="1")
 if CASE == "custom_code":
     env["SDFX_ALLOW_CODE"] = "1"
-proc = subprocess.Popen([PY, "-m", "sdfx"], cwd=r"D:\stable-diffusion-webui-reForge\stablediffusion-fx\python",
+engine_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "python"))
+proc = subprocess.Popen([PY, "-m", "sdfx"], cwd=engine_dir,
                         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                         stderr=open(os.path.join(OUT, f"stderr-{CASE}.txt"), "w"), text=True, encoding="utf-8", env=env)
 lines, cv, n = [], threading.Condition(), [0]
+
+
+def cleanup_engine():
+    if proc.poll() is None:
+        proc.terminate()
+        try:
+            proc.wait(10)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait(10)
+
+
+atexit.register(cleanup_engine)
 
 
 def reader():
@@ -123,7 +138,34 @@ def mask_png(size):
 
 t0 = time.time()
 r = None
-if CASE in ("neutral_sampling_sd15", "neutral_sampling_sdxl", "sampling_pag_sd15", "sampling_pag_sdxl"):
+if CASE in ("color_correction_sd15", "color_correction_sdxl"):
+    from PIL import Image
+    import numpy as np
+    load(SDXL if CASE.endswith("sdxl") else SD15)
+    size = 768 if CASE.endswith("sdxl") else 512
+    generated = call("txt2img", req(gp(width=size, height=size, steps=16,
+        prompt="a ceramic teapot on a wooden table, warm window light, detailed photograph")))
+    assert generated["type"] == "result", generated
+    source = keep(generated, CASE + "_source")
+    assert source
+    reference_result = call("txt2img", req(gp(width=size, height=size, steps=16, seed=19,
+        prompt="a ceramic teapot on a blue table, cool blue window light, detailed photograph")))
+    assert reference_result["type"] == "result", reference_result
+    reference = keep(reference_result, CASE + "_reference")
+    report = {}
+    for method in ("A1111", "Wavelet", "AdaIN"):
+        result = call("image_tool", {"tool": "color_correction", "image_path": source,
+            "reference_path": reference, "method": method, "output_dir": OUT})
+        assert result["type"] == "result", result
+        path = keep(result, CASE + "_" + method)
+        with Image.open(path) as image:
+            assert image.size == (size, size)
+            assert np.asarray(image).std() > 1
+        report[method] = path
+    with open(os.path.join(OUT, CASE + ".json"), "w", encoding="utf-8") as output:
+        json.dump(dict(source=source, reference=reference, outputs=report), output, indent=2)
+    r = {"type": "result", "result": {"result": report}}
+elif CASE in ("neutral_sampling_sd15", "neutral_sampling_sdxl", "sampling_pag_sd15", "sampling_pag_sdxl"):
     from PIL import Image, ImageChops, ImageStat
     xl = CASE.endswith("sdxl")
     load(SDXL if xl else SD15)

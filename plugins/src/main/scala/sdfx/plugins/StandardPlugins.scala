@@ -64,7 +64,8 @@ object StandardPlugins:
     new AutosizedCropPlugin,
     new FocalCropPlugin,
     // image tools (extension index)
-    new RemoveBackgroundPlugin, new PersonMaskPlugin, new PixelArtPlugin, new ColorEnhancePlugin, new FsrUpscalePlugin
+    new RemoveBackgroundPlugin, new PersonMaskPlugin, new PixelArtPlugin, new ColorEnhancePlugin, new FsrUpscalePlugin,
+    new ColorCorrectionPlugin
   )
 
   /** `extraAxes` lets the host contribute axes of all loaded plugins (including these AlwaysOn ones). */

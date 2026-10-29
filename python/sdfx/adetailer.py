@@ -171,7 +171,9 @@ def unit_masks(image, u: dict, device: str, model_dirs=None) -> list:
 
 
 def match_colors(image, reference):
-    """Per-channel LAB mean/std transfer from `reference` (A1111 img2img colour correction, Reinhard style).
+    """Per-channel LAB mean/std transfer from `reference` (Reinhard style).
+
+    This is not A1111's LAB histogram matching followed by luminosity blending.
 
     Inpainting re-encodes the crop through the VAE; with many checkpoints' baked VAEs that round trip alone loses
     contrast and shifts colours, so the redrawn region looks washed out next to the untouched pixels."""

@@ -124,6 +124,9 @@ BASE = [
     ("pytorch/pytorch", "dependency", "tensor runtime"),
     ("opencv/opencv-python", "dependency", "image processing (canny, face detection)"),
     ("python-pillow/Pillow", "dependency", "images"),
+    ("scikit-image/scikit-image", "dependency", "Optional LAB histogram matching for A1111 reference color correction"),
+    ("FHPythonUtils/BlendModes", "dependency", "Optional luminosity blending for A1111 reference color correction"),
+    ("light-and-ray/sd-webui-color-correction-extras", "reimplemented", "Reference color correction behavior, original-input fallback and independent method comparisons; no wrapper code copied; source 0d86f5a55d5648ca693584a1078761cf8ae26395"),
     ("Alvi-alvarez/sd-Img2img-batch-interrogator", "ported", "Per-image prompt composition, including source-derived emoticon exceptions, MIT; partial WD v3 batch only; [source ed91cec](https://github.com/Alvi-alvarez/sd-Img2img-batch-interrogator/tree/ed91cec663bcddd7ca5514264a61483c7d80f8d2)"),
     ("onnx/onnx", "dependency", "Optional local WD v3 model structure inspection"),
     ("microsoft/onnxruntime", "dependency", "WD14 tagger and optional local WD v3 batch inference"),
@@ -181,14 +184,27 @@ def repo_of(url: str):
     return f"{m.group(1)}/{m.group(2)}" if m else None
 
 
+def verify_license_bytes(raw: bytes, expected: str):
+    """Verify a trusted digest, allowing only uniform LF/CRLF transport variants.
+
+    Do not strip whitespace or final newlines; content changes remain failures.
+    """
+    lf = raw.replace(b"\r\n", b"\n")
+    candidates = (raw, lf, lf.replace(b"\n", b"\r\n"))
+    if not any(hashlib.sha256(candidate).hexdigest() == expected for candidate in candidates):
+        raise ValueError("license content does not match trusted digest")
+
+
 def gh_license(repo: str):
     if repo in PINNED_LICENSES:
         pin, path, expected, spdx = PINNED_LICENSES[repo]
         out = subprocess.run(["gh", "api", f"repos/{repo}/contents/{path}?ref={pin}"],
                              capture_output=True, text=True, timeout=60, check=True)
         raw = base64.b64decode(json.loads(out.stdout)["content"])
-        if hashlib.sha256(raw).hexdigest() != expected:
-            raise RuntimeError(f"pinned license hash mismatch for {repo}@{pin}")
+        try:
+            verify_license_bytes(raw, expected)
+        except ValueError as exc:
+            raise RuntimeError(f"pinned license hash mismatch for {repo}@{pin}") from exc
         return spdx, raw
     error = ""
     for _ in range(3):
@@ -256,8 +272,10 @@ def main(argv=()):
             if repo in PINNED_LICENSES:
                 _, _, expected, spdx = PINNED_LICENSES[repo]
                 with open(license_path, "rb") as source:
-                    if hashlib.sha256(source.read()).hexdigest() != expected:
-                        raise RuntimeError(f"pinned archived license hash mismatch for {repo}")
+                    try:
+                        verify_license_bytes(source.read(), expected)
+                    except ValueError as exc:
+                        raise RuntimeError(f"pinned archived license hash mismatch for {repo}") from exc
                 lic = f"{spdx} ([text](licenses/{fname}))"
             elif repo in archived:
                 lic = archived[repo]
