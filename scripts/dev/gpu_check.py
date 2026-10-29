@@ -138,7 +138,90 @@ def mask_png(size):
 
 t0 = time.time()
 r = None
-if CASE in ("color_correction_sd15", "color_correction_sdxl"):
+if CASE in ("temperature_modes_sd15", "temperature_modes_sdxl"):
+    from PIL import Image
+    import numpy as np
+    load(SDXL if CASE.endswith("sdxl") else SD15)
+    size = 768 if CASE.endswith("sdxl") else 512
+    source_result = call("txt2img", req(gp(width=size, height=size, steps=8)))
+    assert source_result["type"] == "result", source_result
+    source = keep(source_result, CASE + "_source")
+    report = {}
+    for mode in ("img2img", "hires"):
+        images = []
+        for active in (False, True):
+            params = gp(width=size, height=size, steps=8)
+            if mode == "img2img":
+                params['img2img'] = i2i(source, denoise=0.5)
+            else:
+                params['hires'].update(enabled=True, scale=1.25, second_pass_steps=4)
+            if active:
+                params['hooks'] = {"gpu_temperature_guard": {"sleep_temperature": 1, "wake_temperature": 0,
+                    "interval": 0.1, "sleep_time": 0.1, "max_sleep": 0.1}}
+            result = call("img2img" if mode == "img2img" else "txt2img", req(params))
+            assert result['type'] == 'result', result
+            path = keep(result, CASE + '_' + mode + ('_guard' if active else '_off'))
+            with Image.open(path) as image:
+                images.append(np.asarray(image).copy())
+        assert np.array_equal(*images), mode
+        report[mode] = dict(exact_rgb=True, shape=list(images[0].shape))
+    with open(os.path.join(OUT, CASE + '.json'), 'w') as output:
+        json.dump(report, output, indent=2)
+    r = {'type': 'result', 'result': {'result': report}}
+elif CASE in ("temperature_interrupt_sd15", "temperature_interrupt_sdxl"):
+    load(SDXL if CASE.endswith("sdxl") else SD15)
+    size = 768 if CASE.endswith("sdxl") else 512
+    completed = []
+    request = req(gp(width=size, height=size, steps=8, hooks={"gpu_temperature_guard": {
+        "sleep_temperature": 1, "wake_temperature": 0, "interval": 0.1,
+        "sleep_time": 10, "max_sleep": 0}}))
+    worker = threading.Thread(target=lambda: completed.append(call("txt2img", request)), daemon=True)
+    worker.start()
+    deadline = time.monotonic() + 120
+    with cv:
+        while not any("GPU temperature pause:" in json.dumps(line) for line in lines):
+            assert proc.poll() is None, "engine exited before pause"
+            assert not completed, completed
+            assert time.monotonic() < deadline, "no temperature pause observed"
+            cv.wait(0.1)
+    started = time.monotonic()
+    decision = call("interrupt", {}, timeout=10)
+    worker.join(10)
+    assert not worker.is_alive(), "temperature wait did not interrupt"
+    assert completed and completed[0].get("code") == "interrupted", completed
+    elapsed = time.monotonic() - started
+    assert elapsed < 5, elapsed
+    recovery = call("txt2img", req(gp(width=size, height=size, steps=8)))
+    assert recovery["type"] == "result", recovery
+    keep(recovery, CASE + "_recovery")
+    report = dict(interrupt_seconds=elapsed, interrupted=completed[0], decision=decision)
+    with open(os.path.join(OUT, CASE + ".json"), "w") as output:
+        json.dump(report, output, indent=2)
+    r = {"type": "result", "result": {"result": report}}
+elif CASE in ("temperature_sd15", "temperature_sdxl"):
+    from PIL import Image
+    import numpy as np
+    load(SDXL if CASE.endswith("sdxl") else SD15)
+    size = 768 if CASE.endswith("sdxl") else 512
+    paths, report = {}, {}
+    for name, hook in (("off", {}),
+        ("cool", {"gpu_temperature_guard": {"sleep_temperature": 100, "wake_temperature": 90, "interval": 0.1}}),
+        ("wait", {"gpu_temperature_guard": {"sleep_temperature": 1, "wake_temperature": 0,
+                                            "interval": 0.1, "sleep_time": 0.1, "max_sleep": 0.2}})):
+        start = time.monotonic()
+        result = call("txt2img", req(gp(width=size, height=size, steps=8, hooks=hook)))
+        assert result["type"] == "result", result
+        paths[name] = keep(result, CASE + "_" + name)
+        report[name] = {"seconds": time.monotonic() - start, "path": paths[name]}
+    with Image.open(paths["off"]) as source:
+        expected = np.asarray(source).copy()
+    for name in ("cool", "wait"):
+        with Image.open(paths[name]) as candidate:
+            assert np.array_equal(expected, np.asarray(candidate)), name
+    with open(os.path.join(OUT, CASE + ".json"), "w") as output:
+        json.dump(report, output, indent=2)
+    r = {"type": "result", "result": {"result": report}}
+elif CASE in ("color_correction_sd15", "color_correction_sdxl"):
     from PIL import Image
     import numpy as np
     load(SDXL if CASE.endswith("sdxl") else SD15)

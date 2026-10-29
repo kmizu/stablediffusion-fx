@@ -1119,7 +1119,7 @@
 "index": 186,
 "name": "GPU temperature protection",
 "url": "https://github.com/w-e-w/stable-diffusion-webui-GPU-temperature-protection.git",
-"status": "todo:gpu_temperature_guard"
+"status": "done:gpu_temperature_guard"
 },
 {
 "index": 187,

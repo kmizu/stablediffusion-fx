@@ -188,7 +188,8 @@ class Engine(BaseEngine):
         return h
 
     def features(self) -> list[str]:
-        f = ["freeu", "dynamic_thresholding", "hypertile", "system_info", "vae_tools", "prevent_interrupt"]
+        # Temperature guard uses step callbacks and does not alter model weights.
+        f = ["gpu_temperature_guard", "freeu", "dynamic_thresholding", "hypertile", "system_info", "vae_tools", "prevent_interrupt"]
         f += self._batch_features()
         if hasattr(diffusers, "StableDiffusionXLPAGPipeline"):
             f.append("pag")
@@ -1003,6 +1004,29 @@ class Engine(BaseEngine):
         if getattr(self, "_lora_windows", None):
             ext_mod._chain_callback(kw, self._lora_window_callback())
             self._set_lora_step(1, max(int(expected_steps or steps), 1))  # state for the first step
+        thermal = hooks_mod.hook_config(gp.hooks, "gpu_temperature_guard", {})
+        if thermal is not None:
+            from .temperature_guard import TemperatureGuard, nvidia_temperature, rocm_temperature, ohm_temperature
+            device_index = thermal.get("device", 0)
+            providers = {"NVIDIA": nvidia_temperature, "ROCm": rocm_temperature,
+                         "OpenHardwareMonitor": lambda _: ohm_temperature(thermal.get("sensor_id", ""))}
+            provider = thermal.get("provider", "NVIDIA")
+            if provider not in providers:
+                raise EngineError(INVALID_PARAMS, f"unknown temperature provider '{provider}'")
+            def thermal_event(kind, temperature):
+                if kind == "reading" and not thermal.get("print_readings", False):
+                    return
+                message = f"GPU temperature {kind}: {temperature:g} C (provider={provider}, device={device_index})"
+                if kind == "timeout":
+                    ctx.warn(message + "; maximum pause reached, continuing before wake temperature")
+                else:
+                    ctx.log("info", message)
+            guard = TemperatureGuard(lambda: providers[provider](device_index), on_event=thermal_event,
+                **{key: thermal[key] for key in ("sleep_temperature", "wake_temperature", "interval", "sleep_time", "max_sleep") if key in thermal})
+            def thermal_callback(pipe, step, timestep, callback_kwargs):
+                guard.step(ctx.check_interrupt)
+                return callback_kwargs
+            ext_mod._chain_callback(kw, thermal_callback)
         sch = getattr(embeds, "schedule", None)
         if sch and "prompt_embeds" in kw:
             ext_mod._chain_callback(kw, self._schedule_swapper(sch))

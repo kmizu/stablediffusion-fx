@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 106, todo 196, na 51.
+Totals: done 107, todo 195, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-nui | Scope / notes |
 |---|---|---|---|---|---|
@@ -192,7 +192,7 @@ Totals: done 106, todo 196, na 51.
 | 183 | [Loopback Scaler](https://github.com/Elldreth/loopback_scaler.git) | 178 | todo | `loopback_scaler` |  |
 | 184 | [Mask2Background](https://github.com/limithit/Mask2Background.git) | 47 | done | `inpaint_background` |  |
 | 185 | [ComfyUI](https://github.com/ModelSurge/sd-webui-comfyui.git) | 535 | na | `external-app` | bridge to a specific external application (Photoshop, Krita, ComfyUI, ...) |
-| 186 | [GPU temperature protection](https://github.com/w-e-w/stable-diffusion-webui-GPU-temperature-protection.git) | 36 | todo | `gpu_temperature_guard` |  |
+| 186 | [GPU temperature protection](https://github.com/w-e-w/stable-diffusion-webui-GPU-temperature-protection.git) | 36 | done | `gpu_temperature_guard` |  |
 | 187 | [zoom-image](https://github.com/viyiviyi/stable-diffusion-webui-zoomimage.git) | 23 | done | `core:zoom` |  |
 | 188 | [Shutdown button](https://github.com/EnsignMK/sd_shutdown_button.git) | 18 | na | `server-ops` | operating a shared web server (tunnels, TLS, multi-instance, kill buttons) |
 | 189 | [Latent Upscale](https://github.com/feynlee/latent-upscale.git) | 76 | done | `latent_upscale` |  |

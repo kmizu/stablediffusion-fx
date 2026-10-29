@@ -21,6 +21,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # (repo, how it is used, what)
 BASE = [
+    ("w-e-w/stable-diffusion-webui-GPU-temperature-protection", "reimplemented", "Temperature pause/wake hysteresis and controls; behavior reference f388d7081945576ca2361c365d16f5edb3250412; independent native/engine implementation"),
+    ("openhardwaremonitor/openhardwaremonitor", "dependency", "Optional external running Windows GPU temperature monitor through WMI; not installed or bundled; schema reference 09c16898a4a84c36644e7c07baebf1efd299691e"),
+    ("ROCm/rocm_smi_lib", "dependency", "Optional external rocm-smi temperature query on Linux; not installed or bundled"),
     ("SenshiSentou/sd-webui-state-manager", "reimplemented", "Manual named generation settings, per-mode list/inspect/restore/delete, "
      "including shared model settings and inactive script/extension controls -> `core:state-manager`; independent Scala/JavaFX "
      "implementation, no upstream code/assets copied; no history/autosave/thumbnail or upstream storage-format parity; "
@@ -148,6 +151,9 @@ BASE = [
 # Keep these source-pinned original LICENSE bytes; do not normalize newlines.
 # (commit, license path, SHA-256, SPDX)
 PINNED_LICENSES = {
+    "w-e-w/stable-diffusion-webui-GPU-temperature-protection": (
+        "f388d7081945576ca2361c365d16f5edb3250412", "LICENSE",
+        "248a1ab6a57e6f677770a1498efc7a567f22aaae68923ae84c47d8a3db0ee699", "AGPL-3.0"),
     "SenshiSentou/sd-webui-state-manager": (
         "2af62ecd5287438bbc309f7e840d34aa5c8e3cb6", "LICENSE",
         "3fe9f2a7f539d60ed0e8edaab5f9645c0ee144f9df7f3cf29296153fc643bc4e", "MIT"),

@@ -20,7 +20,7 @@ object StandardPlugins:
     // inpainting / post
     new SoftInpaintingPlugin, new FooocusInpaintPlugin, new FaceRestorePlugin, new AdetailerPlugin,
     // memory
-    new NeverOomPlugin,
+    new NeverOomPlugin, new TemperatureGuardPlugin,
     // prompt processing (extension index)
     new RandomizePlugin, new PromptFormatPlugin, new PromptFilterPlugin, new NegativePromptWeightPlugin,
     new NovelAIPromptPlugin, new StyleVariablesPlugin(), new LoraBlockWeightPlugin, new WeightGradientPlugin, new NegPipPlugin,

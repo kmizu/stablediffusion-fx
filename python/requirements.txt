@@ -34,3 +34,6 @@ onnxruntime==1.23.2  # WD14 tagger (Caption plugin, method wd14)
 # Optional A1111 reference color correction (Extras):
 # scikit-image==0.25.2
 # blendmodes==2025
+# Optional temperature guard uses user-installed external nvidia-smi, rocm-smi,
+# or a running OpenHardwareMonitor WMI provider. No pip package or binary is
+# installed automatically for these providers.

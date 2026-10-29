@@ -116,6 +116,7 @@ S = {
 
 # plugin ids / core features that are implemented: their `todo:` entries are reported as `done:`
 IMPLEMENTED = {
+    "gpu_temperature_guard",
     "color_correction",
     "core:config-presets", "core:preset-utilities", "core:nsfw-card-blur", "core:temporal-lab",
     "dynamic_prompts", "randomize", "prompt_format", "prompt_filter", "negative_prompt_weight", "novelai_prompt",

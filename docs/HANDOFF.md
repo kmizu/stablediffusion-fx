@@ -1,5 +1,11 @@
 # Handoff: bundling the A1111 extension index into stablediffusion-nui
 
+## 2026-10-30 update: GPU temperature guard
+
+Index 186 / issue #54 has native AlwaysOn `gpu_temperature_guard`, interruptible step-end hysteresis, bounded NVIDIA/ROCm/WMI temperature queries, physical device/sensor selection and pause/resume/timeout logging. Current ledger: 107 done, 195 todo, 51 not applicable. See `temperature-guard-verification.md` for actual SD1.5/SDXL native Generate/Interrupt/recovery checks, exact guarded/off RGB parity across txt2img/img2img/hires and AMD fixture-only limits. Whole Python regression passed; whole Scala regression passed 1264 tests with one skip. The real Windows bulk scanner takes several minutes; preserve its live process rather than restarting for quiet logs.
+
+The active twenty-issue release progress is tracked in `twenty-issue-release-progress.md`. No release has yet been published for that goal. The separate temporary worktree `sdnui-temperature-native-check` was used for native acceptance while the main checkout's regression ran; its product sources matched the current checkout. Canonical changes and commits remain in this checkout.
+
 ## 2026-10-30 update: color correction
 
 Index 261 / issue #15 now has native Extras and script/plugin `color_correction`: A1111, independently implemented AdaIN and Wavelet, optional original-input reference, independent comparison outputs and strength. Current generated ledger: 106 done, 196 todo, 51 not applicable. Read `color-correction-verification.md` for real SD1.5/SDXL and native button checks, broad regression results and numerical/visual limits. This is one issue toward the active twenty-issue release request; no new release has been published.
