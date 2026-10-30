@@ -36,6 +36,7 @@ object Protocol:
     val TemporalLab = "temporal_lab"
     val SystemStatus = "system_status"
     val SystemBenchmark = "system_benchmark"
+    val VramEstimator = "vram_estimator"
     val Shutdown = "shutdown"
 
   object ErrorCodes:

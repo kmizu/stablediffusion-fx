@@ -1,5 +1,10 @@
 # Real-model verification log
 
+## VRAM Estimator (2026-10-30)
+
+See [the dedicated verification record](vram-estimator-verification.md) for actual SD1.5/SDXL four-mode calibration and holdouts, native view and owned stop, bounded CUDA OOM/recovery, whole regression, file integrity validation and assembled-jar acceptance. Finite vanilla calibration is not a physical memory-capacity guarantee.
+
+
 ## Partial WD v3 batch candidate (2026-10-27)
 
 The candidate was integrated from main for the next Windows release. This is a partial implementation of issue #7, not complete parity with the original batch interrogator. Unless specifically identified as packaged, the observations below apply to the tested worktree and machine.

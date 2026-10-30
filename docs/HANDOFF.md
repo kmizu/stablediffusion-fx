@@ -1,5 +1,9 @@
 # Handoff: bundling the A1111 extension index into stablediffusion-nui
 
+## 2026-10-30 update: VRAM Estimator
+
+Index 105 / issue #136 has native four-mode CUDA calibration, reserved/allocated peak baselines, four charts, bounded atomic complete/partial profile history and file import/export, strict runtime identity matching and visible-form live estimates. Actual SD1.5/SDXL sweeps and held-out predictions, owned/protected cancellation with unrelated generation preserved, actual bounded CUDA OOM/recovery and assembled-jar native service/view acceptance passed. See vram-estimator-verification.md for exact evidence and limits. Whole Python passed; whole Scala passed 1292 tests with one skip, then the four focused history/session tests and UI compile/assembly passed. MIT notices cover 148 projects. Ledger: 111 done, 191 todo, 51 not applicable. This is the sixth issue of the twenty-issue goal; no release has been published. Next: select and investigate the seventh distinct issue without narrowing its original scope. #121 spans three different style libraries; its complete scope is broader than one prompt selector.
+
 ## 2026-10-30 update: StylePile
 
 Index 40 / issue #122 has native Script `stylepile`, full pinned GPL catalog (512 references), searchable lazy previews, weighted style/preset composition, X/Y/A/B/C and noise variables, prompt insertion helpers, custom image/inspiration overlays and interruption-safe sequences. Actual native SD1.5/SDXL configured-style/manual RGB and img2img RGB match exactly; four-image order/seeds and partial interruption/recovery pass. See `stylepile-verification.md`. Whole Scala passed 1289 tests with one skip; assembly and assembled-jar-only native/resource checks passed. All 517 bundled source-file hashes verified in staged Git and jar. Notices cover 147 projects. Current ledger: 110 done, 192 todo, 51 not applicable. This is the fifth issue of the active twenty-issue release goal; release remains unpublished.

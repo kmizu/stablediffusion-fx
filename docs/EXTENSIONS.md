@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 110, todo 192, na 51.
+Totals: done 111, todo 191, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-nui | Scope / notes |
 |---|---|---|---|---|---|
@@ -111,7 +111,7 @@ Totals: done 110, todo 192, na 51.
 | 102 | [LLuL](https://github.com/hnmr293/sd-webui-llul.git) | 794 | todo | `llul` |  |
 | 103 | [CFG-Schedule-for-Automatic1111-SD](https://github.com/guzuligo/CFG-Schedule-for-Automatic1111-SD.git) | 41 | done | `cfg_schedule` |  |
 | 104 | [ebsynth_utility](https://github.com/s9roll7/ebsynth_utility.git) | 1273 | todo | `ebsynth_utility` |  |
-| 105 | [VRAM Estimator](https://github.com/space-nuko/a1111-stable-diffusion-webui-vram-estimator.git) | 113 | todo | `vram_estimator` |  |
+| 105 | [VRAM Estimator](https://github.com/space-nuko/a1111-stable-diffusion-webui-vram-estimator.git) | 113 | done | `vram_estimator` | Native four-mode CUDA calibration/charts, bounded profile history/import/export and compatible live estimates. Vanilla square calibration excludes extensions; bounded real OOM/recovery and SD1.5/SDXL packaged checks recorded in vram-estimator-verification.md. |
 | 106 | [TiledDiffusion with Tiled VAE](https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111.git) | 4991 | todo | `tiled_diffusion` |  |
 | 107 | [3D Model&Pose Loader](https://github.com/jtydhr88/sd-3dmodel-loader.git) | 247 | todo | `openpose_editor` |  |
 | 108 | [Corridor Crawler Outpainting](https://github.com/brick2face/corridor-crawler-outpainting.git) | 35 | todo | `corridor_crawler` |  |

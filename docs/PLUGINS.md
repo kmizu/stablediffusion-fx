@@ -1,5 +1,12 @@
 # Plugin coverage vs. reForge built-ins
 
+The native **VRAM Estimator** tab calibrates four vanilla CUDA workloads, displays
+per-batch memory charts and imports/exports bounded local profile history. Visible
+generation forms show estimates only for a matching model/runtime calibration.
+Calibration is explicit; Stop honors interruption protection and preserves partial
+measurements. Extension costs are excluded, and extrapolation is labeled. See
+[verification and limits](vram-estimator-verification.md).
+
 Every built-in script (`scripts/`) and built-in extension (`extensions-builtin/`) of the parent
 reForge repository, and where its rewrite lives in stablediffusion-fx.
 

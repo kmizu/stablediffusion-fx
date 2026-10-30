@@ -17,6 +17,7 @@ final class UiContext(val services: AppServices, val catalog: CatalogVM, val sta
   private var styleRefresh = 0L
   lazy val styleLibrary = new StyleLibrary(services.home.stylesFile)
   lazy val hardwareInfo = new sdfx.engine.HardwareInfoService(services)
+  lazy val vramEstimator = new sdfx.engine.VramEstimatorService(services)
   lazy val tagDictionary = new TagDictionary(this)
   var openStylesEditor: () => Unit = () => ()
   var openModelBrowser: (String, Option[PromptInsertionTarget]) => Unit = (_, _) => ()

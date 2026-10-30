@@ -190,7 +190,7 @@ class Engine(BaseEngine):
 
     def features(self) -> list[str]:
         # Temperature guard uses step callbacks and does not alter model weights.
-        f = ["steps_animation", "pnginfo_injection", "gpu_temperature_guard", "freeu", "dynamic_thresholding", "hypertile", "system_info", "vae_tools", "prevent_interrupt"]
+        f = ["vram_estimator", "steps_animation", "pnginfo_injection", "gpu_temperature_guard", "freeu", "dynamic_thresholding", "hypertile", "system_info", "vae_tools", "prevent_interrupt"]
         f += self._batch_features()
         if hasattr(diffusers, "StableDiffusionXLPAGPipeline"):
             f.append("pag")
@@ -1420,6 +1420,8 @@ class Engine(BaseEngine):
                     from .hardware_info import record
                     image_result['hardware_info'] = record(hardware_profile, hardware_timer.next_image(), req.hardware_info.remark)
                 if getattr(self, '_benchmark_no_save', False):
+                    if getattr(self, '_vram_capture_sample', False) and getattr(self, '_vram_sample', None) is None:
+                        self._vram_sample = im.copy()
                     path = ''  # internal benchmark excludes PNG encoding/disk I/O, like upstream do_not_save_samples
                     image_result['path'] = path
                 else:

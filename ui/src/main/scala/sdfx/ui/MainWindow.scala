@@ -169,6 +169,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   val tokenizer = new TokenizerTab(ctx, () => vms(activeMode).prompt.get)
   val temporalLab = new TemporalLabTab(ctx)
   val systemInfo = new SystemInfoTab(ctx)
+  val vramEstimator = new VramEstimatorTab(ctx)
   val stylesEditor = new StylesEditorTab(ctx)
   val vaeTools = new VaeToolsTab(ctx)
   private val interruptionControls = new InterruptionControls(ctx)
@@ -181,6 +182,12 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE)
   tabs.getStyleClass.add("main-tabs")
   private val modeTabs: Map[Mode, Tab] = Mode.values.map(m => m -> new Tab(m.label, panels(m).node)).toMap
+  private val vramEstimates = Mode.values.map { mode =>
+    val estimate = new VramEstimatePane(ctx, () => vms(mode).toParams)
+    panels(mode).content.getChildren.add(0, estimate.node)
+    mode -> estimate
+  }.toMap
+  vramEstimates(Mode.Txt2Img).setActive(true)
   Mode.values.foreach(m => tabs.getTabs.add(modeTabs(m)))
   private val pngTab = new Tab("PNG Info", pngInfo.node)
   private val extrasTab = new Tab("Extras", extras.node)
@@ -197,10 +204,12 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   private val comparisonTab = new Tab("Comparison", comparison.node)
   comparisonTab.setId("comparison-tab")
   tabs.getTabs.addAll(pngTab, extrasTab, tokenizerTab, temporalLabTab, systemInfoTab, stylesTab, comparisonTab, vaeToolsTab)
+  tabs.getTabs.add(new Tab("VRAM Estimator", vramEstimator.node))
   private var comparisonDivider = initial.dividers.get("main").flatMap(_.headOption).getOrElse(.42)
   private var lastMode: Mode = Mode.Txt2Img
   tabs.getSelectionModel.selectedItemProperty.addListener((_, previous, t) =>
     modeOf(t).foreach(lastMode = _)
+    vramEstimates.foreach((mode, estimate) => estimate.setActive(modeOf(t).contains(mode)))
     systemInfo.setActive(t eq systemInfoTab)
     if (previous eq stylesTab) && (t ne stylesTab) then stylesEditor.leave()
     refreshComparisonOptions()
@@ -927,6 +936,8 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
       "preset session" -> (() => if presetSession != null then presetSession.close()),
       "preset stage" -> (() => if presetStage != null then presetStage.close()),
       "system information" -> (() => systemInfo.dispose()),
+      "VRAM estimator" -> (() => vramEstimator.dispose()),
+      "VRAM estimates" -> (() => vramEstimates.values.foreach(_.dispose())),
       "temporal lab" -> (() => temporalLab.dispose()),
       "styles editor" -> (() => stylesEditor.dispose()),
       "VRAM timer" -> (() => vramPoll.stop()),

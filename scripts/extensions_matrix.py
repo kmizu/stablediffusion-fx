@@ -116,6 +116,7 @@ S = {
 
 # plugin ids / core features that are implemented: their `todo:` entries are reported as `done:`
 IMPLEMENTED = {
+    "vram_estimator",
     "stylepile",
     "steps_animation",
     "pnginfo_injection",
@@ -141,6 +142,7 @@ IMPLEMENTED = {
 
 
 SCOPE_NOTES = {
+    "vram_estimator": "Native four-mode CUDA calibration/charts, bounded profile history/import/export and compatible live estimates. Vanilla square calibration excludes extensions; bounded real OOM/recovery and SD1.5/SDXL packaged checks recorded in vram-estimator-verification.md.",
     "core:tag-autocomplete": "v0.03: local CSV tag/alias completion and native keyboard/IME guards; upstream extras remain under #24. See tag-autocomplete.md.",
     "core:state-manager": "v0.03: per-mode named generation settings save/list/restore/delete; upstream history and other extras remain under #23. See generation-states.md.",
 }

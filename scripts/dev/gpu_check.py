@@ -138,7 +138,54 @@ def mask_png(size):
 
 t0 = time.time()
 r = None
-if CASE in ("steps_animation_sd15", "steps_animation_sdxl", "steps_animation_img_sd15", "steps_animation_img_sdxl", "steps_animation_hires_sd15", "steps_animation_hires_sdxl"):
+if CASE in ("vram_sd15", "vram_sdxl", "vram_holdout_sd15", "vram_holdout_sdxl"):
+    import math
+    from pathlib import Path
+    load(SDXL if CASE.endswith('sdxl') else SD15)
+    holdout = CASE.startswith('vram_holdout_')
+    max_size, max_batch = (512, 2) if holdout else (320, 1)
+    measured = call('vram_estimator', dict(max_size=max_size, max_batch=max_batch, steps=1, save_samples=True, output_dir=OUT))
+    assert measured['type'] == 'result', measured
+    profile = measured['result']
+    assert profile['status'] == 'complete' and len(profile['rows']) == 4*((max_size-256)//64+1)*max_batch, profile
+    assert {row['mode'] for row in profile['rows']} == {'txt2img', 'txt2img_hr', 'txt2img_hr_latent', 'img2img'}
+    samples = [row['sample_path'] for row in profile['rows'] if row.get('sample_path')]
+    assert len(samples) == 4 and all(Path(path).is_file() for path in samples), samples
+    for row in profile['rows']:
+        assert math.isfinite(row['reserved_delta_mb']) and row['reserved_delta_mb'] >= 0, row
+        assert row['reserved_peak_mb'] >= row['baseline_reserved_mb'], row
+    saved = json.loads(Path(profile['profile_path']).read_text(encoding='utf-8'))
+    assert saved['fingerprint'] == profile['fingerprint'] and saved['status'] == 'complete'
+    recovery = call('txt2img', req(gp(steps=4)))
+    assert recovery['type'] == 'result' and Path(recovery['result']['images'][0]['path']).is_file(), recovery
+    current = call('vram_estimator', {'operation':'profile'})
+    assert current['type'] == 'result' and current['result']['compatible'], current
+    predicted = call('vram_estimator', {'operation':'estimate', 'mode':'txt2img', 'width':288, 'height':288, 'batch':1})
+    assert predicted['type'] == 'result' and predicted['result']['available'], predicted
+    import copy, hashlib
+    mismatch = copy.deepcopy(saved)
+    mismatch['identity']['model']['hash'] = 'deliberately different model'
+    canonical_identity = json.loads(json.dumps(mismatch['identity']), parse_float=lambda value: int(float(value)) if float(value).is_integer() else float(value))
+    mismatch['fingerprint'] = hashlib.sha256(json.dumps(canonical_identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest()[:24]
+    rejected = call('vram_estimator', {'operation':'estimate', 'profile':mismatch})
+    assert rejected['type'] == 'result' and rejected['result']['reason'] == 'profile_identity_mismatch', rejected
+    errors = []
+    if holdout:
+        training = copy.deepcopy(saved)
+        training['rows'] = [row for row in training['rows'] if row['target'] != 448]
+        for row in saved['rows']:
+            if row['target'] != 448: continue
+            prediction = call('vram_estimator', dict(operation='estimate', profile=training, mode=row['mode'], width=448, height=448, batch=row['batch_size']))
+            assert prediction['type'] == 'result' and prediction['result']['available'], prediction
+            estimate_mb = prediction['result']['incremental_mb']
+            errors.append(dict(mode=row['mode'], batch=row['batch_size'], observed_mb=row['reserved_delta_mb'],
+                predicted_mb=estimate_mb, absolute_error_mb=abs(estimate_mb-row['reserved_delta_mb'])))
+    report = dict(profile=profile, recovery=keep(recovery, CASE + '_recovery'), samples=samples,
+                  estimate=predicted['result'], identity_mismatch_rejected=True, holdout_errors=errors)
+    with open(os.path.join(OUT, CASE + '.json'), 'w') as output:
+        json.dump(report, output, indent=2)
+    r = {'type': 'result', 'result': {'result': report}}
+elif CASE in ("steps_animation_sd15", "steps_animation_sdxl", "steps_animation_img_sd15", "steps_animation_img_sdxl", "steps_animation_hires_sd15", "steps_animation_hires_sdxl"):
     from PIL import Image
     import numpy as np
     xl = CASE.endswith('sdxl')

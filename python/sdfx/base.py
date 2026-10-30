@@ -262,6 +262,10 @@ class BaseEngine:
             data['networks'] = inventory(self, params['dirs'], params.get('hashes', False), ctx)
         return data
 
+    def vram_estimator(self, params: dict, ctx: JobContext) -> dict:
+        from .vram_estimator import dispatch
+        return dispatch(self, params, ctx)
+
     def system_benchmark(self, params: dict, ctx: JobContext) -> dict:
         from .system_info import benchmark
         previous = getattr(self, '_benchmark_no_save', False)

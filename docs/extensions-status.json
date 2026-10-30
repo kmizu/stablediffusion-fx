@@ -633,7 +633,7 @@
 "index": 105,
 "name": "VRAM Estimator",
 "url": "https://github.com/space-nuko/a1111-stable-diffusion-webui-vram-estimator.git",
-"status": "todo:vram_estimator"
+"status": "done:vram_estimator"
 },
 {
 "index": 106,

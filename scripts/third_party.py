@@ -114,6 +114,9 @@ BASE = [
      "huchenlei/sd-webui-api-payload-display; behaviour independently reimplemented in Scala/JavaFX; "
      "no vendored JavaScript or CSS copied; "
      "[license source 6abfcc1](https://github.com/summerstyle/jsonTreeViewer/blob/6abfcc1202396af12e2806d129bcae0e75b37365/LICENSE)"),
+    ("space-nuko/a1111-stable-diffusion-webui-vram-estimator", "reimplemented", "Native VRAM calibration and estimation behavior; "
+     "four generation modes, measured memory profiles, plots and model/runtime-matched prediction. Independently implemented without WebUI imports. "
+     "[source 8ecde47](https://github.com/space-nuko/a1111-stable-diffusion-webui-vram-estimator/tree/8ecde47f7aac1304058ab5af09702b703191c5f6)"),
     ("some9000/StylePile", "data", "Pinned GPL-3.0 StylePile catalog, reference images and inspiration texts; "
      "original bytes and license are bundled under plugins/src/main/resources/stylepile, with SHA-256 provenance. "
      "Processing and native UI are independently implemented; no WebUI script is bundled or executed. "
