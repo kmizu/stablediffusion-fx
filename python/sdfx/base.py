@@ -334,6 +334,22 @@ class BaseEngine:
         if problems:
             raise EngineError(INVALID_PARAMS, "; ".join(problems))
         from .hooks import hook_config
+        refine = hook_config(gp.hooks, 'img2img_hires_fix', {})
+        if refine is not None:
+            from .img2img_hires_fix import normalize, effective
+            config = normalize(refine)
+            candidate = effective(config, gp)
+            source_size = gp.hires.target_size(gp.width, gp.height) if gp.hires.enabled and gp.img2img is None else (gp.width, gp.height)
+            config.target(*source_size)
+            try:
+                schedulers.sampler_spec(candidate.sampler_name)
+                schedulers.resolve_schedule(candidate.sampler_name, candidate.scheduler)
+            except ValueError as error:
+                raise EngineError(INVALID_PARAMS, str(error))
+            if not self.sampler_supported(candidate.sampler_name):
+                raise EngineError(UNSUPPORTED, 'img2img Hires Fix sampler is not available')
+            if config.upscaler not in PIXEL_UPSCALERS:
+                self.check_model_upscaler(config.upscaler, req.upscaler_paths)
         latent = hook_config(gp.hooks, "latent_upscale", {})
         if latent is not None:
             from . import latent_upscale
@@ -371,7 +387,7 @@ class BaseEngine:
             up = gp.hires.upscaler
             if up not in LATENT_UPSCALERS and up not in PIXEL_UPSCALERS:
                 self.check_model_upscaler(up, req.upscaler_paths)
-        for lr in gp.loras + (req.hires_loras or []) + (req.manual_loras or []):
+        for lr in gp.loras + (req.hires_loras or []) + (req.manual_loras or []) + (req.img2img_hires_loras or []):
             if lr.name not in req.lora_paths:
                 raise EngineError(INVALID_PARAMS, f"no path for LoRA '{lr.name}' in lora_paths")
             if not os.path.isfile(req.lora_paths[lr.name]):

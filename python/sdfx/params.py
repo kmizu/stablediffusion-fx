@@ -197,6 +197,7 @@ class GenerationRequest:
     hardware_info: HardwareInfoOptions = field(default_factory=HardwareInfoOptions)
     hires_loras: Optional[List[LoraRef]] = None
     manual_loras: Optional[List[LoraRef]] = None
+    img2img_hires_loras: Optional[List[LoraRef]] = None
 
 
 @dataclass

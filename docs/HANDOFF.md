@@ -2,9 +2,17 @@
 
 ## Active goal reset: ten additional issues then release
 
-On 2026-10-30 the user cleared the previous 20-issue goal and set a new goal to resolve ten issues and release. Treat the new goal as ten further issue resolutions from this reset; #48 is in progress and none has yet been completed toward the new goal. The earlier ten resolved waves remain project history, not automatic completion of the new objective. Preserve all original scope, real-model and package checks, push and verify before counting, then publish and download/hash-verify the release.
+On 2026-10-30 the user cleared the previous 20-issue goal and set a new goal to resolve ten issues and release. Treat the new goal as ten further issue resolutions from this reset; #48 is accepted, making the count 1/10. The earlier ten resolved waves remain project history, not automatic completion of the new objective. Preserve all original scope, real-model and package checks, push and verify before counting, then publish and download/hash-verify the release.
 
-## In progress: Image Encryption (#48), eleventh wave
+## Current progress: #48 accepted; #61 locally verified; #85 and #46 underway
+
+#48 was pushed as commit `b8a623fdad1d78317a10b37149192a59ccff3499`; local and `origin/main` matched and the working tree was clean at verification. [Issue #48](https://github.com/kmizu/stablediffusion-nui/issues/48) closed 2026-10-30 15:17:54 UTC. Count is 1/10. See `encrypt-image-verification.md` for evidence and limitations, including readable metadata and temporary files, unsupported 16-bit LA, and no actual SVD-model test. #85 is underway in isolated worktree `C:/Users/Mizushima/.codex/worktrees/d919/stablediffusion-nui`, not yet integrated. The release is pending.
+
+#61 img2img Hires Fix has passed local acceptance: Python 1,507 passed/1 skipped, Scala 1,437 passed/1 skipped, and native and extracted-package SD1.5/SDXL generation, replay and interruption checks passed with images inspected. See `img2img-hires-fix-verification.md` for source behavior and limits. Commit, push and issue closure must be verified before counting it. #46 is underway separately at `C:/Users/Mizushima/.codex/worktrees/embedding-inspector/stablediffusion-nui`; its SDXL pooling and live embedding reload changes remain under validation.
+
+## Historical: Image Encryption (#48), eleventh wave
+
+The following entries record earlier states; the acceptance status above supersedes pending and 0/10 statements.
 
 2026-10-31 ledger update: index 237 is locally `done:core:image-scrambling`; generated totals are 116 done / 186 todo / 51 not applicable. Focused ledger tests passed (`outputs/encrypt-ledger-test.log`). Earlier statements that index 237 is todo are historical. Commit, push, remote verification and issue closure remain pending; count remains 0/10 until closure.
 

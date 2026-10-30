@@ -1,0 +1,13 @@
+# img2img Hires Fix (#61)
+
+Pinned source: Amadeus-AI/img2img-hires-fix, b8930527a8cc606dd79dd54ed23bc967314d1859, MIT. Full script, README and license are retained under outputs/img2img-hires-source. Issue/index 339 remains todo until acceptance.
+
+The README says it uses the first-pass latent. The actual script operates in postprocess_image on a PIL image: pixel upscale, VAE encode, image-conditioned sampling, VAE decode. Implement that actual behavior as a separate img2img_hires_fix hook for txt2img, img2img and inpaint. Do not replace or decode the existing native latent Hires path. Parent approved this interpretation after the discrepancy was reported.
+
+Controls: enabled; scale default 2 (0..4), explicit width/height (both positive override scale; one alone does not); pixel upscaler; steps 0 inherits; denoise .33; sampler/scheduler inherit; CFG 0 inherits; stripped positive/negative overrides with blank inheriting. Source default R-ESRGAN 4x+ remains selectable and requires a matching local model. PNG source key is img2img Hires Fix with quote-swapped JSON; scale is a number or WIDTHxHEIGHT. Restore validates bounded data atomically. Persist controls with existing plugin forms.
+
+Process each completed image after existing postprocessing. Each output gets one independent refinement, preserving its seed and cancellation ownership. Save completed outputs promptly; interruption must preserve already finished images. Use existing scheduling, ControlNet, adapter and pipeline cleanup surfaces. New pass does not recursively run ADetailer/postprocessing. Refiner checkpoints are currently unsupported by the native engine; do not claim this extension adds a refiner architecture. Existing model/feature support boundaries remain explicit.
+
+Adaptations: source uses ambient random noise and shared mutable script state; use deterministic per-output seeds and job-local immutable configuration instead. Validate finite dimensions and sampling settings before loading models. Native dimensions align down to multiples of8 with a minimum64, matching existing pipeline constraints. Denoise0 produces resized pixels without invoking an invalid zero-timestep pipeline. No new inference dependencies.
+
+Acceptance requires pure/helper and orchestration tests, source metadata restoration, native controls, actual SD1.5/SDXL txt2img/img2img/inpaint results, existing latent Hires preservation, batch/cancel/recovery, pass adapters, source integrity and image inspection. No completion claim from mock tests. Heavy tests/sbt/GPU must be coordinated with parent; no commits/push/issue closure from this worker.

@@ -21,6 +21,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # (repo, how it is used, what)
 BASE = [
+    ("Amadeus-AI/img2img-hires-fix", "reimplemented", "MIT behavior reference b8930527a8cc606dd79dd54ed23bc967314d1859; independent post-image pixel upscale, VAE re-encode and refinement controls for all generation modes"),
     ("haraldk/TwelveMonkeys", "dependency", "Bundled TwelveMonkeys ImageIO WebP reader 3.12.0 and its supporting modules"),
     ("viyiviyi/sd-encrypt-image", "reimplemented", "AGPL-3.0 behavior reference 3a44d3c264632aa90442bdc50e42af0770289bfd; independently implemented pixel-scrambling compatibility; upstream core used only for reference fixtures"),
     ("PladsElsker/sd-webui-inpaint-difference", "reimplemented", "MIT behavior reference 656eed0a214186f4fb12fd6100fef582a01558bf; native difference masks and preview; upstream pure functions used only for test fixtures"),

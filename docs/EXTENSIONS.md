@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 116, todo 186, na 51.
+Totals: done 117, todo 185, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-nui | Scope / notes |
 |---|---|---|---|---|---|
@@ -345,7 +345,7 @@ Totals: done 116, todo 186, na 51.
 | 336 | [Stable Diffusion PNGINFO Injection extension](https://github.com/bluelovers/sd-webui-pnginfo-injection.git) | 14 | done | `pnginfo_injection` |  |
 | 337 | [sd-webui-decadetw-auto-prompt-llm](https://github.com/xlinx/sd-webui-decadetw-auto-prompt-llm.git) | 72 | todo | `llm_prompt` |  |
 | 338 | [GeekyRemB](https://github.com/GeekyGhost/Automatic1111-Geeky-Remb.git) | 17 | done | `remove_background` |  |
-| 339 | [img2img-hires-fix](https://github.com/Amadeus-AI/img2img-hires-fix.git) | 48 | todo | `img2img_hires_fix` |  |
+| 339 | [img2img-hires-fix](https://github.com/Amadeus-AI/img2img-hires-fix.git) | 48 | done | `img2img_hires_fix` | Pinned source pixel upscale/VAE encode/refine behavior in all three modes, full controls and PNG replay; existing native latent Hires stays independent. SD1.5/SDXL extracted-package replay, cancellation and recovery verified. Refiner architectures remain unsupported; ControlNet/ADetailer interaction is not GPU-verified. See img2img-hires-fix-verification.md. |
 | 340 | [Diffusion Cocktail (Ditail)](https://github.com/MAPS-research/sd-webui-ditail.git) | 19 | todo | `ditail` |  |
 | 341 | [sd-webui-live-portrait](https://github.com/dimitribarbot/sd-webui-live-portrait.git) | 79 | todo | `live_portrait` |  |
 | 342 | [TIPO/DanTagGen Extension](https://github.com/KohakuBlueleaf/z-tipo-extension) | 642 | todo | `tipo` |  |

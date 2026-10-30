@@ -9,6 +9,7 @@ object StandardPlugins:
   def alwaysOn: Seq[Plugin] = Seq(
     new InpaintDifferencePlugin,
     new HiresFixTweaksPlugin,
+    new Img2ImgHiresFixPlugin,
     new PromptFusionPlugin,
     new TokenDownsamplingPlugin,
     new ComposableLoraPlugin,

@@ -190,7 +190,7 @@ class Engine(BaseEngine):
 
     def features(self) -> list[str]:
         # Temperature guard uses step callbacks and does not alter model weights.
-        f = ["hires_fix_tweaks", "token_downsampling", "vram_estimator", "steps_animation", "pnginfo_injection", "gpu_temperature_guard", "freeu", "dynamic_thresholding", "hypertile", "system_info", "vae_tools", "prevent_interrupt"]
+        f = ["img2img_hires_fix", "hires_fix_tweaks", "token_downsampling", "vram_estimator", "steps_animation", "pnginfo_injection", "gpu_temperature_guard", "freeu", "dynamic_thresholding", "hypertile", "system_info", "vae_tools", "prevent_interrupt"]
         f += self._batch_features()
         if cn_mod._has("cv2"):
             f.append("inpaint_difference")
@@ -1250,6 +1250,9 @@ class Engine(BaseEngine):
         hardware_started = time.perf_counter()
         req = self.parse_generation(params, mode, ctx)
         gp = req.params
+        from . import img2img_hires_fix
+        refine_config = hooks_mod.hook_config(gp.hooks, 'img2img_hires_fix', {})
+        refine_config = img2img_hires_fix.normalize(refine_config) if refine_config is not None else None
         hp = gp.hires
         hires = mode == "txt2img" and hp.enabled
         from .hires_tweaks import seed_plan, wire_seed
@@ -1300,6 +1303,8 @@ class Engine(BaseEngine):
         hr_gp = replace(gp, loras=req.hires_loras) if separate_loras else gp
         lora_hashes = self._apply_loras(gp, req, ctx)
         texts = [gp.prompt, gp.negative_prompt] + ([hp.prompt, hp.negative_prompt] if hires else [])
+        if refine_config is not None:
+            texts += [refine_config.prompt, refine_config.negative_prompt]
         gradient_enabled = hooks_mod.hook_config(gp.hooks, "weight_gradient", {}) is not None
         if (gradient_enabled and hooks_mod.hook_config(gp.hooks, "photomaker", {}) is not None
                 and any(weight_gradient.has_gradient(text) for text in texts)):
@@ -1385,16 +1390,19 @@ class Engine(BaseEngine):
         def finish_batch(imgs, base_seeds, base_subs, seeds, idx0, it, repeat=0, hr_seeds=None, hr_subs=None, pass_gp=None):
             effective_gp = pass_gp if pass_gp is not None else gp
             ad = hooks_mod.hook_config(gp.hooks, "adetailer", {})
-            if hr_plan is None:
+            if hr_plan is None and refine_config is None:
                 if ad:
                     imgs = self._adetailer(effective_gp, req, ctx, ad, imgs, seeds, idx0, total, pag)
                 imgs = ext_mod.post_images(self, gp, None, imgs, ctx=ctx, faces=True)
             for j, im in enumerate(imgs):
-                if hr_plan is not None:
+                if hr_plan is not None or refine_config is not None:
                     # Publish each finished item before another item's detector/inpaint can interrupt.
                     item = self._adetailer(effective_gp, req, ctx, ad, [im], [seeds[j]],
                                            idx0 + j, total, pag) if ad else [im]
                     im = ext_mod.post_images(self, gp, None, item, ctx=ctx, faces=True)[0]
+                if refine_config is not None:
+                    im = img2img_hires_fix.refine(self, gp, req, ctx, refine_config, im,
+                        seeds[j], idx0 + j, total, pag, cn, effective_gp, lora_hashes)
                 path = next_output_path(req.output_dir, str(base_seeds[j]))
                 image_result = {"path": path, "seed": base_seeds[j], "subseed": base_subs[j],
                                 "width": im.width, "height": im.height}
@@ -1533,7 +1541,7 @@ class Engine(BaseEngine):
                         imgs = [job.finalize(im) for im in imgs]
                 finish_batch(imgs, seeds, subs, seeds, idx0 * repeats, it)
         except EngineError as error:
-            if error.code != "interrupted" or hr_plan is None or not out_images:
+            if error.code != "interrupted" or (hr_plan is None and refine_config is None) or not out_images:
                 raise
             interrupted = True
 

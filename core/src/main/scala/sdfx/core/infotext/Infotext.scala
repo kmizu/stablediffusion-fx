@@ -179,8 +179,10 @@ object Infotext:
         )
       else base.hires.copy(enabled = false)
     val subStrength = d("Variation seed strength").getOrElse(0.0)
-    val restoredHooks = f.get("Hires seed").flatMap(HiresSeedMetadata.parse)
+    val hiresHooks = f.get("Hires seed").flatMap(HiresSeedMetadata.parse)
       .fold(base.hooks)(h => base.hooks.updated("hires_fix_tweaks", h))
+    val restoredHooks = f.get(Img2ImgHiresMetadata.key).flatMap(Img2ImgHiresMetadata.parse)
+      .fold(hiresHooks - "img2img_hires_fix")(h => hiresHooks.updated("img2img_hires_fix", h))
     base.copy(
       prompt = pi.prompt,
       negativePrompt = pi.negativePrompt,

@@ -96,7 +96,8 @@ case class GenerationRequest(
     vaeRecoveryDir: String = "",
     hardwareInfo: HardwareInfo.Options = HardwareInfo.Options(),
     hiresLoras: Option[Seq[sdfx.core.model.LoraRef]] = None,
-    manualLoras: Option[Seq[sdfx.core.model.LoraRef]] = None
+    manualLoras: Option[Seq[sdfx.core.model.LoraRef]] = None,
+    img2imgHiresLoras: Option[Seq[sdfx.core.model.LoraRef]] = None
 ) derives RW
 
 /** Partial WD v3 worker preparation; the worker owns image snapshots and assets. */

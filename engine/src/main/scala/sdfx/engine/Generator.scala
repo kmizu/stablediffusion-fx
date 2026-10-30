@@ -2,7 +2,7 @@ package sdfx.engine
 
 import sdfx.core.config.{AppHome, Settings}
 import sdfx.core.gallery.OutputNaming
-import sdfx.core.infotext.{HardwareInfo, ImageFacts, Infotext}
+import sdfx.core.infotext.{HardwareInfo, ImageFacts, Infotext, Img2ImgHiresMetadata}
 import sdfx.core.model.*
 import sdfx.core.plugins.api.*
 import sdfx.core.png.PngMetadata
@@ -76,6 +76,13 @@ final case class JobLimits(
       if hw > maxSide || hh > maxSide then fail(s"hires target ${hw}x$hh exceeds the maximum side $maxSide")
       val hpx = hw.toLong * hh * p.batchSize
       if hpx > maxPixelsPerGeneration then fail(s"hires ${hw}x$hh x batch ${p.batchSize} = $hpx pixels exceeds the limit of $maxPixelsPerGeneration")
+    Img2ImgHiresMetadata.active(p.hooks).foreach { config =>
+      val source = if p.hires.enabled && !p.isImg2Img then p.hires.targetSize(p.width, p.height) else (p.width, p.height)
+      val (rw, rh) = Img2ImgHiresMetadata.targetSize(config, source._1, source._2)
+      if rw > maxSide || rh > maxSide then fail(s"img2img Hires target ${rw}x$rh exceeds the maximum side $maxSide")
+      // Refinement runs one completed image at a time.
+      if rw.toLong * rh > maxPixelsPerGeneration then fail(s"img2img Hires ${rw}x$rh exceeds the pixel limit $maxPixelsPerGeneration")
+    }
 
 /** A generation request violates the job's [[JobLimits]]. */
 final case class JobLimitExceeded(message: String) extends IllegalArgumentException(message)
@@ -243,12 +250,16 @@ final class Generator(
     val composed = HiresPreparation.compose(p0, styleSource(), settings().hiresFixTweaks.saveTemplate)
     val prompt = composed.prompt
     val negative = composed.negativePrompt
+    val refinement = Img2ImgHiresMetadata.active(composed.hooks)
     val recorded = composed.copy(seed = seed, subseed = subseed,
       extra = p0.extra.filterNot((key, _) => HardwareInfo.fieldNames(key) ||
-        Set("Hires prompt mode", "NUI Hires template", "NUI Manual LoRAs")(key)))
+        Set("Hires prompt mode", "NUI Hires template", "NUI Manual LoRAs", Img2ImgHiresMetadata.key)(key)) ++
+        refinement.map(h => Img2ImgHiresMetadata.key -> Img2ImgHiresMetadata.encode(h)))
 
     val ex = LoraSyntax.extract(prompt)
     val hrEx = LoraSyntax.extract(recorded.hires.prompt)
+    val refinePrompt = refinement.map(_("prompt").str).filter(_.nonEmpty).getOrElse(prompt)
+    val refineEx = LoraSyntax.extract(refinePrompt)
     val composable = recorded.hooks.get("composable_lora").exists {
       case o: ujson.Obj => o.value.get("enabled").forall {
         case ujson.Bool(value) => value
@@ -264,14 +275,16 @@ final class Generator(
       if composable then
         // Placement and repeated tag weights belong to the composable engine. Resolve
         // each file once; retain its first native TE/UNet settings instead of summing tags.
-        val tags = """<(?:lora|lyco):[^>]+>""".r.findAllIn(prompt + " " + recorded.hires.prompt)
+        val tags = """<(?:lora|lyco):[^>]+>""".r.findAllIn(prompt + " " + recorded.hires.prompt +
+          refinement.fold("")(h => " " + h("prompt").str + " " + h("negative_prompt").str))
           .flatMap(t => LoraSyntax.extract(t).loras).toSeq
         (recorded.loras ++ tags).foldLeft(Vector.empty[LoraRef])((found, lr) =>
           if found.exists(_.name == lr.name) then found else found :+ lr)
       else recorded.loras ++ ex.loras ++ hrEx.loras.filterNot(l => ex.loras.exists(_.name == l.name))
     val separateHiresLoras = HiresPreparation.active(recorded).isDefined && !composable
     val warnings = Seq.newBuilder[String]
-    val loraPaths = allLoras.map(_.name).distinct.flatMap { n =>
+    val refinementLoras = refinement.map(_ => recorded.loras ++ refineEx.loras)
+    val loraPaths = (allLoras ++ refinementLoras.getOrElse(Nil)).map(_.name).distinct.flatMap { n =>
       catalog.findLora(n).map(e => n -> e.path).orElse {
         val f = home.resolve(n)
         if Files.isRegularFile(f) && withinDirs(f, settings().modelDirs.lora) then Some(n -> f.toString)
@@ -286,11 +299,15 @@ final class Generator(
         None
       }
     }.toMap
-    val upPaths = Seq(Option.when(recorded.hires.enabled)(recorded.hires.upscaler)).flatten
+    val upPaths = Seq(Option.when(recorded.hires.enabled)(recorded.hires.upscaler), refinement.map(_("upscaler").str)).flatten
       .flatMap(u => catalog.findUpscaler(u).map(e => u -> e.path))
       .toMap
     val s = settings()
     val resolvedHooks = resolveHookModels(recorded.hooks, msg => warnings += msg).map {
+      case ("img2img_hires_fix", _) if refinement.isDefined =>
+        val config = ujson.Obj.from(refinement.get.value.toSeq)
+        if !composable && config("prompt").str.nonEmpty then config("prompt") = refineEx.prompt
+        "img2img_hires_fix" -> config
       case (id @ ("save_intermediate" | "composable_lora"), o: ujson.Obj) =>
         val persistent = ujson.Obj.from(o.value.toSeq)
         persistent("output_dir") = home.outputs(s).toAbsolutePath.toString
@@ -309,6 +326,7 @@ final class Generator(
       loraPaths = loraPaths,
       manualLoras = Option.when(composable)(recorded.loras.filter(l => loraPaths.contains(l.name))),
       hiresLoras = Option.when(separateHiresLoras)((recorded.loras ++ hrEx.loras).filter(l => loraPaths.contains(l.name))),
+      img2imgHiresLoras = refinementLoras.map(_.filter(l => loraPaths.contains(l.name))),
       embeddingPaths = catalog.embeddings.map(_.path),
       controlnetPaths = cnPaths,
       upscalerPaths = upPaths,
@@ -317,7 +335,7 @@ final class Generator(
       systemInfoFields = s.systemInfoMetadataFields,
       hardwareInfo = HardwareInfo.Options(s.hardwareInfoEnabled, s.hardwareInfoRemark),
       vaeRecoveryDir = home.outputs(s).toAbsolutePath.toString,
-      lbwPresets = if (sent.loras ++ Option.when(separateHiresLoras)(recorded.loras ++ hrEx.loras).getOrElse(Nil))
+      lbwPresets = if (sent.loras ++ Option.when(separateHiresLoras)(recorded.loras ++ hrEx.loras).getOrElse(Nil) ++ refinementLoras.getOrElse(Nil))
         .exists(_.lbw.nonEmpty) then Generator.lbwPresets(home.configDir) else Map.empty
     )
     val globalOutputs = home.outputs(s).toAbsolutePath.normalize()

@@ -15,6 +15,41 @@ class GeneratorSuite extends munit.FunSuite:
 
   override val munitTimeout: Duration = 120.seconds
 
+  test("img2img refinement target obeys job limits including preceding native Hires") {
+    val params = GenerationParams(width = 512, height = 512,
+      hires = HiresParams(enabled = true, scale = 2),
+      hooks = Map("img2img_hires_fix" -> ujson.Obj("ratio" -> 4, "upscaler" -> "Lanczos")))
+    intercept[JobLimitExceeded](JobLimits(maxSide = 2048).check(params, 1))
+  }
+
+  test("img2img refinement discovers override adapters without enabling them in the base pass") {
+    val p = GenerationParams(prompt = "cat", loras = Seq(LoraRef("My Lora", .2)), hooks = Map(
+      "img2img_hires_fix" -> ujson.Obj("prompt" -> "dog <lora:detail:.6>", "upscaler" -> "Lanczos")))
+    val prep = services.generator.prepare(p)
+    assertEquals(prep.request.params.loras.map(_.name), Seq("My Lora"))
+    assertEquals(prep.request.img2imgHiresLoras.get.map(_.name), Seq("My Lora", "detail"))
+    assertEquals(prep.request.params.hooks("img2img_hires_fix")("prompt").str, "dog")
+    assert(prep.recorded.extra.contains("img2img Hires Fix"))
+  }
+
+  test("img2img refinement preserves manual and tagged identity and resolves custom LBW presets") {
+    Files.writeString(home.configDir.resolve("lbwpresets.txt"), "DETAIL:0,0,1\n")
+    try {
+      val p = GenerationParams(prompt = "cat <lora:My Lora:.7>", loras = Seq(LoraRef("My Lora", .2)), hooks = Map(
+        "img2img_hires_fix" -> ujson.Obj("prompt" -> "dog <lora:detail:.6:lbw=DETAIL>", "upscaler" -> "Lanczos")))
+      val prep = services.generator.prepare(p)
+      assertEquals(prep.request.params.loras.map(_.weight), Seq(.2, .7))
+      assertEquals(prep.request.img2imgHiresLoras.get.map(_.name), Seq("My Lora", "detail"))
+      assertEquals(prep.request.lbwPresets("DETAIL"), "0,0,1")
+      val restored = Infotext.toParams(Infotext.parse(Infotext.write(prep.recorded,
+        sdfx.core.infotext.ImageFacts(seed = prep.recorded.seed))))
+      val replay = services.generator.prepare(restored)
+      assertEquals(replay.request.img2imgHiresLoras, prep.request.img2imgHiresLoras)
+      val disabled = services.generator.prepare(p.copy(hooks = Map.empty, extra = prep.recorded.extra))
+      assert(!disabled.recorded.extra.contains("img2img Hires Fix"))
+    } finally Files.deleteIfExists(home.configDir.resolve("lbwpresets.txt"))
+  }
+
   test("video policy follows the job snapshot and blocks img2vid before dispatch") {
     val session = new sdfx.core.png.ImageScrambleSession
     session.unlock("secret")

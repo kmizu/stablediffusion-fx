@@ -107,7 +107,7 @@ S = {
     327: "todo:masked_content_extras", 328: "done:core:theme", 329: "todo:manga_inpainting", 330: "na:webui-api",
     331: "todo:chara_searcher", 332: "todo:fsr_upscale", 333: "todo:core:nsfw-card-blur", 334: "na:webui-ux",
     335: "todo:face_manipulation", 336: "todo:pnginfo_injection", 337: "todo:llm_prompt", 338: "todo:remove_background",
-    339: "todo:img2img_hires_fix", 340: "todo:ditail", 341: "todo:live_portrait", 342: "todo:tipo",
+    339: "done:img2img_hires_fix", 340: "todo:ditail", 341: "todo:live_portrait", 342: "todo:tipo",
     343: "na:webui-ux", 344: "na:account", 345: "done:core:gallery", 346: "na:account", 347: "todo:booru_prompt",
     348: "na:account", 349: "todo:model_downloader", 350: "done:core:size-presets", 351: "todo:style_selector",
     352: "todo:vae_tools",
@@ -144,6 +144,7 @@ IMPLEMENTED = {
 
 
 SCOPE_NOTES = {
+    "img2img_hires_fix": "Pinned source pixel upscale/VAE encode/refine behavior in all three modes, full controls and PNG replay; existing native latent Hires stays independent. SD1.5/SDXL extracted-package replay, cancellation and recovery verified. Refiner architectures remain unsupported; ControlNet/ADetailer interaction is not GPU-verified. See img2img-hires-fix-verification.md.",
     "core:image-scrambling": "Native session and batch compatibility with upstream pixel permutations. This is not secure encryption; readable metadata and temporary files remain. See encrypt-image-verification.md.",
     "token_downsampling": "Native two-depth K/V resampling, requested-step evaluation cutoff, XYZ axes and PNG replay. Actual SD1.5/SDXL extracted-package interruption/recovery verified; explicit PAG/HyperTile conflict and per-pass hires clock adaptation. See token-downsampling-verification.md.",
     "waifu2x": "Nine pinned neural upscalers and native Script Anime/Photo/CARN controls, 2x-16x. RGB output, 64MP bound, first-use weight downloads; exact CPU reference parity and SD1.5/SDXL extracted-package cancellation/recovery verified. See waifu2x-verification.md.",

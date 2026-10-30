@@ -76,7 +76,7 @@ class FakeEngine(BaseEngine):
 
     def features(self) -> list[str]:
         from importlib.util import find_spec
-        return (["inpaint_difference"] if HAVE_NUMPY and HAVE_PIL and find_spec('cv2') else []) + ["hires_fix_tweaks", "token_downsampling", "vram_estimator", "steps_animation", "pnginfo_injection", "gpu_temperature_guard", "freeu", "dynamic_thresholding", "hypertile", "pag", "controlnet", "apg", "mahiro", "rescale_cfg",
+        return (["inpaint_difference"] if HAVE_NUMPY and HAVE_PIL and find_spec('cv2') else []) + ["img2img_hires_fix", "hires_fix_tweaks", "token_downsampling", "vram_estimator", "steps_animation", "pnginfo_injection", "gpu_temperature_guard", "freeu", "dynamic_thresholding", "hypertile", "pag", "controlnet", "apg", "mahiro", "rescale_cfg",
                 "model_sampling", "kohya_hrfix", "multidiffusion", "latent_modifier", "soft_inpainting", "sag", "neveroom",
                 "reference", "revision", "ip_adapter", "controllllite", "fooocus_inpaint", "photomaker", "img2imgalt",
                 "face_restore", "caption", "img2vid", "novel_view", "ldsr", "marigold", "adetailer", "weight_gradient", "negpip", "neutral_prompt", "prompt_fusion", "save_intermediate", "latent_upscale", "composable_lora", "system_info", "prevent_interrupt"] + list(SAMPLING_HOOKS) + (
@@ -212,6 +212,9 @@ class FakeEngine(BaseEngine):
         gp = req.params
         from .hooks import hook_config
         from .hires_tweaks import seed_plan, wire_seed
+        from .img2img_hires_fix import normalize, effective
+        refine_config = hook_config(gp.hooks, 'img2img_hires_fix', {})
+        refine_config = normalize(refine_config) if refine_config is not None else None
         seed, subseed = resolve_seed(gp.seed), resolve_seed(gp.subseed)
         bs, n_iter = gp.batch_size, gp.n_iter
         hires = mode == "txt2img" and gp.hires.enabled
@@ -287,9 +290,19 @@ class FakeEngine(BaseEngine):
                             if hardware_timer is not None:
                                 from .hardware_info import record
                                 hardware_record = record(hardware_profile, hardware_timer.next_image(), req.hardware_info.remark)
+                            if refine_config is not None:
+                                rw, rh = refine_config.target(*img.size)
+                                if refine_config.denoise:
+                                    refine_params = effective(refine_config, gp)
+                                    actual = img2img_steps(refine_params.steps, refine_config.denoise)[2]
+                                    self._run_pass(ctx, actual, 'img2img_hires', (it * repeats + repeat) * bs + j,
+                                        total, hr_seeds[j], req.preview_every, (rw, rh))
+                                img = img.resize((rw, rh))
                             save_png(img, path)
                             iw, ih = img.size
                         else:
+                            if refine_config is not None:
+                                raise EngineError(UNSUPPORTED, 'img2img Hires Fix dry-run requires Pillow')
                             rows = fake_rows(out_w, out_h, hr_seeds[j])
                             if hardware_timer is not None:
                                 from .hardware_info import record
@@ -305,7 +318,7 @@ class FakeEngine(BaseEngine):
                             entry['hardware_info'] = hardware_record
                         images.append(entry)
         except EngineError as error:
-            if error.code != "interrupted" or hr_plan is None or not images:
+            if error.code != "interrupted" or (hr_plan is None and refine_config is None) or not images:
                 raise
             interrupted = True
 
