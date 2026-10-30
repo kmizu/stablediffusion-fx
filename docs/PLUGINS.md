@@ -1,5 +1,14 @@
 # Plugin coverage vs. reForge built-ins
 
+**Metadata Utils** reads and edits checkpoint or LoRA `.safetensors` metadata
+without loading model weights. Choose a file, load its JSON, edit it, and save a
+copy beside the source. Loading fingerprints the source with cancellable progress;
+if the source changes before saving, reload its metadata first. A blank output name appends `_md`; existing names are
+always rejected. Metadata changes the file hash, while the tensor payload is
+copied byte for byte. Cancel affects only the current metadata operation.
+Nested JSON values are stored as strings as required by safetensors. See
+[source behavior and verification status](metadata-utils-verification.md).
+
 **Inpaint Difference** is available in the Inpaint panel. Enable “Create mask
 from image difference”, choose the base and altered images, and adjust threshold,
 contours, dilation and erosion. The altered image is the image being inpainted;

@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 117, todo 185, na 51.
+Totals: done 118, todo 184, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-nui | Scope / notes |
 |---|---|---|---|---|---|
@@ -318,7 +318,7 @@ Totals: done 117, todo 185, na 51.
 | 309 | [Hardware Info in metadata](https://github.com/light-and-ray/sd-webui-hardware-info-in-metadata.git) | 6 | done | `core:hardware-info` |  |
 | 310 | [PNGINFO Beautify](https://github.com/bluelovers/sd-webui-pnginfo-beautify.git) | 32 | done | `core:png-info` |  |
 | 311 | [InputAccordion Highlight](https://github.com/w-e-w/sd-webui-input-accordion-highlight.git) | 9 | na | `webui-css` | styles / JavaScript tweaks of the Gradio web page; the JavaFX UI has its own theme and layout |
-| 312 | [Metadata Utils](https://github.com/Tzigo/metadata_utils.git) | 8 | todo | `metadata_utils` |  |
+| 312 | [Metadata Utils](https://github.com/Tzigo/metadata_utils.git) | 8 | done | `metadata_utils` | Native checkpoint/LoRA JSON metadata editing and non-overwriting copies preserving tensor bytes; cancellable source fingerprints bind edits to the loaded file and reject stale sources. Bounded safetensors/JSON input; atomic publication requires hard-link support. Real SD1.5/SDXL native and extracted-package read-back, cancellation/recovery and harmless-edit RGB equality verified. See metadata-utils-verification.md for evidence and retained timeout diagnostics. |
 | 313 | [webui-foooxus-prompt-expansion](https://github.com/power88/webui-fooocus-prompt-expansion.git) | 23 | todo | `prompt_expansion` |  |
 | 314 | [Bilingual Localization Refactored Fork](https://github.com/bluelovers/sd-webui-bilingual-localization.git) | 5 | todo | `core:localization` |  |
 | 315 | [SD-PPP](https://github.com/zombieyang/sd-ppp.git) | 2191 | na | `external-app` | bridge to a specific external application (Photoshop, Krita, ComfyUI, ...) |

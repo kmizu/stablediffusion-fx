@@ -22,6 +22,9 @@ final class TemporalLabHandle(val result: Future[TemporalLabResult], interruptFn
 final class VaeToolsHandle(val result: Future[ujson.Value], interruptFn: () => Future[InterruptionDecision]):
   def interrupt(): Future[InterruptionDecision] = interruptFn()
 
+final class MetadataUtilsHandle(val result: Future[MetadataUtilsResult], interruptFn: () => Future[InterruptionDecision]):
+  def interrupt(): Future[InterruptionDecision] = interruptFn()
+
 object GenerationMode:
   val Txt2Img: String = Protocol.Types.Txt2Img
   val Img2Img: String = Protocol.Types.Img2Img
@@ -129,6 +132,14 @@ final class EngineClient(val supervisor: EngineSupervisor):
   /** Literal CLIP BPE inspection on the currently loaded model; SDXL returns both tokenizers. */
   def tokenize(text: String, inputMode: String = "text"): Future[TokenizeResult] =
     call[TokenizeResult](Protocol.Types.Tokenize, ujson.Obj("text" -> text, "input_mode" -> inputMode))
+
+  def metadataUtilsOwned(request: MetadataUtilsRequest, listener: EngineEvent => Unit = _ => ()): MetadataUtilsHandle =
+    val owner = java.util.UUID.randomUUID().toString
+    val gate = new TemporalLabCancelGate(owner, id => supervisor.captureInterrupt(Some(id), restartOnTimeout = false))
+    val result = supervisor.requestExtras(Protocol.Types.MetadataUtils, Json.toJs(request), listener, owner,
+      () => gate.beforeDispatch(), () => gate.dispatched()).map(Json.fromJs[MetadataUtilsResult](_))
+    result.onComplete(_ => gate.completed())(using ExecutionContext.parasitic)
+    new MetadataUtilsHandle(result, () => gate.cancel())
 
   /** A single Extras batch owns its requests and never interrupts other jobs. */
   def extrasBatch(listener: EngineEvent => Unit = _ => ()): ExtrasBatchHandle =

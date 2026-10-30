@@ -71,7 +71,7 @@ class BaseEngine:
         }
 
     def features(self) -> list[str]:
-        return ["prevent_interrupt", *self._batch_features()]
+        return ["metadata_utils", "prevent_interrupt", *self._batch_features()]
 
     def _batch_features(self) -> list[str]:
         if self.dry_run:
@@ -174,6 +174,10 @@ class BaseEngine:
                     os.remove(out + ".part")
                 except OSError:
                     pass
+
+    def metadata_utils(self, params: dict, ctx: JobContext) -> dict:
+        from .metadata_utils import run
+        return run(params, ctx)
 
     def tokenize(self, params: dict, ctx: JobContext) -> dict:
         if self.dry_run:

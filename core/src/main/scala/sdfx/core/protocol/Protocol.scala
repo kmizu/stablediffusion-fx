@@ -31,6 +31,7 @@ object Protocol:
     val Unload = "unload"
     val Memory = "memory"
     val Tokenize = "tokenize"
+    val MetadataUtils = "metadata_utils"
     val SystemInfo = "system_info"
     val VaeTools = "vae_tools"
     val TemporalLab = "temporal_lab"
@@ -74,6 +75,11 @@ case class EngineHello(
 
 case class ModelEntry(name: String, path: String, kind: String, sizeMb: Double = 0) derives RW
 case class FileEntry(name: String, path: String, sizeMb: Double = 0) derives RW
+
+case class MetadataUtilsRequest(operation: String = "read", path: String,
+    metadataJson: String = "", newName: String = "", sourceToken: String = "") derives RW
+case class MetadataUtilsResult(path: String, metadata: Map[String, String] = Map.empty,
+    editable: String = "", tensorBytes: Long = 0L, tensorSha256: String = "", sourceToken: String = "") derives RW
 
 case class LoadModelRequest(path: String, dtype: String = "fp16", vramMode: String = "gpu", vaePath: Option[String] = None, vaeTiling: Boolean = false) derives RW
 case class LoadedModel(name: String, path: String, kind: String, hash: String, loadedMs: Long = 0, vaeName: Option[String] = None, vaeHash: Option[String] = None, modelToken: Option[String] = None) derives RW

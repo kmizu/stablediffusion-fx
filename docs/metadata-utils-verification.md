@@ -1,0 +1,71 @@
+# Metadata Utils (#82) verification
+
+Managed worktree d912, base65b4ddcc11e8c2438c30cdd57b3d7cfc3732e019. The read-to-save source replacement correction passed native and packaged revalidation on both model families and current full regressions. Ledger is done; independent re-review confirmed the stale-source finding resolved with no remaining concrete blocker. Not committed, pushed or counted toward issue closure.
+
+## Source
+
+Tzigo/metadata_utils pinned a4cda9fe899f95de769496946497d20daedb516b. Originals retained under outputs/metadata-utils-source; GPL-3.0 license copied with matching bytes. Independent implementation; no imported upstream runtime code.
+
+SHA256:
+
+- LICENSE: 3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986
+- metadata_util_lib.py: be796eee38b4d2a3bb021254828d2149d1b14607267019812538ee248570cfd1
+- metadata_utils_file_utils.py: 90ddb2303727cfbd57c49d6d282d414dc1f1d6944eae608c83571c2d49741be6
+- README.md: 635f79b9cf39265adb15371a5f005eb32b3336034cde132482726027641fd569
+- scripts/metadata_utils.py: d3c02bb4605137cd1cf8ad17e6ed48c474f691e168ae46cd1e8fe68fa94ed953
+
+Source scope: separate Checkpoint/LoRA catalogs and refresh, editable JSON, optional filename stem/default `_md`, collision and non-safetensors rejection, hash-change notice. Source displays nested JSON objects from metadata strings, then writes user JSON directly; native write normalizes non-string values to JSON strings to preserve a valid safetensors string map. Empty metadata displays `{}` instead of uneditable `No metadata`. Existing tensor payload stays byte-identical. Input is limited to valid supported safetensors layout and bounded JSON; publication requires filesystem hard-link support for atomic no-overwrite behavior and fails safely if unavailable.
+
+## Evidence so far
+
+- Pure stdlib unittest23 passed; no torch imported. Latest: outputs/metadata-utils-boundaries-latest.log. Earlier RED/GREEN logs are retained. Covers exact source/payload/descriptor preservation; Unicode/nested/empty metadata; hardlink and racing-destination no-overwrite, input validation, mutation during copy and publication, actual-context mid-copy cancellation, failed-publication cleanup, actual queued server dispatch and JobContext publication. Initial test fixture adjusted for Windows short/long path equivalence and existing lowercase error codes.
+- Official safetensors reader inspected at e246a2560645b7525f5775669ed816eb57c5bcc8 (safetensors/src/tensor.rs): header lengths need not be aligned; C64 and FP8 FNUZ types are valid. Added RED/GREEN regression fixtures and accepted these layouts, while new output is padded to8. See outputs/metadata-utils-format-{red,green}.log.
+- JDK21 MetadataUtilsProtocolSuite2 passed (outputs/metadata-utils-scala-green.log), after missing-type RED. Unicode JSON, defaults, read/write result variants and 7GB size field roundtrip covered.
+- Owned-client cancellation suite2 passed: cancellation before engine startup prevents metadata dispatch; queued metadata cancellation leaves unrelated generation running (outputs/metadata-utils-native-latest.log).
+- Actual MainWindow dry-run worker passed checkpoint and LoRA load/edit/copy/collision controls (outputs/metadata-utils-native-green.log and latest outputs/metadata-utils-native-latest.log). Screenshot outputs/metadata-utils-native-green/metadata-controls.png inspected. Native RED first required correcting a test-only Scene.lookupAll typo, then failed on absent controls before product UI was added. Tiny handcrafted safetensors were used; this is not real-model inference evidence. Latest harness preserves existing metadata and adds harmless test fields. Official safetensors0.5.3 deserialized both native output payloads with exact expected bytes, without importing torch.
+- Archived notice generation passed:161 projects. License bytes verified against pinned digest.
+- Final light notice/pin checks passed7 tests (outputs/metadata-utils-ledger-final.log). Regenerated ledger totals118done/184todo/51na; index312 is done:metadata_utils. git diff --check passed.
+
+## Read-time source identity correction
+
+Independent review reproduced read-A/replace-B/save silently combining A metadata with B tensors. Replacement and same-size in-place mutation with restored timestamps both failed the new RED tests (outputs/metadata-utils-stale-red.log). Current Python28 tests pass (outputs/metadata-utils-stale-green.log), including mandatory read token, full source SHA256 binding, cancellation and mutation during read, unchanged save and both stale-source cases. The UI and protocol now preserve that token; stale-save rejection disables Save until reload, and fingerprint progress is distinguished from copy progress. Current-source native/package and full regression evidence follows; earlier pre-fix evidence is labelled historical.
+
+Current parent-coordinated whole regressions exited0: Python1535 passed/1 skipped (outputs/metadata-utils-python-current.log), Scala1441 passed/1 skipped (outputs/metadata-utils-scala-current.log,501s). Historical pre-fix runs are retained: Python1530 passed/1 skipped (outputs/metadata-utils-python-full.log), Scala1441 passed/1 skipped (outputs/metadata-utils-scala-full.log,472s).
+
+Limits: valid supported safetensors only; 100 MiB header and 4 MiB edited metadata bounds; atomic publication requires filesystem hard-link support and fails safely without it. Handled cancellation/failure cleans owned temporaries; abrupt process termination may leave a private temporary file. Real-model equality covers harmless metadata additions, not arbitrary loader-sensitive metadata changes. No pretrained weights are bundled or modified in place.
+
+## Current-source revalidation after read-token fix
+
+Current JDK21 protocol2 and cancellation2 tests passed, and actual MainWindow tiny checkpoint/LoRA tests rejected both replacement and in-place same-size changes with restored timestamps, required reload, then saved successfully. Log: outputs/metadata-utils-token-native.log (exit0). Actual MainWindow real SD1.5 and SDXL also passed: fingerprint-read cancellation, copy cancellation/cleanup/recovery, saved Unicode/nested metadata read-back, source hashes and exact baseline/edited RGB. Logs: outputs/metadata-utils-token-sd15.log and outputs/metadata-utils-token-sdxl-assembly.log. Corresponding homes contain reports, screenshots and generated PNGs; both screenshots inspected.
+
+Fresh assembly passed. Jar SHA256390c85ea4ad8db93122e8d4b8077114bf61752f437c6cbabaf18a8b3e994b041. ZIP outputs/metadata-utils-token-package/build-52d69c2245944f8a965109fc8dcfc541/SDNUI-v0.03-windows-x64.zip has SHA256723d54e796bdc159d2028c7e9514815a5820cbf4a9b9cbcb0a6fd46892100f35. Extracted bundled-runtime exe dry-run passed and screenshot inspected (outputs/metadata-utils-token-package-check.log). Packaged SD1.5 passed all native checks and its screenshot was inspected (outputs/metadata-utils-token-packaged-sd15.log).
+
+The first packaged SDXL run failed: outputs/metadata-utils-token-packaged-sdxl.log exited1 at the unchanged120s harness wait after normal checkpoint Save. The temporary file .metadata-mw6geapp.part reached6938040754bytes but destination was not published before harness shutdown. All owned processes exited; the failed log and temporary file are retained. No UI status was recorded by that harness version, so a slow flush/fsync versus another failure is not established. Test-only status diagnostics and an isolated stdlib I/O phase trace were prepared; no product or timeout change was made. Later passing revalidation is recorded below; this failed run is retained separately.
+
+Follow-up diagnostics, with product and120s harness timeout unchanged: extracted stdlib I/O trace passed (outputs/metadata-utils-token-io-trace.log). Read finished5.047s; write payload finished54.390s; fsync returned62.437s, with a stack confirming os.fsync during the8.047s flush; publication was immediate. The test-only native metadata-only mode then passed on the same6.9GB checkpoint and LoRA without torch/model loading/GPU (outputs/metadata-utils-token-io-native.log, report/screenshot in corresponding home). It covered read/copy cancellation, cleanup/recovery, save/read-back, hashes and collisions; screenshot inspected. Status remained Copying6617/6617MiB for at least25s before success. This supports a variable post-copy delay, but does not conclusively establish the previous timeout's cause. No runtime code or timeout changed. The original failed real SDXL package run is not counted as acceptance.
+
+The next real SDXL diagnostic also timed out at120s (outputs/metadata-utils-token-diagnostic-sdxl.log). UI status showed an approximately35s mid-copy stall at3779/6617MiB, then at least65s at6617/6617MiB. Timeout screenshot was retained and inspected; UI remained responsive with Cancel enabled and baseline image displayed. The complete temporary file was retained, with no destination. Worker stderr was redirected into the live UI log after startup, so that run did not retain the intended phase/stack diagnostics externally. Test-only instrumentation was corrected to write directly to metadata-worker-phases.log for the next authorized run. This failure remains unresolved and is not acceptance evidence.
+
+Final instrumented packaged SDXL run passed with the original120s timeout and unchanged product bytes: outputs/metadata-utils-token-trace-sdxl.log (exit0), dedicated metadata-worker-phases.log and report/screenshot in the corresponding home. The worker stack captured stalls inside output.write; normal checkpoint write took73.860s including5.172s fsync, followed by immediate publication. Source fingerprints, read/copy cancellation and recovery, Unicode/nested saved values, no-overwrite collisions, source hashes and exact baseline/edited-model RGB all passed. Screenshot inspected: coherent garden portrait and visible Metadata Utils controls. The trace establishes variable blocking write/flush latency in this successful run; it does not establish the exact cause of the two earlier timeouts, whose artifacts remain retained. No product or timeout change was made to obtain the pass.
+
+The same extracted package also passed the tiny native stale-source workflow: both replacement and in-place same-size mutation with restored timestamps were rejected, Save remained disabled until reload, and subsequent normal copy/collision checks passed (outputs/metadata-utils-token-packaged-stale.log, exit0). Current package validation and full Python/Scala regressions are complete. Package/jar hashes above remain unchanged.
+
+## Historical real-model acceptance before read-token fix
+
+`scripts/dev/metadata_utils_check.py` passed separately on SD1.5 animekawa_v10 with20_yui and SDXL waiIllustriousSDXL_v170 with alraune_v1_illustrious_b-000007. Read-only original checkpoints/LoRAs were copied into isolated output directories before editing. Exact original SHA256, exact raw tensor payload hashes, changed model file hashes, successful edited checkpoint/LoRA loading and exact RGB equality against unchanged baseline all passed. These tests add harmless metadata keys while retaining existing fields; metadata values that themselves configure a loader can legitimately affect model behavior.
+
+Artifacts: outputs/metadata-utils-sd15 and outputs/metadata-utils-sdxl, with sibling `.log`, inner report.json/protocol.jsonl/stderr.log and baseline/edited PNGs. Both edited/00000-173.png images inspected: coherent garden portraits, with SD1.5's pale baseline appearance unchanged.
+
+Actual MainWindow runs passed on both families using RealMetadataUtilsCheck: visible native controls load/edit checkpoint and LoRA metadata, copied file creation, no-overwrite collision, source SHA256 unchanged, active checkpoint-copy Cancel publishes no destination, subsequent copy save recovers, and native generation with edited checkpoint plus LoRA exactly matches baseline RGB. Logs: outputs/metadata-utils-mainwindow-sd15.log (exit0,67s), outputs/metadata-utils-mainwindow-sdxl.log (exit0,139s). Each home contains metadata-native-report.json, metadata-controls.png and generated PNGs. Screenshots inspected. SD1.5's final screenshot shows the generation tab; the test harness was refined to select Metadata Utils again before edits and final screenshot, and SDXL shows that panel with the loaded generated preview. Staged native inputs are hardlinks to this worktree's isolated copies, never to the original model assets. No product code changed between these model runs.
+
+## Historical extracted Windows package before read-token fix
+
+Final JDK21 harness compilation and ui/assembly passed (outputs/metadata-utils-assembly.log). Jar SHA256: `e80dcb2b4df66a44b396e56ac0f2fa52c5cd782ebeea248ede767f93de3049cf`.
+
+ZIP: outputs/metadata-utils-package/build-c0aa8da9ee3b4f22b2d1fd76c748637c/SDNUI-v0.03-windows-x64.zip. SHA256: `7e949b8e5146b7be983b6a78fe90f6c6a3e0de9022e3024c79975ffa8322281a`.
+
+Fresh extraction: outputs/metadata-utils-package-extracted/package check c47e7b9436d2460a9a8690bb05039eb1/SDNUI. The bundled-runtime SDNUI.exe dry-run autogen check exited0 with one PNG; screenshot inspected. Build/extraction logs: outputs/metadata-utils-package-build.log and outputs/metadata-utils-package-check.log.
+
+`scripts/dev/check_metadata_utils_packaged.ps1` verified all extracted Python modules against this worktree and the packaged jar against assembly. Both SD1.5 and SDXL actual MainWindow runs then exited0, including harmless Unicode/nested metadata edits and saved-value read-back, active checkpoint-copy Cancel with no destination or owned temporary file remaining, recovery copy and collision refusal, exact source hashes and exact baseline/edited-model RGB. All product Scala/Python came from extraction; only harness classes came from ui test-classes. The explicitly configured smoke venv supplied Python dependencies. The jar hash remained unchanged.
+
+Logs: outputs/metadata-utils-packaged-sd15.log and outputs/metadata-utils-packaged-sdxl.log. Each corresponding directory contains metadata-native-report.json, metadata-controls.png and outputs/txt2img/2026-10-31/00001-173.png. Both screenshots inspected: visible metadata editor and coherent loaded portrait. These are local acceptance artifacts, not a published release.
