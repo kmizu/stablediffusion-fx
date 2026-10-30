@@ -2,7 +2,7 @@
 
 The user reset the prior goal on 2026-10-30 and requested ten issue resolutions followed by a release. This tracker counts further distinct issues completed after that reset; the ten waves in `twenty-issue-release-progress.md` are earlier project history.
 
-Baseline local and remote `main`: `83b00b598f48606eafe7266f03fcbab4c1b9c1a7`. At reset, #48 image scrambling was in progress and uncommitted. Accepted under this goal: **2 / 10**.
+Baseline local and remote `main`: `83b00b598f48606eafe7266f03fcbab4c1b9c1a7`. At reset, #48 image scrambling was in progress and uncommitted. Accepted under this goal: **3 / 10**.
 
 ## Accepted
 
@@ -10,11 +10,13 @@ Baseline local and remote `main`: `83b00b598f48606eafe7266f03fcbab4c1b9c1a7`. At
 
 - [#61 img2img Hires Fix](https://github.com/kmizu/stablediffusion-nui/issues/61): commit [`65b4ddcc11e8c2438c30cdd57b3d7cfc3732e019`](https://github.com/kmizu/stablediffusion-nui/commit/65b4ddcc11e8c2438c30cdd57b3d7cfc3732e019) was pushed to `origin/main`; local HEAD and remote HEAD matched and the working tree was clean at verification. Issue closed 2026-10-30T16:36:42Z. Python 1,507 passed/1 skipped and Scala 1,437 passed/1 skipped; real SD1.5/SDXL native and extracted-package checks passed. See `img2img-hires-fix-verification.md` for source-faithful pixel refinement, preserved native latent Hires and explicit scope limits.
 
+- [#82 metadata utilities](https://github.com/kmizu/stablediffusion-nui/issues/82): commit [`777d128cd02762d4b8749ddefe3d7d70c83fc353`](https://github.com/kmizu/stablediffusion-nui/commit/777d128cd02762d4b8749ddefe3d7d70c83fc353) was pushed to `origin/main`; local HEAD and remote HEAD matched and the working tree was clean at verification. Issue closed 2026-10-30T19:15:43Z. Python 1,535 passed/1 skipped and Scala 1,441 passed/1 skipped; native and extracted-package SD1.5/SDXL checks passed, including source-bound editing, cancellation/recovery and exact generated RGB. See `metadata-utils-verification.md` for safety limits and retained earlier timeout evidence.
+
 ## In progress
 
-- #85 is underway in isolated worktree `C:/Users/Mizushima/.codex/worktrees/d919/stablediffusion-nui`. No integration into main has occurred yet.
-- #46 is underway in isolated worktree `C:/Users/Mizushima/.codex/worktrees/embedding-inspector-integrated/stablediffusion-nui`, based on `65b4ddcc11e8c2438c30cdd57b3d7cfc3732e019`; the earlier worktree is retained. No integration into main has occurred yet.
-- #82 passed local acceptance in worktree `C:/Users/Mizushima/.codex/worktrees/d912/stablediffusion-nui` and is being integrated into main. Do not count it until push and issue closure are verified; see `metadata-utils-verification.md`.
+- #85 is underway in isolated worktree `C:/Users/Mizushima/.codex/worktrees/d919/stablediffusion-nui`, now based on `777d128cd02762d4b8749ddefe3d7d70c83fc353`. No integration into main has occurred yet.
+- #46 is underway in isolated worktree `C:/Users/Mizushima/.codex/worktrees/embedding-inspector-main82/stablediffusion-nui`, based on `777d128cd02762d4b8749ddefe3d7d70c83fc353`; earlier worktrees are retained. No integration into main has occurred yet.
+- #47 is underway in isolated worktree `C:/Users/Mizushima/.codex/worktrees/690e/stablediffusion-nui` at the same base. No integration into main has occurred yet.
 
 ## Release gate
 

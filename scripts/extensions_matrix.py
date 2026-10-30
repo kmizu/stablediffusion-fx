@@ -99,7 +99,7 @@ S = {
     297: "done:hires_fix_tweaks", 298: "todo:manga_maker", 299: "todo:model_organizer", 300: "na:server-ops",
     301: "todo:demofusion", 302: "todo:incantations", 303: "todo:old_sd_firstpasser", 304: "todo:image_editor",
     305: "todo:triposr", 306: "na:webui-ux", 307: "todo:core:prompt-tools", 308: "todo:model_merge",
-    309: "todo:core:hardware-info", 310: "done:core:png-info", 311: "na:webui-css", 312: "done:metadata_utils",
+    309: "todo:core:hardware-info", 310: "done:core:png-info", 311: "na:webui-css", 312: "done:core:metadata-utils",
     313: "todo:prompt_expansion", 314: "todo:core:localization", 315: "na:external-app",
     316: "todo:segment_anything", 317: "done:core:size-presets", 318: "todo:scramble_prompts", 319: "todo:tweak_weights",
     320: "todo:core:prevent-interrupt", 321: "todo:waifu2x", 322: "todo:depth_anything", 323: "na:external-app",
@@ -144,7 +144,7 @@ IMPLEMENTED = {
 
 
 SCOPE_NOTES = {
-    "metadata_utils": "Native checkpoint/LoRA JSON metadata editing and non-overwriting copies preserving tensor bytes; cancellable source fingerprints bind edits to the loaded file and reject stale sources. Bounded safetensors/JSON input; atomic publication requires hard-link support. Real SD1.5/SDXL native and extracted-package read-back, cancellation/recovery and harmless-edit RGB equality verified. See metadata-utils-verification.md for evidence and retained timeout diagnostics.",
+    "core:metadata-utils": "Native checkpoint/LoRA JSON metadata editing and non-overwriting copies preserving tensor bytes; cancellable source fingerprints bind edits to the loaded file and reject stale sources. Bounded safetensors/JSON input; atomic publication requires hard-link support. Real SD1.5/SDXL native and extracted-package read-back, cancellation/recovery and harmless-edit RGB equality verified. See metadata-utils-verification.md for evidence and retained timeout diagnostics.",
     "img2img_hires_fix": "Pinned source pixel upscale/VAE encode/refine behavior in all three modes, full controls and PNG replay; existing native latent Hires stays independent. SD1.5/SDXL extracted-package replay, cancellation and recovery verified. Refiner architectures remain unsupported; ControlNet/ADetailer interaction is not GPU-verified. See img2img-hires-fix-verification.md.",
     "core:image-scrambling": "Native session and batch compatibility with upstream pixel permutations. This is not secure encryption; readable metadata and temporary files remain. See encrypt-image-verification.md.",
     "token_downsampling": "Native two-depth K/V resampling, requested-step evaluation cutoff, XYZ axes and PNG replay. Actual SD1.5/SDXL extracted-package interruption/recovery verified; explicit PAG/HyperTile conflict and per-pass hires clock adaptation. See token-downsampling-verification.md.",
