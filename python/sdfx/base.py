@@ -89,6 +89,23 @@ class BaseEngine:
         from . import temporal_lab
         return temporal_lab.run(params, ctx)
 
+    def inpaint_difference_preview(self, params: dict, ctx: JobContext) -> dict:
+        try:
+            from .inpaint_difference import preview_request
+        except ImportError as exc:
+            raise EngineError(UNSUPPORTED, 'Inpaint Difference requires OpenCV, NumPy and Pillow') from exc
+        try:
+            return preview_request(params, ctx)
+        except (ValueError, OSError) as exc:
+            raise EngineError(INVALID_PARAMS, f'Inpaint Difference preview: {exc}') from exc
+
+    def difference_generation(self, params: dict, mode: str, ctx: JobContext):
+        try:
+            from .inpaint_difference import generation_request
+        except ImportError as exc:
+            raise EngineError(UNSUPPORTED, 'Inpaint Difference requires OpenCV, NumPy and Pillow') from exc
+        return generation_request(params, mode, ctx)
+
     def _batch_service(self):
         service = getattr(self, "_batch_interrogate_service", None)
         if self.dry_run or service is None:

@@ -145,7 +145,24 @@ final class GenerationPanel(
 
   // ---- img2img / inpaint inputs ------------------------------------------------------------------------
   val initDrop: Option[ImageDropZone] = Option.when(mode == Mode.Img2Img)(new ImageDropZone(ctx, vm.initImage, "Init image", 280))
-  val mask: Option[MaskCanvas] = Option.when(mode == Mode.Inpaint)(new MaskCanvas(ctx, vm.initImage, vm.hasMask))
+  private val differenceForm = Option.when(mode == Mode.Inpaint)(plugins.form("inpaint_difference")).flatten
+  private val differenceInputs = differenceForm.map(f => new sdfx.ui.vm.InpaintDifferenceInputs(vm.initImage,
+    f.props("enabled"), f.props("painted_path"), f.props("altered_path"),
+    path => scala.util.Try(java.nio.file.Files.isRegularFile(java.nio.file.Path.of(path))).getOrElse(false)))
+  val mask: Option[MaskCanvas] = Option.when(mode == Mode.Inpaint)(
+    new MaskCanvas(ctx, differenceInputs.map(_.painted).getOrElse(vm.initImage), vm.hasMask))
+  val difference: Option[InpaintDifferenceControls] = for
+    form <- differenceForm
+    inputs <- differenceInputs
+  yield new InpaintDifferenceControls(ctx, vm, form, inputs)
+  differenceForm.foreach { form =>
+    def updatePaint(): Unit = mask.foreach { canvas =>
+      canvas.node.setVisible(!form.isActive)
+      canvas.node.setManaged(!form.isActive)
+    }
+    form.props("enabled").addListener((_, _, _) => updatePaint())
+    updatePaint()
+  }
 
   private def denoiseRow(f: W.Form) =
     f.add("Denoising", W.doubleSlider(vm.denoise, 0, 1, 0.01), "How much the image may change: 0 = keep, 1 = ignore the init image")
@@ -166,7 +183,7 @@ final class GenerationPanel(
         .add("Padding", W.intSlider(vm.inpaintPadding, 0, 256, 4), "Context pixels around the mask for 'Only masked'")
         .add("Resize mode", W.indexCombo(GenerationVM.ResizeModes, vm.resizeMode), "How the image is fitted to the target size")
       denoiseRow(f)
-      Some(W.card("Inpaint", mask.get.node, f.grid))
+      Some(W.card("Inpaint", (difference.toSeq.map(_.node) ++ Seq(mask.get.node, f.grid))*))
 
   private def boolIndex(b: javafx.beans.property.BooleanProperty) =
     val ip = new javafx.beans.property.SimpleIntegerProperty(if b.get then 1 else 0)
@@ -305,7 +322,7 @@ final class GenerationPanel(
     if mode == Mode.Txt2Img then v.getChildren.add(track("hires", ExtraSections.hires(ctx, vm, isExpanded("hires", false), plugins.form("hires_fix_tweaks"))))
     v.getChildren.add(track("controlnet", ExtraSections.controlNet(ctx, vm, isExpanded("controlnet", false))))
     v.getChildren.add(W.card("Script", PluginForm.scriptSection(ctx, plugins)))
-    plugins.alwaysOnForms.filterNot(_.plugin.id == "hires_fix_tweaks").foreach { f =>
+    plugins.alwaysOnForms.filterNot(f => Set("hires_fix_tweaks", "inpaint_difference")(f.plugin.id)).foreach { f =>
       val key = s"plugin.${f.plugin.id}"
       v.getChildren.add(track(key, PluginForm.alwaysOnSection(ctx, f, isExpanded(key, false))))
     }

@@ -97,7 +97,22 @@ case class GenerationParams(
     extra: Map[String, String] = Map.empty
 ) derives RW:
   def isImg2Img: Boolean = img2img.isDefined
-  def isInpaint: Boolean = img2img.exists(_.mask.isDefined)
+  def isInpaint: Boolean = img2img.exists(_.mask.isDefined) ||
+    (img2img.isDefined && hooks.get("inpaint_difference").exists { value =>
+      def flag(v: ujson.Value, default: Boolean): Boolean = v match
+        case ujson.Bool(b) => b
+        case ujson.Num(n) => n != 0
+        case ujson.Str(s) => s.trim.toLowerCase(java.util.Locale.ROOT) match
+          case "enable" | "enabled" | "true" | "on" | "yes" | "1" => true
+          case "disable" | "disabled" | "false" | "off" | "no" | "0" | "" => false
+          case _ => default
+        case _ => default
+      value match
+        case o: ujson.Obj => o.value.get("enabled").forall(flag(_, true))
+        case b: ujson.Bool => flag(b, false)
+        case s: ujson.Str => flag(s, false)
+        case _ => false
+    })
   def imagesPerJob: Int = batchSize * nIter
 
   /** Basic validation shared by UI, MCP and engine client. Returns human readable problems. */

@@ -32,10 +32,12 @@ object ImageFiles:
   def acquire(ctx: UiContext, files: java.util.List[java.io.File], image: Image, prefix: String)(onPath: Path => Unit): Boolean =
     Option(files).map(_.asScala.map(_.toPath).find(isImage)).flatten match
       case Some(p) =>
+        ctx.temps.rememberInput(p)
         onPath(p)
         true
       case None if image != null =>
-        Fx.async(saveFxImage(ctx, image, prefix))(onPath)(e => ctx.error(s"Cannot store image: ${Fx.message(e)}"))
+        Fx.async(saveFxImage(ctx, image, prefix))(p => if ctx.temps.acceptInput then onPath(p))
+          (e => if ctx.temps.acceptInput then ctx.error(s"Cannot store image: ${Fx.message(e)}"))
         true
       case None => false
 
@@ -48,9 +50,17 @@ object ImageFiles:
 
   /** Blocking: call off the FX thread. */
   def saveFxImage(ctx: UiContext, img: Image, prefix: String): Path =
-    val f = ctx.tmpFile(prefix, ".png")
-    ImageIO.write(SwingFXUtils.fromFXImage(img, null), "png", f.toFile)
-    f
+    val f = ctx.temps.createInputTemp(prefix, ".png")
+    try
+      if !ImageIO.write(SwingFXUtils.fromFXImage(img, null), "png", f.toFile) then
+        throw new java.io.IOException("PNG encoder is unavailable")
+      if !ctx.temps.completeInputWrite(f) then throw new java.util.concurrent.CancellationException("Image input closed")
+      f
+    catch
+      case NonFatal(e) =>
+        ctx.temps.forgetInput(f)
+        try java.nio.file.Files.deleteIfExists(f) catch case NonFatal(_) => ()
+        throw e
 
   /** Background-loading image for a path (errors surface through `Image.isError`). */
   def load(path: String, background: Boolean = true): Option[Image] =
@@ -91,7 +101,9 @@ final class ImageInput(ctx: UiContext, path: StringProperty):
 
   def open(): Unit =
     val f = ImageFiles.chooser("Open image").showOpenDialog(ctx.stage)
-    if f != null then path.set(f.toPath.toString)
+    if f != null then
+      ctx.temps.rememberInput(f.toPath)
+      path.set(f.toPath.toString)
 
   /** Pastes an image or image file from the clipboard; returns false when there is none. */
   def paste(): Boolean =
@@ -174,5 +186,7 @@ final class ImageDropZone(ctx: UiContext, path: StringProperty, hint: String, he
             else info.setText(f"${img.getWidth}%.0f×${img.getHeight}%.0f")
         }
 
-  path.addListener((_, _, p) => refresh(p))
+  path.addListener((_, _, p) =>
+    Option(p).filter(_.nonEmpty).flatMap(s => scala.util.Try(Paths.get(s)).toOption).foreach(ctx.temps.rememberInput)
+    refresh(p))
   refresh(path.get)

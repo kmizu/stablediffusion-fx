@@ -41,7 +41,8 @@ class BuiltinsSuite extends munit.FunSuite:
   test("every hook plugin declares its engine feature and emits JSON with numeric/bool types"):
     StandardPlugins.alwaysOn.collect { case h: HookPlugin => h }.foreach { h =>
       assertEquals(h.requiresEngineFeatures, Seq(h.hook))
-      val v = defaults(h, "enabled" -> "true")
+      val v = if h.id == "inpaint_difference" then defaults(h, "enabled" -> "true", "base_path" -> "fixture.png")
+        else defaults(h, "enabled" -> "true")
       val o = hookOf(h, v)
       h.controls.foreach {
         case c: Control.Slider if o.value.contains(c.key) => assert(o(c.key).isInstanceOf[ujson.Num], s"${h.id}.${c.key}")

@@ -203,7 +203,9 @@ final class MaskCanvas(ctx: UiContext, imagePath: StringProperty, hasMask: javaf
           }
       }(e => ctx.error(s"Cannot load mask: ${Fx.message(e)}"))
 
-  imagePath.addListener((_, _, p) => setImage(ImageFiles.load(p)))
+  imagePath.addListener((_, _, p) =>
+    Option(p).filter(_.nonEmpty).flatMap(s => scala.util.Try(Paths.get(s)).toOption).foreach(ctx.temps.rememberInput)
+    setImage(ImageFiles.load(p)))
   setImage(ImageFiles.load(imagePath.get))
 
   // ---- tools -------------------------------------------------------------------------------------------

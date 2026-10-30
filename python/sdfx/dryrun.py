@@ -75,7 +75,8 @@ class FakeEngine(BaseEngine):
         self.vae: Optional[dict] = None
 
     def features(self) -> list[str]:
-        return ["hires_fix_tweaks", "token_downsampling", "vram_estimator", "steps_animation", "pnginfo_injection", "gpu_temperature_guard", "freeu", "dynamic_thresholding", "hypertile", "pag", "controlnet", "apg", "mahiro", "rescale_cfg",
+        from importlib.util import find_spec
+        return (["inpaint_difference"] if HAVE_NUMPY and HAVE_PIL and find_spec('cv2') else []) + ["hires_fix_tweaks", "token_downsampling", "vram_estimator", "steps_animation", "pnginfo_injection", "gpu_temperature_guard", "freeu", "dynamic_thresholding", "hypertile", "pag", "controlnet", "apg", "mahiro", "rescale_cfg",
                 "model_sampling", "kohya_hrfix", "multidiffusion", "latent_modifier", "soft_inpainting", "sag", "neveroom",
                 "reference", "revision", "ip_adapter", "controllllite", "fooocus_inpaint", "photomaker", "img2imgalt",
                 "face_restore", "caption", "img2vid", "novel_view", "ldsr", "marigold", "adetailer", "weight_gradient", "negpip", "neutral_prompt", "prompt_fusion", "save_intermediate", "latent_upscale", "composable_lora", "system_info", "prevent_interrupt"] + list(SAMPLING_HOOKS) + (
@@ -195,6 +196,16 @@ class FakeEngine(BaseEngine):
                 previews += 1
 
     def _generate(self, params: dict, ctx: JobContext, mode: str) -> dict:
+        from .hooks import hook_config
+        fields = params.get('params', {}) if isinstance(params, dict) else {}
+        if not isinstance(fields, dict):
+            fields = {}
+        if hook_config(fields.get('hooks', {}), 'inpaint_difference', {}) is None:
+            return self._generate_recorded(params, ctx, mode)
+        with self.difference_generation(params, mode, ctx) as prepared:
+            return self._generate_recorded(prepared, ctx, mode)
+
+    def _generate_recorded(self, params: dict, ctx: JobContext, mode: str) -> dict:
         t0 = time.monotonic()
         hardware_started = time.perf_counter()
         req = self.parse_generation(params, mode, ctx)

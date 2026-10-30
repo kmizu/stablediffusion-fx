@@ -422,7 +422,8 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
           if services.settings.comparisonMouseAuto then tabs.getSelectionModel.select(comparisonTab)
         path match
           case Some(p) => send(p)
-          case None => Fx.async(ImageFiles.saveFxImage(ctx, image, "comparison-"))(send)(e => ctx.error(Fx.message(e)))
+          case None => Fx.async(ImageFiles.saveFxImage(ctx, image, "comparison-"))
+            (p => if ctx.temps.acceptInput then send(p))(e => if ctx.temps.acceptInput then ctx.error(Fx.message(e)))
         event.consume()
   )
   ctx.interruptRuntime = () => interrupt()
@@ -516,7 +517,10 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
       case Right(value) => value
     // never reuse a mask exported for an earlier job: it is re-exported from the canvas below
     vm.maskImage.set("")
-    val problems = vm.validate(batchImages = wdChoice.nonEmpty)
+    val difference = panel.difference.filter(_.enabled)
+    val problems = vm.validate(batchImages = wdChoice.nonEmpty, differenceActive = difference.nonEmpty) ++
+      difference.toList.flatMap(d => Option.when(!scala.util.Try(Files.isRegularFile(Path.of(d.basePath))).getOrElse(false))(
+        "Choose an existing base image for Inpaint Difference"))
     if problems.nonEmpty then
       ctx.error(problems.mkString("\n"))
       return
@@ -546,9 +550,22 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
               ctx.error(s"Cannot prepare WD batch: ${Fx.message(e)}")
               return
           ordinary.copy(wdBatch = Some(spec))
+      difference.foreach { d =>
+        val refs = Seq(d.basePath, job.params.img2img.map(_.initImage).getOrElse(""))
+          .filter(_.nonEmpty).flatMap(s => scala.util.Try(Path.of(s)).toOption)
+        ctx.temps.holdJobInputs(job.id, refs)
+      }
       ctx.temps.registerJob(job.id, tempFiles)
-      services.queue.submit(job).failed.foreach(_ => ())(using scala.concurrent.ExecutionContext.parasitic)
+      try services.queue.submit(job).failed.foreach(_ => ctx.temps.releaseJob(job.id))(using Fx.bg)
+      catch
+        case NonFatal(e) =>
+          ctx.temps.releaseJob(job.id)
+          ctx.error(s"Cannot queue generation: ${Fx.message(e)}")
+          return
       if queueOnly && progress.get.running then ctx.info(s"Queued (${progress.get.pendingCount + 1} waiting)")
+    if difference.nonEmpty then
+      submit(Nil)
+      return
     panels(mode).mask match
       case Some(canvas) =>
         // PNG-encode the mask in the background, submit when it is written
@@ -909,7 +926,8 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   /** Images the form state still points at (kept by temp sweeps). */
   private def referencedImages: Set[String] =
     (Mode.values.toSeq.flatMap(m => vms(m).initImage.get +: vms(m).controlNet.map(_.image.get)) ++
-      Seq(pngInfo.image.get, extras.image.get)).filter(s => s != null && s.nonEmpty).toSet ++ comparison.sourcePaths
+      Seq(pngInfo.image.get, extras.image.get) ++ panels.values.toSeq.flatMap(_.difference.toSeq.flatMap(_.referencedImages)))
+      .filter(s => s != null && s.nonEmpty).toSet ++ comparison.sourcePaths
 
   /** Deletes stale UI temp files (masks of finished jobs, unreferenced pasted images). */
   def sweepTemps(): Unit =
@@ -932,6 +950,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   def dispose(): Unit =
     disposed = true
     cleanup.run(Seq(
+      "difference previews" -> (() => panels.values.foreach(_.difference.foreach(_.dispose()))),
       "interruptions" -> (() => interruptionControls.dispose()),
       "card idle observer" -> (() => cardIdle.dispose()),
       "model browser" -> (() => if browser != null then { val old = browser; browser = null; old.dispose() }),
@@ -953,5 +972,5 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
       "VRAM timer" -> (() => vramPoll.stop()),
       "MCP controller" -> (() => mcpExec.execute(() => mcp.close())),
       "MCP executor" -> (() => mcpExec.shutdown()),
-      "temporary files" -> (() => { ctx.temps.sweep(referencedImages); () })
+      "temporary files" -> (() => { ctx.temps.closeInputs(referencedImages); () })
     ))

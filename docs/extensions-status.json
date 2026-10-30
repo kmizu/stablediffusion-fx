@@ -1461,7 +1461,7 @@
 "index": 243,
 "name": "Inpaint difference",
 "url": "https://github.com/John-WL/sd-webui-inpaint-difference",
-"status": "todo:inpaint_difference"
+"status": "done:inpaint_difference"
 },
 {
 "index": 244,

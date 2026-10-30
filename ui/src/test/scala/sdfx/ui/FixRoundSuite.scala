@@ -10,6 +10,66 @@ import sdfx.ui.vm.*
 import java.nio.file.{Files, Path, Paths}
 
 class FixRoundSuite extends munit.FunSuite:
+  test("temp cleanup ignores malformed saved paths") {
+    val dir = Files.createTempDirectory("invalid-cleanup-path")
+    val tracker = new TempTracker(() => dir)
+    assertEquals(tracker.closeInputs(Set("\u0000")), 0)
+    Files.delete(dir)
+  }
+  test("closed window removes an abandoned input after the last queued job releases it") {
+    val dir = Files.createTempDirectory("closed-held-input")
+    val tracker = new TempTracker(() => dir)
+    val image = tracker.createInputTemp("paste-", ".png")
+    assert(tracker.completeInputWrite(image))
+    tracker.holdJobInputs("first", Seq(image)); tracker.holdJobInputs("second", Seq(image))
+    tracker.closeInputs(Set.empty)
+    assert(Files.exists(image))
+    tracker.releaseJob("first")
+    assert(Files.exists(image))
+    tracker.releaseJob("second")
+    assert(!Files.exists(image))
+    Files.delete(dir)
+  }
+  test("closing input tracking preserves referenced images and cleans abandoned or late writes") {
+    val dir = Files.createTempDirectory("closing-inputs")
+    val tracker = new TempTracker(() => dir)
+    val kept = tracker.createInputTemp("paste-", ".png")
+    val abandoned = tracker.createInputTemp("drop-", ".png")
+    val late = tracker.createInputTemp("paste-", ".png")
+    assert(tracker.completeInputWrite(kept))
+    assert(tracker.completeInputWrite(abandoned))
+    tracker.closeInputs(Set(kept.toString))
+    assert(Files.exists(kept) && !Files.exists(abandoned) && Files.exists(late))
+    assert(!tracker.completeInputWrite(late))
+    assert(!Files.exists(late))
+    intercept[IllegalStateException](tracker.createInputTemp("paste-", ".png"))
+    Files.delete(kept); Files.delete(dir)
+  }
+  test("a newly created pasted image remains pinned while its UI callback is pending") {
+    val dir = Files.createTempDirectory("pending-paste")
+    val tracker = new TempTracker(() => dir)
+    val image = tracker.createInputTemp("paste-", ".png")
+    assertEquals(tracker.sweep(Set.empty), 0)
+    assert(Files.exists(image))
+    tracker.forgetInput(image)
+    assertEquals(tracker.sweep(Set.empty), 1)
+    Files.delete(dir)
+  }
+  test("queued input references survive sweeps and are not deleted on completion") {
+    val dir = Files.createTempDirectory("queued-inputs")
+    val image = Files.write(dir.resolve("paste-base.png"), Array[Byte](1))
+    val tracker = new TempTracker(() => dir)
+    tracker.holdJobInputs("a", Seq(image))
+    tracker.holdJobInputs("b", Seq(image))
+    assertEquals(tracker.sweep(Set.empty), 0)
+    tracker.releaseJob("a")
+    assert(Files.exists(image))
+    assertEquals(tracker.sweep(Set.empty), 0)
+    tracker.releaseJob("b")
+    assert(Files.exists(image))
+    assertEquals(tracker.sweep(Set.empty), 1)
+    Files.delete(dir)
+  }
 
   // ---- JobBuilder ----------------------------------------------------------------------------------------
 

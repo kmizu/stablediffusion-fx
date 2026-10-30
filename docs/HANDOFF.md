@@ -1,11 +1,19 @@
 # Handoff: bundling the A1111 extension index into stablediffusion-nui
+## 2026-10-30 update: Inpaint Difference (#67)
+
+Index 243 is the tenth wave toward the twenty-issue release goal. The native Inpaint panel supports original/altered inputs, difference threshold, contours, dilation/erosion and an effective blur/invert preview. It preserves the existing painted mask and queued inputs; preview and input temporary lifetimes are guarded. Pinned MIT source, license and 26 source-derived pixel fixtures are recorded in `inpaint-difference-verification.md`, including EXIF/RGB adaptations and preview limitations.
+
+Final Python regression: 1378 passed, one skipped. Whole Scala: 1367 passed, one skipped before the final invalid-path guard; 41 focused UI tests and assembly passed after it. Both SD1.5 and SDXL passed actual native Generate/Interrupt/recovery and extracted-package RGB comparisons; images/screenshots inspected. Acceptance ZIP SHA256 `d52aa8c566fa93a9f7c9d32241dd9f22c8b180da1f693a4d90d424b6b6b078d4`; it is not a release. Notices cover 156 projects; ledger 115 done, 187 todo, 51 not applicable. See verification document for exact commands, artifacts and limits. Check push and issue closure on GitHub before counting this wave as accepted.
+
+After #67 is pushed and closed, accepted count is 10/20. Select and investigate the next distinct open issue, preserving its full source scope. Do not publish until twenty issues are accepted and the release is built, tested, published and downloaded/hash-verified. Parent reForge remains reference only; never import or launch it.
+
 ## 2026-10-30 update: Hires Fix Tweaks
 
 Index297 / #56 is the ninth accepted wave: full native Hires CFG/XYZ, cached1–16 refinements, independent primary/variation/resize seeds, four prompt modes, pre-style network removal, ordered styles, safe template/PNG restoration, output/gallery destination and display preferences. Structured manual LoRAs remain distinct from prompt tags, including Composable provenance. Large seeds remain exact across hook/response/PNG/history; upstream CFG spelling is accepted. AGPL source and licence are pinned. See `hires-fix-tweaks-verification.md` for requirement-by-requirement evidence and explicit visual/adaptation limits.
 
 Final whole Python1340pass1skip; whole Scala1351pass1skip (494s); assembly and final ledger20 tests pass. Actual SD15/SDXL native Generate/Interrupt/Restore and extracted-package manual-LoRA/style/output/cancellation/recovery checks pass; images/screenshots inspected. Real AD four-item detection/inpaint and partial cancellation pass both models; SD15 ControlNet and both-model Hires-only custom LBW exact equivalence pass. Package ZIP SHA256059c394b3dc687b3ad72b66277a4de0a575f6b36aad3df227888f606a4bbadbe; jar SHA256cb206ff0657e279db9a738f7e68717a7356664a13c5a753388ed4b133a597ba5. This is an acceptance package, not a published release. Ledger114done188todo51na. Push/closure receipt is on issue#56; verify HEAD/remote before new work. No test/GPU processes remain after their recorded completion.
 
-Next candidate is #67 `inpaint_difference` (index243). Its original repo redirects to PladsElsker/sd-webui-inpaint-difference; MIT source clone retained at outputs/inpaint-difference-source, pin656eed0a214186f4fb12fd6100fef582a01558bf. Read the full source, including sdwi2iextender operation-mode semantics, before defining the native plan. Scope includes two images, difference threshold, contours, dilation/erosion, blurred colored preview, image-under-mask setting, swap, live recomputation and generation integration. No implementation or plan for #67 has been added yet. Other candidates #48/#85 were only read. Goal remains twenty distinct resolutions then verified release; after #56 closure count9/20.
+Next selected issue is #67 `inpaint_difference` (index243); its current state is at the top of this handoff. Other candidates #48/#85 were only read. Goal remains twenty distinct resolutions then verified release; after #56 closure count9/20.
 
 ## 2026-10-30 update: Token Downsampling
 

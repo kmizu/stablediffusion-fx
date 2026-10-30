@@ -101,7 +101,8 @@ class AlwaysOnSuite extends munit.FunSuite:
 
   test("process preserves existing hooks and extra") {
     val p0 = GenerationParams(hooks = Map("other" -> ujson.Obj("x" -> 1)), extra = Map("Keep" -> "me"))
-    val p = StandardPlugins.alwaysOn.foldLeft(p0)((p, pl) => pl.process(p, on(pl)))
+    val p = StandardPlugins.alwaysOn.foldLeft(p0)((p, pl) =>
+      pl.process(p, if pl.id == "inpaint_difference" then on(pl, "base_path" -> "fixture.png") else on(pl)))
     val hookNames = StandardPlugins.alwaysOn.collect { case h: HookPlugin => h.hook }.toSet
     assertEquals(p.hooks.keySet, hookNames + "other")
     assertEquals(p.extra("Keep"), "me")

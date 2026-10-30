@@ -10,14 +10,16 @@ import sdfx.ui.vm.{PluginValuesVM, PluginsVM, Widget}
 
 /** Renders plugin [[Control]]s generically and binds them to a [[PluginValuesVM]]. */
 object PluginForm:
-  def render(ctx: UiContext, form: PluginValuesVM): Node =
+  def render(ctx: UiContext, form: PluginValuesVM): Node = render(ctx, form, form.plugin.controls)
+
+  def render(ctx: UiContext, form: PluginValuesVM, selected: Seq[Control]): Node =
     val v = new VBox(8)
     if form.plugin.description.nonEmpty then
       val d = W.label(form.plugin.description, "muted", "plugin-description")
       d.setWrapText(true)
       v.getChildren.add(d)
     // controls before the first Section go straight into the panel, each Section becomes a collapsible group
-    val groups = PluginForm.groups(form.plugin.controls)
+    val groups = PluginForm.groups(selected)
     groups.foreach { (section, controls) =>
       val grid = renderControls(ctx, form, controls)
       section match

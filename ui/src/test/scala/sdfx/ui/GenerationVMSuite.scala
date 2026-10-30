@@ -5,6 +5,13 @@ import sdfx.core.model.*
 import sdfx.ui.vm.*
 
 class GenerationVMSuite extends munit.FunSuite:
+  test("difference inpaint can submit without a hand-painted mask") {
+    val vm = new GenerationVM(Mode.Inpaint)
+    vm.initImage.set("altered.png")
+    val exists: String => Boolean = _ => true
+    assert(vm.validate(exists).exists(_.contains("Paint a mask")))
+    assert(!vm.validate(exists, differenceActive = true).exists(_.contains("Paint a mask")))
+  }
 
   test("disabled_gate_keeps_drafts_but_submits_zero_strength") {
     Mode.values.foreach { mode =>

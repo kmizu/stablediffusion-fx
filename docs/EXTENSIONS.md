@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 114, todo 188, na 51.
+Totals: done 115, todo 187, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-nui | Scope / notes |
 |---|---|---|---|---|---|
@@ -249,7 +249,7 @@ Totals: done 114, todo 188, na 51.
 | 240 | [CADS](https://github.com/v0xie/sd-webui-cads.git) | 106 | done | `cads` |  |
 | 241 | [sd-webui-facefusion](https://github.com/diffus-me/sd-webui-facefusion) | 102 | todo | `face_swap` |  |
 | 242 | [Hotshot-XL-Automatic1111](https://github.com/hotshotco/Hotshot-XL-Automatic1111.git) | 79 | todo | `hotshot_xl` |  |
-| 243 | [Inpaint difference](https://github.com/John-WL/sd-webui-inpaint-difference) | 56 | todo | `inpaint_difference` |  |
+| 243 | [Inpaint difference](https://github.com/John-WL/sd-webui-inpaint-difference) | 56 | done | `inpaint_difference` |  |
 | 244 | [Temporal](https://github.com/Iniquitatis/sd-webui-temporal) | 31 | todo | `temporal` |  |
 | 245 | [FaceChain](https://github.com/modelscope/facechain.git) | 9507 | todo | `facechain` |  |
 | 246 | [Stylez](https://github.com/javsezlol1/Stylez.git) | 123 | todo | `style_selector` |  |

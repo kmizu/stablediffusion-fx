@@ -8,6 +8,16 @@ import sdfx.core.infotext.HardwareInfo
 class ProtocolSuite extends munit.FunSuite:
   import EngineEvent.*
 
+  test("difference hook enablement matches engine when determining inpaint mode") {
+    val base = GenerationParams(img2img = Some(Img2ImgParams(initImage = "altered.png")))
+    def enabled(value: ujson.Value) = base.copy(hooks = Map("inpaint_difference" -> value)).isInpaint
+    assert(enabled(ujson.Obj("base_path" -> "base.png")))
+    assert(!enabled(ujson.Obj("enabled" -> "false")))
+    assert(enabled(ujson.Str("yes")))
+    assert(!enabled(ujson.Str("false")))
+    assert(!enabled(ujson.Num(1)))
+  }
+
   test("large Hires output seeds decode exactly from decimal text") {
     val raw = ujson.read("""{"path":"a.png","seed":1,"width":64,"height":64,"hires_seed":"9007199254740993","hires_subseed":"9223372036854775807"}""")
     val image = Json.fromJs[GeneratedImage](raw)

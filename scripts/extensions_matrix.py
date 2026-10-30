@@ -82,7 +82,7 @@ S = {
     229: "todo:booru_prompt", 230: "todo:model_downloader", 231: "todo:nsfw_checker", 232: "todo:negpip",
     233: "todo:cd_tuner", 234: "na:webui-css", 235: "na:webui-api", 236: "todo:core:compile",
     237: "todo:encrypt_image", 238: "todo:nsfw_checker", 239: "todo:lcm", 240: "todo:cads",
-    241: "todo:face_swap", 242: "todo:hotshot_xl", 243: "todo:inpaint_difference", 244: "todo:temporal",
+    241: "todo:face_swap", 242: "todo:hotshot_xl", 243: "done:inpaint_difference", 244: "todo:temporal",
     245: "todo:facechain", 246: "todo:style_selector", 247: "todo:panorama_tools", 248: "todo:core:styles-editor",
     249: "todo:semantic_guidance", 250: "done:core:png-info", 251: "todo:person_mask", 252: "todo:style_variables",
     253: "todo:core:api-payload", 254: "todo:adetailer", 255: "todo:lora_queue", 256: "done:kohya_hrfix",

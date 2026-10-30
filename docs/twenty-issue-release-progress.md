@@ -15,14 +15,15 @@ Objective: resolve twenty issues, then publish and verify a release containing t
 | #137 waifu2x | a44214756f32add81105b356f819ba4665fa6bc0 | docs/waifu2x-verification.md; closed 2026-10-30T03:58:45Z |
 | #129 token_downsampling | 8df4858fa2cfc722a86b68f9f8bcc6fd5328d262 | docs/token-downsampling-verification.md; closed 2026-10-30T04:25:06Z |
 | #56 hires_fix_tweaks | Hires Fix Tweaks wave; exact commit in issue closure | docs/hires-fix-tweaks-verification.md; complete regressions and both extracted-package native checks |
+| #67 inpaint_difference | Inpaint Difference wave; exact commit in issue closure | docs/inpaint-difference-verification.md; both extracted-package native checks |
 
-Accepted count: **9 / 20** after the #56 wave push/closure. Earlier closed #1, #7 and #141 predate this active goal and are not counted. No new release has been published for this goal.
+Accepted count: **10 / 20** after the #67 wave push/closure. Earlier closed #1, #7 and #141 predate this active goal and are not counted. No new release has been published for this goal.
 
 
 
 ## Next
 
-#67 inpaint_difference is the next candidate; pinned MIT source is retained under outputs/inpaint-difference-source, with no implementation yet. The #54 AMD providers have fixture/schema checks, not AMD hardware validation; this limitation remains explicit in its acceptance record.
+Select the eleventh distinct open issue after verifying #67 push and closure; inspect its full original scope before implementation. The #54 AMD providers have fixture/schema checks, not AMD hardware validation; this limitation remains explicit in its acceptance record.
 
 ## Final release gates
 

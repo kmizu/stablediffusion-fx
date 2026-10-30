@@ -14,6 +14,44 @@ import scala.util.control.NonFatal
   */
 final class TempTracker(dir: () => Path):
   private val jobFiles = new ConcurrentHashMap[String, Seq[Path]]()
+  private val jobInputs = new ConcurrentHashMap[String, Seq[Path]]()
+  private val inputPins = scala.collection.mutable.Set.empty[String]
+  private val pendingInputs = scala.collection.mutable.Set.empty[String]
+  private var inputsClosed = false
+  private var closingKeep = Set.empty[String]
+
+  /** Pin new pasted files before their asynchronous callback can publish a form reference. */
+  def createInputTemp(prefix: String, suffix: String): Path = synchronized {
+    if inputsClosed then throw new IllegalStateException("Image input is closed")
+    val path = Files.createTempFile(dir(), prefix, suffix)
+    inputPins += norm(path)
+    pendingInputs += norm(path)
+    path
+  }
+
+  /** A late background encoder owns its file and removes it after the window has closed. */
+  def completeInputWrite(path: Path): Boolean = synchronized {
+    pendingInputs -= norm(path)
+    if inputsClosed then
+      inputPins -= norm(path)
+      delete(path)
+      false
+    else true
+  }
+
+  def acceptInput: Boolean = synchronized { !inputsClosed }
+
+  /** A selected pre-existing UI temp stays usable for the lifetime of this window. */
+  def rememberInput(path: Path): Unit = synchronized { if !inputsClosed && isUiTemp(path) then inputPins += norm(path) }
+  def forgetInput(path: Path): Unit = synchronized { inputPins -= norm(path); pendingInputs -= norm(path) }
+
+  /** Drop session pins but keep referenced and in-flight inputs; late writers self-clean. */
+  def closeInputs(keep: Set[String]): Int = synchronized {
+    inputsClosed = true
+    closingKeep = keep
+    inputPins.clear()
+    sweep(keep)
+  }
 
   def isUiTemp(p: Path): Boolean =
     val name = Option(p.getFileName).map(_.toString).getOrElse("")
@@ -21,25 +59,38 @@ final class TempTracker(dir: () => Path):
       (try p.toAbsolutePath.normalize().getParent == dir().toAbsolutePath.normalize()
       catch case NonFatal(_) => false)
 
-  def registerJob(jobId: String, files: Seq[Path]): Unit = if files.nonEmpty then jobFiles.merge(jobId, files, _ ++ _)
+  def registerJob(jobId: String, files: Seq[Path]): Unit = synchronized {
+    if files.nonEmpty then jobFiles.merge(jobId, files, _ ++ _)
+  }
+
+  /** Keep shared pasted inputs through a queued job without deleting them on completion. */
+  def holdJobInputs(jobId: String, files: Seq[Path]): Unit = synchronized {
+    val owned = files.filter(isUiTemp)
+    if owned.nonEmpty then jobInputs.merge(jobId, owned, _ ++ _)
+  }
 
   /** Deletes the files registered for a finished / failed / cancelled job. */
-  def releaseJob(jobId: String): Int =
-    Option(jobFiles.remove(jobId)).toSeq.flatten.count(delete)
+  def releaseJob(jobId: String): Int = synchronized {
+    jobInputs.remove(jobId)
+    val removed = Option(jobFiles.remove(jobId)).toSeq.flatten.count(delete)
+    if inputsClosed then sweep(closingKeep)
+    removed
+  }
 
-  def pendingJobs: Set[String] = jobFiles.keySet.asScala.toSet
+  def pendingJobs: Set[String] = synchronized { jobFiles.keySet.asScala.toSet ++ jobInputs.keySet.asScala.toSet }
 
   /** Deletes UI temp files in the temp dir that are not in `keep` (absolute path strings) and not held by a job. */
-  def sweep(keep: Set[String]): Int =
+  def sweep(keep: Set[String]): Int = synchronized {
     val d = dir()
     if !Files.isDirectory(d) then 0
     else
-      val held = jobFiles.values.asScala.flatten.map(norm).toSet
-      val keepN = keep.filter(_.nonEmpty).map(s => norm(Paths.get(s)))
+      val held = (jobFiles.values.asScala.flatten ++ jobInputs.values.asScala.flatten).map(norm).toSet ++ inputPins ++ pendingInputs
+      val keepN = keep.filter(s => s != null && s.nonEmpty).flatMap(s => scala.util.Try(norm(Paths.get(s))).toOption)
       Using.resource(Files.list(d))(_.iterator().asScala.toList)
         .filter(isUiTemp)
         .filterNot(p => keepN.contains(norm(p)) || held.contains(norm(p)))
         .count(delete)
+  }
 
   private def norm(p: Path): String = p.toAbsolutePath.normalize().toString.toLowerCase
   private def delete(p: Path): Boolean =
@@ -47,7 +98,7 @@ final class TempTracker(dir: () => Path):
     catch case NonFatal(_) => false
 
 object TempTracker:
-  val Prefixes: Seq[String] = Seq("mask-", "paste-", "drop-")
+  val Prefixes: Seq[String] = Seq("mask-", "paste-", "drop-", "comparison-")
 
 /** Keeps the MCP HTTP server in line with the settings: (re)start on enable / port / token change, stop on disable. */
 final class McpController(start: (Int, Option[String]) => AutoCloseable):

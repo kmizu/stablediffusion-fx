@@ -192,6 +192,8 @@ class Engine(BaseEngine):
         # Temperature guard uses step callbacks and does not alter model weights.
         f = ["hires_fix_tweaks", "token_downsampling", "vram_estimator", "steps_animation", "pnginfo_injection", "gpu_temperature_guard", "freeu", "dynamic_thresholding", "hypertile", "system_info", "vae_tools", "prevent_interrupt"]
         f += self._batch_features()
+        if cn_mod._has("cv2"):
+            f.append("inpaint_difference")
         if hasattr(diffusers, "StableDiffusionXLPAGPipeline"):
             f.append("pag")
         if hasattr(diffusers, "ControlNetModel"):
@@ -1213,7 +1215,14 @@ class Engine(BaseEngine):
         self._composable_job = None
         self._vae_recovery = []
         try:
-            result = self._generate_recorded(params, ctx, mode)
+            fields = params.get('params', {}) if isinstance(params, dict) else {}
+            if not isinstance(fields, dict):
+                fields = {}
+            if hooks_mod.hook_config(fields.get('hooks', {}), 'inpaint_difference', {}) is None:
+                result = self._generate_recorded(params, ctx, mode)
+            else:
+                with self.difference_generation(params, mode, ctx) as prepared:
+                    result = self._generate_recorded(prepared, ctx, mode)
             if self._vae_recovery:
                 result['vae_recovery'] = self._vae_recovery
             if self._composable_job is not None:

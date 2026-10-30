@@ -1,5 +1,13 @@
 # Plugin coverage vs. reForge built-ins
 
+**Inpaint Difference** is available in the Inpaint panel. Enable “Create mask
+from image difference”, choose the base and altered images, and adjust threshold,
+contours, dilation and erosion. The altered image is the image being inpainted;
+Swap exchanges their roles. The live colored preview reflects mask inversion and
+blur before resize/crop. Paint mode retains its image and brush mask when switching.
+The worker creates an independent mask for each submitted job and cleans its own
+temporary images. See [source behavior, checks and limits](inpaint-difference-verification.md).
+
 **Hires Fix Tweaks** lives in the native Hires panel. Enable tweaks to refine one
 first-pass result 1–16 times, with separate primary/variation seeds, resize noise,
 prompt composition and ordered Hires styles. Hires CFG0 inherits the first pass.
