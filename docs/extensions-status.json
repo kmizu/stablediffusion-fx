@@ -1425,7 +1425,7 @@
 "index": 237,
 "name": "encrypt-image",
 "url": "https://github.com/viyiviyi/sd-encrypt-image.git",
-"status": "todo:encrypt_image"
+"status": "done:core:image-scrambling"
 },
 {
 "index": 238,

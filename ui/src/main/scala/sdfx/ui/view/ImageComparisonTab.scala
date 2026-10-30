@@ -25,8 +25,9 @@ final class ImageComparisonTab(ctx: UiContext, source: String => Option[(Path, P
   private val status = W.label("Choose A and B, then Compare upload. Original files stay unchanged.", "muted")
   status.setId("comparison-status")
   status.setWrapText(true)
-  private case class Loaded(path: Path, pixels: BufferedImage, metadata: Option[String])
+  private case class Loaded(path: Path, pixels: BufferedImage, metadata: Option[String], unverified: Boolean)
   private var images: Option[(Loaded, Loaded)] = None
+  private var loadedSessionRevision = -1L
   private var revision = 0L
   private var writingInputs = false
   private var pendingLoads = 0
@@ -49,28 +50,42 @@ final class ImageComparisonTab(ctx: UiContext, source: String => Option[(Path, P
     Set(inputA.get, inputB.get).filter(s => s != null && s.nonEmpty) ++
       images.toSeq.flatMap((a, b) => Seq(a.path.toString, b.path.toString))
   def loadedPaths: Option[(Path, Path)] = images.map((a, b) => (a.path, b.path))
-  private def load(path: Path): Loaded =
-    val im = ImageIO.read(path.toFile)
-    require(im != null, "Image format is unreadable: " + path.getFileName)
-    Loaded(path, im, PngMetadata.readParameters(path))
+  private def load(path: Path, secret: Option[sdfx.core.png.ImageScrambleSecret]): Loaded =
+    val decoded = sdfx.core.png.ScrambledPng.read(path, secret.map(_.use(identity)))
+    Loaded(path, decoded.image, PngMetadata.readParameters(path), decoded.scrambled && decoded.passwordVerified.isEmpty)
   def compare(a: Path, b: Path): Unit =
     revision += 1
     val ticket = revision
+    val session = ctx.services.imageScrambleSession.state
     status.setText("Loading comparison…")
     pendingLoads += 1
     loading.set(true)
-    Fx.async((load(a), load(b))) { pair =>
+    Fx.async((load(a, session.secret), load(b, session.secret))) { pair =>
       pendingLoads -= 1
       loading.set(pendingLoads > 0)
-      if ticket == revision then
+      if ticket == revision && session.revision == ctx.services.imageScrambleSession.state.revision then
         images = Some(pair)
+        loadedSessionRevision = session.revision
         writeInputs(a, b)
         showPair()
     } { e =>
       pendingLoads -= 1
       loading.set(pendingLoads > 0)
-      if ticket == revision then status.setText("Cannot compare: " + Fx.message(e))
+      if ticket == revision && session.revision == ctx.services.imageScrambleSession.state.revision then
+        status.setText("Cannot compare: " + Fx.message(e).stripPrefix("requirement failed: "))
     }
+  def refreshImageAccess(): Unit =
+    revision += 1
+    images = None
+    canvas.setImages(null, null)
+    firstInfo.getChildren.clear()
+    secondInfo.getChildren.clear()
+    dropA.refreshImageAccess()
+    dropB.refreshImageAccess()
+    val a = Option(inputA.get).filter(_.nonEmpty)
+    val b = Option(inputB.get).filter(_.nonEmpty)
+    if a.nonEmpty && b.nonEmpty then compare(Paths.get(a.get), Paths.get(b.get))
+    else status.setText("Image access changed; choose both images to compare")
   def send(sideB: Boolean, path: Path): Unit =
     revision += 1 // invalidate any earlier pair request, even if only one new input is present
     (if sideB then inputB else inputA).set(path.toString)
@@ -91,7 +106,8 @@ final class ImageComparisonTab(ctx: UiContext, source: String => Option[(Path, P
     val previousView = canvas.view
     canvas.setImages(SwingFXUtils.toFXImage(a.pixels, null), SwingFXUtils.toFXImage(b.pixels, null))
     if !reset then canvas.update(previousView)
-    status.setText(s"A: ${a.path.getFileName} · ${a.pixels.getWidth}×${a.pixels.getHeight}    |    B: ${b.path.getFileName} · ${b.pixels.getWidth}×${b.pixels.getHeight}")
+    val note = if a.unverified || b.unverified then " · password unverified for a legacy image" else ""
+    status.setText(s"A: ${a.path.getFileName} · ${a.pixels.getWidth}×${a.pixels.getHeight}    |    B: ${b.path.getFileName} · ${b.pixels.getWidth}×${b.pixels.getHeight}$note")
     val diff = differences(a.metadata, b.metadata)
     def info(box: VBox, image: Loaded, positive: Seq[Term], negative: Seq[Term], sideB: Boolean): Unit =
       box.getChildren.clear()
@@ -160,24 +176,31 @@ final class ImageComparisonTab(ctx: UiContext, source: String => Option[(Path, P
     showPair(reset = false)
   }
   private def exportDialog(): Unit = images.foreach { (a, b) =>
+    val pairRevision = revision
     val chooser = new FileChooser()
     chooser.setTitle("Export visible comparison (originals are preserved)")
     chooser.setInitialFileName("comparison.png")
     chooser.getExtensionFilters.add(new FileChooser.ExtensionFilter("PNG", "*.png"))
     Option(chooser.showSaveDialog(ctx.stage)).foreach { file =>
-      val view = canvas.view
-      val w = canvas.getWidth.toInt.max(1)
-      val h = canvas.getHeight.toInt.max(1)
-      Fx.async(ImageComparison.exportPng(render(a.pixels, b.pixels, w, h, view), file.toPath, Seq(a.path, b.path))) {
-        _ => ctx.success("Comparison exported; originals unchanged")
-      }(e => ctx.error(Fx.message(e)))
+      val session = ctx.services.imageScrambleSession.state
+      if pairRevision != revision || session.revision != loadedSessionRevision then
+        ctx.error("Comparison or image access changed; compare again")
+      else
+        val view = canvas.view
+        val w = canvas.getWidth.toInt.max(1)
+        val h = canvas.getHeight.toInt.max(1)
+        Fx.async(ImageComparison.exportPng(render(a.pixels, b.pixels, w, h, view), file.toPath, Seq(a.path, b.path), session.secret)) {
+          _ => ctx.success("Comparison exported; originals unchanged")
+        }(e => ctx.error(Fx.message(e)))
     }
   }
   /** Manual QA/export integration without a file chooser; exact same rendering and overwrite guard. */
   def exportTo(path: Path): Unit =
     val (a, b) = images.getOrElse(throw new IllegalStateException("Load two images first"))
+    val session = ctx.services.imageScrambleSession.state
+    require(session.revision == loadedSessionRevision, "Image access changed; compare again")
     ImageComparison.exportPng(render(a.pixels, b.pixels, canvas.getWidth.toInt.max(1), canvas.getHeight.toInt.max(1), canvas.view),
-      path, Seq(a.path, b.path))
+      path, Seq(a.path, b.path), session.secret)
 
   private def identified[A <: javafx.scene.Node](id: String, value: A): A = { value.setId(id); value }
   private val compareUpload = identified("comparison-upload", W.button("Compare upload", "Load the two chosen files", Seq("primary")) {
@@ -185,6 +208,7 @@ final class ImageComparisonTab(ctx: UiContext, source: String => Option[(Path, P
     else ctx.info("Choose both image files first")
   })
   compareUpload.disableProperty.bind(loading)
+  ctx.watchImageAccess(canvas)(() => refreshImageAccess())
   private val dropA = new ImageDropZone(ctx, inputA, "A · first image", 110)
   private val dropB = new ImageDropZone(ctx, inputB, "B · second image", 110)
   dropA.node.setId("comparison-input-a")

@@ -19,7 +19,7 @@ private[plugins] object ImageTools:
       val outs = r.obj.get("outputs").collect { case o: ujson.Obj => o.value.collect { case (k, ujson.Str(p)) => k -> Paths.get(p) }.toMap }
         .getOrElse(Map.empty)
       val info = r.obj.get("info").collect { case o: ujson.Obj => o.value.map((k, v) => k -> Hooks.num(v)).toMap }.getOrElse(Map.empty)
-      try Result(Support.readImage(main), outs, info)
+      try Result(Support.readImage(ctx, main), outs, info)
       finally Support.deleteQuietly(Paths.get(main))
     finally Support.deleteQuietly(src)
 
@@ -28,7 +28,7 @@ private[plugins] object ImageTools:
              params: (String, ujson.Value)*): Seq[(BufferedImage, Seq[(String, String)])] =
     val r = run(ctx, tool, img, params*)
     try
-      val more = extra.flatMap(r.outputs.get).map(p => (Support.readImage(p), post :+ ("Output" -> extra.get))).toSeq
+      val more = extra.flatMap(r.outputs.get).map(p => (Support.readImage(ctx, p), post :+ ("Output" -> extra.get))).toSeq
       ((r.image, post ++ r.info.toSeq.map((k, v) => s"$tool $k" -> v)) +: more)
     finally Support.deleteQuietly(r.outputs.values.toSeq*)
 
@@ -116,7 +116,7 @@ private[plugins] abstract class MaskedImg2ImgScript extends Plugin:
   override def run(p0: GenerationParams, v: Values, ctx: PluginContext): JobOutput =
     Support.requireImg2Img(p0, name)
     val i0 = p0.img2img.get
-    val img = Support.readImage(i0.initImage)
+    val img = Support.readImage(ctx, i0.initImage)
     ctx.status(s"$name: making the mask", 0, 2)
     val mask = makeMask(img, v, ctx)
     val maskPath = Support.writeTemp(ctx, mask)

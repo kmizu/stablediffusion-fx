@@ -21,6 +21,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # (repo, how it is used, what)
 BASE = [
+    ("haraldk/TwelveMonkeys", "dependency", "Bundled TwelveMonkeys ImageIO WebP reader 3.12.0 and its supporting modules"),
+    ("viyiviyi/sd-encrypt-image", "reimplemented", "AGPL-3.0 behavior reference 3a44d3c264632aa90442bdc50e42af0770289bfd; independently implemented pixel-scrambling compatibility; upstream core used only for reference fixtures"),
     ("PladsElsker/sd-webui-inpaint-difference", "reimplemented", "MIT behavior reference 656eed0a214186f4fb12fd6100fef582a01558bf; native difference masks and preview; upstream pure functions used only for test fixtures"),
     ("w-e-w/sd-webui-hires-fix-tweaks", "reimplemented", "AGPL3 behavior reference 28902f742a795afc31d86641ad85466afdd280e6; native Hires prompt modes, repeats/seeds, styles and workflow settings; original pure prompt functions used only for reference test fixtures"),
     ("feffy380/sd-webui-token-downsampling", "reimplemented", "MIT behavior reference f1f1cbae82b75d5658b08abbc3cb8ddc0b876cc5; native two-depth K/V nearest-exact downsampling, evaluation cutoff and XYZ controls"),
@@ -174,6 +176,12 @@ BASE = [
 # Keep these source-pinned original LICENSE bytes; do not normalize newlines.
 # (commit, license path, SHA-256, SPDX)
 PINNED_LICENSES = {
+    "haraldk/TwelveMonkeys": (
+        "119700487b78717d45ab74bf5a61ba9824442697", "LICENSE.txt",
+        "10e1e2688c74b337e0ca9e3a6a02e16319c3ee4cec79b768bca28ab8823ffde2", "BSD-3-Clause"),
+    "viyiviyi/sd-encrypt-image": (
+        "3a44d3c264632aa90442bdc50e42af0770289bfd", "LICENSE",
+        "8486a10c4393cee1c25392769ddd3b2d6c242d6ec7928e1414efff7dfb2f07ef", "AGPL-3.0"),
     "w-e-w/stable-diffusion-webui-GPU-temperature-protection": (
         "f388d7081945576ca2361c365d16f5edb3250412", "LICENSE",
         "248a1ab6a57e6f677770a1498efc7a567f22aaae68923ae84c47d8a3db0ee699", "AGPL-3.0"),

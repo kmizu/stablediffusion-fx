@@ -131,9 +131,21 @@ object ExtraSections:
     val hint = if vm.mode.usesInitImage then "Control image (empty = use the init image)" else "Control image"
     val drop = new ImageDropZone(ctx, u.image, hint, 170)
     val previewView = new ImageView()
+    previewView.setId("controlnet-preprocessor-image")
     previewView.setPreserveRatio(true)
     previewView.setFitHeight(160)
     val previewBox = new VBox(4)
+    var previewRevision = 0L
+    Seq(u.image, vm.initImage, u.preprocessor).foreach(_.addListener((_, _, _) => {
+      previewRevision += 1
+      previewView.setImage(null)
+      previewBox.getChildren.clear()
+    }))
+    ctx.watchImageAccess(previewView)(() => {
+      previewRevision += 1
+      previewView.setImage(null)
+      previewBox.getChildren.clear()
+    })
     val previewBtn = W.button("◉ Preview preprocessor", "Run the preprocessor on the control image and show the result")(())
     previewBtn.setOnAction(_ =>
       val img = Option(u.image.get).filter(_.nonEmpty).orElse(Option(vm.initImage.get).filter(_.nonEmpty))
@@ -141,13 +153,26 @@ object ExtraSections:
         case None => ctx.info("Add a control image first")
         case Some(p) =>
           previewBtn.setDisable(true)
-          Fx.async(ctx.services.generator.preprocess(Paths.get(p), u.preprocessor.get)) { out =>
+          val session = ctx.services.imageScrambleSession.state
+          val requestRevision = previewRevision
+          val preprocessor = u.preprocessor.get
+          Fx.async(ctx.services.generator.preprocess(Paths.get(p), preprocessor, secret = session.secret,
+            warn = message => Fx.run(ctx.info(message)))) { out =>
             previewBtn.setDisable(false)
-            ImageFiles.load(out.toString).foreach(previewView.setImage)
-            previewBox.getChildren.setAll(W.label("Preprocessor result", "hint"), previewView)
+            if requestRevision == previewRevision && session.revision == ctx.services.imageScrambleSession.state.revision then
+              Fx.async(ImageFiles.readForDisplay(out, session.secret).image) { image =>
+                if requestRevision == previewRevision && session.revision == ctx.services.imageScrambleSession.state.revision then
+                  previewView.setImage(image)
+                  previewBox.getChildren.setAll(W.label("Preprocessor result", "hint"), previewView)
+              } { error =>
+                if requestRevision == previewRevision && session.revision == ctx.services.imageScrambleSession.state.revision then
+                  ctx.error(s"Preprocess preview failed: ${Fx.message(error)}")
+              }
+            else Fx.async(java.nio.file.Files.deleteIfExists(out))(_ => ())(_ => ())
           } { e =>
             previewBtn.setDisable(false)
-            ctx.error(s"Preprocess failed: ${Fx.message(e)}")
+            if requestRevision == previewRevision && session.revision == ctx.services.imageScrambleSession.state.revision then
+              ctx.error(s"Preprocess failed: ${Fx.message(e)}")
           }
     )
     val f = W.form()

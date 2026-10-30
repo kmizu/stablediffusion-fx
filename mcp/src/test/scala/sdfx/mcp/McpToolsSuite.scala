@@ -53,6 +53,19 @@ class McpToolsSuite extends munit.FunSuite:
     assert(!r("isError").bool, s"$tool failed: ${textOf(r)}")
     r
 
+  test("vae_tools rejects marked PNG before dispatch without exposing a desktop password") {
+    val path = home.outputs(services.settings).resolve("mcp-protected-vae.png")
+    Files.createDirectories(path.getParent)
+    val image = new java.awt.image.BufferedImage(8, 8, java.awt.image.BufferedImage.TYPE_INT_RGB)
+    sdfx.core.png.ScrambledPng.write(image, path, Nil, Some("private-password"))
+    try
+      val result = call("vae_tools", ujson.Obj("input_paths" -> ujson.Arr(path.toString)))
+      assert(result("isError").bool)
+      assert(textOf(result).contains("password"), textOf(result))
+      assert(!textOf(result).contains("private-password"))
+    finally Files.deleteIfExists(path)
+  }
+
   test("tools/list: every tool has a JSON schema object with valid required fields") {
     val ts = server.handle(request("tools/list"), _ => ()).get("result")("tools").arr
     val names = ts.map(_("name").str).toSet

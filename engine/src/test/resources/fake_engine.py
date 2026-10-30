@@ -176,6 +176,10 @@ def handle_work(rid, typ, params):
     try:
         if typ in ("txt2img", "img2img"):
             generate(rid, typ, params)
+        elif typ == "batch_interrogate_prepare":
+            result(rid, {"token": "0" * 32, "partial": True})
+        elif typ == "batch_interrogate_execute":
+            result(rid, {"rows": [], "partial": True})
         elif typ == "load_model":
             if opt("--crash-on-load"):
                 sys.stderr.write("crash during load" + chr(10))
@@ -202,6 +206,7 @@ def handle_work(rid, typ, params):
             state["vae"] = params.get("path")
             result(rid, model_info())
         elif typ == "upscale":
+            state["last_extra"] = {"type": typ, "params": params}
             out = os.path.join(params["output_dir"], "up-%s.png" % rid)
             os.makedirs(params["output_dir"], exist_ok=True)
             with open(out, "wb") as f:
@@ -213,6 +218,7 @@ def handle_work(rid, typ, params):
                     "time_taken": "7.5 sec.", "remark": hardware.get("remark") or None}
             result(rid, output)
         elif typ == "preprocess":
+            state["last_extra"] = {"type": typ, "params": params}
             out = os.path.join(params["output_dir"], "pre-%s.png" % rid)
             os.makedirs(params["output_dir"], exist_ok=True)
             with open(out, "wb") as f:
@@ -295,6 +301,12 @@ def main():
             continue
         msg = json.loads(line)
         rid, typ, params = msg.get("id"), msg.get("type"), msg.get("params") or {}
+        if typ in ("txt2img", "img2img"):
+            state["password_received"] = bool(msg.get("image_password"))
+            state["plaintext_video_allowed"] = msg.get("allow_plaintext_video", False)
+        if typ in ("batch_interrogate_prepare", "batch_interrogate_execute"):
+            state.setdefault("wd_secret_presence", {})[typ] = bool(msg.get("image_password"))
+            state.setdefault("wd_video_permission", {})[typ] = "allow_plaintext_video" in msg
         state["requests"].append(typ)
         if typ == "ping":
             result(rid, {"pong": True})
@@ -356,6 +368,10 @@ def main():
             result(rid, {})
         elif typ == "get_state":
             result(rid, {"loaded": state["loaded"], "vae": state["vae"], "last_generation": state["last_generation"],
+                         "password_received": state.get("password_received", False),
+                         "plaintext_video_allowed": state.get("plaintext_video_allowed", False),
+                         "wd_secret_presence": state.get("wd_secret_presence", {}),
+                         "wd_video_permission": state.get("wd_video_permission", {}),
                          "load_count": state["load_count"], "pid": os.getpid(), "last_extra": state["last_extra"],
                          "requests": list(state["requests"])})
         elif typ == "list_models":

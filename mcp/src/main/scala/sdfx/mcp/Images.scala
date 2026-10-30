@@ -7,6 +7,7 @@ import java.nio.file.{Files, Path, Paths}
 import java.util.Base64
 import javax.imageio.ImageIO
 import javax.imageio.stream.ImageInputStream
+import org.w3c.dom.Element
 import scala.util.control.NonFatal
 
 /** Which local files MCP clients may name by path: the outputs folder (incl. its tmp dir) plus extra folders
@@ -69,6 +70,15 @@ object Images:
 
   private val DataUri = """(?s)^data:([\w/+.-]*)(;[^,]*)?,(.*)$""".r
 
+  /** Apply the same protection policy to file-only script and VAE inputs without decoding non-image data. */
+  def rejectProtectedPng(p: Path, field: String): Unit =
+    val signature = Array[Byte](-119, 80, 78, 71, 13, 10, 26, 10)
+    val in = Files.newInputStream(p)
+    val header = new Array[Byte](8)
+    val count = try in.readNBytes(header, 0, header.length) finally in.close()
+    if count == signature.length && java.util.Arrays.equals(header, signature) then
+      rejectProtected(ImageIO.createImageInputStream(p.toFile), field)
+
   /** Heuristic: base64 never contains '\', ':' or '.'; PNG base64 starts with "iVBOR", JPEG with "/9j/". */
   def looksLikePath(s: String): Boolean =
     s.length < 4096 && !s.contains('\n') &&
@@ -87,6 +97,7 @@ object Images:
       case _ if PathPolicy.isNetworkPath(s) || looksLikePath(s) =>
         val p = policy.resolve(s, field, base)
         checkDims(dimensions(p), field)
+        rejectProtected(ImageIO.createImageInputStream(p.toFile), field)
         val img =
           try ImageIO.read(p.toFile)
           catch case NonFatal(_) => null
@@ -108,6 +119,7 @@ object Images:
 
   private def writeDecoded(bytes: Array[Byte], field: String, tempFile: String => Path): (Path, Option[Path]) =
     checkDims(dimensions(bytes), field)
+    rejectProtected(ImageIO.createImageInputStream(new ByteArrayInputStream(bytes)), field)
     val img =
       try ImageIO.read(new ByteArrayInputStream(bytes))
       catch case NonFatal(_) => null
@@ -139,6 +151,27 @@ object Images:
           finally r.dispose()
       finally iis.close()
 
+  /** MCP has no desktop image-password session; never re-encode marked pixels as ordinary images. */
+  private def rejectProtected(iis: ImageInputStream, field: String): Unit =
+    if iis == null then throw ToolError(s"$field: cannot read image metadata")
+    try
+      val readers = ImageIO.getImageReaders(iis)
+      if !readers.hasNext then throw ToolError(s"$field: cannot read image metadata")
+      val reader = readers.next()
+      try
+        reader.setInput(iis, true, false)
+        val meta = reader.getImageMetadata(0)
+        val format = "javax_imageio_png_1.0"
+        if meta != null && meta.getMetadataFormatNames.contains(format) then
+          val root = meta.getAsTree(format).asInstanceOf[Element]
+          val marked = Seq("tEXtEntry", "iTXtEntry", "zTXtEntry").exists { name =>
+            val entries = root.getElementsByTagName(name)
+            (0 until entries.getLength).exists(i => entries.item(i).asInstanceOf[Element].getAttribute("keyword") == "Encrypt")
+          }
+          if marked then throw ToolError(s"$field: protected image requires an image password; MCP has no image-password session")
+      finally reader.dispose()
+    finally iis.close()
+
   def size(p: Path): (Int, Int) = dimensions(p).getOrElse(throw ToolError(s"not an image: $p"))
 
   private def toRgbOrArgb(img: BufferedImage): BufferedImage =
@@ -162,6 +195,7 @@ object Images:
     */
   def encode(p: Path, maxSide: Int): Encoded =
     val (w, h) = dimensions(p).getOrElse(throw ToolError(s"not a readable image: $p"))
+    rejectProtected(ImageIO.createImageInputStream(p.toFile), "image")
     if maxSide <= 0 || math.max(w, h) <= maxSide then
       Encoded(Base64.getEncoder.encodeToString(Files.readAllBytes(p)), mimeOf(p), w, h)
     else if math.max(w, h) > MaxDecodeSide then throw ToolError(s"$p is too large to preview (${w}x$h)")
@@ -184,6 +218,7 @@ object Images:
 
   /** Upper bound of the base64 size [[encode]] would produce, without reading the pixels. */
   def estimateBase64(p: Path, maxSide: Int): Long =
+    rejectProtected(ImageIO.createImageInputStream(p.toFile), "image")
     dimensions(p) match
       case None => Long.MaxValue
       case Some((w, h)) =>

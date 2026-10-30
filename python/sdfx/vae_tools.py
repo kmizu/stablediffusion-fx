@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 import hashlib
+import io
 import json
 import math
 from pathlib import Path
@@ -100,7 +101,31 @@ def unpack(image, representation, channels):
     return checked(pixels.transpose(2, 0, 1)[None], channels)
 
 
-def read_latent(path, representation, channels):
+def open_input_image(path, password, on_unverified=None):
+    image = Image.open(path)
+    if 'Encrypt' not in image.info:
+        return image
+    image.close()
+    if not password:
+        raise ValueError('image password required')
+    from .encrypt_image import decode_png
+    decoded, verified = decode_png(Path(path).read_bytes(), password)
+    if verified is None and on_unverified is not None:
+        on_unverified()
+    return Image.open(io.BytesIO(decoded))
+
+
+def save_image(image, path, metadata, password):
+    if password:
+        from .encrypt_image import encode_png
+        buffer = io.BytesIO()
+        image.save(buffer, format='PNG', pnginfo=png_info(metadata))
+        Path(path).write_bytes(encode_png(buffer.getvalue(), password))
+    else:
+        image.save(path, pnginfo=png_info(metadata))
+
+
+def read_latent(path, representation, channels, password=None, on_unverified=None):
     path = Path(path)
     if path.stat().st_size > MAX_BYTES:
         raise ValueError('latent file exceeds size limit')
@@ -109,7 +134,7 @@ def read_latent(path, representation, channels):
             return checked(_load_tensor(path.read_bytes()), channels)
         except Exception as exc:
             raise ValueError(f'invalid safetensors latent: {exc}') from exc
-    with Image.open(path) as image:
+    with open_input_image(path, password, on_unverified) as image:
         return unpack(image, representation, channels)
 
 
@@ -317,12 +342,27 @@ def run(engine, params, ctx):
     cmyk_format = params.get('cmyk_format', 'TIFF')
     if cmyk_format not in ('TIFF', 'JPEG100'):
         raise ValueError('CMYK output must be TIFF or JPEG100')
+    password = getattr(ctx, 'image_password', None)
+    consent = params.get('allow_plaintext_latent', False)
+    if not isinstance(consent, bool):
+        raise ValueError('allow_plaintext_latent must be boolean')
+    if password and operation == 'encode' and not consent:
+        raise ValueError('VAE encode saves readable latent data; explicit plaintext latent consent is required')
     output = Path(params.get('output_dir') or '.') / 'vae-tools'
     # A unique session directory prevents output collisions and any overwrite of input data.
     import tempfile
     output.mkdir(parents=True, exist_ok=True)
     output = Path(tempfile.mkdtemp(prefix='run-', dir=output))
     warnings = []
+    def warn_unverified():
+        warning = 'Legacy image password is unverified; the decoded pixels may be incorrect.'
+        if warning not in warnings:
+            warnings.append(warning)
+            ctx.warn(warning)
+    if password and operation == 'encode':
+        warnings.append('Latent safetensors are readable plaintext; L and CMYK encoded files are also plaintext. Report metadata is readable.')
+    elif password:
+        warnings.append('Report metadata is readable plaintext.')
     encode_approx = approximation
     if operation != 'decode' and approximation not in ('Full', 'TAESD'):
         warnings.append(f'{approximation} cannot encode; Full is used for encoding')
@@ -341,12 +381,12 @@ def run(engine, params, ctx):
             item_options = dict(options, latent_metadata={})
             with torch.inference_mode():
                 if operation == 'decode':
-                    array = read_latent(path, representation, channels)
+                    array = read_latent(path, representation, channels, password, warn_unverified)
                     item_options['latent_metadata'] = latent_metadata(path)
                     item['input_coordinate'] = item_options['latent_metadata'].get('coordinate', 'diffusion_scaled')
                     stats = dict(shape=list(array.shape), quantized=representation != 'L')
                 else:
-                    with Image.open(path) as image:
+                    with open_input_image(path, password, warn_unverified) as image:
                         # Preserve pixels as supplied. Odd sizes can round down in the VAE; do not
                         # resize source bytes or silently force the generation form's multiple-of-8 rule.
                         if min(image.size) < 8 or image.width * image.height > MAX_ELEMENTS:
@@ -360,8 +400,8 @@ def run(engine, params, ctx):
                     suffix = '.tiff' if representation == 'CMYK' and cmyk_format == 'TIFF' else '.jpg' if representation == 'CMYK' else '.png'
                     dst = output / f'{index + 1:03d}-encoded{suffix}'
                     if suffix == '.png':
-                        encoded.save(dst, pnginfo=png_info(provenance(engine, operation=operation, representation=representation,
-                            approximation=approximation, seed=seed + index, statistics=stats)))
+                        save_image(encoded, dst, provenance(engine, operation=operation, representation=representation,
+                            approximation=approximation, seed=seed + index, statistics=stats), password if representation == 'RGBA' else None)
                     else:
                         encoded.save(dst, quality=100, compression='raw') if suffix == '.tiff' else encoded.save(dst, quality=100, subsampling=0)
                     from safetensors.numpy import save_file
@@ -373,17 +413,21 @@ def run(engine, params, ctx):
                 else:
                     display = decode(engine, array, approximation, item_options)
                     dst = output / f'{index + 1:03d}-decoded.png'
-                    display.save(dst, pnginfo=png_info(provenance(engine, operation=operation, representation=representation,
-                        approximation=approximation, seed=seed + index, statistics=stats)))
+                    save_image(display, dst, provenance(engine, operation=operation, representation=representation,
+                        approximation=approximation, seed=seed + index, statistics=stats), password)
                 preview = output / f'{index + 1:03d}-preview.png'
-                display.save(preview, pnginfo=png_info(provenance(engine, operation=operation, representation=representation,
-                    approximation=approximation, seed=seed + index, statistics=stats, display_only=True)))
+                save_image(display, preview, provenance(engine, operation=operation, representation=representation,
+                    approximation=approximation, seed=seed + index, statistics=stats, display_only=True), password)
                 item.update(path=str(dst), preview_path=str(preview), statistics=stats, width=display.width, height=display.height)
         except EngineError as exc:
+            for partial in output.glob(f'{index + 1:03d}-*'):
+                partial.unlink(missing_ok=True)
             if exc.code == INTERRUPTED:
                 raise
             item.update(status='error', code=exc.code, error=exc.message)
         except Exception as exc:
+            for partial in output.glob(f'{index + 1:03d}-*'):
+                partial.unlink(missing_ok=True)
             item.update(status='error', code=INVALID_PARAMS if isinstance(exc, (ValueError, OSError)) else 'internal', error=str(exc))
         item['elapsed_seconds'] = time.monotonic() - started
         results.append(item)
@@ -427,7 +471,20 @@ def catch_decode(engine, vae, output_dir, ctx):
                 latent = checked(array[part:part + 1])
                 rgba, stats = pack(latent, 'RGBA')
                 path = Path(next_output_path(str(folder), 'caught-latent'))
-                rgba.save(path, pnginfo=png_info(provenance(engine, representation='RGBA', statistics=stats, error=str(exc))))
+                info = png_info(provenance(engine, representation='RGBA', statistics=stats, error=str(exc)))
+                password = getattr(ctx, 'image_password', None)
+                try:
+                    if password:
+                        import io
+                        from .encrypt_image import encode_png
+                        plain = io.BytesIO()
+                        rgba.save(plain, format='PNG', pnginfo=info)
+                        path.write_bytes(encode_png(plain.getvalue(), password))
+                    else:
+                        rgba.save(path, pnginfo=info)
+                except BaseException:
+                    path.unlink(missing_ok=True)
+                    raise
                 raw = path.with_suffix('.safetensors')
                 # The pre-division denoising tensor is no longer available here. Retain the
                 # actual failed decoder input, rather than claim inverse half arithmetic is exact.
@@ -443,6 +500,8 @@ def catch_decode(engine, vae, output_dir, ctx):
                 ImageDraw.Draw(image).text((8, 8), 'Broken - VAE decode failed', fill='red', stroke_width=1)
                 previews.append(torch.from_numpy(np.array(image).transpose(2, 0, 1)).float() / 127.5 - 1)
             ctx.warn(f'VAE decode failed ({type(exc).__name__}: {exc}); Broken preview is approximate. Recover exact VAE decoder input from {raw}')
+            if getattr(ctx, 'image_password', None):
+                ctx.warn('VAE recovery PNG pixels are scrambled; the exact safetensors recovery file remains readable.')
             sample = torch.stack(previews).to(z.device, z.dtype)
             if kwargs.get('return_dict', args[0] if args else True):
                 from diffusers.models.autoencoders.vae import DecoderOutput

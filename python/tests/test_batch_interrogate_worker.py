@@ -182,3 +182,52 @@ def test_prepare_token_publication_is_atomic_with_cancel(tmp_path, monkeypatch, 
         assert cancel.get("too_late") and terminal["type"] == "result"
         assert terminal["result"]["token"] in engine._batch_interrogate_service._entries
     assert list(output.iterdir()) == []
+
+
+def test_real_server_wd_protected_batch_preserves_metadata_and_decodes_input(tmp_path, monkeypatch):
+    from sdfx.encrypt_image import encode_png, decode_png
+    from sdfx.wd_v3_runtime import ScoredTag
+    import sdfx.wd_v3_provider as provider
+    params, output = fixture(tmp_path)
+    source = Path(params['images_root']) / 'one.png'
+    original = source.read_bytes()
+    source.write_bytes(encode_png(original, 'secret'))
+    protected_source = source.read_bytes()
+    def inference(model, tags, temp_parent, actual, ctx):
+        with Image.open(io.BytesIO(original)) as expected:
+            assert actual.convert('RGB').tobytes() == expected.convert('RGB').tobytes()
+        return (ScoredTag('caption', 0, .8),)
+    monkeypatch.setattr(provider, 'run_internal', inference)
+    stream = io.BytesIO(); server = Server(Engine(), Emitter(stream))
+    prep = invoke(server, stream, 'prep', 'batch_interrogate_prepare', params)
+    assert prep['type'] == 'result'
+    server.handle_line(json.dumps({'id': 'run', 'type': 'batch_interrogate_execute', 'owner_id': 'owner',
+        'params': {'token': prep['result']['token']}, 'image_password': 'secret'}))
+    server._handle(server.q.get_nowait())
+    response = [json.loads(line) for line in stream.getvalue().splitlines() if json.loads(line).get('id') == 'run'][-1]
+    assert response['type'] == 'result' and response['result']['rows'][0]['status'] == 'complete', response
+    path = output / 'result' / 'item-0000' / 'fake.png'
+    with Image.open(path) as scrambled:
+        assert scrambled.info['Encrypt'] == 'pixel_shuffle_3'
+        assert scrambled.info['parameters'].startswith('caption, base\n')
+    plain, verified = decode_png(path.read_bytes(), 'secret')
+    with Image.open(io.BytesIO(plain)) as decoded:
+        assert verified is True and decoded.size == (64, 64)
+        assert 'Seed: 123' in decoded.info['parameters']
+    assert source.read_bytes() == protected_source and b'secret' not in stream.getvalue()
+
+
+def test_wd_legacy_password_warning_is_reported(tmp_path):
+    from PIL.PngImagePlugin import PngInfo
+    from sdfx.encrypt_image import scramble
+    params, output = fixture(tmp_path)
+    source = Path(params['images_root']) / 'one.png'
+    info = PngInfo(); info.add_text('Encrypt', 'pixel_shuffle_3')
+    scramble(Image.new('RGB', (8, 8), 'red'), 'secret').save(source, pnginfo=info)
+    stream = io.BytesIO(); server = Server(Engine(), Emitter(stream))
+    prep = invoke(server, stream, 'prep', 'batch_interrogate_prepare', params)
+    server.handle_line(json.dumps({'id': 'run', 'type': 'batch_interrogate_execute', 'owner_id': 'owner',
+        'params': {'token': prep['result']['token']}, 'image_password': 'secret'}))
+    server._handle(server.q.get_nowait())
+    assert b'unverified' in stream.getvalue().lower()
+    assert (output / 'result' / 'item-0000' / 'fake.png').exists()

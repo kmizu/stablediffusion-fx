@@ -176,6 +176,8 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   val vramEstimator = new VramEstimatorTab(ctx)
   val stylesEditor = new StylesEditorTab(ctx)
   val vaeTools = new VaeToolsTab(ctx)
+  private val scrambleSession = new ScrambleSessionPane(services.imageScrambleSession, () => ctx.imageAccessChanged())
+  private val scrambleBatch = new ScrambleBatchPane(stage)
   private val interruptionControls = new InterruptionControls(ctx)
   val statusBar = new StatusBar(progress, () => generate(false), () => generate(true), () => interrupt(),
     () => clearQueue(), interruptionControls.node)
@@ -207,7 +209,18 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   stylesTab.setId("styles-editor-tab")
   private val comparisonTab = new Tab("Comparison", comparison.node)
   comparisonTab.setId("comparison-tab")
-  tabs.getTabs.addAll(pngTab, extrasTab, tokenizerTab, temporalLabTab, systemInfoTab, stylesTab, comparisonTab, vaeToolsTab)
+  private def scramblePage(content: javafx.scene.Node): ScrollPane =
+    val scroll = new ScrollPane(content)
+    scroll.setFitToWidth(true)
+    scroll
+  private val scramblePages = new TabPane(
+    new Tab("Session", scramblePage(scrambleSession.node)),
+    new Tab("Batch conversion", scramblePage(scrambleBatch.node)))
+  scramblePages.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE)
+  scramblePages.setId("scramble-pages")
+  private val scrambleTab = new Tab("Image Scrambling", scramblePages)
+  scrambleTab.setId("image-scrambling-tab")
+  tabs.getTabs.addAll(pngTab, extrasTab, tokenizerTab, temporalLabTab, systemInfoTab, stylesTab, comparisonTab, vaeToolsTab, scrambleTab)
   tabs.getTabs.add(new Tab("VRAM Estimator", vramEstimator.node))
   private var comparisonDivider = initial.dividers.get("main").flatMap(_.headOption).getOrElse(.42)
   private var lastMode: Mode = Mode.Txt2Img
@@ -415,7 +428,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
           case p: Path => path = Some(p)
           case _ => ()
         node = node.getParent
-      if image != null && !image.isError then
+      if path.nonEmpty || (image != null && !image.isError) then
         val sideB = event.getButton == javafx.scene.input.MouseButton.SECONDARY
         def send(p: Path): Unit =
           comparison.send(sideB, p)
@@ -504,6 +517,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
       return
     if exportGate.isBusy then return
     val vm = vms(mode)
+    val imageSecret = services.imageScrambleSession.snapshot
     // a value typed into a spinner but not committed yet (Ctrl+Enter is consumed before focus moves)
     Option(scene.getFocusOwner).foreach(W.commitEnclosingSpinner)
     if Option(tabs.getSelectionModel.getSelectedItem).flatMap(modeOf).isEmpty then select(mode)
@@ -534,7 +548,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
       ctx.error("No checkpoint available.\nPut .safetensors in models/checkpoints or add folders in Settings.")
       return
     def submit(tempFiles: Seq[Path]): Unit =
-      val ordinary = JobBuilder.build(vm, plugins(mode), sdfx.engine.CaptureOptions(services.settings.apiPayloadIncludeImageContents))
+      val ordinary = JobBuilder.build(vm, plugins(mode), sdfx.engine.CaptureOptions(services.settings.apiPayloadIncludeImageContents), imageSecret)
       val job = wdChoice match
         case None => ordinary
         case Some((input, name)) =>
@@ -950,6 +964,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   def dispose(): Unit =
     disposed = true
     cleanup.run(Seq(
+      "image scrambling controls" -> (() => { scrambleBatch.dispose(); scrambleSession.dispose() }),
       "difference previews" -> (() => panels.values.foreach(_.difference.foreach(_.dispose()))),
       "interruptions" -> (() => interruptionControls.dispose()),
       "card idle observer" -> (() => cardIdle.dispose()),

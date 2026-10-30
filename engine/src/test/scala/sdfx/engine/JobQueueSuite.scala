@@ -15,6 +15,19 @@ class JobQueueSuite extends munit.FunSuite:
 
   override val munitTimeout: Duration = 120.seconds
 
+  test("service shutdown clears the live image session but leaves existing snapshots stable") {
+    val localHome = tempHome()
+    val local = new AppServices(localHome, Settings(), dryRun = true, builtins = Nil,
+      launchOverride = Some(() => launch()), persistSettings = false, installShutdownHook = false)
+    try
+      local.imageScrambleSession.unlock("shutdown-secret")
+      val submitted = local.imageScrambleSession.snapshot.get
+      local.shutdown()
+      assertEquals(local.imageScrambleSession.snapshot, None)
+      assertEquals(submitted.use(identity), "shutdown-secret")
+    finally deleteTree(localHome.root)
+  }
+
   private lazy val home = tempHome()
   private lazy val services =
     val s = new AppServices(home, Settings(lastModel = Some("foo")), dryRun = true, builtins = Seq(new RepeatScript, new MarkerAlwaysOn),
@@ -75,6 +88,94 @@ class JobQueueSuite extends munit.FunSuite:
     assertEquals(replay.grids.size, 1)
     assertEquals(await(queue.submit(Job(p.copy(extra = Map("Grid image numbers" -> "False"))))).grids.size, 0)
     assertEquals(await(queue.submit(Job(p.copy(batchSize = 1, nIter = 1, extra = options)))).grids.size, 0)
+  }
+
+  test("job snapshots scramble generated outputs and numbered grids without leaking password") {
+    val password = "image secret 猫"
+    val session = new sdfx.core.png.ImageScrambleSession
+    session.unlock(password)
+    val p = base.copy(batchSize = 2, extra = Map("Grid image numbers" -> "True"))
+    val plain = await(queue.submit(Job(p)))
+    val job = Job(p).copy(imageSecret = session.snapshot)
+    session.lock()
+    assert(!job.toString.contains(password))
+    val output = await(queue.submit(job))
+    assertEquals(output.images.size, 2)
+    assertEquals(output.grids.size, 1)
+    output.all.foreach { image =>
+      val texts = sdfx.core.png.PngMetadata.readTexts(image.path)
+      assertEquals(texts.get("Encrypt"), Some("pixel_shuffle_3"))
+      assert(!texts.toString.contains(password))
+    }
+    plain.images.zip(output.images).foreach { (expected, actual) =>
+      val a = sdfx.core.png.PngMetadata.readImage(expected.path)
+      val b = sdfx.core.png.ScrambledPng.read(actual.path, Some(password)).image
+      assert(a.getRGB(0, 0, a.getWidth, a.getHeight, null, 0, a.getWidth).sameElements(
+        b.getRGB(0, 0, b.getWidth, b.getHeight, null, 0, b.getWidth)))
+    }
+    assertEquals(sdfx.core.png.ScrambledPng.read(output.grids.head.path, Some(password)).passwordVerified, Some(true))
+  }
+
+  test("script context reads scrambled generated output before saving a derived image") {
+    val session = new sdfx.core.png.ImageScrambleSession
+    session.unlock("script secret")
+    val plugin = new Plugin:
+      def id = "test_scramble_read"
+      def name = "Test scramble read"
+      def kind = PluginKind.Script
+      override def tabs = Set(Tab.Txt2Img)
+      override def run(p: GenerationParams, values: Values, ctx: PluginContext): JobOutput =
+        val source = ctx.generate(p).head
+        val pixels = ctx.readImage(source.path)
+        val copy = ctx.saveImage(pixels, "derived", source.params, source.infotext)
+        JobOutput(Seq(source, copy))
+    val result = await(queue.submit(Job(base).copy(script = Some(plugin -> Values.empty), imageSecret = session.snapshot)))
+    val images = result.images.map(o => sdfx.core.png.ScrambledPng.read(o.path, Some("script secret")).image)
+    val a = images(0); val b = images(1)
+    assert(a.getRGB(0, 0, a.getWidth, a.getHeight, null, 0, a.getWidth).sameElements(
+      b.getRGB(0, 0, b.getWidth, b.getHeight, null, 0, b.getWidth)))
+  }
+
+  test("script worker tools receive decoded images and remove temporary inputs") {
+    val src = java.nio.file.Files.createTempFile("scrambled-tool-test", ".png")
+    val image = new java.awt.image.BufferedImage(8, 8, java.awt.image.BufferedImage.TYPE_INT_RGB)
+    sdfx.core.png.ScrambledPng.write(image, src, Nil, Some("tool secret"))
+    val session = new sdfx.core.png.ImageScrambleSession; session.unlock("tool secret")
+    val plugin = new Plugin:
+      def id = "test_tool_input"
+      def name = "Test tool input"
+      def kind = PluginKind.Script
+      override def run(p: GenerationParams, values: Values, ctx: PluginContext): JobOutput =
+        ctx.engineCall("caption", ujson.Obj("image_path" -> src.toString, "method" -> "fake"))
+        JobOutput(Nil)
+    try
+      await(queue.submit(Job(base).copy(script = Some(plugin -> Values.empty), imageSecret = session.snapshot)))
+      val path = java.nio.file.Paths.get(await(services.client.raw("get_state"))("last_extra")("params")("image_path").str)
+      assertNotEquals(path, src)
+      assert(!java.nio.file.Files.exists(path))
+      assertEquals(sdfx.core.png.PngMetadata.readTexts(src).get("Encrypt"), Some("pixel_shuffle_3"))
+    finally java.nio.file.Files.deleteIfExists(src)
+  }
+
+  test("script upscaler receives decoded input and cleanup removes its temporary") {
+    val src = java.nio.file.Files.createTempFile("scrambled-upscale-test", ".png")
+    sdfx.core.png.ScrambledPng.write(new java.awt.image.BufferedImage(8, 8, java.awt.image.BufferedImage.TYPE_INT_RGB), src, Nil, Some("tool secret"))
+    val session = new sdfx.core.png.ImageScrambleSession; session.unlock("tool secret")
+    val plugin = new Plugin:
+      def id = "test_upscale_input"
+      def name = "Test upscale input"
+      def kind = PluginKind.Script
+      override def run(p: GenerationParams, values: Values, ctx: PluginContext): JobOutput =
+        ctx.upscale(src, "Lanczos", 2.0)
+        JobOutput(Nil)
+    try
+      await(queue.submit(Job(base).copy(script = Some(plugin -> Values.empty), imageSecret = session.snapshot)))
+      val state = await(services.client.raw("get_state"))("last_extra")
+      assertEquals(state("type").str, "upscale")
+      val path = java.nio.file.Paths.get(state("params")("image_path").str)
+      assertNotEquals(path, src)
+      assert(!java.nio.file.Files.exists(path))
+    finally java.nio.file.Files.deleteIfExists(src)
   }
 
   test("cancel a pending job and clear the queue") {

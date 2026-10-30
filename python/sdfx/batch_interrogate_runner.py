@@ -201,6 +201,22 @@ class OwnedBatchTransaction:
             if total != snap.size or digest.hexdigest() != snap.sha256 or (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns) != signature:
                 raise ValueError("input changed during snapshot")
         self.ctx.check_interrupt()
+        password = getattr(self.ctx, 'image_password', None)
+        with target.open('rb') as stream:
+            is_png = stream.read(8) == b'\x89PNG\r\n\x1a\n'
+        if is_png:
+            from PIL import Image
+            with Image.open(target) as image:
+                marked = 'Encrypt' in image.info
+            if marked:
+                if not password:
+                    raise ValueError('image password required')
+                from .encrypt_image import decode_png
+                decoded, verified = decode_png(target.read_bytes(), password)
+                if verified is None and callable(getattr(self.ctx, 'warn', None)):
+                    self.ctx.warn('Legacy image password is unverified; the decoded pixels may be incorrect.')
+                self.ctx.check_interrupt()
+                target.write_bytes(decoded)
         return target
 
     def item_directory(self, index):
@@ -282,6 +298,16 @@ class OwnedBatchTransaction:
                     self.ctx.check_interrupt()
                     text = parameters(generation, facts, image, row["result"], provenance)
                     write_parameters(_absolute(image["path"]), text, self.ctx.check_interrupt)
+            self.check_output_budget()
+        password = getattr(self.ctx, 'image_password', None)
+        if password:
+            from .encrypt_image import encode_png
+            for path in expected:
+                self.ctx.check_interrupt()
+                protected = encode_png(path.read_bytes(), password)
+                self.ctx.check_interrupt()
+                # This path is in the owned private staging directory, never the published output.
+                path.write_bytes(protected)
             self.check_output_budget()
         for path in self.bound.values():
             if os.path.lexists(path):

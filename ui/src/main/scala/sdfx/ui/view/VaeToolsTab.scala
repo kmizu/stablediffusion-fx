@@ -41,6 +41,8 @@ final class VaeToolsTab(ctx: UiContext):
   W.tip(tiled, "Use native diffusers VAE tiling for this operation; previous VAE state is restored afterwards")
   private val download = new CheckBox("Allow optional model downloads")
   download.setId("vae-tools-download")
+  private val plaintextLatent = new CheckBox("Allow readable plaintext latent files for this run")
+  plaintextLatent.setId("vae-tools-plaintext-latent")
   private val approxWeights = new TextField()
   approxWeights.setId("vae-tools-approx-weights")
   approxWeights.setPromptText("Optional local Approx NN model.pt / vaeapprox-sdxl.pt")
@@ -62,12 +64,23 @@ final class VaeToolsTab(ctx: UiContext):
   preview.setFitHeight(300)
   preview.setFitWidth(600)
   private var results = Vector.empty[ujson.Value]
+  private val previewReads = new sdfx.ui.vm.ImageReadGate[ImageFiles.DisplayImage](ctx.services.imageScrambleSession,
+    run => Fx.run(run()), (path, secret) => ImageFiles.readForDisplay(path, secret))(using Fx.bg)
+  def refreshImageAccess(): Unit =
+    previewReads.invalidate()
+    preview.setImage(null)
+    showResult()
   private def showResult(): Unit =
     val index = choices.getSelectionModel.getSelectedIndex
     if index >= 0 && index < results.size then
       val item = results(index)
       item.obj.get("preview_path") match
-        case Some(ujson.Str(path)) => preview.setImage(new Image(Paths.get(path).toUri.toString, true))
+        case Some(ujson.Str(path)) =>
+          preview.setImage(null)
+          previewReads.request(Paths.get(path)) {
+            case scala.util.Success(display) => preview.setImage(display.image)
+            case scala.util.Failure(_) => preview.setImage(null)
+          }
         case _ => preview.setImage(null)
   choices.valueProperty.addListener((_, _, _) => showResult())
   private val selectFiles = W.button("Choose files…", "Select one or more image or latent files without converting their modes") {
@@ -85,12 +98,24 @@ final class VaeToolsTab(ctx: UiContext):
   }
   private val runButton = W.button("Run VAE Tools", "Run the selected operation on every input file", Seq("primary"))(run())
   runButton.setId("vae-tools-run")
-  private val interrupt = W.button("Interrupt", "Stop at the next safe model/batch boundary")(ctx.services.client.interrupt())
+  private var active: Option[sdfx.engine.VaeToolsHandle] = None
+  private val interrupt = W.button("Interrupt", "Request cancellation of this VAE operation at the next safe boundary") {
+    active.foreach { handle =>
+      Fx.onFx(handle.interrupt()) { decision =>
+        if active.contains(handle) then
+          if decision.blocked then status.setText(decision.message.getOrElse("Cancellation is blocked by interruption protection."))
+          else if decision.tooLate then status.setText(decision.message.getOrElse("Cancellation arrived too late."))
+          else if decision.affected then status.setText("Cancellation requested; waiting for the operation to stop.")
+          else status.setText("The operation has already finished or was not interrupted.")
+      } { error => if active.contains(handle) then status.setText(s"Cancellation failed: ${Fx.message(error)}") }
+    }
+  }
   interrupt.setId("vae-tools-interrupt")
   private val help = W.label("Explore VAE compression, latent editing and cross-VAE decoding. L is an exact tensor container in a grayscale PNG. " +
     "RGBA/CMYK quantize 4 latent channels to 8-bit over [-10,10]; out-of-range values clip. Sixteen channels use a 2×2 grid. " +
     "CMYK TIFF retains all channels; JPEG 100 still adds loss. Do not resize, flatten alpha or use lossy formats for L/RGBA. " +
-    "Encoding/decoding itself is lossy. The separate CMYK preview is converted to RGB for display only.", "muted")
+    "Encoding/decoding itself is lossy. The separate CMYK preview is converted to RGB for display only. " +
+    "With image scrambling enabled, previews, decoded images and RGBA latent PNGs are scrambled. L/CMYK latent files, safetensors and reports remain readable; encode requires explicit consent below.", "muted")
   help.setWrapText(true)
   private val approximationHelp = W.label("Full uses the selected VAE. TAESD uses madebyollin/taesd or taesdxl (MIT); first use needs cached weights or explicit download permission. " +
     "Approx NN uses official A1111 release weights (local path or explicit download), and decodes at 2× latent size; Approx cheap at latent size. " +
@@ -101,7 +126,7 @@ final class VaeToolsTab(ctx: UiContext):
     new FlowPane(8, 8, W.hbox(6, W.label("Operation"), operation), W.hbox(6, W.label("Representation"), representation)),
     new FlowPane(8, 8, W.hbox(6, W.label("Approximation"), approximation), tiled), approximationHelp,
     new FlowPane(8, 8, selectFiles, W.hbox(6, W.label("Encoding seed"), seed)), input,
-    W.hbox(8, W.label("CMYK save format"), format), approxWeights, download,
+    W.hbox(8, W.label("CMYK save format"), format), approxWeights, download, plaintextLatent,
     W.hbox(8, outputButton, output), W.hbox(8, runButton, interrupt), status, choices, preview,
     new TitledPane("Result metadata and saved paths", report))
   body.setPadding(new Insets(14))
@@ -115,17 +140,25 @@ final class VaeToolsTab(ctx: UiContext):
   VBox.setVgrow(scroll, Priority.ALWAYS)
   val node: VBox = new VBox(scroll)
   node.setId("vae-tools-tool")
-  private val controls = Seq(input, output, seed, operation, representation, approximation, format, tiled, download, approxWeights, selectFiles, outputButton, runButton)
-  private def busy(value: Boolean): Unit = controls.foreach(_.setDisable(value))
+  ctx.watchImageAccess(node)(() => refreshImageAccess())
+  private val controls = Seq(input, output, seed, operation, representation, approximation, format, tiled, download, plaintextLatent, approxWeights, selectFiles, outputButton, runButton)
+  interrupt.setDisable(true)
+  private def busy(value: Boolean): Unit =
+    controls.foreach(_.setDisable(value))
+    interrupt.setDisable(!value)
   private def run(): Unit =
     try
       val paths = input.getText.linesIterator.map(_.trim).filter(_.nonEmpty).map(Paths.get(_)).toSeq
       val number = seed.getText.trim.toLongOption.getOrElse(throw new IllegalArgumentException("Seed must be an integer"))
       busy(true)
       status.setText("VAE operation queued; original input files will be retained.")
-      val future = service.run(paths, operation.getValue, representation.getValue, approximation.getValue,
-        Paths.get(output.getText), number, tiled.isSelected, format.getValue, download.isSelected, approxWeights.getText)
-      Fx.onFx(future) { value =>
+      val handle = service.runOwned(paths, operation.getValue, representation.getValue, approximation.getValue,
+        Paths.get(output.getText), number, tiled.isSelected, format.getValue, download.isSelected, approxWeights.getText,
+        plaintextLatent.isSelected, imageSecret = ctx.services.imageScrambleSession.snapshot)
+      active = Some(handle)
+      plaintextLatent.setSelected(false)
+      Fx.onFx(handle.result) { value =>
+        active = None
         busy(false)
         report.setText(value.render(indent = 2))
         results = value("results").arr.toVector
@@ -134,7 +167,7 @@ final class VaeToolsTab(ctx: UiContext):
         showResult() // Repeated same-file runs can keep the same selected display label.
         val completed = results.count(_("status").str == "complete")
         status.setText(s"$completed / ${results.size} completed. Saved report: ${value("report_path").str}. " + value("warnings").arr.map(_.str).mkString(" "))
-      } { error => busy(false); status.setText(Fx.message(error)) }
+      } { error => active = None; busy(false); status.setText(Fx.message(error)) }
     catch
       case scala.util.control.NonFatal(error) =>
         busy(false)

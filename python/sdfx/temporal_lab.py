@@ -60,8 +60,18 @@ def _cv():
     return cv2
 
 
-def _read_rgb(path):
+def _read_rgb(path, ctx=None):
     with Image.open(path) as image:
+        if 'Encrypt' in image.info:
+            password = getattr(ctx, 'image_password', None)
+            if not password:
+                raise ValueError('image password required')
+            from .encrypt_image import decode_png
+            decoded, verified = decode_png(Path(path).read_bytes(), password)
+            if verified is None and callable(getattr(ctx, 'warn', None)):
+                ctx.warn('Legacy image password is unverified; the decoded pixels may be incorrect.')
+            with Image.open(BytesIO(decoded)) as plain:
+                return np.array(plain.convert('RGB'), dtype=np.uint8)
         return np.array(image.convert("RGB"), dtype=np.uint8)
 
 
@@ -141,8 +151,8 @@ def _preview(params, ctx):
     _check_working_memory(reference.dimensions, generated.dimensions)
     idx = _number(params, "frame_index", 1, 1, reference.count - 1, integer=True)
     ctx.check_interrupt()
-    mask = _mask(_align_reference(_read_rgb(reference.paths[idx - 1]), generated.dimensions),
-                 _align_reference(_read_rgb(reference.paths[idx]), generated.dimensions), options)
+    mask = _mask(_align_reference(_read_rgb(reference.paths[idx - 1], ctx), generated.dimensions),
+                 _align_reference(_read_rgb(reference.paths[idx], ctx), generated.dimensions), options)
     preview = Image.fromarray(mask, "L")
     preview.thumbnail((MAX_PREVIEW_SIDE, MAX_PREVIEW_SIDE))
     with BytesIO() as buffer:
@@ -153,10 +163,19 @@ def _preview(params, ctx):
             "generated_previous": str(generated.paths[idx - 1]), "generated_current": str(generated.paths[idx])}
 
 
-def _writer(tx, image, index, bytes_used):
+def _writer(tx, image, index, bytes_used, ctx=None):
     assert tx.staging is not None
     output = tx.staging / f"frame{index:06d}.png"
-    Image.fromarray(image, "RGB").save(output, format="PNG")
+    pixels = Image.fromarray(image, "RGB")
+    password = getattr(ctx, 'image_password', None)
+    if password:
+        from .encrypt_image import encode_png
+        buffer = BytesIO()
+        pixels.save(buffer, format='PNG')
+        ctx.check_interrupt()
+        output.write_bytes(encode_png(buffer.getvalue(), password))
+    else:
+        pixels.save(output, format="PNG")
     size = output.stat().st_size
     total = bytes_used + size
     if total > MAX_OUTPUT_BYTES:
@@ -176,14 +195,14 @@ def _dfi(params, ctx):
     count = min(reference.count, options["frame_limit"] or reference.count)
     ctx.check_interrupt()
     with _transaction(params, [reference_dir, generated_dir]) as tx:
-        prior_ref = _align_reference(_read_rgb(reference.paths[0]), generated.dimensions)
-        previous = _read_rgb(generated.paths[0])
-        used = _writer(tx, previous, 1, 0)
+        prior_ref = _align_reference(_read_rgb(reference.paths[0], ctx), generated.dimensions)
+        previous = _read_rgb(generated.paths[0], ctx)
+        used = _writer(tx, previous, 1, 0, ctx)
         ctx.progress(1, count, pass_="dfi")
         for idx in range(1, count):
             ctx.check_interrupt()
-            current_ref = _align_reference(_read_rgb(reference.paths[idx]), generated.dimensions)
-            current = _read_rgb(generated.paths[idx])
+            current_ref = _align_reference(_read_rgb(reference.paths[idx], ctx), generated.dimensions)
+            current = _read_rgb(generated.paths[idx], ctx)
             pre_mask = _mask(prior_ref, current_ref, options)
             percentage = round(float(np.count_nonzero(pre_mask == 255)) / pre_mask.size * 100, 1)
             kernel = math.ceil((100 - percentage) / 3)
@@ -207,7 +226,7 @@ def _dfi(params, ctx):
                 if blur > 1:
                     width = blur if blur % 2 else blur + 1
                     previous = cv.GaussianBlur(previous, (width, width), 0)
-            used = _writer(tx, previous, idx + 1, used)
+            used = _writer(tx, previous, idx + 1, used, ctx)
             prior_ref = current_ref
             ctx.progress(idx + 1, count, pass_="dfi")
         ctx.check_interrupt()
@@ -280,7 +299,7 @@ def _deflicker(params, ctx):
         def read_frames():
             for path in sequence.paths:
                 ctx.check_interrupt()
-                yield _read_rgb(path)
+                yield _read_rgb(path, ctx)
 
         frames = read_frames()
         if blend:
@@ -292,7 +311,7 @@ def _deflicker(params, ctx):
         used = 0
         for idx, current in enumerate(frames):
             ctx.check_interrupt()
-            used = _writer(tx, current, idx + 1, used)
+            used = _writer(tx, current, idx + 1, used, ctx)
             ctx.progress(idx + 1, sequence.count, pass_="deflicker")
         ctx.check_interrupt()
         output = ctx.publish(tx.commit)
@@ -309,10 +328,9 @@ def _fuse(params, ctx):
         used = 0
         for idx, (a, b) in enumerate(zip(style.paths, video.paths)):
             ctx.check_interrupt()
-            with Image.open(a) as image:
-                style_frame = np.array(image.convert("RGB").resize(video.dimensions, Image.Resampling.LANCZOS))
-            fused = _overlay(style_frame, _read_rgb(b), strength)
-            used = _writer(tx, fused, idx + 1, used)
+            style_frame = np.array(Image.fromarray(_read_rgb(a, ctx), 'RGB').resize(video.dimensions, Image.Resampling.LANCZOS))
+            fused = _overlay(style_frame, _read_rgb(b, ctx), strength)
+            used = _writer(tx, fused, idx + 1, used, ctx)
             ctx.progress(idx + 1, video.count, pass_="fuse")
         ctx.check_interrupt()
         output = ctx.publish(tx.commit)
@@ -367,7 +385,7 @@ def _extract(params, ctx):
                 if frame.shape[:2] != (height, width):
                     raise ValueError("video frame dimensions changed")
                 if frame_index / source_fps + 1e-9 >= next_sample:
-                    used = _writer(tx, cv.cvtColor(frame, cv.COLOR_BGR2RGB), written + 1, used)
+                    used = _writer(tx, cv.cvtColor(frame, cv.COLOR_BGR2RGB), written + 1, used, ctx)
                     written += 1
                     next_sample += 1.0 / fps
                 ctx.progress(frame_index + 1, expected, pass_="extract")
@@ -390,7 +408,10 @@ def run(params: dict, ctx) -> dict:
     if not isinstance(operation, str) or operation not in operations:
         raise EngineError(INVALID_PARAMS, "unknown Temporal Lab operation")
     try:
-        return operations[operation](params, ctx)
+        result = operations[operation](params, ctx)
+        if getattr(ctx, 'warnings', None):
+            result['warnings'] = list(ctx.warnings)
+        return result
     except EngineError:
         raise
     except (ValueError, OSError) as exc:

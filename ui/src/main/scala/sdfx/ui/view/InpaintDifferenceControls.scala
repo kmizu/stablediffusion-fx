@@ -22,7 +22,8 @@ import scala.util.control.NonFatal
 /** Native controls and owned asynchronous preview for the two-image inpaint mode. */
 final class InpaintDifferenceControls(ctx: UiContext, vm: GenerationVM, form: PluginValuesVM,
                                       inputs: InpaintDifferenceInputs):
-  private case class Request(base: String, altered: String, options: ujson.Obj)
+  private case class Request(base: String, altered: String, options: ujson.Obj,
+      secret: Option[sdfx.core.png.ImageScrambleSecret])
   private given ExecutionContext = ExecutionContext.parasitic
   private val rootDir = ctx.tmpDir.resolve("inpaint-difference-previews").toAbsolutePath.normalize()
   private val image = new ImageView()
@@ -41,7 +42,7 @@ final class InpaintDifferenceControls(ctx: UiContext, vm: GenerationVM, form: Pl
     displayed = None
 
   private val work: LatestPreview[Request, InpaintDifferencePreview.Artifact] = new LatestPreview[Request, InpaintDifferencePreview.Artifact](
-    r => InpaintDifferencePreview.run(ctx.services, r.base, r.altered, rootDir, r.options),
+    r => InpaintDifferencePreview.run(ctx.services, r.base, r.altered, rootDir, r.options, r.secret),
     (id, outcome) =>
       outcome.foreach(pendingDelivery.add)
       if shuttingDown.get then outcome.foreach(a => if pendingDelivery.remove(a) then remove(a))
@@ -61,7 +62,8 @@ final class InpaintDifferenceControls(ctx: UiContext, vm: GenerationVM, form: Pl
             if !closed && work.isCurrent(id) && displayed.contains(artifact) then
               if loaded.isError then
                 clear(); status.setText("Could not open the generated preview")
-              else status.setText(s"Difference mask · ${artifact.width} × ${artifact.height} · before resize/crop")
+              else status.setText(s"Difference mask · ${artifact.width} × ${artifact.height} · before resize/crop" +
+                artifact.warnings.map(" · " + _).mkString)
           }
         case Failure(error) =>
           clear(); status.setText(s"Preview unavailable: ${Fx.message(error)}")
@@ -91,7 +93,7 @@ final class InpaintDifferenceControls(ctx: UiContext, vm: GenerationVM, form: Pl
           opts("invert") = vm.maskInvert.get
           opts("preview_mode") = "effective"
           status.setText("Calculating preview…")
-          work.request(Request(values.str("base_path"), inputs.altered.get, opts))
+          work.request(Request(values.str("base_path"), inputs.altered.get, opts, ctx.services.imageScrambleSession.snapshot))
         catch case NonFatal(error) => status.setText(s"Preview unavailable: ${Fx.message(error)}")
       )
       debounce.playFromStart()
@@ -127,6 +129,7 @@ final class InpaintDifferenceControls(ctx: UiContext, vm: GenerationVM, form: Pl
   vm.maskBlur.addListener((_, _, _) => refresh())
   vm.maskInvert.addListener((_, _, _) => refresh())
   refresh()
+  ctx.watchImageAccess(node)(() => refresh())
 
   def enabled: Boolean = active
   def basePath: String = form.props("base_path").get

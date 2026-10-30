@@ -251,7 +251,7 @@ def test_encoding_cancellation_removes_partial_video_and_temporary_frames(tmp_pa
             return 0
     running = Running()
     def start(args, **kwargs):
-        Path(args[-1]).write_bytes(b'partial')
+        (Path(kwargs['cwd']) / args[-1]).write_bytes(b'partial')
         assert kwargs['stdout'] == si.subprocess.DEVNULL
         assert kwargs['stderr'] is not None
         ctx.cancelled = True
@@ -277,7 +277,7 @@ def test_encoder_error_retains_frames_and_returns_manifest_with_warning(tmp_path
         def wait(self, **kwargs):
             return 1
     def start(args, **kwargs):
-        Path(args[-1]).write_bytes(b'partial')
+        (Path(kwargs['cwd']) / args[-1]).write_bytes(b'partial')
         kwargs['stderr'].write(b'Unknown encoder libx264')
         return Failed()
     monkeypatch.setattr(si.subprocess, 'Popen', start)
@@ -380,3 +380,209 @@ def test_real_gif_retains_source_endpoint_colors(tmp_path):
             image.seek(index)
             actual = image.convert('RGB').getpixel((8, 8))
             assert max(abs(a - b) for a, b in zip(actual, colors[index])) <= 2
+
+
+def test_protected_intermediate_frames_keep_pixels_and_metadata_without_plaintext_file(tmp_path):
+    from sdfx.encrypt_image import decode_png
+    rec = si.Recorder(tmp_path, {'every_n': 1}, Context(), {'prompt': 'cat'}, image_password='secret')
+    image = Image.new('RGB', (9, 7))
+    image.putdata([(x * 20, y * 30, x + y) for y in range(7) for x in range(9)])
+    rec.capture([image], [42], 'base', 1, 1, 0)
+    path = Path(rec.frames[0]['path'])
+    with Image.open(path) as stored:
+        assert stored.info['Encrypt'] == 'pixel_shuffle_3'
+        assert list(stored.getdata()) != list(image.getdata())
+        assert stored.info['parameters'].startswith('cat\n')
+    plain, verified = decode_png(path.read_bytes(), 'secret')
+    from io import BytesIO
+    with Image.open(BytesIO(plain)) as decoded:
+        assert list(decoded.getdata()) == list(image.getdata())
+        assert json.loads(decoded.info['sdfx_intermediate'])['seed'] == 42
+    assert verified is True
+    assert not any(p.name.startswith('.sdfx-frame-') for p in rec.directory.iterdir())
+
+
+def test_protected_intermediate_write_failure_removes_reserved_file(tmp_path, monkeypatch):
+    from sdfx import encrypt_image
+    rec = si.Recorder(tmp_path, {'every_n': 1}, Context(), {}, image_password='secret')
+    def fail(*args):
+        raise RuntimeError('encoding failed')
+    monkeypatch.setattr(encrypt_image, 'encode_png', fail)
+    with pytest.raises(RuntimeError, match='encoding failed'):
+        rec.capture([Image.new('RGB', (4, 4))], [1], 'base', 1, 1, 0)
+    assert list(rec.directory.iterdir()) == []
+    assert rec.frames == []
+
+
+def test_protected_intermediate_video_is_explicitly_rejected_until_supported(tmp_path):
+    with pytest.raises(EngineError, match='protected video export is not yet supported'):
+        si.Recorder(tmp_path, {'mode': 'Video'}, Context(), {}, image_password='secret')
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_protected_video_decodes_frames_only_with_explicit_plaintext_export(tmp_path, monkeypatch):
+    import shutil
+    if not shutil.which('ffmpeg'):
+        pytest.skip('ffmpeg unavailable')
+    rec = si.Recorder(tmp_path, {'mode': 'Video', 'format': 'gif', 'every_n': 1, 'fps': 2},
+                      Context(), {}, image_password='secret', allow_plaintext_video=True)
+    frames = [Image.new('RGB', (16, 16)), Image.new('RGB', (16, 16))]
+    for n, frame in enumerate(frames):
+        for y in range(16):
+            for x in range(16):
+                frame.putpixel((x, y), ((x * 17) % 256, (y * 17) % 256, n * 200))
+    plain = si.Recorder(tmp_path, {'mode': 'Video', 'format': 'gif', 'every_n': 1, 'fps': 2}, Context(), {})
+    for i, frame in enumerate(frames):
+        plain.capture([frame], [1], 'base', i + 1, i + 1, 0)
+    plain_gif = next(Path(a['path']) for a in plain.finish() if a['type'] == 'video')
+    rec.capture([frames[0]], [1], 'base', 1, 1, 0)
+    rec.capture([frames[1]], [1], 'base', 2, 2, 0)
+    artifacts = rec.finish()
+    gif = next(Path(a['path']) for a in artifacts if a['type'] == 'video')
+    with Image.open(gif) as actual, Image.open(plain_gif) as expected:
+        assert actual.n_frames == expected.n_frames == 2
+        for index in range(actual.n_frames):
+            actual.seek(index)
+            expected.seek(index)
+            assert actual.convert('RGB').tobytes() == expected.convert('RGB').tobytes()
+    for index, record in enumerate(rec.frames):
+        with Image.open(record['path']) as stored:
+            assert stored.info['Encrypt'] == 'pixel_shuffle_3'
+            assert stored.convert('RGB').tobytes() != frames[index].tobytes()
+    assert not list(rec.directory.glob('.video-*'))
+
+
+@pytest.mark.parametrize('option', ['bat_only', 'ffmpeg_bat'])
+def test_protected_video_recipe_options_generate_recipe(tmp_path, option):
+    import shutil
+    if option == 'ffmpeg_bat' and not shutil.which('ffmpeg'):
+        pytest.skip('ffmpeg required')
+    rec = si.Recorder(tmp_path, {'mode': 'Video', option: True, 'every_n': 1}, Context(), {},
+                      image_password='secret', allow_plaintext_video=True)
+    rec.capture([Image.new('RGB', (8, 8), 'red')], [1], 'base', 1, 1, 0)
+    artifacts = rec.finish()
+    assert any(item['type'] == 'ffmpeg_recipe' for item in artifacts)
+    assert any(item['type'] == 'video' for item in artifacts) == (option == 'ffmpeg_bat')
+
+
+def test_protected_video_interruption_removes_plaintext_temp_frames(tmp_path):
+    import shutil
+    if not shutil.which('ffmpeg'):
+        pytest.skip('ffmpeg unavailable')
+    class CancelDuringVideo(Context):
+        def __init__(self):
+            self.cancel = False
+            self.observed_plain_frame = False
+        def check_interrupt(self):
+            if self.cancel:
+                self.observed_plain_frame = any(tmp_path.rglob('.video-*/*.png'))
+                if self.observed_plain_frame:
+                    raise RuntimeError('stopped')
+    ctx = CancelDuringVideo()
+    rec = si.Recorder(tmp_path, {'mode': 'Video', 'every_n': 1}, ctx, {},
+                      image_password='secret', allow_plaintext_video=True)
+    rec.capture([Image.new('RGB', (8, 8), 'red')], [1], 'base', 1, 1, 0)
+    rec.capture([Image.new('RGB', (8, 8), 'blue')], [1], 'base', 2, 2, 0)
+    ctx.cancel = True
+    with pytest.raises(RuntimeError, match='stopped'):
+        rec.finish()
+    assert ctx.observed_plain_frame
+    assert not list(rec.directory.glob('.video-*'))
+    assert not list(rec.directory.glob('*.mp4'))
+    assert Path(rec.frames[0]['path']).is_file()
+
+
+def test_generation_forgets_recorder_when_close_raises():
+    pytest.importorskip('torch')
+    from sdfx.engine import Engine
+    class Recorder:
+        def close(self):
+            raise RuntimeError('close failed')
+    class EngineStub:
+        _generate = Engine._generate
+        def _generate_recorded(self, params, ctx, mode):
+            self._intermediate_recorder = Recorder()
+            return {}
+    engine = EngineStub()
+    with pytest.raises(RuntimeError, match='close failed'):
+        engine._generate({}, object(), 'txt2img')
+    assert engine._intermediate_recorder is None
+
+
+def test_protected_recipe_can_export_later_without_storing_password(tmp_path, monkeypatch):
+    import shutil
+    from sdfx import protected_recipe
+    if not shutil.which('ffmpeg'):
+        pytest.skip('ffmpeg required')
+    rec = si.Recorder(tmp_path, {'mode': 'Video', 'bat_only': True, 'every_n': 1, 'format': 'gif'},
+                      Context(), {}, image_password='private-password', allow_plaintext_video=True)
+    for i in range(2):
+        image = Image.new('RGB', (16, 16), ('red', 'blue')[i])
+        rec.capture([image], [1], 'base', i + 1, i + 1, 0)
+    artifacts = rec.finish()
+    spec = Path(next(a['path'] for a in artifacts if a['type'] == 'ffmpeg_playlist'))
+    recipe = Path(next(a['path'] for a in artifacts if a['type'] == 'ffmpeg_recipe'))
+    assert 'private-password' not in spec.read_text(encoding='utf-8')
+    assert 'private-password' not in recipe.read_text(encoding='utf-8')
+    target = protected_recipe.export(spec, 'private-password')
+    assert target.is_file()
+    with Image.open(target) as result:
+        assert result.n_frames >= 2
+        assert result.convert('RGB').getpixel((8, 8))[0] > 200
+        result.seek(result.n_frames - 1)
+        assert result.convert('RGB').getpixel((8, 8))[2] > 200
+    assert not list(rec.directory.glob('.video-*'))
+    with pytest.raises(FileExistsError):
+        protected_recipe.export(spec, 'private-password')
+
+
+def test_protected_recipe_rejects_wrong_password_without_partial_output(tmp_path):
+    import shutil
+    from sdfx import protected_recipe
+    if not shutil.which('ffmpeg'):
+        pytest.skip('ffmpeg required')
+    rec = si.Recorder(tmp_path, {'mode': 'Video', 'bat_only': True, 'every_n': 1},
+                      Context(), {}, image_password='secret', allow_plaintext_video=True)
+    rec.capture([Image.new('RGB', (8, 8), 'red')], [1], 'base', 1, 1, 0)
+    spec = Path(next(a['path'] for a in rec.finish() if a['type'] == 'ffmpeg_playlist'))
+    with pytest.raises(ValueError, match='incorrect password'):
+        protected_recipe.export(spec, 'wrong')
+    assert not list(rec.directory.glob('*.mp4')) and not list(rec.directory.glob('.video-*'))
+
+
+def test_protected_recipe_windows_batch_executes_and_hides_password(tmp_path):
+    import os, shutil, subprocess
+    if os.name != 'nt' or not shutil.which('ffmpeg'):
+        pytest.skip('Windows and ffmpeg required')
+    folder = tmp_path / '日本語 % folder'
+    folder.mkdir()
+    rec = si.Recorder(folder, {'mode': 'Video', 'bat_only': True, 'every_n': 1, 'format': 'gif'},
+                      Context(), {}, image_password='private-password', allow_plaintext_video=True)
+    rec.capture([Image.new('RGB', (8, 8), 'red')], [1], 'base', 1, 1, 0)
+    artifacts = rec.finish()
+    bat = next(a['path'] for a in artifacts if a['type'] == 'ffmpeg_recipe')
+    result = subprocess.run(['cmd.exe', '/d', '/c', bat], input='private-password\n',
+                            capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=60)
+    assert result.returncode == 0, (result.stdout, result.stderr)
+    assert 'private-password' not in result.stdout + result.stderr
+    assert len(list(rec.directory.glob('*.gif'))) == 1
+
+
+def test_protected_recipe_concurrent_output_is_not_overwritten(tmp_path, monkeypatch):
+    import shutil
+    from sdfx import protected_recipe
+    if not shutil.which('ffmpeg'):
+        pytest.skip('ffmpeg required')
+    rec = si.Recorder(tmp_path, {'mode': 'Video', 'bat_only': True, 'every_n': 1},
+                      Context(), {}, image_password='secret', allow_plaintext_video=True)
+    rec.capture([Image.new('RGB', (8, 8), 'red')], [1], 'base', 1, 1, 0)
+    spec = Path(next(a['path'] for a in rec.finish() if a['type'] == 'ffmpeg_playlist'))
+    link = protected_recipe.os.link
+    def concurrent_target(source, target):
+        Path(target).write_bytes(b'existing output')
+        return link(source, target)
+    monkeypatch.setattr(protected_recipe.os, 'link', concurrent_target)
+    with pytest.raises(FileExistsError):
+        protected_recipe.export(spec, 'secret')
+    assert next(rec.directory.glob('*.mp4')).read_bytes() == b'existing output'
+    assert not list(rec.directory.glob('.protected-recipe-*'))

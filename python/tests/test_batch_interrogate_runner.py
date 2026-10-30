@@ -304,3 +304,124 @@ def test_registered_runner_unloads_before_publication_and_on_preflight_failure(t
                              BatchInterrogateOptions(), registry, output, "second", Publish())
     assert provider.unloaded == 2
 
+
+
+def test_owned_batch_protected_inputs_and_outputs_roundtrip(tmp_path):
+    import hashlib, io
+    from pathlib import Path
+    from PIL import Image
+    from sdfx.batch_face_manifest import FileSnapshot
+    from sdfx.batch_interrogate_runner import run_owned_batch
+    from sdfx.encrypt_image import encode_png, decode_png
+    image = Image.new('RGB', (12, 10))
+    for y in range(10):
+        for x in range(12):
+            image.putpixel((x, y), (x * 20, y * 20, x + y))
+    source = tmp_path / 'protected.png'
+    memory = io.BytesIO(); image.save(memory, format='PNG')
+    source.write_bytes(encode_png(memory.getvalue(), 'secret'))
+    original = source.read_bytes(); info = source.stat()
+    item = BatchInput(str(source), FileSnapshot(source, image.size, hashlib.sha256(original).hexdigest(),
+                      info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns))
+    output = tmp_path / 'out'; output.mkdir()
+    class ReadBackend:
+        def interrogate(self, path, models, ctx):
+            with Image.open(path) as actual:
+                assert actual.tobytes() == image.tobytes()
+            return ['caption']
+    class WriteEngine:
+        def img2img(self, request, ctx):
+            with Image.open(request['params']['img2img']['init_image']) as actual:
+                assert actual.tobytes() == image.tobytes()
+            path = Path(request['output_dir']) / 'result.png'
+            image.save(path)
+            return {'images': [{'path': str(path)}]}
+    ctx = Context(); ctx.publish = lambda action: action(); ctx.image_password = 'secret'
+    result = run_owned_batch(WriteEngine(), (item,), {'params': {}}, ('clip',),
+                             BatchInterrogateOptions(), ReadBackend(), output, 'result', ctx)
+    assert result[0]['status'] == 'complete'
+    saved = Path(result[0]['result']['images'][0]['path'])
+    with Image.open(saved) as stored:
+        assert stored.info['Encrypt'] == 'pixel_shuffle_3'
+        assert stored.tobytes() != image.tobytes()
+    decoded, verified = decode_png(saved.read_bytes(), 'secret')
+    with Image.open(io.BytesIO(decoded)) as restored:
+        assert verified is True and restored.tobytes() == image.tobytes()
+    assert source.read_bytes() == original
+    assert not list(output.rglob('.inputs'))
+
+
+def test_owned_batch_wrong_image_password_never_runs_backend_or_publishes(tmp_path):
+    import hashlib, io
+    from PIL import Image
+    from sdfx.batch_face_manifest import FileSnapshot
+    from sdfx.batch_interrogate_runner import run_owned_batch
+    from sdfx.encrypt_image import encode_png
+    source = tmp_path / 'input.png'
+    data = io.BytesIO(); Image.new('RGB', (8, 8), 'red').save(data, format='PNG')
+    source.write_bytes(encode_png(data.getvalue(), 'correct'))
+    info = source.stat(); original = source.read_bytes()
+    item = BatchInput(str(source), FileSnapshot(source, (8, 8), hashlib.sha256(original).hexdigest(),
+                      info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns))
+    output = tmp_path / 'out'; output.mkdir()
+    class Never:
+        def interrogate(self, *args): pytest.fail('backend must not see wrong-password pixels')
+    class NeverEngine:
+        def img2img(self, *args): pytest.fail('engine must not see wrong-password pixels')
+    ctx = Context(); ctx.publish = lambda action: action(); ctx.image_password = 'wrong'
+    rows = run_owned_batch(NeverEngine(), (item,), {'params': {}}, ('clip',), BatchInterrogateOptions(),
+                           Never(), output, 'result', ctx)
+    assert rows[0]['status'] == 'error'
+    assert not (output / 'result').exists() and not list(output.iterdir())
+    assert source.read_bytes() == original
+
+
+def test_owned_batch_protection_failure_rolls_back_entire_output(tmp_path, monkeypatch):
+    import hashlib
+    from PIL import Image
+    from pathlib import Path
+    from sdfx.batch_face_manifest import FileSnapshot
+    from sdfx.batch_interrogate_runner import run_owned_batch
+    import sdfx.encrypt_image as encryption
+    source = tmp_path / 'input.png'; Image.new('RGB', (8, 8), 'blue').save(source)
+    original = source.read_bytes(); info = source.stat()
+    item = BatchInput(str(source), FileSnapshot(source, (8, 8), hashlib.sha256(original).hexdigest(),
+                      info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns))
+    output = tmp_path / 'out'; output.mkdir()
+    class Backend:
+        def interrogate(self, *args): return ['caption']
+    class Engine:
+        def img2img(self, request, ctx):
+            result = Path(request['output_dir']) / 'image.png'
+            Image.new('RGB', (8, 8), 'red').save(result)
+            return {'images': [{'path': str(result)}]}
+    ctx = Context(); ctx.publish = lambda action: action(); ctx.image_password = 'secret'
+    def fail(*args): raise RuntimeError('injected failure')
+    monkeypatch.setattr(encryption, 'encode_png', fail)
+    with pytest.raises(RuntimeError, match='injected failure'):
+        run_owned_batch(Engine(), (item,), {'params': {}}, ('clip',), BatchInterrogateOptions(),
+                        Backend(), output, 'result', ctx)
+    assert list(output.iterdir()) == [] and source.read_bytes() == original
+
+
+def test_owned_batch_locked_protected_input_does_not_reach_backend(tmp_path):
+    import hashlib, io
+    from PIL import Image
+    from sdfx.batch_face_manifest import FileSnapshot
+    from sdfx.batch_interrogate_runner import run_owned_batch
+    from sdfx.encrypt_image import encode_png
+    source = tmp_path / 'input.png'
+    data = io.BytesIO(); Image.new('RGB', (8, 8), 'red').save(data, format='PNG')
+    source.write_bytes(encode_png(data.getvalue(), 'secret'))
+    info = source.stat(); raw = source.read_bytes()
+    item = BatchInput(str(source), FileSnapshot(source, (8, 8), hashlib.sha256(raw).hexdigest(),
+                      info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns))
+    output = tmp_path / 'out'; output.mkdir()
+    class Never:
+        def interrogate(self, *args): pytest.fail('locked pixels must not reach backend')
+        def img2img(self, *args): pytest.fail('locked pixels must not reach generator')
+    context = Context(); context.publish = lambda action: action()
+    rows = run_owned_batch(Never(), (item,), {'params': {}}, ('clip',), BatchInterrogateOptions(),
+                           Never(), output, 'result', context)
+    assert rows[0]['status'] == 'error' and 'password required' in rows[0]['error']
+    assert not list(output.iterdir()) and source.read_bytes() == raw

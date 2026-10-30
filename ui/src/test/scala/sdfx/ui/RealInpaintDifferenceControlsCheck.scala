@@ -56,13 +56,14 @@ object RealInpaintDifferenceControlsCheck:
     var inputs: InpaintDifferenceInputs = null
     var vm: GenerationVM = null
     var painted: MaskCanvas = null
+    var context: UiContext = null
     def nodes(n: Node): Seq[Node] = Seq(n) ++ (n match
       case p: Parent => p.getChildrenUnmodifiable.asScala.toSeq.flatMap(nodes)
       case _ => Nil)
     try
       fx {
         stage = new Stage()
-        val ctx = new UiContext(services, new CatalogVM, stage)
+        val ctx = new UiContext(services, new CatalogVM, stage); context = ctx
         vm = new GenerationVM(Mode.Inpaint)
         vm.initImage.set(base.toString)
         form = new PluginValuesVM(new InpaintDifferencePlugin)
@@ -116,6 +117,37 @@ object RealInpaintDifferenceControlsCheck:
         vm.maskInvert.set(false)
         form.props("show_under").set("true")
       }
+      awaitPreview()
+      val plainPixels = fx {
+        val preview = nodes(controls.node).find(_.getId == "difference-preview").get.asInstanceOf[javafx.scene.image.ImageView].getImage
+        val a = new Array[Int](preview.getWidth.toInt * preview.getHeight.toInt)
+        preview.getPixelReader.getPixels(0, 0, preview.getWidth.toInt, preview.getHeight.toInt,
+          javafx.scene.image.PixelFormat.getIntArgbInstance, a, 0, preview.getWidth.toInt)
+        a
+      }
+      val protectedBase = output.resolve("base-scrambled.png")
+      val protectedAltered = output.resolve("altered-scrambled.png")
+      sdfx.core.png.ScrambledPng.write(ImageIO.read(base.toFile), protectedBase, Nil, Some("secret"))
+      sdfx.core.png.ScrambledPng.write(ImageIO.read(altered.toFile), protectedAltered, Nil, Some("secret"))
+      fx {
+        services.imageScrambleSession.unlock("secret"); context.imageAccessChanged()
+        form.props("base_path").set(protectedAltered.toString)
+        inputs.altered.set(protectedBase.toString)
+      }
+      awaitPreview()
+      fx {
+        val preview = nodes(controls.node).find(_.getId == "difference-preview").get.asInstanceOf[javafx.scene.image.ImageView].getImage
+        val actual = new Array[Int](preview.getWidth.toInt * preview.getHeight.toInt)
+        preview.getPixelReader.getPixels(0, 0, preview.getWidth.toInt, preview.getHeight.toInt,
+          javafx.scene.image.PixelFormat.getIntArgbInstance, actual, 0, preview.getWidth.toInt)
+        require(java.util.Arrays.equals(plainPixels, actual), "protected difference preview differs")
+        services.imageScrambleSession.unlock("wrong"); context.imageAccessChanged()
+      }
+      val wrongDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(90)
+      def currentStatus = fx(nodes(controls.node).find(_.getId == "difference-preview-status").get.asInstanceOf[Label].getText)
+      while !currentStatus.startsWith("Preview unavailable") && System.nanoTime() < wrongDeadline do Thread.sleep(50)
+      require(currentStatus.startsWith("Preview unavailable"), "wrong password was not rejected")
+      fx { services.imageScrambleSession.unlock("secret"); context.imageAccessChanged() }
       awaitPreview()
       fx {
         controls.node.asInstanceOf[Parent].applyCss()

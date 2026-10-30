@@ -27,6 +27,11 @@ final class MaskCanvas(ctx: UiContext, imagePath: StringProperty, hasMask: javaf
   private var overlay: Option[WritableImage] = None
   private val OverlayArgb = 0xff7c5cff
 
+  private val imageReads = new sdfx.ui.vm.ImageReadGate[ImageFiles.DisplayImage](ctx.services.imageScrambleSession,
+    run => Fx.run(run()), (file, secret) => ImageFiles.readForDisplay(file, secret))(using Fx.bg)
+  private val maskReads = new sdfx.ui.vm.ImageReadGate[java.awt.image.BufferedImage](ctx.services.imageScrambleSession,
+    run => Fx.run(run()), (file, secret) => sdfx.core.png.ScrambledPng.read(file, secret.map(_.use(identity))).image)(using Fx.bg)
+  private var loadedPath: Option[String] = None
   private val base = new ImageView()
   base.setPreserveRatio(true)
   base.setSmooth(true)
@@ -193,20 +198,61 @@ final class MaskCanvas(ctx: UiContext, imagePath: StringProperty, hasMask: javaf
   /** Loads an existing mask file into the current mask (e.g. restored state). */
   def loadMask(file: String): Unit =
     for m <- model if file.nonEmpty do
-      Fx.async(Option(ImageIO.read(Paths.get(file).toFile))) { src =>
-        if model.exists(_ eq m) then
-          src.foreach { s =>
+      scala.util.Try(Paths.get(file)).fold(e => ctx.error(s"Cannot load mask: ${Fx.message(e)}"), path =>
+        maskReads.request(path) {
+          case scala.util.Success(src) if model.exists(_ eq m) =>
             m.checkpoint()
-            m.loadFrom(s)
+            m.loadFrom(src)
             redrawAll()
             changed()
-          }
-      }(e => ctx.error(s"Cannot load mask: ${Fx.message(e)}"))
+          case scala.util.Failure(e) if model.exists(_ eq m) => ctx.error(s"Cannot load mask: ${Fx.message(e)}")
+          case _ => ()
+        })
+
+  private def refreshImage(p: String, preserveMask: Boolean): Unit =
+    imageReads.invalidate()
+    val file = Option(p).filter(_.trim.nonEmpty).flatMap(s => scala.util.Try(Paths.get(s)).toOption)
+    if !preserveMask then
+      setImage(None)
+      loadedPath = None
+    else
+      base.setImage(null)
+      over.setVisible(false)
+    file match
+      case None =>
+        placeholder.setText("◐\nOpen, drop or paste the image to inpaint\nthen paint over the area to change")
+        placeholder.setVisible(true)
+      case Some(path) =>
+        placeholder.setText("Loading image…")
+        placeholder.setVisible(true)
+        imageReads.request(path) {
+          case scala.util.Success(display) if imagePath.get == p =>
+            val image = display.image
+            val canKeep = preserveMask && loadedPath.contains(p) && model.exists(m => m.width == image.getWidth.toInt && m.height == image.getHeight.toInt)
+            if canKeep then
+              base.setImage(image)
+              over.setVisible(true)
+              placeholder.setVisible(false)
+            else
+              setImage(Some(image))
+              over.setVisible(true)
+            loadedPath = Some(p)
+            if display.scrambled && display.passwordVerified.isEmpty then ctx.info("Image password could not be verified")
+          case scala.util.Failure(error) if imagePath.get == p =>
+            base.setImage(null)
+            over.setVisible(false)
+            placeholder.setText("Cannot display image: " + Fx.message(error).stripPrefix("requirement failed: "))
+            placeholder.setVisible(true)
+          case _ => ()
+        }
+
+  def refreshImageAccess(): Unit = refreshImage(imagePath.get, preserveMask = true)
 
   imagePath.addListener((_, _, p) =>
     Option(p).filter(_.nonEmpty).flatMap(s => scala.util.Try(Paths.get(s)).toOption).foreach(ctx.temps.rememberInput)
-    setImage(ImageFiles.load(p)))
-  setImage(ImageFiles.load(imagePath.get))
+    refreshImage(p, preserveMask = false))
+  refreshImage(imagePath.get, preserveMask = false)
+  ctx.watchImageAccess(stack)(() => refreshImageAccess())
 
   // ---- tools -------------------------------------------------------------------------------------------
 

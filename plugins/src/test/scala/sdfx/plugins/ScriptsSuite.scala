@@ -37,6 +37,33 @@ class ScriptsSuite extends munit.FunSuite:
     assertEquals(ctx2.generated.map(_.seed).distinct, Seq(100L))
   }
 
+  test("prompt matrix reads scrambled outputs through its job context") {
+    val password = "queued secret"
+    class Context(encoded: Boolean) extends FakeContext:
+      override def generate(p: GenerationParams): Seq[OutputImage] =
+        val results = super.generate(p)
+        results.foreach { o =>
+          val img = new java.awt.image.BufferedImage(p.width, p.height, java.awt.image.BufferedImage.TYPE_INT_RGB)
+          for y <- 0 until p.height; x <- 0 until p.width do
+            img.setRGB(x, y, ((x * 3 & 255) << 16) | ((y * 5 & 255) << 8) | (p.seed.toInt & 255))
+          sdfx.core.png.ScrambledPng.write(img, o.path, Nil, if encoded then Some(password) else None)
+        }
+        results
+      override def readImage(path: java.nio.file.Path): java.awt.image.BufferedImage =
+        sdfx.core.png.ScrambledPng.read(path, Some(password)).image
+    val plugin = new PromptMatrixPlugin
+    val plain = new Context(false)
+    val protectedCtx = new Context(true)
+    val p = base.copy(prompt = "base|red")
+    plugin.run(p, defaults(plugin), plain)
+    plugin.run(p, defaults(plugin), protectedCtx)
+    val a = plain.saved.head._2
+    val b = protectedCtx.saved.head._2
+    assertEquals((a.getWidth, a.getHeight), (b.getWidth, b.getHeight))
+    assert(a.getRGB(0, 0, a.getWidth, a.getHeight, null, 0, a.getWidth).sameElements(
+      b.getRGB(0, 0, b.getWidth, b.getHeight, null, 0, b.getWidth)))
+  }
+
   test("prompt matrix interrupted mid-generation still saves a partial grid") {
     val pm = new PromptMatrixPlugin
     val ctx = FakeContext(interruptAfter = 3)

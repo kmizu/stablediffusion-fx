@@ -166,8 +166,11 @@ def observe_scheduler(scheduler):
 
 
 class Recorder:
-    def __init__(self, output_dir, raw, ctx, metadata):
+    def __init__(self, output_dir, raw, ctx, metadata, image_password=None, allow_plaintext_video=False):
         self.c = normalize(raw)
+        if image_password and self.c['mode'] == 'Video' and not allow_plaintext_video:
+            raise EngineError(UNSUPPORTED, 'save intermediate: protected video export is not yet supported')
+        self.image_password = image_password
         self.ctx, self.metadata = ctx, metadata
         self.frames, self.artifacts = [], []
         self.finished = False
@@ -208,7 +211,16 @@ class Recorder:
         parameters += ', '.join(text_fields)
         info.add_text('parameters', parameters)
         try:
-            image.save(path, format='PNG', pnginfo=info, compress_level=4)
+            password = getattr(self, 'image_password', None)
+            if password:
+                # The only on-disk bytes are the scrambled PNG; the plaintext PNG stays in memory.
+                import io
+                from .encrypt_image import encode_png
+                plain = io.BytesIO()
+                image.save(plain, format='PNG', pnginfo=info, compress_level=4)
+                Path(path).write_bytes(encode_png(plain.getvalue(), password))
+            else:
+                image.save(path, format='PNG', pnginfo=info, compress_level=4)
         except BaseException:
             Path(path).unlink(missing_ok=True)
             raise
@@ -253,6 +265,26 @@ class Recorder:
 
     def _recipe(self, frames, name):
         """Only generated relative file names enter the batch recipe; no user prompt/path command text."""
+        if getattr(self, 'image_password', None):
+            import os, sys
+            listing = self.directory / f'{name}.protected.json'
+            listing.write_text(json.dumps(dict(settings=self.c, name=name,
+                frames=[dict(path=Path(f['path']).name, width=f['width'], height=f['height']) for f in frames]),
+                ensure_ascii=False, indent=2), encoding='utf-8', newline='\n')
+            def cmd_path(value):
+                value = str(value)
+                if any(c in value for c in ('"', '\r', '\n')):
+                    raise ValueError('recipe runtime path cannot be represented in a batch file')
+                return value.replace('%', '%%')
+            bat = self.directory / f'{name}.bat'
+            package_root = Path(__file__).resolve().parent.parent
+            bat.write_text('@echo off\nchcp 65001 >nul\nsetlocal DisableDelayedExpansion\ncd /d "%~dp0"\n'
+                           f'set "PYTHONPATH={cmd_path(package_root)}"\n'
+                           f'"{cmd_path(sys.executable)}" -m sdfx.protected_recipe "{listing.name}"\n',
+                           encoding='utf-8', newline='\n')
+            self.artifacts.extend([dict(type='ffmpeg_recipe', path=str(bat)),
+                                   dict(type='ffmpeg_playlist', path=str(listing))])
+            return
         listing = self.directory / f'{name}.ffconcat'
         rate, duration = video_timing(self.c, len(frames))
         lines = ['ffconcat version 1.0']
@@ -282,14 +314,22 @@ class Recorder:
                 self.ctx.check_interrupt()
                 if hasattr(self.ctx, 'progress'):
                     self.ctx.progress(i + 1, len(frames), 'intermediate video')
-                with Image.open(f['path']) as im:
+                password = getattr(self, 'image_password', None)
+                if password:
+                    import io
+                    from .encrypt_image import decode_png
+                    decoded, _ = decode_png(Path(f['path']).read_bytes(), password)
+                    source = io.BytesIO(decoded)
+                else:
+                    source = f['path']
+                with Image.open(source) as im:
                     image = ImageOps.pad(im.convert('RGB'), (w, h), color='black')
                     image.save(Path(temp) / f'{i:06d}.png')
             args = [self.ffmpeg, '-nostdin', '-n', '-loglevel', 'error', '-framerate', str(rate),
-                    '-i', str(Path(temp) / '%06d.png'), '-vf', self._filters(frames), '-t', f'{duration:g}',
-                    *self._codec(), str(target)]
+                    '-i', '%06d.png', '-vf', self._filters(frames), '-t', f'{duration:g}',
+                    *self._codec(), str(Path('..') / target.name)]
             with tempfile.TemporaryFile() as errors:
-                proc = subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=errors,
+                proc = subprocess.Popen(args, cwd=temp, stdout=subprocess.DEVNULL, stderr=errors,
                                         creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
                 try:
                     last_log = 0

@@ -216,12 +216,12 @@ final class EngineProcess private (proc: Process, log: String => Unit, onExit: (
     requestWithId(tpe, params, onEvent)._2
 
   private[engine] def requestOwned(tpe: String, params: ujson.Value, onEvent: EngineEvent => Unit,
-                                   owner: Option[String]): Future[ujson.Value] =
-    requestWithId(tpe, params, onEvent, owner)._2
+                                   owner: Option[String], imageSecret: Option[sdfx.core.png.ImageScrambleSecret] = None): Future[ujson.Value] =
+    requestWithId(tpe, params, onEvent, owner, imageSecret)._2
 
   /** Like [[request]] but also returns the request id. */
   def requestWithId(tpe: String, params: ujson.Value = ujson.Obj(), onEvent: EngineEvent => Unit = _ => (),
-                    owner: Option[String] = None): (String, Future[ujson.Value]) =
+                    owner: Option[String] = None, imageSecret: Option[sdfx.core.png.ImageScrambleSecret] = None): (String, Future[ujson.Value]) =
     if !isAlive then ("", Future.failed(forcedError.getOrElse(EngineError(EngineNotRunning, "engine is not running"))))
     else
       val id = s"r${ids.incrementAndGet()}"
@@ -229,6 +229,10 @@ final class EngineProcess private (proc: Process, log: String => Unit, onExit: (
       pending.put(id, p)
       val envelope = ujson.Obj("id" -> id, "type" -> tpe, "params" -> params)
       owner.foreach(value => envelope("owner_id") = value)
+      imageSecret.foreach { secret =>
+        secret.use(value => envelope("image_password") = value)
+        if secret.plaintextVideoAllowed && (tpe == "txt2img" || tpe == "img2img") then envelope("allow_plaintext_video") = true
+      }
       val msg = ujson.write(envelope)
       try
         writer.synchronized {

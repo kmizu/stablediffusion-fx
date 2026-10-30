@@ -92,7 +92,7 @@ class LoopbackPlugin extends Plugin:
       if v.bool("make_grid", true) && images.size > 1 then
         val filled = rows.toSeq.filter(_.nonEmpty)
         val cols = filled.map(_.size).max
-        val cells = filled.flatMap(r => r.toSeq.map(Support.gridTile) ++ Seq.fill(cols - r.size)(null))
+        val cells = filled.flatMap(r => r.toSeq.map(o => Support.gridTile(ctx, o)) ++ Seq.fill(cols - r.size)(null))
         val gp = Support.gridParams(p0.copy(extra = extra + ("Script" -> "Loopback")), images)
         Seq(ctx.saveImage(Grid.labeled(cells, cols, Nil, Nil), "grids", gp, Support.infotext(gp, images.head.seed)))
       else Nil
@@ -124,7 +124,7 @@ class SdUpscalePlugin extends Plugin:
       case Some(path) => path
       case None       => return JobOutput(Nil)
     val img =
-      try Support.readImage(upscaledPath)
+      try Support.readImage(ctx, upscaledPath)
       finally if upscaledPath.toString != i0.initImage then Support.deleteQuietly(upscaledPath)
     val tiles = ImageOps.splitTiles(img.getWidth, img.getHeight, p0.width, p0.height, overlap)
     val upscaleCount = math.max(1, p0.nIter) // A1111: batch count = number of upscales, batch size groups tiles
@@ -156,7 +156,7 @@ class SdUpscalePlugin extends Plugin:
         try
           Support.step(ctx)(ctx.generateTransient(p)) match
             case Some(outs) =>
-              outs.headOption.foreach(o => processed += t -> Support.readImage(o.path))
+              outs.headOption.foreach(o => processed += t -> Support.readImage(ctx, o.path))
               Support.deleteQuietly(outs.map(_.path)*) // transient tiles: the caller deletes them
               done += 1
             case None => running = false
@@ -189,7 +189,7 @@ class OutpaintPlugin extends Plugin:
   override def run(p0: GenerationParams, v: Values, ctx: PluginContext): JobOutput =
     Support.requireImg2Img(p0, name)
     val i0 = p0.img2img.get
-    val img = Support.readImage(i0.initImage)
+    val img = Support.readImage(ctx, i0.initImage)
     val blur = v.int("mask_blur", 4)
     val e = ImageOps.expansion(
       img.getWidth, img.getHeight, v.int("pixels", 128),
@@ -232,7 +232,7 @@ class UpscaleExtrasPlugin extends Plugin:
     def up(src: Path, params: GenerationParams, info: Option[String]): Option[OutputImage] =
       Support.step(ctx)(ctx.upscale(src, upscaler, scale)).map { tmp =>
         val img =
-          try Support.readImage(tmp)
+          try Support.readImage(ctx, tmp)
           finally if tmp != src then Support.deleteQuietly(tmp)
         val gp = params.copy(width = img.getWidth, height = img.getHeight, extra = params.extra ++ post)
         ctx.saveImage(img, "extras", gp, postText(info))

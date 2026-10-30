@@ -77,6 +77,12 @@ case class JobOutput(images: Seq[OutputImage], grids: Seq[OutputImage] = Nil):
 
 /** Services the host offers to plugins. Calls are blocking and run on the job thread. */
 trait PluginContext:
+  /** Whether this job uses an image scrambling session. */
+  def imageScramblingEnabled: Boolean = false
+  /** Whether a job may publish readable video/GIF files. */
+  def plaintextVideoAllowed: Boolean = true
+  def requirePlaintextVideoAllowed(): Unit =
+    if !plaintextVideoAllowed then throw new IllegalStateException("Enable plaintext video export in the image scrambling session first")
   /** Whether this job opted into recording consumed local resource hashes. */
   def resourceHashesEnabled: Boolean = false
   /** Runs one generation (txt2img or img2img depending on params) and saves the images. */
@@ -98,6 +104,8 @@ trait PluginContext:
   def upscale(image: Path, upscaler: String, scale: Double): Path
   /** Saves an arbitrary image (e.g. a grid) to outputs/<kind>/ with the given infotext. */
   def saveImage(img: BufferedImage, kind: String, params: GenerationParams, infotext: String): OutputImage
+  /** Reads a job image using the host image access policy. */
+  def readImage(path: Path): BufferedImage = sdfx.core.png.PngMetadata.readImage(path)
   def tempFile(suffix: String): Path
   def choices(source: ChoiceSource): Seq[String]
   def log(message: String): Unit

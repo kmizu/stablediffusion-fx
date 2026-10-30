@@ -274,11 +274,11 @@ final class EngineSupervisor(
     requestOwned(tpe, params, onEvent, None)
 
   private[engine] def requestOwned(tpe: String, params: ujson.Value, onEvent: EngineEvent => Unit,
-                                   owner: Option[String]): Future[ujson.Value] =
+                                   owner: Option[String], imageSecret: Option[sdfx.core.png.ImageScrambleSecret] = None): Future[ujson.Value] =
     ensureStarted().flatMap { p =>
       val heavy = heavyTypes.contains(tpe)
       if heavy then markBusy(+1, p)
-      p.requestOwned(tpe, params, onEvent, owner).transform { r =>
+      p.requestOwned(tpe, params, onEvent, owner, imageSecret).transform { r =>
         r match
           case Success(v) if tpe == Protocol.Types.LoadModel =>
             lastLoad = Some(params)
@@ -300,13 +300,14 @@ final class EngineSupervisor(
   /** Inform the cancellation gate only after the owned envelope has been written. */
   private[engine] def requestTemporal(params: ujson.Value, onEvent: EngineEvent => Unit,
                                       owner: String, beforeDispatch: () => Future[Boolean],
-                                      onDispatched: () => Unit): Future[ujson.Value] =
+                                      onDispatched: () => Unit,
+                                      imageSecret: Option[sdfx.core.png.ImageScrambleSecret] = None): Future[ujson.Value] =
     ensureStarted().flatMap { p =>
       beforeDispatch().flatMap { admitted =>
         if !admitted then Future.failed(EngineError(Protocol.ErrorCodes.Interrupted, "interrupted before start"))
         else
           markBusy(+1, p)
-          val result = p.requestOwned(Protocol.Types.TemporalLab, params, onEvent, Some(owner))
+          val result = p.requestOwned(Protocol.Types.TemporalLab, params, onEvent, Some(owner), imageSecret)
           onDispatched()
           result.transform { r =>
             markBusy(-1, p)
@@ -317,7 +318,8 @@ final class EngineSupervisor(
 
   private[engine] def requestExtras(kind: String, params: ujson.Value, onEvent: EngineEvent => Unit,
       owner: String, beforeDispatch: () => Future[Boolean], onDispatched: () => Unit,
-      onProcess: EngineProcess => Unit = _ => (), beforeWrite: () => Boolean = () => true): Future[ujson.Value] =
+      onProcess: EngineProcess => Unit = _ => (), beforeWrite: () => Boolean = () => true,
+      imageSecret: Option[sdfx.core.png.ImageScrambleSecret] = None): Future[ujson.Value] =
     ensureStarted().flatMap { p =>
       beforeDispatch().flatMap { admitted =>
         if !admitted then Future.failed(EngineError(Protocol.ErrorCodes.Interrupted, "Extras cancelled before start").markWorkerResponse())
@@ -326,7 +328,7 @@ final class EngineSupervisor(
           if !beforeWrite() then Future.failed(EngineError(Protocol.ErrorCodes.Interrupted, "Extras cancelled before write").markWorkerResponse())
           else
             markBusy(+1, p)
-            val result = p.requestOwned(kind, params, onEvent, Some(owner))
+            val result = p.requestOwned(kind, params, onEvent, Some(owner), imageSecret)
             onDispatched()
             result.transform { r => markBusy(-1, p); r }(using ExecutionContext.parasitic)
       }

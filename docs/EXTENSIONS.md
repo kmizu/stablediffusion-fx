@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 115, todo 187, na 51.
+Totals: done 116, todo 186, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-nui | Scope / notes |
 |---|---|---|---|---|---|
@@ -243,7 +243,7 @@ Totals: done 115, todo 187, na 51.
 | 234 | [DevDark theme](https://github.com/devdarktheme/stable-diffusion-webui-devdark.git) | 22 | na | `webui-css` | styles / JavaScript tweaks of the Gradio web page; the JavaFX UI has its own theme and layout |
 | 235 | [auxiliary API](https://github.com/aria1th/webui-model-uploader.git) | 4 | na | `webui-api` | adds HTTP routes to the A1111 server for other tools; this app's integration surface is MCP |
 | 236 | [TensorRT](https://github.com/NVIDIA/Stable-Diffusion-WebUI-TensorRT) | 1978 | todo | `core:compile` |  |
-| 237 | [encrypt-image](https://github.com/viyiviyi/sd-encrypt-image.git) | 64 | todo | `encrypt_image` |  |
+| 237 | [encrypt-image](https://github.com/viyiviyi/sd-encrypt-image.git) | 64 | done | `core:image-scrambling` | Native session and batch compatibility with upstream pixel permutations. This is not secure encryption; readable metadata and temporary files remain. See encrypt-image-verification.md. |
 | 238 | [NudeNet NSFW Censor](https://github.com/w-e-w/sd-webui-nudenet-nsfw-censor.git) | 139 | todo | `nsfw_checker` |  |
 | 239 | [Latent Consistency Models](https://github.com/0xbitches/sd-webui-lcm.git) | 606 | todo | `lcm` |  |
 | 240 | [CADS](https://github.com/v0xie/sd-webui-cads.git) | 106 | done | `cads` |  |

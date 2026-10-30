@@ -40,6 +40,11 @@ class TemporalLabPresentationSuite extends munit.FunSuite:
     assert(text.contains("result") && text.contains("3") && text.contains("5") && text.contains("10") && text.contains("0.6"))
   }
 
+  test("completion displays unverified legacy password warning") {
+    val result = TemporalLabResult("preview", warnings = Seq("Legacy password is unverified"))
+    assert(TemporalLabPresentation.completion(result).contains("unverified"))
+  }
+
   test("help exposes stage order, overlay first pair duplication, and DFI blur quantization") {
     val dfi = TemporalLabPresentation.dfiHelp.toLowerCase
     val stages = TemporalLabPresentation.deflickerHelp.toLowerCase

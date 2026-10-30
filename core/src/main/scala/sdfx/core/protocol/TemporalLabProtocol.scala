@@ -59,5 +59,6 @@ final case class TemporalLabResult(
     frameIndex: Option[Int] = None,
     previewDimensions: Seq[Int] = Nil,
     generatedPrevious: Option[String] = None,
-    generatedCurrent: Option[String] = None
+    generatedCurrent: Option[String] = None,
+    warnings: Seq[String] = Nil
 ) derives RW

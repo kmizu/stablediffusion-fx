@@ -13,6 +13,19 @@ import scala.util.control.NonFatal
 /** Shared services and callbacks for the views. */
 final class UiContext(val services: AppServices, val catalog: CatalogVM, val stage: Stage):
   val toaster = new Toaster
+  lazy val imageCopyReads = new sdfx.ui.vm.ImageReadGate[ImageFiles.DisplayImage](services.imageScrambleSession,
+    run => sdfx.ui.Fx.run(run()), (path, secret) => ImageFiles.readForDisplay(path, secret))(using sdfx.ui.Fx.bg)
+  private val imageAccessRevision = new javafx.beans.property.SimpleLongProperty(0L)
+  /** Notify views after the shared image session has changed; call on the FX thread. */
+  def imageAccessChanged(): Unit =
+    require(javafx.application.Platform.isFxApplicationThread, "Image access changes must run on the FX thread")
+    imageCopyReads.invalidate()
+    imageAccessRevision.set(imageAccessRevision.get + 1)
+  /** The node retains its listener; the context holds it weakly so discarded views can be collected. */
+  def watchImageAccess(owner: javafx.scene.Node)(f: () => Unit): Unit =
+    val listener: javafx.beans.InvalidationListener = _ => f()
+    owner.getProperties.put(new Object(), listener)
+    imageAccessRevision.addListener(new javafx.beans.WeakInvalidationListener(listener))
   val styles: ObservableList[PromptStyle] = FXCollections.observableArrayList()
   var hiresSeedHistory = new sdfx.ui.vm.HiresSeedHistory
   lazy val hiresPreferences = new javafx.beans.property.SimpleObjectProperty(services.settings.hiresFixTweaks)

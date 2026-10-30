@@ -233,3 +233,94 @@ def test_random_seed_metadata_records_resolved_frame_seed(tmp_path):
     recorder.finish()
     manifest = json.loads((recorder.directory / 'manifest.json').read_text(encoding='utf-8'))
     assert manifest['metadata']['seed'] == 123456
+
+
+def test_protected_frames_are_saved_without_plaintext(tmp_path):
+    import io
+    from pathlib import Path
+    from PIL import Image
+    from sdfx.encrypt_image import decode_png
+    from sdfx.steps_animation import Recorder
+    class Context:
+        def check_interrupt(self): pass
+        def warn(self, message): raise AssertionError(message)
+    recorder = Recorder(tmp_path, {'create_output': False}, Context(), {}, image_password='secret')
+    image = Image.new('RGB', (16, 16))
+    for y in range(16):
+        for x in range(16):
+            image.putpixel((x, y), (x * 15, y * 15, (x + y) * 7))
+    recorder.capture([image], [1], 'base', 1, 1, 0)
+    artifacts = recorder.finish()
+    path = Path(next(a['path'] for a in artifacts if a['type'] == 'image'))
+    with Image.open(path) as scrambled:
+        assert scrambled.info['Encrypt'] == 'pixel_shuffle_3'
+        assert scrambled.tobytes() != image.tobytes()
+    decoded, verified = decode_png(path.read_bytes(), 'secret')
+    with Image.open(io.BytesIO(decoded)) as restored:
+        assert restored.tobytes() == image.tobytes() and verified is True
+
+
+def test_protected_video_requires_explicit_plaintext_export(tmp_path):
+    from sdfx.steps_animation import Recorder
+    class Context:
+        def check_interrupt(self): pass
+    with pytest.raises(EngineError, match='plaintext video export'):
+        Recorder(tmp_path, {}, Context(), {}, image_password='secret')
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_protected_animation_video_matches_plain_frames(tmp_path):
+    import shutil, subprocess
+    from pathlib import Path
+    from PIL import Image
+    from sdfx.steps_animation import Recorder
+    if not shutil.which('ffmpeg'):
+        pytest.skip('ffmpeg required')
+    class Context:
+        def check_interrupt(self): pass
+        def warn(self, message): raise AssertionError(message)
+    opts = {'duration': .5, 'fps': 10, 'interpolation': 'none'}
+    regular = Recorder(tmp_path / 'plain', opts, Context(), {})
+    protected = Recorder(tmp_path / 'protected', opts, Context(), {}, image_password='secret', allow_plaintext_video=True)
+    for i in range(2):
+        image = Image.new('RGB', (32, 32))
+        for y in range(32):
+            for x in range(32):
+                image.putpixel((x, y), (x * 7, y * 7, i * 180))
+        regular.capture([image], [1], 'base', i + 1, i + 1, 0)
+        protected.capture([image], [1], 'base', i + 1, i + 1, 0)
+    plain_video = next(a['path'] for a in regular.finish() if a['type'] == 'video')
+    protected_video = next(a['path'] for a in protected.finish() if a['type'] == 'video')
+    def rgb(path):
+        return subprocess.check_output(['ffmpeg', '-v', 'error', '-i', path, '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'])
+    assert rgb(plain_video) == rgb(protected_video)
+    assert not list(Path(protected.video_directory).glob('.steps-encode-*'))
+
+
+def test_protected_animation_cancellation_removes_plaintext_staging(tmp_path):
+    import shutil
+    from pathlib import Path
+    from PIL import Image
+    from sdfx.steps_animation import Recorder
+    from sdfx.protocol import INTERRUPTED
+    if not shutil.which('ffmpeg'):
+        pytest.skip('ffmpeg required')
+    class Context:
+        cancel = False
+        saw_staging = False
+        def check_interrupt(self):
+            if self.cancel and any(tmp_path.rglob('.steps-encode-*/*.png')):
+                self.saw_staging = True
+                raise EngineError(INTERRUPTED, 'stopped')
+        def warn(self, message): raise AssertionError(message)
+    ctx = Context()
+    rec = Recorder(tmp_path, {'duration': .5}, ctx, {}, image_password='secret', allow_plaintext_video=True)
+    for i in range(2):
+        rec.capture([Image.new('RGB', (32, 32), (i * 200, 0, 0))], [1], 'base', i + 1, i + 1, 0)
+    ctx.cancel = True
+    with pytest.raises(EngineError, match='stopped'):
+        rec.finish()
+    assert ctx.saw_staging
+    assert not list(tmp_path.rglob('.steps-encode-*'))
+    assert not list(Path(rec.video_directory).glob('*.mp4'))
+    assert all(Path(f['path']).is_file() for f in rec.frames)

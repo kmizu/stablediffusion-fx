@@ -81,7 +81,7 @@ S = {
     225: "todo:mov2mov", 226: "todo:easyphoto", 227: "todo:rich_text", 228: "todo:remove_background",
     229: "todo:booru_prompt", 230: "todo:model_downloader", 231: "todo:nsfw_checker", 232: "todo:negpip",
     233: "todo:cd_tuner", 234: "na:webui-css", 235: "na:webui-api", 236: "todo:core:compile",
-    237: "todo:encrypt_image", 238: "todo:nsfw_checker", 239: "todo:lcm", 240: "todo:cads",
+    237: "done:core:image-scrambling", 238: "todo:nsfw_checker", 239: "todo:lcm", 240: "todo:cads",
     241: "todo:face_swap", 242: "todo:hotshot_xl", 243: "done:inpaint_difference", 244: "todo:temporal",
     245: "todo:facechain", 246: "todo:style_selector", 247: "todo:panorama_tools", 248: "todo:core:styles-editor",
     249: "todo:semantic_guidance", 250: "done:core:png-info", 251: "todo:person_mask", 252: "todo:style_variables",
@@ -144,6 +144,7 @@ IMPLEMENTED = {
 
 
 SCOPE_NOTES = {
+    "core:image-scrambling": "Native session and batch compatibility with upstream pixel permutations. This is not secure encryption; readable metadata and temporary files remain. See encrypt-image-verification.md.",
     "token_downsampling": "Native two-depth K/V resampling, requested-step evaluation cutoff, XYZ axes and PNG replay. Actual SD1.5/SDXL extracted-package interruption/recovery verified; explicit PAG/HyperTile conflict and per-pass hires clock adaptation. See token-downsampling-verification.md.",
     "waifu2x": "Nine pinned neural upscalers and native Script Anime/Photo/CARN controls, 2x-16x. RGB output, 64MP bound, first-use weight downloads; exact CPU reference parity and SD1.5/SDXL extracted-package cancellation/recovery verified. See waifu2x-verification.md.",
     "core:vram-estimator": "Native four-mode CUDA calibration/charts, bounded profile history/import/export and compatible live estimates. Vanilla square calibration excludes extensions; bounded real OOM/recovery and SD1.5/SDXL packaged checks recorded in vram-estimator-verification.md.",

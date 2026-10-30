@@ -43,7 +43,8 @@ object RealWdBatchSubmitCheck:
     md.digest().map(b => f"${b & 255}%02x").mkString
 
   def main(args: Array[String]): Unit =
-    require(args.length == 6, "output-dir python checkpoint-file wd-model wd-tags image-file")
+    require(args.length == 6 || args.length == 7, "output-dir python checkpoint-file wd-model wd-tags image-file [protected]")
+    val protectedMode = args.length == 7 && args(6) == "protected"
     val output = Paths.get(args(0)).toAbsolutePath.normalize()
     val python = Paths.get(args(1)).toAbsolutePath.normalize()
     val checkpoint = Paths.get(args(2)).toAbsolutePath.normalize()
@@ -56,9 +57,12 @@ object RealWdBatchSubmitCheck:
     val home = AppHome(Files.createDirectories(run.resolve("home")))
     val inputs = Files.createDirectories(run.resolve("image inputs"))
     val copied = inputs.resolve("input" + input.getFileName.toString.dropWhile(_ != '.'))
-    Files.copy(input, copied, StandardCopyOption.COPY_ATTRIBUTES)
+    if protectedMode then
+      sdfx.core.png.ScrambledPng.write(ImageIO.read(input.toFile), copied, Nil, Some("wd-native-test"))
+    else Files.copy(input, copied, StandardCopyOption.COPY_ATTRIBUTES)
     val copiedSecond = inputs.resolve("second" + input.getFileName.toString.dropWhile(_ != '.'))
-    Files.copy(input, copiedSecond, StandardCopyOption.COPY_ATTRIBUTES)
+    if protectedMode then Files.copy(copied, copiedSecond)
+    else Files.copy(input, copiedSecond, StandardCopyOption.COPY_ATTRIBUTES)
     val watched = Seq(checkpoint, wdModel, wdTags, input, copied, copiedSecond)
     val hashes = watched.map(p => p -> sha(p)).toMap
     val temp = Files.createDirectories(home.root.resolve("wd-temp"))
@@ -83,6 +87,7 @@ object RealWdBatchSubmitCheck:
       val hello = services.start()
       require(!hello.dryRun && hello.features.contains("batch_interrogate_wd_v3_partial"), "real WD worker unavailable")
       val loaded = services.loadCheckpoint(checkpoint.toString, remember = false)
+      if protectedMode then services.imageScrambleSession.unlock("wd-native-test")
       require(Set("sd15", "sdxl")(loaded.kind), s"Unexpected model family ${loaded.kind}")
       window = fx {
         val w = new MainWindow(new Stage(), services, UiState(), CliOptions(), _ => ())
@@ -154,6 +159,13 @@ object RealWdBatchSubmitCheck:
         case e: JobEvent.JobFinished => e.output
         case other => throw new IllegalStateException(s"WD job did not finish: $other")
       require(result.images.size == 2 && result.images.forall(i => Files.isRegularFile(i.path)), "expected two batch output images")
+      if protectedMode then
+        result.images.foreach { image =>
+          require(sdfx.core.png.PngMetadata.readTexts(image.path).get("Encrypt").contains("pixel_shuffle_3"))
+          val decoded = sdfx.core.png.ScrambledPng.read(image.path, Some("wd-native-test"))
+          require(decoded.passwordVerified.contains(true))
+          ImageIO.write(decoded.image, "png", run.resolve("decoded-" + image.path.getFileName.toString).toFile)
+        }
       require(result.images.map(_.path).distinct.size == 2, "batch outputs overlap")
       require(result.images.forall(_.params.prompt != queued.params.prompt), "WD caption did not alter each prompt")
       waitFor("gallery output", 60) { fx { window.galleryVM.items.asScala.exists(_.path == result.images.head.path) } }

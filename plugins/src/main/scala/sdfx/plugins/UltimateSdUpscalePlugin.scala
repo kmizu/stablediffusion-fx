@@ -42,7 +42,7 @@ class UltimateSdUpscalePlugin extends Plugin:
   override def run(p0: GenerationParams, v: Values, ctx: PluginContext): JobOutput =
     Support.requireImg2Img(p0, name)
     val i0 = p0.img2img.get
-    val src = Support.readImage(i0.initImage)
+    val src = Support.readImage(ctx, i0.initImage)
     val (tw0, th0) = (v.int("tile_width", 512), v.int("tile_height", 0))
     val tw = if tw0 > 0 then tw0 else if th0 > 0 then th0 else p0.width
     val th = if th0 > 0 then th0 else tw
@@ -58,7 +58,7 @@ class UltimateSdUpscalePlugin extends Plugin:
       case None    => return JobOutput(Nil)
     var cur =
       try
-        val up = Support.readImage(upPath)
+        val up = Support.readImage(ctx, upPath)
         if up.getWidth == outW && up.getHeight == outH then up else ImageOps.resize(up, outW, outH)
       finally if upPath.toString != i0.initImage then Support.deleteQuietly(upPath)
 
@@ -88,7 +88,7 @@ class UltimateSdUpscalePlugin extends Plugin:
       try
         Support.step(ctx)(ctx.generateTransient(p)) match
           case Some(outs) =>
-            outs.headOption.foreach(o => cur = Support.readImage(o.path))
+            outs.headOption.foreach(o => cur = Support.readImage(ctx, o.path))
             Support.deleteQuietly(outs.map(_.path)*)
             done += 1
             true

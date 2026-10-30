@@ -19,6 +19,7 @@ lazy val fxDeps = Seq("base", "graphics", "controls", "swing").map(m => "org.ope
 lazy val commonSettings = Seq(
   libraryDependencies ++= Seq(
     "com.lihaoyi" %% "upickle" % upickleV,
+    "com.twelvemonkeys.imageio" % "imageio-webp" % "3.12.0",
     "org.scalameta" %% "munit" % munitV % Test
   ),
   Test / fork := true,

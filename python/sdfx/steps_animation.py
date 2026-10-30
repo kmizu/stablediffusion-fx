@@ -42,7 +42,7 @@ def normalize(raw):
     return settings
 
 
-def encode_frames(frames, target, settings, ctx, metadata):
+def encode_frames(frames, target, settings, ctx, metadata, image_password=None):
     """Encode owned captured frames; preserve source PNGs on any export failure."""
     import json
     import shutil
@@ -81,6 +81,11 @@ def encode_frames(frames, target, settings, ctx, metadata):
     with tempfile.TemporaryDirectory(prefix='.steps-encode-', dir=target.parent) as temporary:
         for index, source in enumerate(frames):
             ctx.check_interrupt()
+            if image_password:
+                import io
+                from .encrypt_image import decode_png
+                decoded, _ = decode_png(Path(source).read_bytes(), image_password)
+                source = io.BytesIO(decoded)
             with Image.open(source) as image:
                 ImageOps.pad(image.convert('RGB'), (width, height), color='black').save(Path(temporary) / f'{index:06d}.png')
         args = [executable, '-nostdin', '-n', '-v', 'error', '-framerate', f'{rate:g}', '-i',
@@ -126,12 +131,15 @@ def scoped_directory(root, relative):
 
 
 class Recorder(IntermediateRecorder):
-    def __init__(self, output_dir, raw, ctx, metadata):
+    def __init__(self, output_dir, raw, ctx, metadata, image_password=None, allow_plaintext_video=False):
         import shutil, tempfile
         from pathlib import Path
         from . import save_intermediate
         from .protocol import UNSUPPORTED
         self.settings = normalize(raw)
+        if image_password and self.settings['create_output'] and not allow_plaintext_video:
+            raise EngineError(UNSUPPORTED, 'steps animation: plaintext video export requires explicit permission')
+        self.image_password = image_password
         if self.settings['create_output'] and not shutil.which('ffmpeg'):
             raise EngineError(UNSUPPORTED, 'steps animation: ffmpeg is required')
         self.c = save_intermediate.normalize(dict(every_n=1, start_at=self.settings['skip_initial'] + 1,
@@ -195,7 +203,11 @@ class Recorder(IntermediateRecorder):
             extension = {'vp9': 'webm', 'prores': 'mov'}.get(self.settings['codec'], 'mp4')
             target = self.video_directory / f'{self.directory.name}.{extension}'
             try:
-                encode_frames([frame['path'] for frame in self.frames], target, self.settings, self.ctx, self.metadata)
+                args = ([frame['path'] for frame in self.frames], target, self.settings, self.ctx, self.metadata)
+                if self.image_password:
+                    encode_frames(*args, image_password=self.image_password)
+                else:
+                    encode_frames(*args)
                 self.artifacts.append(dict(type='video', path=str(target), frames=len(self.frames), format=extension))
                 if self.settings['delete_intermediate']:
                     for frame in self.frames:

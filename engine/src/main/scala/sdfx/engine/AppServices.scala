@@ -36,6 +36,7 @@ final class AppServices(
   def settings: Settings = _settings
   def settingsRecovery: Option[SettingsRecovery] = _settingsRecovery
   val cardPreviews: CardPreviewSession = new CardPreviewSession(initialSettings.nsfwCardBlurDefault)
+  val imageScrambleSession = new sdfx.core.png.ImageScrambleSession
 
   /** Updates (and saves) the settings. */
   def updateSettings(f: Settings => Settings): Settings = synchronized {
@@ -178,6 +179,7 @@ final class AppServices(
     galleryIndex
 
   def shutdown(): Unit =
+    imageScrambleSession.lock()
     shutdownHook.foreach(t =>
       try Runtime.getRuntime.removeShutdownHook(t)
       catch case _: IllegalStateException => ()

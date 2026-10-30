@@ -203,11 +203,12 @@ object RealImageComparisonCheck:
           "New source pair lost zoom/pan or failed to reset reveal/opacity")
       }
       checks :+= "actual decode completion preserves later draft/Clear and shared transforms"
-      val savedView = fx {
+      fx {
         window.select(Mode.Txt2Img)
         window.preview.show(a)
-        window.preview.zoom.image
       }
+      eventually("saved preview loaded") { fx { window.preview.zoom.image != null && window.preview.zoom.getUserData == a } }
+      val savedView = fx { window.preview.zoom.image }
       fx { window.preview.showLive(java.util.Base64.getEncoder.encodeToString(Files.readAllBytes(b))) }
       eventually("live replacement published") { fx { window.preview.zoom.image ne savedView } }
       fx {

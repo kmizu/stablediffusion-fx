@@ -5,6 +5,7 @@ import java.awt.image.BufferedImage
 import java.nio.file.{Files, Path}
 import javax.imageio.ImageIO
 import sdfx.core.infotext.Infotext
+import sdfx.core.png.{ImageScrambleSecret, ScrambledPng}
 
 /** Pure comparison geometry and pixels. Input images and their metadata are never changed. */
 object ImageComparison:
@@ -51,13 +52,16 @@ object ImageComparison:
     output
 
   /** Explicit export only; also rejects hardlink/symlink aliases to either original. */
-  def exportPng(image: BufferedImage, destination: Path, originals: Seq[Path]): Unit =
+  def exportPng(image: BufferedImage, destination: Path, originals: Seq[Path],
+      secret: Option[ImageScrambleSecret] = None): Unit =
     val dst = destination.toAbsolutePath.normalize()
     require(!originals.exists { source =>
       source.toAbsolutePath.normalize() == dst ||
         (Files.exists(dst) && Files.exists(source) && Files.isSameFile(dst, source))
     }, "Choose a new file: comparison export must not overwrite either original")
-    require(ImageIO.write(image, "png", dst.toFile), "PNG writer unavailable")
+    secret match
+      case Some(value) => value.use(pass => ScrambledPng.write(image, dst, Nil, Some(pass)))
+      case None => require(ImageIO.write(image, "png", dst.toFile), "PNG writer unavailable")
 
   case class Term(text: String, changed: Boolean)
   case class Parameter(key: String, a: Option[String], b: Option[String]):

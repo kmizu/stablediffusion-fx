@@ -28,7 +28,8 @@ final case class Job(
     limits: JobLimits = JobLimits(),
     submittedContext: Option[SubmittedPayloadContext] = None,
     captureOptions: Option[CaptureOptions] = None,
-    wdBatch: Option[WdBatchSpec] = None
+    wdBatch: Option[WdBatchSpec] = None,
+    imageSecret: Option[sdfx.core.png.ImageScrambleSecret] = None
 )
 
 /** Explicit partial WD operation: folder and a new destination directory. */
@@ -80,7 +81,9 @@ object JobRunner:
         val images = ctx.generate(job.params)
         val grids =
           if images.size > 1 && !ctx.isInterrupted && GridNumbers.enabled(images.head.params.extra) then
-            val tiles = images.map(o => GridNumbers.render(PngMetadata.readImage(o.path), o.path.getFileName.toString, o.params.extra))
+            val tiles = images.map(o => GridNumbers.render(
+              sdfx.core.png.ScrambledPng.read(o.path, job.imageSecret.map(_.use(identity))).image,
+              o.path.getFileName.toString, o.params.extra))
             val mapping = ujson.Arr.from(images.map(o => ujson.Obj("filename" -> o.path.getFileName.toString,
               "seed" -> o.seed, "number" -> GridNumbers.number(o.path.getFileName.toString).map(ujson.Str(_)).getOrElse(ujson.Null))))
             val p = images.head.params.copy(seed = images.head.seed,
@@ -254,6 +257,7 @@ final class JobQueue(generator: Generator, interruptEngine: Option[String] => Fu
     val listener = new GenerationListener:
       override private[engine] def onEngineInterrupted(): Unit = flag.set(true)
       override def interruptionOwner: Option[String] = Some(e.interruptionOwner)
+      override private[engine] def imageSecret: Option[sdfx.core.png.ImageScrambleSecret] = e.job.imageSecret
       override private[engine] def wdBatchControl: Option[ExtrasBatchControl] = e.wdControl
       override private[engine] def payloadJobId: Option[String] = Some(id)
       override private[engine] def submittedPayloadContext: Option[SubmittedPayloadContext] = e.job.submittedContext

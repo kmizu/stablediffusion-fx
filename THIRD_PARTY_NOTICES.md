@@ -16,6 +16,8 @@ description of their behaviour only.
 
 | Project | Use | License | What |
 |---|---|---|---|
+| [haraldk/TwelveMonkeys](https://github.com/haraldk/TwelveMonkeys) | dependency | BSD-3-Clause ([text](licenses/haraldk__TwelveMonkeys.txt)) | Bundled TwelveMonkeys ImageIO WebP reader 3.12.0 and its supporting modules |
+| [viyiviyi/sd-encrypt-image](https://github.com/viyiviyi/sd-encrypt-image) | reimplemented | AGPL-3.0 ([text](licenses/viyiviyi__sd-encrypt-image.txt)) | AGPL-3.0 behavior reference 3a44d3c264632aa90442bdc50e42af0770289bfd; independently implemented pixel-scrambling compatibility; upstream core used only for reference fixtures |
 | [PladsElsker/sd-webui-inpaint-difference](https://github.com/PladsElsker/sd-webui-inpaint-difference) | reimplemented | MIT ([text](licenses/PladsElsker__sd-webui-inpaint-difference.txt)) | MIT behavior reference 656eed0a214186f4fb12fd6100fef582a01558bf; native difference masks and preview; upstream pure functions used only for test fixtures |
 | [w-e-w/sd-webui-hires-fix-tweaks](https://github.com/w-e-w/sd-webui-hires-fix-tweaks) | reimplemented | AGPL-3.0 ([text](licenses/w-e-w__sd-webui-hires-fix-tweaks.txt)) | AGPL3 behavior reference 28902f742a795afc31d86641ad85466afdd280e6; native Hires prompt modes, repeats/seeds, styles and workflow settings; original pure prompt functions used only for reference test fixtures |
 | [feffy380/sd-webui-token-downsampling](https://github.com/feffy380/sd-webui-token-downsampling) | reimplemented | MIT ([text](licenses/feffy380__sd-webui-token-downsampling.txt)) | MIT behavior reference f1f1cbae82b75d5658b08abbc3cb8ddc0b876cc5; native two-depth K/V nearest-exact downsampling, evaluation cutoff and XYZ controls |
@@ -109,6 +111,7 @@ description of their behaviour only.
 | [Haoming02/sd-webui-resharpen](https://github.com/Haoming02/sd-webui-resharpen) | reimplemented | MIT ([text](licenses/Haoming02__sd-webui-resharpen.txt)) | extension rewritten as ReSharpen -> `resharpen` |
 | [Haoming02/sd-webui-vectorscope-cc](https://github.com/Haoming02/sd-webui-vectorscope-cc) | reimplemented | MIT ([text](licenses/Haoming02__sd-webui-vectorscope-cc.txt)) | extension rewritten as SD Webui Vectorscope CC -> `vectorscope_cc` |
 | [John-WL/sd-webui-inpaint-background](https://github.com/John-WL/sd-webui-inpaint-background) | reimplemented | MIT ([text](licenses/John-WL__sd-webui-inpaint-background.txt)) | extension rewritten as Inpaint background -> `inpaint_background` |
+| [John-WL/sd-webui-inpaint-difference](https://github.com/John-WL/sd-webui-inpaint-difference) | reimplemented | MIT ([text](licenses/John-WL__sd-webui-inpaint-difference.txt)) | extension rewritten as Inpaint difference -> `inpaint_difference` |
 | [Kryptortio/SDAtom-WebUi-client-queue-ext](https://github.com/Kryptortio/SDAtom-WebUi-client-queue-ext) | reimplemented | no license file published | extension rewritten as Web UI client queue -> `core:job-queue` |
 | [KutsuyaYuki/ABG_extension](https://github.com/KutsuyaYuki/ABG_extension) | reimplemented | no license file published | extension rewritten as ABG_extension -> `remove_background` |
 | [LEv145/--sd-webui-ar-plus](https://github.com/LEv145/--sd-webui-ar-plus) | reimplemented | no license file published | extension rewritten as Aspect Ratio selector plus -> `core:size-presets` |

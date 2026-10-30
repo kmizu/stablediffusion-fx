@@ -204,6 +204,10 @@ final class TemporalLabTab(ctx: UiContext):
     previewDescription.setText("Inputs changed. Run preview or processing again.")
     changingSeek = true
     try { seek.setMax(0); seek.setValue(0) } finally changingSeek = false
+  ctx.watchImageAccess(node) { () =>
+    clearPreview()
+    state.result.flatMap(_.outputDir).foreach(loadFrames)
+  }
   val invalidateListener: javafx.beans.InvalidationListener = _ => { state.invalidate(); clearPreview() }
   Seq(reference, generated, frames, style, videoFrames, video, outputParent, outputName,
     sourceDenoise, tolerance, expand, smooth, interDenoise, interSize, interFrequency, interBlur,
@@ -223,11 +227,12 @@ final class TemporalLabTab(ctx: UiContext):
         case Right(ticket) =>
           busy(true); status.setText("Queued…"); progress.setProgress(0); activeTicket = Some(ticket)
           clearPreview()
+          val session = ctx.services.imageScrambleSession.state
           val handle = ctx.services.client.temporalLab(request, event => event match
             case p: EngineEvent.Progress => Fx.run {
               if !closed then { state.progress(ticket, p.step, p.total); progress.setProgress(state.progressFraction); status.setText(state.status) }
             }
-            case _ => ())
+            case _ => (), session.secret)
           active = Some(handle)
           Fx.onFx(handle.result) { result =>
             if !closed then
@@ -235,7 +240,9 @@ final class TemporalLabTab(ctx: UiContext):
               if state.result.contains(result) then
                 status.setText(TemporalLabPresentation.completion(result))
                 progress.setProgress(1)
-                if request.isInstanceOf[TemporalLabPreview] then showMask(result)
+                if request.isInstanceOf[TemporalLabPreview] then
+                  if session.revision == ctx.services.imageScrambleSession.state.revision then showMask(result)
+                  else previewDescription.setText("Image access changed. Run preview again to view the result.")
                 else result.outputDir.foreach(loadFrames)
           } { error =>
             if !closed then
@@ -278,7 +285,7 @@ final class TemporalLabTab(ctx: UiContext):
     } { e => if !closed && revision == previewRevision then previewDescription.setText(s"Cannot read output frames: ${Fx.message(e)}") }
   private def loadPreview(slot: String, path: Path, done: Either[String, Image] => Unit): () => Unit =
     var cancelled = false
-    var image: Option[Image] = None
+    val session = ctx.services.imageScrambleSession.state
     // Bound file size and decoded source dimensions off the FX thread before asking JavaFX to load it.
     Fx.async {
       require(Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS), "Not a regular image file")
@@ -295,19 +302,15 @@ final class TemporalLabTab(ctx: UiContext):
           require(width > 0 && height > 0 && width.toLong * height <= 16000000L, "Image dimensions exceed preview limit")
         finally reader.dispose()
       }
-    } { _ =>
-      if !cancelled && !closed then
-        try
-          val candidate = new Image(path.toUri.toString, 1024, 1024, true, true, true)
-          image = Some(candidate)
-          ImageFiles.whenLoaded(candidate) {
-            if !cancelled && !closed then
-              if candidate.isError then done(Left(Option(candidate.getException).map(Fx.message).getOrElse("Image decode failed")))
-              else done(Right(candidate))
-          }
-        catch case NonFatal(e) => done(Left(Fx.message(e)))
-    } { e => if !cancelled && !closed then done(Left(Fx.message(e))) }
-    () => { cancelled = true; image.foreach(_.cancel()) }
+      ImageFiles.readThumbnail(path, session.secret, 1024).image
+    } { candidate =>
+      if !closed then
+        if !cancelled && session.revision == ctx.services.imageScrambleSession.state.revision then done(Right(candidate))
+        else done(Left("Image access changed"))
+    } { e =>
+      if !closed then done(Left(if cancelled then "Image access changed" else Fx.message(e)))
+    }
+    () => { cancelled = true }
   private def showSlot(name: String, path: Path, view: ImageView): Unit =
     previewSlots.show(name, path, value => {
       view.setImage(value)

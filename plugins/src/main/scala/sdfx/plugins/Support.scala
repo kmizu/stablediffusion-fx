@@ -23,6 +23,8 @@ object Support:
     if img == null then throw new IllegalStateException(s"cannot read image: $path") else img
 
   def readImage(path: String): BufferedImage = readImage(Paths.get(path))
+  def readImage(ctx: PluginContext, path: Path): BufferedImage = ctx.readImage(path)
+  def readImage(ctx: PluginContext, path: String): BufferedImage = ctx.readImage(Paths.get(path))
 
   def writeTemp(ctx: PluginContext, img: BufferedImage): Path =
     val p = ctx.tempFile(".png")
@@ -37,8 +39,8 @@ object Support:
     if p.img2img.isEmpty then throw new IllegalArgumentException(s"$plugin needs an img2img init image")
 
   /** Image of a cell: the first output, like A1111 (`processed.images[0]`); other batch images stay sub images. */
-  def gridTile(o: OutputImage): BufferedImage = GridNumbers.render(readImage(o.path), o.path.getFileName.toString, o.params.extra)
-  def cellImage(outs: Seq[OutputImage]): Option[BufferedImage] = outs.headOption.map(gridTile)
+  def gridTile(ctx: PluginContext, o: OutputImage): BufferedImage = GridNumbers.render(ctx.readImage(o.path), o.path.getFileName.toString, o.params.extra)
+  def cellImage(ctx: PluginContext, outs: Seq[OutputImage]): Option[BufferedImage] = outs.headOption.map(o => gridTile(ctx, o))
 
   /** Keep native display controls and the exact saved-source correspondence on derived grid PNGs. */
   def gridParams(base: GenerationParams, outs: Seq[OutputImage]): GenerationParams =

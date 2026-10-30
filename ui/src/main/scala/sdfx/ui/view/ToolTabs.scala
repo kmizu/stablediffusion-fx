@@ -116,11 +116,28 @@ final class ExtrasTab(ctx: UiContext, initialUpscaler: String, initialScale: Dou
   spinner.setVisible(false)
   spinner.setPrefSize(22, 22)
 
+  private val resultReads = new sdfx.ui.vm.ImageReadGate[ImageFiles.DisplayImage](ctx.services.imageScrambleSession,
+    run => Fx.run(run()), (path, secret) => ImageFiles.readForDisplay(path, secret))(using Fx.bg)
   def showResult(path: Path): Unit =
     result.set(path.toString)
     resultView.setUserData(path)
-    ImageFiles.load(path.toString).foreach(resultView.setImage)
-    resultInfo.setText(path.toString)
+    resultView.setImage(null)
+    resultInfo.setText("Loading image…")
+    resultReads.request(path) {
+      case scala.util.Success(display) if resultView.getUserData == path =>
+        resultView.setImage(display.image)
+        resultInfo.setText(path.toString + (if display.scrambled && display.passwordVerified.isEmpty then " · password unverified" else ""))
+      case scala.util.Failure(error) if resultView.getUserData == path =>
+        resultView.setImage(null)
+        resultInfo.setText("Cannot display image: " + Fx.message(error).stripPrefix("requirement failed: "))
+      case _ => ()
+    }
+
+  def refreshImageAccess(): Unit =
+    drop.refreshImageAccess()
+    correctionDrop.refreshImageAccess()
+    resultReads.invalidate()
+    Option(result.get).filter(_.nonEmpty).foreach(p => showResult(Paths.get(p)))
 
   private val run: Button = W.button("⤢ Upscale", "Upscale the image with the selected upscaler", Seq("accent-button"))(upscale())
   private def upscale(): Unit =
@@ -135,12 +152,16 @@ final class ExtrasTab(ctx: UiContext, initialUpscaler: String, initialScale: Dou
         spinner.setVisible(true)
         val sc = scale.get
         val submittedRevision = inputRevision
-        Fx.async(ctx.services.generator.upscaleImage(Paths.get(s), u, sc)) { out =>
+        val session = ctx.services.imageScrambleSession.state
+        Fx.async(ctx.services.generator.upscaleImage(Paths.get(s), u, sc, secret = session.secret,
+          warn = message => Fx.run(ctx.info(message)))) { out =>
           run.setDisable(false)
           correct.setDisable(false)
           spinner.setVisible(false)
-          if inputRevision == submittedRevision then showResult(out)
-          ctx.success("Upscaled")
+          if inputRevision == submittedRevision && session.revision == ctx.services.imageScrambleSession.state.revision then
+            showResult(out)
+            ctx.success("Upscaled")
+          else Fx.async(java.nio.file.Files.deleteIfExists(out))(_ => ())(_ => ())
         } { e =>
           run.setDisable(false)
           correct.setDisable(false)
@@ -162,6 +183,10 @@ final class ExtrasTab(ctx: UiContext, initialUpscaler: String, initialScale: Dou
 
   private[ui] val correctionReference = new SimpleStringProperty("")
   private val correctionDrop = new ImageDropZone(ctx, correctionReference, "Optional color reference (empty uses original input)", 160)
+  ctx.watchImageAccess(resultView)(() => {
+    resultReads.invalidate()
+    Option(result.get).filter(_.nonEmpty).foreach(p => showResult(Paths.get(p)))
+  })
   private val correctionMethod = new SimpleStringProperty("A1111")
   private val correctionStrength = new SimpleDoubleProperty(1)
   private val correctionAll = new CheckBox("Also output other methods")
@@ -173,6 +198,7 @@ final class ExtrasTab(ctx: UiContext, initialUpscaler: String, initialScale: Dou
       case None => ctx.info("Add an image first")
       case Some(original) =>
         val submittedRevision = inputRevision
+        val session = ctx.services.imageScrambleSession.state
         val target = Option(result.get).filter(_.nonEmpty).getOrElse(original)
         val reference = Option(correctionReference.get).filter(_.nonEmpty).getOrElse(original)
         val values = sdfx.core.plugins.api.Values(Map("reference" -> reference,
@@ -182,11 +208,12 @@ final class ExtrasTab(ctx: UiContext, initialUpscaler: String, initialScale: Dou
         correct.setDisable(true)
         run.setDisable(true)
         spinner.setVisible(true)
-        Fx.async(new sdfx.plugins.ColorCorrectionPlugin().run(params, values, ctx.services.generator)) { output =>
+        Fx.async(new sdfx.plugins.ColorCorrectionPlugin().run(params, values,
+          ctx.services.generator.forImageSession(session.secret, message => Fx.run(ctx.info(message))))) { output =>
           correct.setDisable(false)
           run.setDisable(false)
           spinner.setVisible(false)
-          if inputRevision == submittedRevision then
+          if inputRevision == submittedRevision && session.revision == ctx.services.imageScrambleSession.state.revision then
             val entries = output.images.zipWithIndex.map { (o, index) =>
               val method = Infotext.parse(o.infotext).fields.getOrElse("Color Correction",
                 if index == 0 then values.str("method") else s"Output ${index + 1}")
@@ -220,7 +247,7 @@ final class ExtrasTab(ctx: UiContext, initialUpscaler: String, initialScale: Dou
     6, compareButton,
     W.button("⇢ img2img", "Use the result as img2img init image")(Option(result.get).filter(_.nonEmpty).foreach(p => ctx.sendToTab(Mode.Img2Img, Paths.get(p), None))),
     W.button("⇢ Inpaint", "Use the result for inpainting")(Option(result.get).filter(_.nonEmpty).foreach(p => ctx.sendToTab(Mode.Inpaint, Paths.get(p), None))),
-    W.iconButton("⧉", "Copy the result")(Option(result.get).filter(_.nonEmpty).foreach(p => ImageActions.copyImage(Paths.get(p)))),
+    W.iconButton("⧉", "Copy the result")(Option(result.get).filter(_.nonEmpty).foreach(p => ImageActions.copyImage(ctx, Paths.get(p)))),
     W.iconButton("▤", "Show in folder")(Option(result.get).filter(_.nonEmpty).foreach(p => ImageActions.openFolder(Paths.get(p))))
   )
 

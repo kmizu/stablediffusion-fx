@@ -84,3 +84,17 @@ class SeamlessTileSuite extends munit.FunSuite:
     val sent = ctx.transientCalls.head.img2img.get
     assert(!Files.exists(Paths.get(sent.initImage)))
     assert(!Files.exists(Paths.get(sent.mask.get)))
+
+
+  test("scrambled input is decoded through the job context before tile processing"):
+    val password = "session secret"
+    val ctx = new FakeContext(echoInit = true):
+      override def readImage(path: java.nio.file.Path): java.awt.image.BufferedImage =
+        sdfx.core.png.ScrambledPng.read(path, Some(password)).image
+    val source = Paths.get(ctx.gradientInit(64, 48))
+    val original = Support.readImage(source)
+    sdfx.core.png.ScrambledPng.write(original, source, Nil, Some(password))
+    val p = GenerationParams(width = 64, height = 48, seed = 5, img2img = Some(Img2ImgParams(source.toString)))
+    val result = new SeamlessTilePlugin().run(p, values(), ctx)
+    val decoded = Support.readImage(result.images.head.path)
+    assert(original.getRGB(0, 0, 64, 48, null, 0, 64).sameElements(decoded.getRGB(0, 0, 64, 48, null, 0, 64)))

@@ -578,7 +578,11 @@ final class McpTools(
     val checkedValues = values.map { (k, v) =>
       if !imageKeys.contains(k) then k -> v
       else k -> v.split("[\\r\\n]+").map(_.trim).filter(_.nonEmpty)
-        .map(spec => pathPolicy.resolve(spec, s"values.$k", outputsDir).toString).mkString("\n")
+        .map { spec =>
+          val path = pathPolicy.resolve(spec, s"values.$k", outputsDir)
+          Images.rejectProtectedPng(path, s"values.$k")
+          path.toString
+        }.mkString("\n")
     }
     val pObj = a.objOpt("params").getOrElse(ujson.Obj())
     val img2img = pObj.value.get("init_image").exists(_ != ujson.Null)
@@ -743,6 +747,7 @@ final class McpTools(
         val names = args.strList("input_paths").getOrElse(throw ToolError("input_paths is required"))
         if names.isEmpty || names.size > 64 then throw ToolError("input_paths must contain 1 to 64 files")
         val paths = names.map(p => pathPolicy.resolve(p, "input_paths", outputsDir.toAbsolutePath))
+        paths.foreach(p => Images.rejectProtectedPng(p, "input_paths"))
         val weights = args.str("approx_nn_path").filter(_.nonEmpty).map(p => pathPolicy.resolve(p, "approx_nn_path", outputsDir.toAbsolutePath).toString).getOrElse("")
         ready(ctx)
         val result = Await.result(new VaeToolsService(services).run(paths,

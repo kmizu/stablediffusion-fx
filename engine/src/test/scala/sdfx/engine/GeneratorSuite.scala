@@ -15,6 +15,20 @@ class GeneratorSuite extends munit.FunSuite:
 
   override val munitTimeout: Duration = 120.seconds
 
+  test("video policy follows the job snapshot and blocks img2vid before dispatch") {
+    val session = new sdfx.core.png.ImageScrambleSession
+    session.unlock("secret")
+    val denied = services.generator.forImageSession(session.snapshot)
+    assert(!denied.plaintextVideoAllowed)
+    val error = intercept[IllegalStateException](denied.engineCall("img2vid", ujson.Obj()))
+    assert(error.getMessage.contains("plaintext video"))
+    session.setPlaintextVideoAllowed(true)
+    val allowed = services.generator.forImageSession(session.snapshot)
+    assert(allowed.plaintextVideoAllowed && !denied.plaintextVideoAllowed)
+    session.lock()
+    assert(services.generator.forImageSession(session.snapshot).plaintextVideoAllowed)
+  }
+
   test("intermediate captures use a persistent destination without recording machine paths") {
     val p = GenerationParams(seed = 5, hooks = Map("save_intermediate" -> ujson.Obj("every_n" -> 2,
       "output_dir" -> "../../untrusted")))
@@ -156,6 +170,97 @@ class GeneratorSuite extends munit.FunSuite:
     // the counter continues
     val next = services.generator.generate(p.copy(seed = 42, batchSize = 1, styles = Nil))
     assertEquals(next.head.path.getFileName.toString, "00002-42.png")
+  }
+
+  test("scrambled img2img input is decoded for worker and cleaned after generation") {
+    val src = home.root.resolve("protected-input.png")
+    val original = new java.awt.image.BufferedImage(8, 8, java.awt.image.BufferedImage.TYPE_INT_RGB)
+    for y <- 0 until 8; x <- 0 until 8 do original.setRGB(x, y, (x << 16) | (y << 8) | 7)
+    sdfx.core.png.ScrambledPng.write(original, src, Nil, Some("secret"))
+    val session = new sdfx.core.png.ImageScrambleSession
+    session.unlock("secret")
+    var observed: Option[java.nio.file.Path] = None
+    var pixels: Array[Int] = Array.emptyIntArray
+    var assets = ""
+    val listener = new GenerationListener:
+      override private[engine] def imageSecret = session.snapshot
+      override private[engine] def payloadCaptureOptions = Some(CaptureOptions(includeImageContents = true))
+      override def onPreparedRequest(snapshot: sdfx.core.payload.PayloadSnapshot): Unit =
+        assets = snapshot.assetsJson.getOrElse("")
+        val body = ujson.read(snapshot.bodyJson.get)
+        val path = java.nio.file.Paths.get(body("params")("img2img")("init_image").str)
+        observed = Some(path)
+        pixels = PngMetadata.readImage(path).getRGB(0, 0, 8, 8, null, 0, 8)
+    try
+      val p = GenerationParams(seed = 4, steps = 1, width = 64, height = 64, img2img = Some(Img2ImgParams(src.toString)))
+      val out = services.generator.generateWith(p, listener)
+      assertEquals(out.size, 1)
+      assert(observed.nonEmpty && observed.get != src)
+      assert(original.getRGB(0, 0, 8, 8, null, 0, 8).sameElements(pixels))
+      assert(!Files.exists(observed.get))
+      assert(!assets.contains("png_data_url"))
+      observed = None
+      intercept[EngineError](services.generator.generateWith(p.copy(extra = Map("force_error" -> "internal")), listener))
+      assert(observed.nonEmpty && !Files.exists(observed.get))
+      assertEquals(PngMetadata.readTexts(src).get("Encrypt"), Some("pixel_shuffle_3"))
+    finally Files.deleteIfExists(src)
+  }
+
+  test("worker input paths for mask, ControlNet and image hooks are decoded together") {
+    val src = home.root.resolve("protected-input-many.png")
+    val image = new java.awt.image.BufferedImage(8, 8, java.awt.image.BufferedImage.TYPE_INT_RGB)
+    for y <- 0 until 8; x <- 0 until 8 do image.setRGB(x, y, (x << 16) | (y << 8) | 7)
+    sdfx.core.png.ScrambledPng.write(image, src, Nil, Some("secret"))
+    val session = new sdfx.core.png.ImageScrambleSession; session.unlock("secret")
+    var paths = Seq.empty[java.nio.file.Path]
+    var images = Seq.empty[Array[Int]]
+    val listener = new GenerationListener:
+      override private[engine] def imageSecret = session.snapshot
+      override def onPreparedRequest(snapshot: sdfx.core.payload.PayloadSnapshot): Unit =
+        val params = ujson.read(snapshot.bodyJson.get)("params")
+        val values = Seq(params("img2img")("init_image").str, params("img2img")("mask").str,
+          params("controlnet")(0)("image").str, params("hooks")("inpaint_difference")("base_path").str,
+          params("hooks")("reference")("image").str, params("hooks")("photomaker")("images")(0).str)
+        paths = values.map(java.nio.file.Paths.get(_))
+        images = paths.map(p => PngMetadata.readImage(p).getRGB(0, 0, 8, 8, null, 0, 8))
+    try
+      val path = src.toString
+      val p = GenerationParams(seed = 4, steps = 1, width = 64, height = 64,
+        img2img = Some(Img2ImgParams(path, mask = Some(path))),
+        controlnet = Seq(sdfx.core.model.ControlNetUnit(image = Some(path))),
+        hooks = Map("inpaint_difference" -> ujson.Obj("base_path" -> path),
+          "reference" -> ujson.Obj("image" -> path), "photomaker" -> ujson.Obj("images" -> ujson.Arr(path))))
+      services.generator.generateWith(p, listener)
+      assertEquals(paths.size, 6)
+      assert(paths.forall(_ != src))
+      assert(images.forall(_.sameElements(image.getRGB(0, 0, 8, 8, null, 0, 8))))
+      assert(paths.forall(p => !Files.exists(p)))
+      assertEquals(PngMetadata.readTexts(src).get("Encrypt"), Some("pixel_shuffle_3"))
+    finally Files.deleteIfExists(src)
+  }
+
+  test("direct image tools use a captured session secret and clean worker inputs") {
+    val src = home.root.resolve("protected-tool.png")
+    val image = new java.awt.image.BufferedImage(8, 8, java.awt.image.BufferedImage.TYPE_INT_RGB)
+    sdfx.core.png.ScrambledPng.write(image, src, Nil, Some("direct secret"))
+    val session = new sdfx.core.png.ImageScrambleSession; session.unlock("direct secret")
+    val snapshot = session.snapshot
+    session.lock()
+    try
+      services.generator.upscaleImage(src, "Lanczos", 2, secret = snapshot)
+      val upscale = java.nio.file.Paths.get(await(services.client.raw("get_state"))("last_extra")("params")("image_path").str)
+      assertNotEquals(upscale, src); assert(!Files.exists(upscale))
+      services.generator.preprocess(src, "canny", secret = snapshot)
+      val pre = java.nio.file.Paths.get(await(services.client.raw("get_state"))("last_extra")("params")("image_path").str)
+      assertNotEquals(pre, src); assert(!Files.exists(pre))
+      val context = services.generator.forImageSession(snapshot)
+      val decoded = context.readImage(src)
+      assertEquals(decoded.getWidth, 8)
+      val out = context.saveImage(decoded, "direct-test", GenerationParams(seed = 8), "test")
+      assertEquals(PngMetadata.readTexts(out.path).get("Encrypt"), Some("pixel_shuffle_3"))
+      assert(!out.toString.contains("direct secret"))
+      intercept[IllegalArgumentException](services.generator.upscaleImage(src, "Lanczos", 2))
+    finally Files.deleteIfExists(src)
   }
 
   test("checkpoint and VAE switching follow params") {

@@ -31,7 +31,7 @@ class ColorCorrectionPlugin extends ExtrasPlugin:
         val info = Seq("Color Correction" -> method, "Color Correction strength" -> Values.fmt(v.double("strength", 1)),
           "Color Correction reference" -> (if reference.isEmpty then "original input" else Paths.get(reference).getFileName.toString))
         val comparisons = r.outputs.toSeq.sortBy(_._1).map { (name, path) =>
-          (Support.readImage(path), info.filterNot(_._1 == "Color Correction") :+ ("Color Correction" -> name))
+          (Support.readImage(ctx, path), info.filterNot(_._1 == "Color Correction") :+ ("Color Correction" -> name))
         }
         (r.image, info) +: comparisons
       finally Support.deleteQuietly(r.outputs.values.toSeq*)

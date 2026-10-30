@@ -22,6 +22,7 @@ trait GenerationListener:
   private[engine] def onEngineInterrupted(): Unit = ()
   /** Private transport identity for queued work; never part of GenerationParams or image metadata. */
   def interruptionOwner: Option[String] = None
+  private[engine] def imageSecret: Option[sdfx.core.png.ImageScrambleSecret] = None
   private[engine] def wdBatchControl: Option[ExtrasBatchControl] = None
   private[engine] def payloadJobId: Option[String] = None
   private[engine] def submittedPayloadContext: Option[SubmittedPayloadContext] = None
@@ -116,6 +117,13 @@ final class Generator(
   def status(text: String, done: Int, total: Int): Unit = ()
   def isInterrupted: Boolean = false
 
+  /** Non-queue tool context bound to a snapshot; secrets are never added to request metadata. */
+  def forImageSession(secret: Option[sdfx.core.png.ImageScrambleSecret], warn: String => Unit = _ => ()): PluginContext =
+    forJob(new GenerationListener {
+      override private[engine] def imageSecret = secret
+      override def onLog(message: String): Unit = warn(message)
+    })
+
   /** A context bound to one job: events go to `listener`; every `generate` applies the active AlwaysOn plugins. */
   def forJob(listener: GenerationListener, alwaysOn: Seq[(Plugin, Values)] = Nil, limits: JobLimits = JobLimits()): PluginContext =
     val self = this
@@ -136,6 +144,7 @@ final class Generator(
           throw e
     val scopedListener: GenerationListener = new GenerationListener:
       override def interruptionOwner: Option[String] = listener.interruptionOwner
+      override private[engine] def imageSecret: Option[sdfx.core.png.ImageScrambleSecret] = listener.imageSecret
       override private[engine] def payloadJobId: Option[String] = listener.payloadJobId
       override private[engine] def submittedPayloadContext: Option[SubmittedPayloadContext] = listener.submittedPayloadContext
       override private[engine] def payloadCaptureOptions: Option[CaptureOptions] = listener.payloadCaptureOptions
@@ -151,6 +160,8 @@ final class Generator(
       override def onTempFile(path: Path): Unit = listener.onTempFile(path)
       override def isInterrupted: Boolean = listener.isInterrupted || engineInterrupted.get()
     new PluginContext:
+      override def imageScramblingEnabled: Boolean = listener.imageSecret.nonEmpty
+      override def plaintextVideoAllowed: Boolean = listener.imageSecret.forall(_.plaintextVideoAllowed)
       override def resourceHashesEnabled: Boolean = alwaysOn.exists((plugin, values) =>
         plugin.id == "pnginfo_injection" && plugin.isActive(values))
       def generate(p: GenerationParams): Seq[OutputImage] = guard(self.generateWith(limited(p), scopedListener))
@@ -158,12 +169,16 @@ final class Generator(
         guard(self.generateTransientWith(limited(p), scopedListener))
       def upscale(image: Path, upscaler: String, scale: Double): Path = guard {
         if isInterrupted then throw interruptedError
-        val out = self.upscaleImage(image, upscaler, scale, listener.interruptionOwner)
+        val out = self.upscaleImage(image, upscaler, scale, listener.interruptionOwner, listener.imageSecret, listener.onLog)
         listener.onTempFile(out)
         out
       }
       def saveImage(img: BufferedImage, kind: String, params: GenerationParams, infotext: String): OutputImage =
         self.saveWith(img, kind, params, infotext, listener)
+      override def readImage(path: Path): BufferedImage =
+        val decoded = sdfx.core.png.ScrambledPng.read(path, listener.imageSecret.map(_.use(identity)))
+        if decoded.scrambled && decoded.passwordVerified.isEmpty then listener.onLog(ScrambledInput.LegacyWarning)
+        decoded.image
       def tempFile(suffix: String): Path =
         val t = self.tempFile(suffix)
         listener.onTempFile(t)
@@ -172,7 +187,14 @@ final class Generator(
       override def modelPath(source: ChoiceSource, name: String): Option[String] = self.modelPath(source, name)
       override def engineCall(kind: String, params: ujson.Obj): ujson.Value = guard {
         if isInterrupted then throw interruptedError
-        self.engineCallWith(kind, params, scopedListener)
+        if kind == "img2vid" then requirePlaintextVideoAllowed()
+        val fields = kind match
+          case "caption" | "restore_faces" | "novel_view" | "img2vid" => Seq("image_path")
+          case "image_tool" => Seq("image_path", "reference_path")
+          case _ => Nil
+        ScrambledInput.withObject(params, fields, home.tmpDir(settings()), listener.imageSecret, listener.onLog) { resolved =>
+          self.engineCallWith(kind, resolved, scopedListener)
+        }
       }
       def log(message: String): Unit = listener.onLog(message)
       def status(text: String, done: Int, total: Int): Unit = listener.onStatus(text, done, total)
@@ -410,7 +432,7 @@ final class Generator(
         case value: EngineEvent.Progress => listener.onProgress(value)
         case value: EngineEvent.Preview => listener.onPreview(value)
         case value: EngineEvent.Log => listener.onLog(value.message)
-    })
+    }, listener.imageSecret)
     val result = WdBatchSafety.awaitActive(handle.result, activity, timeouts.generationInactivity, () => {
       WdBatchSafety.timeoutAction(handle, control, client.supervisor)
     })
@@ -492,7 +514,12 @@ final class Generator(
 
   private def runEngine(p: GenerationParams, listener: GenerationListener): (PreparedGeneration, GenerationResult) =
     if listener.isInterrupted then throw interruptedError
-    val prep = prepare(p)
+    val original = prepare(p)
+    ScrambledInput.withParams(original.request.params, home.tmpDir(settings()), listener.imageSecret, listener.onLog) { params =>
+      runEnginePrepared(p, listener, original.copy(request = original.request.copy(params = params)))
+    }
+
+  private def runEnginePrepared(p: GenerationParams, listener: GenerationListener, prep: PreparedGeneration): (PreparedGeneration, GenerationResult) =
     prep.warnings.foreach(listener.onLog)
     ensureModel(prep.recorded, listener)
     if listener.isInterrupted then throw interruptedError
@@ -539,7 +566,7 @@ final class Generator(
             None
           else
             try
-              val result = PayloadAssets.collect(body.bodyJson, options.includeImageContents)
+              val result = PayloadAssets.collect(body.bodyJson, options.includeImageContents && listener.imageSecret.isEmpty)
               warnings ++= result.warnings
               Some(result.assetsJson)
             catch
@@ -550,7 +577,7 @@ final class Generator(
           context, assets, PayloadState.Prepared, warnings, submitted.sourceMode)
         payloads.put(snapshot)
         payloads.snapshots.find(_.key == key).foreach(s => diagnostic(listener.onPreparedRequest(s)))
-      }, () => if listener.isInterrupted then throw interruptedError)
+      }, () => if listener.isInterrupted then throw interruptedError, listener.imageSecret)
       lifecycle(PayloadState.Submitted)
       val completed = awaitActive(handle.result, activity)
       val completion = PayloadCaptureContext.completion(completed, jsonLimits) match
@@ -591,7 +618,9 @@ final class Generator(
       val (params, text) = describe(prep, result, img, loaded)
       val src = Paths.get(img.path)
       val dst = OutputNaming.nextFile(outputs, kind, img.seed)
-      try PngMetadata.copyWithParameters(src, dst, text)
+      try
+        val pixels = PngMetadata.readImage(src)
+        sdfx.core.png.ScrambledPng.write(pixels, dst, Seq(PngMetadata.ParametersKey -> text), listener.imageSecret.map(_.use(identity)))
       catch
         case NonFatal(e) =>
           Files.deleteIfExists(dst)
@@ -624,7 +653,28 @@ final class Generator(
       case _ => ()
     r
 
-  def upscaleImage(image: Path, upscaler: String, scale: Double, owner: Option[String] = None): Path =
+  def upscaleImage(image: Path, upscaler: String, scale: Double, owner: Option[String] = None,
+      secret: Option[sdfx.core.png.ImageScrambleSecret] = None, warn: String => Unit = _ => ()): Path =
+    ScrambledInput.withPlain(image, home.tmpDir(settings()), secret, warn) { plain =>
+      protectToolOutput(upscalePlain(plain, upscaler, scale, owner), plain, secret)
+    }
+
+  /** Worker tools create a plaintext temporary first; do not leave it readable after success. */
+  private def protectToolOutput(output: Path, input: Path, secret: Option[sdfx.core.png.ImageScrambleSecret]): Path =
+    secret.foreach { value =>
+      require(!Files.isSameFile(input, output), "Tool output cannot overwrite its input")
+      try
+        val pixels = PngMetadata.readImage(output)
+        val texts = PngMetadata.readTexts(output).toSeq
+        value.use(pass => sdfx.core.png.ScrambledPng.write(pixels, output, texts, Some(pass)))
+      catch
+        case NonFatal(error) =>
+          try Files.deleteIfExists(output) catch case NonFatal(cleanup) => error.addSuppressed(cleanup)
+          throw error
+    }
+    output
+
+  private def upscalePlain(image: Path, upscaler: String, scale: Double, owner: Option[String]): Path =
     val s = settings()
     val paths = catalog.findUpscaler(upscaler).map(e => upscaler -> e.path).toMap
     val req = UpscaleRequest(image.toAbsolutePath.toString, upscaler, scale, home.tmpDir(s).toAbsolutePath.toString, paths,
@@ -644,15 +694,19 @@ final class Generator(
     }
     output
 
-  def preprocess(image: Path, preprocessor: String, args: Map[String, Double] = Map.empty): Path =
+  def preprocess(image: Path, preprocessor: String, args: Map[String, Double] = Map.empty,
+      secret: Option[sdfx.core.png.ImageScrambleSecret] = None, warn: String => Unit = _ => ()): Path =
     val s = settings()
-    Paths.get(await(client.preprocess(PreprocessRequest(preprocessor, image.toAbsolutePath.toString, home.tmpDir(s).toAbsolutePath.toString, args)), timeouts.upscale, "preprocess").path)
+    ScrambledInput.withPlain(image, home.tmpDir(s), secret, warn) { plain =>
+      val output = Paths.get(await(client.preprocess(PreprocessRequest(preprocessor, plain.toAbsolutePath.toString, home.tmpDir(s).toAbsolutePath.toString, args)), timeouts.upscale, "preprocess").path)
+      protectToolOutput(output, plain, secret)
+    }
 
   /** Saves an image to outputs/<kind>/<date>/ (`grid`/`grids` -> outputs/grids). */
   def saveWith(img: BufferedImage, kind: String, params: GenerationParams, infotext: String, listener: GenerationListener): OutputImage =
     val k = if kind == "grid" then "grids" else kind
     val dst = OutputNaming.nextFile(outputsDir, k, params.seed, if k.contains("grid") then "-grid" else "")
-    try PngMetadata.write(img, dst, Seq(PngMetadata.ParametersKey -> infotext))
+    try sdfx.core.png.ScrambledPng.write(img, dst, Seq(PngMetadata.ParametersKey -> infotext), listener.imageSecret.map(_.use(identity)))
     catch
       case NonFatal(e) =>
         Files.deleteIfExists(dst)

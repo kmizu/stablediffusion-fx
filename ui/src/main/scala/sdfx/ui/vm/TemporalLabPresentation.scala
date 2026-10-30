@@ -101,7 +101,7 @@ object TemporalLabPresentation:
     val alignment = if a.width != b.width || a.height != b.height then " Reference will be center-cropped as needed and resized to generated dimensions." else ""
     s"Reference: ${a.count} frames, ${a.width} × ${a.height}; generated: ${b.count} frames, ${b.width} × ${b.height}.$mismatch$alignment Header inspection only; worker validates all inputs."
   def completion(result: TemporalLabResult): String =
-    if result.dryRun then "Dry run: request validated; no output created."
+    val summary = if result.dryRun then "Dry run: request validated; no output created."
     else result.outputDir.map { p =>
       val details = if result.operation == "extract" then
         s"; source FPS: ${result.sourceFps.map(_.toString).getOrElse("unknown")}; output FPS: ${result.fps.map(_.toString).getOrElse("unknown")}; duration: ${result.duration.map(_.toString).getOrElse("unknown")} s"
@@ -109,3 +109,4 @@ object TemporalLabPresentation:
       else ""
       s"Complete: $p (${result.frameCount.getOrElse(0)} frames)$details"
     }.getOrElse("Preview ready")
+    summary + result.warnings.map(w => s" · $w").mkString

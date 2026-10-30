@@ -20,6 +20,30 @@ class RequestPayloadSuite extends munit.FunSuite:
       services.shutdown()
       deleteTree(home.root)
 
+  test("generation password travels outside captured request parameters") {
+    withServices { s =>
+      val req = GenerationRequest(GenerationParams(seed = 7, steps = 1, width = 64, height = 64),
+        s.home.tmpDir(s.settings).toString)
+      val session = new sdfx.core.png.ImageScrambleSession
+      session.unlock("transport-secret")
+      var captured = ""
+      await(s.client.generateOwned(req, GenerationMode.Txt2Img, _ => (), None,
+        body => captured = body.bodyJson, imageSecret = session.snapshot).result)
+      val actual = await(s.client.raw("get_state"))
+      assertEquals(actual("last_generation")("request"), ujson.read(captured))
+      assertEquals(actual("password_received").bool, true)
+      assert(!captured.contains("transport-secret"))
+      assert(!actual.render().contains("transport-secret"))
+      assertEquals(actual("plaintext_video_allowed").bool, false)
+      await(s.client.generateOwned(req, GenerationMode.Txt2Img, _ => (), None,
+        body => captured = body.bodyJson, imageSecret = session.snapshot.map(_.withPlaintextVideoAllowed)).result)
+      val permitted = await(s.client.raw("get_state"))
+      assertEquals(permitted("plaintext_video_allowed").bool, true)
+      assert(!captured.contains("allow_plaintext_video"))
+      assert(!session.snapshot.get.plaintextVideoAllowed)
+    }
+  }
+
   test("observed body equals actual fake-process input and mutable hooks cannot change either") {
     withServices { s =>
       var draws = 0

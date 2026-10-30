@@ -23,14 +23,19 @@ trait ImageActions:
   def delete(path: Path): Unit
 
 object ImageActions:
-  /** Decodes off the FX thread, then puts the file and the pixels on the clipboard. */
-  def copyImage(path: Path): Unit =
-    Fx.async(ImageFiles.load(path.toString, background = false).filterNot(_.isError)) { img =>
-      val c = new ClipboardContent()
-      c.putFiles(java.util.List.of(path.toFile))
-      img.foreach(c.putImage)
-      Clipboard.getSystemClipboard.setContent(c)
-    }(e => System.err.println(s"[sdfx] copy failed: ${e.getMessage}"))
+  /** Copies decoded pixels; a scrambled source file is not offered as a plaintext image file. */
+  def copyImage(ctx: UiContext, path: Path): Unit =
+    ctx.imageCopyReads.request(path) {
+      case scala.util.Success(display) =>
+        val content = new ClipboardContent()
+        if !display.scrambled then content.putFiles(java.util.List.of(path.toFile))
+        content.putImage(display.image)
+        if Clipboard.getSystemClipboard.setContent(content) then
+          if display.scrambled && display.passwordVerified.isEmpty then ctx.info("Image copied; password could not be verified")
+          else ctx.success("Image copied")
+        else ctx.error("Cannot copy image to clipboard")
+      case scala.util.Failure(error) => ctx.error("Cannot copy image: " + Fx.message(error).stripPrefix("requirement failed: "))
+    }
 
   def openFolder(path: Path): Unit =
     try
@@ -45,6 +50,9 @@ final class PreviewPane(ctx: UiContext, actions: ImageActions):
   private val empty = new Label("✦\nGenerated images appear here\nCtrl+Enter to generate")
   empty.getStyleClass.add("empty-preview")
   empty.setMouseTransparent(true)
+  def imageStatus: String = empty.getText
+  private val imageReads = new sdfx.ui.vm.ImageReadGate[ImageFiles.DisplayImage](ctx.services.imageScrambleSession,
+    run => Fx.run(run()), (path, secret) => ImageFiles.readForDisplay(path, secret))(using Fx.bg)
   private val banner = new Label("")
   banner.getStyleClass.add("banner")
   banner.setWrapText(true)
@@ -71,6 +79,8 @@ final class PreviewPane(ctx: UiContext, actions: ImageActions):
 
   @volatile private var current: Option[(Path, Option[String])] = None
   def currentPath: Option[Path] = current.map(_._1)
+  ctx.watchImageAccess(zoom)(() =>
+    if zoom.getUserData != null then current.foreach((path, info) => show(path, info)))
 
   private def withCurrent(f: (Path, Option[String]) => Unit): Unit =
     current match
@@ -93,7 +103,7 @@ final class PreviewPane(ctx: UiContext, actions: ImageActions):
         case None       => ctx.info("This image has no generation parameters")
     )),
     W.spacer(),
-    W.iconButton("⧉", "Copy the image to the clipboard")(withCurrent((p, _) => { ImageActions.copyImage(p); ctx.success("Image copied") })),
+    W.iconButton("⧉", "Copy the image to the clipboard")(withCurrent((p, _) => { ImageActions.copyImage(ctx, p) })),
     W.iconButton("▤", "Show in folder")(withCurrent((p, _) => ImageActions.openFolder(p))),
     W.iconButton("🗑", "Delete this image (asks first)")(withCurrent((p, _) => actions.delete(p)))
   )
@@ -126,15 +136,23 @@ final class PreviewPane(ctx: UiContext, actions: ImageActions):
     shownGeneration += 1
     liveNext = None
     liveBadge.setVisible(false)
-    ImageFiles.load(path.toString) match
-      case Some(img) =>
-        zoom.setImage(img)
-        empty.setVisible(false)
-      case None =>
-        zoom.setImage(null)
-        empty.setVisible(true)
+    zoom.setImage(null)
+    empty.setText("Loading image…")
+    empty.setVisible(true)
     fileLabel.setText(path.getFileName.toString)
     current = Some(path -> infotext)
+    imageReads.request(path) {
+      case scala.util.Success(display) if zoom.getUserData == path =>
+        zoom.setImage(display.image)
+        empty.setVisible(false)
+        if display.scrambled && display.passwordVerified.isEmpty then
+          fileLabel.setText(path.getFileName.toString + " · password unverified")
+      case scala.util.Failure(error) if zoom.getUserData == path =>
+        zoom.setImage(null)
+        empty.setText("Cannot display image: " + Fx.message(error).stripPrefix("requirement failed: "))
+        empty.setVisible(true)
+      case _ => ()
+    }
     info.setText(infotext.getOrElse(""))
     if infotext.isEmpty then
       Fx.async(PngMetadata.readParameters(path)) { t =>
@@ -145,6 +163,7 @@ final class PreviewPane(ctx: UiContext, actions: ImageActions):
 
   /** Shows a live engine preview (base64 JPEG), decoded off the FX thread; late frames are dropped. */
   def showLive(b64: String): Unit =
+    imageReads.invalidate()
     if liveBusy then liveNext = Some(b64)
     else
       liveBusy = true
@@ -172,6 +191,8 @@ final class PreviewPane(ctx: UiContext, actions: ImageActions):
     liveBadge.setVisible(false)
 
   def clear(): Unit =
+    imageReads.invalidate()
+    empty.setText("✦\nGenerated images appear here\nCtrl+Enter to generate")
     shownGeneration += 1
     current = None
     zoom.setUserData(null)

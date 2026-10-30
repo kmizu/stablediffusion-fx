@@ -28,7 +28,7 @@ class SeamlessTilePlugin extends Plugin:
     val direction = v.str("direction", "Both")
     require(Directions.contains(direction), s"unknown tiling direction: $direction")
     val i0 = p0.img2img.get
-    val original = Support.readImage(i0.initImage)
+    val original = Support.readImage(ctx, i0.initImage)
     val src = if original.getWidth == p0.width && original.getHeight == p0.height then original
       else ImageOps.resize(original, p0.width, p0.height)
     val dx = if direction == "Vertical" then 0 else src.getWidth / 2
@@ -51,7 +51,7 @@ class SeamlessTilePlugin extends Plugin:
           case Some(outputs) =>
             try
               JobOutput(outputs.map { o =>
-                val raw = Support.readImage(o.path)
+                val raw = Support.readImage(ctx, o.path)
                 val img = if restore then offset(raw, -dx, -dy) else raw
                 val metadata = o.params.copy(seed = o.seed, extra = o.params.extra ++ p.extra)
                 ctx.saveImage(img, "img2img", metadata, o.infotext)

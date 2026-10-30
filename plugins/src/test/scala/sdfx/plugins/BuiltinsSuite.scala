@@ -194,12 +194,22 @@ class BuiltinsSuite extends munit.FunSuite:
   test("custom code saves returned images and logs stdout"):
     val ctx = new FakeContext()
     val p = new CustomCodePlugin
+    val warning = p.controls.collectFirst { case Control.Note("scrambling_warning", text) => text }.get
+    assert(warning.contains("cannot protect"))
+    assert(warning.contains("readable images"))
+    assert(warning.contains("cannot be intercepted"))
     val out = p.run(GenerationParams(), defaults(p, "code" -> "result = 42"), ctx)
     assertEquals(ctx.engineCalls.head._1, "run_code")
     assertEquals(ctx.engineCalls.head._2("code").str, "result = 42")
     assertEquals(out.images.size, 1)
     assert(ctx.logs.exists(_.contains("hello")))
     assert(ctx.logs.exists(_.contains("42")))
+    assert(!ctx.logs.exists(_.contains("image scrambling cannot intercept")))
+    val protectedCtx = new FakeContext():
+      override def imageScramblingEnabled = true
+    p.run(GenerationParams(), defaults(p, "code" -> "result = 42"), protectedCtx)
+    assertEquals(protectedCtx.engineCalls.head._1, "run_code")
+    assert(protectedCtx.logs.exists(_.contains("image scrambling cannot intercept")))
 
   test("SVD saves the first frame with infotext and copies the GIF next to it"):
     val ctx = new FakeContext()

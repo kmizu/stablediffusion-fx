@@ -9,6 +9,14 @@ import java.nio.file.Files
 import scala.util.Random
 
 class PromptPluginsSuite extends munit.FunSuite:
+  test("video scripts reject plaintext GIF before generating frames when session disallows it") {
+    for plugin <- Seq(new SeedTravelPlugin, new ShiftAttentionPlugin, new SvdPlugin) do
+      val ctx = new FakeContext():
+        override def plaintextVideoAllowed: Boolean = false
+      val error = intercept[IllegalStateException](plugin.run(GenerationParams(), Values.defaults(plugin.controls), ctx))
+      assert(error.getMessage.contains("plaintext video"))
+      assert(ctx.generated.isEmpty && ctx.engineCalls.isEmpty)
+  }
   test("dynamic prompt hash injection is opt-in and includes negative wildcard sources"):
     val dir = Files.createTempDirectory("wildcard-injection")
     Files.writeString(dir.resolve("positive.txt"), "teapot\n")

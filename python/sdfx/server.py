@@ -100,6 +100,16 @@ class Server:
         if 'owner_id' in msg and (not isinstance(owner, str) or not 1 <= len(owner) <= 256):
             self.emitter.emit(error_msg(rid, INVALID_PARAMS, 'owner_id must be a nonempty string of at most 256 characters'))
             return True
+        image_password = msg.get('image_password')
+        if 'image_password' in msg and (typ not in ('txt2img', 'img2img', 'batch_interrogate_execute', 'temporal_lab', 'vae_tools') or
+                                        not isinstance(image_password, str) or not image_password):
+            self.emitter.emit(error_msg(rid, INVALID_PARAMS, 'invalid image password transport'))
+            return True
+        allow_plaintext_video = msg.get('allow_plaintext_video', False)
+        if 'allow_plaintext_video' in msg and (typ not in ('txt2img', 'img2img') or
+                                                not isinstance(allow_plaintext_video, bool) or not image_password):
+            self.emitter.emit(error_msg(rid, INVALID_PARAMS, 'invalid plaintext video permission'))
+            return True
 
         if typ == "interruption_protection":
             if 'enabled' in params and not isinstance(params['enabled'], bool):
@@ -176,7 +186,7 @@ class Server:
                     self.queued.append(rid)
                     self.queued_owners[rid] = owner
             # Ownership is transport metadata, never injected into model parameters/results.
-            self.q.put((rid, typ, params, owner))
+            self.q.put((rid, typ, params, owner, image_password, allow_plaintext_video))
         else:
             self.emitter.emit(error_msg(rid, UNSUPPORTED, f"unknown request type '{typ}'"))
         return True
@@ -200,6 +210,9 @@ class Server:
                     self.emitter.emit(error_msg(item[0], INTERNAL, f"internal error: {type(e).__name__}"))
                 except Exception:
                     pass
+            finally:
+                # Do not keep a completed request envelope (and its session secret) while idle.
+                item = None
 
     def _handle(self, item):
         rid, typ, params = item[:3]
@@ -221,6 +234,8 @@ class Server:
             self.interrupt.clear()
         ctx = JobContext(self.emitter, rid, self.interrupt, publication_lock=self.lock)
         ctx.owner_id = owner
+        ctx.image_password = item[4] if len(item) > 4 else None
+        ctx.allow_plaintext_video = item[5] if len(item) > 5 else False
         with self.lock:
             self.current_ctx = ctx
         try:
@@ -238,6 +253,7 @@ class Server:
                 log.error("request %s (%s) failed:\n%s", rid, typ, detail)
             self.emitter.emit(error_msg(rid, code, message, detail if code != INTERRUPTED else ""))
         finally:
+            ctx.image_password = None
             with self.lock:
                 self.current_id = None
                 self.current_owner = None

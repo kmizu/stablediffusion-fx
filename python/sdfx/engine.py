@@ -1232,16 +1232,18 @@ class Engine(BaseEngine):
                 result['system_info'] = metadata(snapshot(self, full=True), params['system_info_fields'])
             return result
         finally:
-            if self._composable_job is not None:
-                self._composable_job.remove()
-                self._composable_job = None
-            recorder = self._intermediate_recorder
-            if recorder is not None:
-                try:
-                    recorder.close()
-                except OSError as e:
-                    log.warning("could not close intermediate manifest: %s", e)
-            self._intermediate_recorder = None
+            try:
+                if self._composable_job is not None:
+                    self._composable_job.remove()
+                    self._composable_job = None
+                recorder = self._intermediate_recorder
+                if recorder is not None:
+                    try:
+                        recorder.close()
+                    except OSError as e:
+                        log.warning("could not close intermediate manifest: %s", e)
+            finally:
+                self._intermediate_recorder = None
 
     def _generate_recorded(self, params: dict, ctx: JobContext, mode: str) -> dict:
         t0 = time.monotonic()
@@ -1276,13 +1278,16 @@ class Engine(BaseEngine):
             steps_animation.validate_generation(gp)
             self._intermediate_recorder = steps_animation.Recorder(req.output_dir, animation, ctx,
                 dict(prompt=gp.prompt, negative_prompt=gp.negative_prompt, seed=gp.seed, sampler=gp.sampler_name,
-                     steps=gp.steps, cfg_scale=gp.cfg_scale, mode=mode, generation=params.get("params", {})))
+                     steps=gp.steps, cfg_scale=gp.cfg_scale, mode=mode, generation=params.get("params", {})),
+                image_password=getattr(ctx, 'image_password', None),
+                allow_plaintext_video=getattr(ctx, 'allow_plaintext_video', False))
         intermediate = hooks_mod.hook_config(gp.hooks, "save_intermediate", {})
         if intermediate is not None:
             self._intermediate_recorder = save_intermediate.Recorder(intermediate.get("output_dir") or req.output_dir, intermediate, ctx,
                 dict(prompt=gp.prompt, negative_prompt=gp.negative_prompt, sampler=gp.sampler_name,
                      steps=gp.steps, cfg_scale=gp.cfg_scale, mode=mode, preview_method=req.preview_method,
-                     generation=params.get("params", {})))
+                     generation=params.get("params", {})), image_password=getattr(ctx, 'image_password', None),
+                allow_plaintext_video=getattr(ctx, 'allow_plaintext_video', False))
         self._extra = dict(gp.extra or {})
         self._ms_overrides = ext_mod.model_sampling_overrides(gp)
         self.ensure_model(gp, ctx)

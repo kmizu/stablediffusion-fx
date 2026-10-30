@@ -18,6 +18,10 @@ final class GenerationHandle(val result: Future[GenerationResult], interruptFn: 
 final class TemporalLabHandle(val result: Future[TemporalLabResult], interruptFn: () => Future[InterruptionDecision]):
   def interrupt(): Future[InterruptionDecision] = interruptFn()
 
+/** One VAE Tools operation and its scoped cancellation. */
+final class VaeToolsHandle(val result: Future[ujson.Value], interruptFn: () => Future[InterruptionDecision]):
+  def interrupt(): Future[InterruptionDecision] = interruptFn()
+
 object GenerationMode:
   val Txt2Img: String = Protocol.Types.Txt2Img
   val Img2Img: String = Protocol.Types.Img2Img
@@ -27,8 +31,9 @@ final class EngineClient(val supervisor: EngineSupervisor):
   private given ExecutionContext = ExecutionContext.parasitic
 
   private def call[T: SnakePickle.Reader](tpe: String, params: ujson.Value = ujson.Obj(), onEvent: EngineEvent => Unit = _ => (),
-                                         owner: Option[String] = None): Future[T] =
-    supervisor.requestOwned(tpe, params, onEvent, owner).map(v => Json.fromJs[T](v))
+                                         owner: Option[String] = None,
+                                         imageSecret: Option[sdfx.core.png.ImageScrambleSecret] = None): Future[T] =
+    supervisor.requestOwned(tpe, params, onEvent, owner, imageSecret).map(v => Json.fromJs[T](v))
 
   def raw(tpe: String, params: ujson.Value = ujson.Obj(), onEvent: EngineEvent => Unit = _ => ()): Future[ujson.Value] =
     supervisor.request(tpe, params, onEvent)
@@ -65,7 +70,8 @@ final class EngineClient(val supervisor: EngineSupervisor):
 
   private[engine] def generateOwned(req: GenerationRequest, mode: String, listener: EngineEvent => Unit,
                                     owner: Option[String], observer: GenerationBody => Unit = _ => (),
-                                    beforeDispatch: () => Unit = () => ()): GenerationHandle =
+                                    beforeDispatch: () => Unit = () => (),
+                                    imageSecret: Option[sdfx.core.png.ImageScrambleSecret] = None): GenerationHandle =
     require(mode == GenerationMode.Txt2Img || mode == GenerationMode.Img2Img, s"bad mode $mode")
     val requestOwner = owner.orElse(Some(java.util.UUID.randomUUID().toString))
     // Serialize the actual typed request exactly once. Both freezing and private transport parsing are
@@ -83,17 +89,18 @@ final class EngineClient(val supervisor: EngineSupervisor):
     // Required admission check: optional diagnostic work may have taken long enough for the
     // actual job's cancellation flag to change. Its failure must escape the observer isolation.
     beforeDispatch()
-    new GenerationHandle(call[GenerationResult](mode, transportBody, listener, requestOwner),
+    new GenerationHandle(call[GenerationResult](mode, transportBody, listener, requestOwner, imageSecret),
       () => supervisor.interruptOwned(requestOwner))
 
   def upscale(req: UpscaleRequest): Future[ImagePathResult] = call[ImagePathResult](Protocol.Types.Upscale, Json.toJs(req))
 
   /** A unique owner prevents stale controls from interrupting another generation or window. */
-  def temporalLab(req: TemporalLabRequest, listener: EngineEvent => Unit = _ => ()): TemporalLabHandle =
+  def temporalLab(req: TemporalLabRequest, listener: EngineEvent => Unit = _ => (),
+      imageSecret: Option[sdfx.core.png.ImageScrambleSecret] = None): TemporalLabHandle =
     val owner = java.util.UUID.randomUUID().toString
     val gate = new TemporalLabCancelGate(owner, id => supervisor.captureInterrupt(Some(id)))
     val result = supervisor.requestTemporal(req.params, listener, owner,
-      () => gate.beforeDispatch(), () => gate.dispatched())
+      () => gate.beforeDispatch(), () => gate.dispatched(), imageSecret)
       .map(Json.fromJs[TemporalLabResult](_))
     result.onComplete(_ => gate.completed())(using ExecutionContext.parasitic)
     new TemporalLabHandle(result, () => gate.cancel())
@@ -103,8 +110,17 @@ final class EngineClient(val supervisor: EngineSupervisor):
   def memory(): Future[MemoryInfo] = call[MemoryInfo](Protocol.Types.Memory)
 
   def systemStatus(): Future[ujson.Value] = raw(Protocol.Types.SystemStatus)
-  def vaeTools(params: ujson.Obj, listener: EngineEvent => Unit = _ => ()): Future[ujson.Value] =
-    raw(Protocol.Types.VaeTools, params, listener)
+  def vaeTools(params: ujson.Obj, listener: EngineEvent => Unit = _ => (),
+      imageSecret: Option[sdfx.core.png.ImageScrambleSecret] = None): Future[ujson.Value] =
+    vaeToolsOwned(params, listener, imageSecret).result
+  def vaeToolsOwned(params: ujson.Obj, listener: EngineEvent => Unit = _ => (),
+      imageSecret: Option[sdfx.core.png.ImageScrambleSecret] = None): VaeToolsHandle =
+    val owner = java.util.UUID.randomUUID().toString
+    val gate = new TemporalLabCancelGate(owner, id => supervisor.captureInterrupt(Some(id), restartOnTimeout = false))
+    val result = supervisor.requestExtras(Protocol.Types.VaeTools, params, listener, owner,
+      () => gate.beforeDispatch(), () => gate.dispatched(), imageSecret = imageSecret)
+    result.onComplete(_ => gate.completed())(using ExecutionContext.parasitic)
+    new VaeToolsHandle(result, () => gate.cancel())
   def systemInfo(dirs: ujson.Obj = ujson.Obj(), hashes: Boolean = false): Future[ujson.Value] =
     raw(Protocol.Types.SystemInfo, ujson.Obj("dirs" -> dirs, "hashes" -> hashes))
   def systemBenchmark(params: ujson.Obj, listener: EngineEvent => Unit = _ => ()): Future[ujson.Value] =
@@ -123,11 +139,13 @@ final class EngineClient(val supervisor: EngineSupervisor):
   private[engine] def extrasBatchOwned(owner: String, control: ExtrasBatchControl,
                                       listener: EngineEvent => Unit = _ => (),
                                       onProcess: EngineProcess => Unit = _ => (),
-                                      restartOnTimeout: Boolean = true): ExtrasBatchHandle =
+                                      restartOnTimeout: Boolean = true,
+                                      imageSecret: Option[sdfx.core.png.ImageScrambleSecret] = None): ExtrasBatchHandle =
     new ExtrasBatchHandle(control, (kind, params) =>
       val gate = new TemporalLabCancelGate(owner, id => supervisor.captureInterrupt(Some(id), restartOnTimeout))
       val result = supervisor.requestExtras(kind, params, listener, owner,
-        () => control.attach(gate, finalStage = kind == "batch_interrogate_execute"), () => gate.dispatched(), onProcess, () => !control.cancellationAccepted)
+        () => control.attach(gate, finalStage = kind == "batch_interrogate_execute"), () => gate.dispatched(), onProcess, () => !control.cancellationAccepted,
+        if kind == "batch_interrogate_execute" then imageSecret else None)
       result.onComplete { _ => gate.completed(); control.detach(gate) }(using ExecutionContext.parasitic)
       result)
 
@@ -138,9 +156,10 @@ final class EngineClient(val supervisor: EngineSupervisor):
     wdBatchOwned(prepare, owner, control, listener)
 
   private[engine] def wdBatchOwned(prepare: WdBatchPrepareRequest, owner: String, control: ExtrasBatchControl,
-                                   listener: EngineEvent => Unit = _ => ()): WdBatchHandle =
+                                   listener: EngineEvent => Unit = _ => (),
+                                   imageSecret: Option[sdfx.core.png.ImageScrambleSecret] = None): WdBatchHandle =
     val process = new java.util.concurrent.atomic.AtomicReference[EngineProcess]()
-    val transport = extrasBatchOwned(owner, control, listener, p => process.set(p), restartOnTimeout = false)
+    val transport = extrasBatchOwned(owner, control, listener, p => process.set(p), restartOnTimeout = false, imageSecret = imageSecret)
     new WdBatchHandle(WdBatchFlow.run(transport, Json.toJs(prepare)).map(Json.fromJs[WdBatchResult](_)), transport, process)
 
   def interruptionProtection(enabled: Option[Boolean] = None): Future[InterruptionProtection] =

@@ -29,7 +29,7 @@ private[plugins] object Sequence:
 
   def grid(ctx: PluginContext, done: Seq[(Item, Seq[OutputImage])], base: GenerationParams, script: String,
       cols: Int = 0, labels: Boolean = true): Seq[OutputImage] =
-    val cells = done.flatMap((item, outs) => Support.cellImage(outs).map(_ -> item.label))
+    val cells = done.flatMap((item, outs) => Support.cellImage(ctx, outs).map(_ -> item.label))
     if cells.size < 2 then Nil
     else
       val c = if cols > 0 then cols else Grid.autoColumns(cells.size)
@@ -40,8 +40,9 @@ private[plugins] object Sequence:
       Seq(ctx.saveImage(img, "grids", gp, Support.infotext(gp, gp.seed)))
 
   /** Saves an animated GIF next to the first saved image (`<name>.gif`) and returns its path. */
-  def gif(done: Seq[(Item, Seq[OutputImage])], frameMillis: Int, pingPong: Boolean): Option[Path] =
-    val frames = done.flatMap(_._2.headOption).map(o => Support.readImage(o.path))
+  def gif(ctx: PluginContext, done: Seq[(Item, Seq[OutputImage])], frameMillis: Int, pingPong: Boolean): Option[Path] =
+    ctx.requirePlaintextVideoAllowed()
+    val frames = done.flatMap(_._2.headOption).map(o => Support.readImage(ctx, o.path))
     if frames.size < 2 then None
     else
       val seq = if pingPong then frames ++ frames.reverse.tail.init else frames
@@ -373,8 +374,9 @@ class SeedTravelPlugin extends Plugin:
       case _ => Nil
     } :+ Sequence.Item(p0.copy(seed = path.last, subseedStrength = 0, batchSize = 1, nIter = 1), path.last.toString)
   override def run(p0: GenerationParams, v: Values, ctx: PluginContext): JobOutput =
+    ctx.requirePlaintextVideoAllowed()
     val done = Sequence.run(ctx, frames(p0, v), "Seed travel")
-    Sequence.gif(done, v.int("frame_ms", 120), pingPong = false).foreach(g => ctx.log(s"Seed travel GIF: $g"))
+    Sequence.gif(ctx, done, v.int("frame_ms", 120), pingPong = false).foreach(g => ctx.log(s"Seed travel GIF: $g"))
     JobOutput(done.flatMap(_._2))
 
 /** Shift attention: animates the weight of `(word:a~b)` tokens across frames. */
@@ -392,6 +394,7 @@ class ShiftAttentionPlugin extends Plugin:
       scala.util.matching.Regex.quoteReplacement(s"(${m.group(1)}:${math.round((a + (b - a) * t) * 1000) / 1000.0})")
     })
   override def run(p0: GenerationParams, v: Values, ctx: PluginContext): JobOutput =
+    ctx.requirePlaintextVideoAllowed()
     val seed = Support.fixSeed(p0.seed)
     val n = v.int("frames", 12)
     val items = (0 until n).map { k =>
@@ -399,7 +402,7 @@ class ShiftAttentionPlugin extends Plugin:
       Sequence.Item(p0.copy(prompt = promptAt(p0.prompt, t), seed = seed, batchSize = 1, nIter = 1), f"$t%.2f")
     }
     val done = Sequence.run(ctx, items, "Shift attention")
-    Sequence.gif(done, v.int("frame_ms", 120), v.bool("ping_pong")).foreach(g => ctx.log(s"Shift attention GIF: $g"))
+    Sequence.gif(ctx, done, v.int("frame_ms", 120), v.bool("ping_pong")).foreach(g => ctx.log(s"Shift attention GIF: $g"))
     JobOutput(done.flatMap(_._2))
 
 // ------------------------------------------------------------------------------------------ prompt generators

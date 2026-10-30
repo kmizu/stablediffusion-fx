@@ -17,18 +17,15 @@ import java.nio.file.Path
 final class GalleryView(ctx: UiContext, vm: GalleryVM, actions: ImageActions, onSelect: GalleryItem => Unit):
   val ThumbSize = 112.0
 
-  // small LRU cache of background-loaded thumbnails
-  private val cache = new java.util.LinkedHashMap[Path, Image](256, 0.75f, true):
-    override def removeEldestEntry(e: java.util.Map.Entry[Path, Image]): Boolean = size() > 400
-  private def thumb(p: Path): Image =
-    val c = cache.get(p)
-    if c != null then c
-    else
-      val img = new Image(p.toUri.toString, ThumbSize * 2, ThumbSize * 2, true, true, true)
-      cache.put(p, img)
-      img
-
-  def evict(p: Path): Unit = cache.remove(p)
+  // Cache entries are session-specific; never retain a decoded thumbnail across a password change.
+  private val cache = new java.util.LinkedHashMap[(Path, Long), ImageFiles.DisplayImage](256, 0.75f, true):
+    override def removeEldestEntry(e: java.util.Map.Entry[(Path, Long), ImageFiles.DisplayImage]): Boolean = size() > 400
+  def evict(p: Path): Unit =
+    val it = cache.keySet().iterator()
+    while it.hasNext do if it.next()._1 == p then it.remove()
+  def refreshImageAccess(): Unit =
+    cache.clear()
+    list.refresh()
 
   val list = new ListView[GalleryItem](vm.filtered)
   list.setOrientation(Orientation.HORIZONTAL)
@@ -38,14 +35,21 @@ final class GalleryView(ctx: UiContext, vm: GalleryVM, actions: ImageActions, on
   list.setPlaceholder(W.label("No images yet", "muted"))
   list.setFixedCellSize(ThumbSize + 8)
   list.setCellFactory(_ => new Cell)
+  ctx.watchImageAccess(list)(() => refreshImageAccess())
 
   private final class Cell extends ListCell[GalleryItem]:
     private val iv = new ImageView()
+    private val reads = new sdfx.ui.vm.ImageReadGate[ImageFiles.DisplayImage](ctx.services.imageScrambleSession,
+      run => Fx.run(run()), (path, secret) => ImageFiles.readThumbnail(path, secret, (ThumbSize * 2).toInt))(using Fx.bg)
     iv.setFitWidth(ThumbSize)
     iv.setFitHeight(ThumbSize)
     iv.setPreserveRatio(true)
     iv.setSmooth(true)
-    private val box = new StackPane(iv)
+    private val overlay = new Label("")
+    overlay.setWrapText(true)
+    overlay.setMaxWidth(ThumbSize - 12)
+    overlay.setMouseTransparent(true)
+    private val box = new StackPane(iv, overlay)
     box.setPrefSize(ThumbSize, ThumbSize)
     box.getStyleClass.add("thumb")
     getStyleClass.add("gallery-cell")
@@ -70,13 +74,36 @@ final class GalleryView(ctx: UiContext, vm: GalleryVM, actions: ImageActions, on
     override def updateItem(item: GalleryItem, empty: Boolean): Unit =
       super.updateItem(item, empty)
       setText(null)
+      reads.invalidate()
+      iv.setImage(null)
+      iv.setUserData(null)
+      iv.setAccessibleText("")
+      overlay.setText("")
       if empty || item == null then
         setGraphic(null)
         setTooltip(null)
       else
-        iv.setImage(thumb(item.path))
-        iv.setUserData(item.path)
+        val path = item.path
+        iv.setUserData(path)
         setGraphic(box)
+        val key = path -> ctx.services.imageScrambleSession.state.revision
+        def displayImage(display: ImageFiles.DisplayImage): Unit =
+          iv.setImage(display.image)
+          if display.scrambled && display.passwordVerified.isEmpty then
+            iv.setAccessibleText("Password could not be verified")
+            overlay.setText("Password unverified")
+        Option(cache.get(key)) match
+          case Some(display) => displayImage(display)
+          case None => reads.request(path) {
+            case scala.util.Success(display) if Option(getItem).exists(_.path == path) && iv.getUserData == path =>
+              cache.put(key, display)
+              displayImage(display)
+            case scala.util.Failure(error) if Option(getItem).exists(_.path == path) && iv.getUserData == path =>
+              iv.setImage(null)
+              iv.setAccessibleText("Cannot display image: " + Fx.message(error).stripPrefix("requirement failed: "))
+              overlay.setText("Cannot display image")
+            case _ => ()
+          }
         tip.setText(item.fileName + item.parameters.map(p => "\n\n" + p.take(400)).getOrElse(""))
         setTooltip(tip)
 
@@ -92,7 +119,7 @@ final class GalleryView(ctx: UiContext, vm: GalleryVM, actions: ImageActions, on
       mi("Compare → B")(actions.compare(true, it.path)),
       mi("Restore parameters")(it.parameters.fold(ctx.info("This image has no generation parameters"))(actions.restore)),
       new SeparatorMenuItem(),
-      mi("Copy image")(ImageActions.copyImage(it.path)),
+      mi("Copy image")(ImageActions.copyImage(ctx, it.path)),
       mi("Copy parameters")(it.parameters.foreach { p =>
         val c = new ClipboardContent()
         c.putString(p)

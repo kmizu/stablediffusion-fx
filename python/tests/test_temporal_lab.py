@@ -576,3 +576,85 @@ def test_missing_opencv_reports_unsupported_and_cleans_staging(tmp_path, monkeyp
     assert error.value.code == UNSUPPORTED and "OpenCV" in error.value.message
     assert list((tmp_path / "outputs").iterdir()) == []
     assert all(p.read_bytes() == data for p, data in before.items())
+
+
+@needs_opencv
+@pytest.mark.parametrize('operation', ['dfi', 'deflicker', 'fuse', 'preview'])
+def test_protected_sequences_match_ordinary_pixels_and_reject_wrong_password(tmp_path, operation):
+    from sdfx.encrypt_image import encode_png, decode_png
+    plain_ref, plain_gen = reference_and_generated(tmp_path)
+    protected = []
+    for directory in (plain_ref, plain_gen):
+        target = tmp_path / (directory.name + '-protected'); target.mkdir()
+        for source in directory.iterdir():
+            (target / source.name).write_bytes(encode_png(source.read_bytes(), 'secret'))
+        protected.append(target)
+    def fields(a, b):
+        if operation in ('dfi', 'preview'):
+            return dict(reference_dir=str(a), generated_dir=str(b))
+        if operation == 'fuse':
+            return dict(style_dir=str(a), video_dir=str(b), strength=.5)
+        return dict(frames_dir=str(b), blend=.3)
+    params = make_params(tmp_path, operation, **fields(plain_ref, plain_gen))
+    ordinary = run({**params, 'output_name': 'ordinary'}, Context())
+    context = Context(); context.image_password = 'secret'
+    result = run({**params, **fields(*protected), 'output_name': 'protected'}, context)
+    if operation == 'preview':
+        assert np.array_equal(decode_mask(ordinary), decode_mask(result))
+    else:
+        for plain, scrambled in zip(output_images(ordinary), output_images(result)):
+            with Image.open(scrambled) as stored:
+                assert stored.info['Encrypt'] == 'pixel_shuffle_3'
+            decoded, verified = decode_png(scrambled.read_bytes(), 'secret')
+            with Image.open(BytesIO(decoded)) as restored:
+                assert verified is True and np.array_equal(np.asarray(restored.convert('RGB')), open_rgb(plain))
+    wrong = Context(); wrong.image_password = 'wrong'
+    with pytest.raises(EngineError, match='incorrect password'):
+        run({**params, **fields(*protected), 'output_name': 'wrong'}, wrong)
+    assert not (tmp_path / 'outputs' / 'wrong').exists()
+
+
+@needs_opencv
+def test_protected_extract_frames_and_cancellation_cleanup(tmp_path, monkeypatch):
+    from sdfx.encrypt_image import decode_png
+    import sdfx.encrypt_image as encryption
+    cv2 = pytest.importorskip('cv2')
+    video = tmp_path / 'test.avi'
+    writer = cv2.VideoWriter(str(video), cv2.VideoWriter_fourcc(*'MJPG'), 10, (32, 32))
+    if not writer.isOpened(): pytest.skip('OpenCV MJPG video writer unavailable')
+    try:
+        for i in range(3): writer.write(solid(i * 60))
+    finally: writer.release()
+    params = make_params(tmp_path, 'extract', video_path=str(video))
+    ordinary = run({**params, 'output_name': 'ordinary'}, Context())
+    context = Context(); context.image_password = 'secret'
+    protected = run({**params, 'output_name': 'protected'}, context)
+    for plain, scrambled in zip(output_images(ordinary), output_images(protected)):
+        decoded, verified = decode_png(scrambled.read_bytes(), 'secret')
+        with Image.open(BytesIO(decoded)) as restored:
+            assert verified and np.array_equal(np.asarray(restored.convert('RGB')), open_rgb(plain))
+    def fail(*args): raise ValueError('injected encoding failure')
+    monkeypatch.setattr(encryption, 'encode_png', fail)
+    with pytest.raises(EngineError, match='injected encoding failure'):
+        run({**params, 'output_name': 'failed'}, context)
+    assert not (tmp_path / 'outputs' / 'failed').exists()
+    assert not list((tmp_path / 'outputs').glob('.failed*'))
+
+
+@needs_opencv
+def test_temporal_legacy_frame_reports_password_unverified(tmp_path):
+    from PIL.PngImagePlugin import PngInfo
+    from sdfx.encrypt_image import scramble
+    frames = tmp_path / 'legacy'; frames.mkdir()
+    for i in (1, 2):
+        info = PngInfo(); info.add_text('Encrypt', 'pixel_shuffle_3')
+        scramble(Image.fromarray(solid(i * 40), 'RGB'), 'secret').save(frames / f'frame{i:04d}.png', pnginfo=info)
+    class WarningContext(Context):
+        def __init__(self):
+            super().__init__(); self.warnings = []
+        def warn(self, message):
+            if message not in self.warnings: self.warnings.append(message)
+    context = WarningContext(); context.image_password = 'secret'
+    result = run(make_params(tmp_path, 'deflicker', frames_dir=str(frames)), context)
+    assert any('unverified' in w.lower() for w in context.warnings)
+    assert any('unverified' in w.lower() for w in result['warnings'])

@@ -76,6 +76,31 @@ class ImageComparisonSuite extends munit.FunSuite:
       Files.deleteIfExists(dir)
   }
 
+  test("protected comparison export uses the captured session secret and preserves rendered pixels") {
+    import sdfx.core.png.{ImageScrambleSession, ScrambledPng, PngMetadata}
+    val dir = Files.createTempDirectory("comparison-protected-")
+    val out = dir.resolve("comparison.png")
+    val session = new ImageScrambleSession
+    session.unlock("first password")
+    val captured = session.snapshot
+    session.unlock("second password")
+    val image = new BufferedImage(24, 24, BufferedImage.TYPE_INT_RGB)
+    for x <- 0 until 24; y <- 0 until 24 do image.setRGB(x, y, 0xff000000 | (x << 16) | (y << 8) | (x * y))
+    try
+      exportPng(image, out, Nil, captured)
+      assertEquals(PngMetadata.readTexts(out).get("Encrypt"), Some("pixel_shuffle_3"))
+      intercept[IllegalArgumentException](ScrambledPng.read(out, Some("second password")))
+      val decoded = ScrambledPng.read(out, Some("first password")).image
+      assert((for x <- 0 until 24; y <- 0 until 24 yield decoded.getRGB(x, y) == image.getRGB(x, y)).forall(identity))
+      val encoded = ImageIO.read(out.toFile)
+      assert((for x <- 0 until 24; y <- 0 until 24 yield encoded.getRGB(x, y) != image.getRGB(x, y)).exists(identity))
+      val entries = Files.list(dir)
+      try assertEquals(entries.count(), 1L) finally entries.close()
+    finally
+      Files.deleteIfExists(out)
+      Files.deleteIfExists(dir)
+  }
+
   test("new image pair resets reveal and opacity while preserving the shared view transform") {
     val v = View(horizontal = false, split = .17, opacity = .3, zoom = 3, panX = 42, panY = -71)
     assertEquals(v.forNewPair, View(horizontal = false, split = .5, opacity = 1, zoom = 3, panX = 42, panY = -71))

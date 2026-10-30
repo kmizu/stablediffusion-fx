@@ -69,6 +69,42 @@ object ImageFiles:
       catch case NonFatal(_) => None
     )
 
+  final case class DisplayImage(image: Image, passwordVerified: Option[Boolean], scrambled: Boolean)
+
+  /** Blocking: resolve compatible scrambled PNGs in memory; call off the FX thread. */
+  def readForDisplay(path: Path, secret: Option[sdfx.core.png.ImageScrambleSecret]): DisplayImage =
+    val texts = sdfx.core.png.PngMetadata.readTexts(path)
+    if texts.contains("Encrypt") then
+      val decoded = sdfx.core.png.ScrambledPng.read(path, secret.map(_.use(identity)))
+      DisplayImage(SwingFXUtils.toFXImage(decoded.image, null), decoded.passwordVerified, true)
+    else
+      val img = load(path.toString, background = false).filterNot(_.isError)
+        .getOrElse(throw new IllegalArgumentException("Image not found or unreadable"))
+      DisplayImage(img, None, false)
+
+  /** Blocking thumbnail read, bounded in cache size; call off the FX thread. */
+  def readThumbnail(path: Path, secret: Option[sdfx.core.png.ImageScrambleSecret], maxSide: Int): DisplayImage =
+    val texts = sdfx.core.png.PngMetadata.readTexts(path)
+    if texts.contains("Encrypt") then
+      val decoded = sdfx.core.png.ScrambledPng.read(path, secret.map(_.use(identity)))
+      val src = decoded.image
+      val factor = math.min(1.0, math.min(maxSide.toDouble / src.getWidth, maxSide.toDouble / src.getHeight))
+      val scaled = if factor >= 1 then src else
+        val w = math.max(1, math.round(src.getWidth * factor).toInt)
+        val h = math.max(1, math.round(src.getHeight * factor).toInt)
+        val out = new java.awt.image.BufferedImage(w, h, java.awt.image.BufferedImage.TYPE_INT_ARGB)
+        val graphics = out.createGraphics()
+        try
+          graphics.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR)
+          graphics.drawImage(src, 0, 0, w, h, null)
+        finally graphics.dispose()
+        out
+      DisplayImage(SwingFXUtils.toFXImage(scaled, null), decoded.passwordVerified, true)
+    else
+      val image = new Image(path.toUri.toString, maxSide, maxSide, true, true, false)
+      if image.isError then throw new IllegalArgumentException("Image not found or unreadable")
+      DisplayImage(image, None, false)
+
   /** Runs `f` once the image finished loading (successfully or not). */
   def whenLoaded(img: Image)(f: => Unit): Unit =
     if img.getProgress >= 1 || img.isError then f
@@ -118,6 +154,8 @@ final class ImageInput(ctx: UiContext, path: StringProperty):
 
 /** Image input: drag & drop (files, gallery thumbnails, browser images), Ctrl+V paste, click to open. */
 final class ImageDropZone(ctx: UiContext, path: StringProperty, hint: String, height: Double = 260):
+  private val reads = new sdfx.ui.vm.ImageReadGate[ImageFiles.DisplayImage](ctx.services.imageScrambleSession,
+    run => Fx.run(run()), (file, secret) => ImageFiles.readForDisplay(file, secret))(using Fx.bg)
   private val input = new ImageInput(ctx, path)
   private val view = new ImageView()
   view.setPreserveRatio(true)
@@ -172,21 +210,30 @@ final class ImageDropZone(ctx: UiContext, path: StringProperty, hint: String, he
     info.setText("")
 
   private def refresh(p: String): Unit =
-    view.setUserData(Option(p).filter(_.nonEmpty).flatMap(s => scala.util.Try(Paths.get(s)).toOption).orNull)
-    ImageFiles.load(p) match
+    reads.invalidate()
+    val file = Option(p).filter(_.trim.nonEmpty).flatMap(s => scala.util.Try(Paths.get(s)).toOption)
+    view.setUserData(file.orNull)
+    file match
       case None => showPlaceholder(s"⤓\n$hint\nDrop · Ctrl+V · click to open")
-      case Some(img) =>
-        view.setImage(img)
-        placeholder.setVisible(false)
-        clearBtn.setVisible(true)
-        info.setText("")
-        ImageFiles.whenLoaded(img) {
-          if path.get == p then
-            if img.isError then showPlaceholder(s"⚠\nImage not found or unreadable\n$p")
-            else info.setText(f"${img.getWidth}%.0f×${img.getHeight}%.0f")
+      case Some(f) =>
+        showPlaceholder("Loading image…")
+        reads.request(f) {
+          case scala.util.Success(display) if path.get == p && view.getUserData == f =>
+            val img = display.image
+            view.setImage(img)
+            placeholder.setVisible(false)
+            clearBtn.setVisible(true)
+            val dimensions = f"${img.getWidth}%.0f×${img.getHeight}%.0f"
+            info.setText(if display.scrambled && display.passwordVerified.isEmpty then dimensions + " · password unverified" else dimensions)
+          case scala.util.Failure(error) if path.get == p && view.getUserData == f =>
+            showPlaceholder("Cannot display image: " + Fx.message(error).stripPrefix("requirement failed: "))
+          case _ => ()
         }
+
+  def refreshImageAccess(): Unit = refresh(path.get)
 
   path.addListener((_, _, p) =>
     Option(p).filter(_.nonEmpty).flatMap(s => scala.util.Try(Paths.get(s)).toOption).foreach(ctx.temps.rememberInput)
     refresh(p))
   refresh(path.get)
+  ctx.watchImageAccess(node)(() => refreshImageAccess())

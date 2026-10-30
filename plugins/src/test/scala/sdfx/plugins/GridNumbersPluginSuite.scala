@@ -45,7 +45,7 @@ class GridNumbersPluginSuite extends munit.FunSuite:
       val source = ImageIO.read(o.path.toFile)
       assertEquals(source.getRGB(10, 10) & 0xffffff, ctx.colorOf(o.params, o.seed))
       val before = Files.readAllBytes(o.path).toSeq
-      val rendered = Support.cellImage(Seq(o)).get
+      val rendered = Support.cellImage(ctx, Seq(o)).get
       assertEquals(Files.readAllBytes(o.path).toSeq, before)
       assert(rendered.getRGB(11, 11) != source.getRGB(11, 11))
     }
@@ -65,7 +65,7 @@ class GridNumbersPluginSuite extends munit.FunSuite:
     Files.copy(source.path, renamed)
     val output = source.copy(path = renamed)
     val before = Files.readAllBytes(renamed).toSeq
-    val decorated = Support.cellImage(Seq(output)).get
+    val decorated = Support.cellImage(ctx, Seq(output)).get
     val original = ImageIO.read(renamed.toFile)
     assertEquals(Files.readAllBytes(renamed).toSeq, before)
     assert(decorated.getRGB(11, 230) != original.getRGB(11, 230))

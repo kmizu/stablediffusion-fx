@@ -218,7 +218,7 @@ class XyzGridPlugin(extraAxes: () => Seq[XyzAxis] = () => Nil) extends Plugin:
     val legend = v.bool("draw_legend", true)
     val margin = v.int("margin", 0)
     val cellImgs: Map[Cell, BufferedImage] =
-      results.view.mapValues(r => Support.cellImage(r._1)).collect { case (k, Some(i)) => k -> ImageOps.withMargin(i, margin) }.toMap
+      results.view.mapValues(r => Support.cellImage(ctx, r._1)).collect { case (k, Some(i)) => k -> ImageOps.withMargin(i, margin) }.toMap
     val firstParams = cells.flatMap(results.get).head._2
     val firstSeed = allImages.head.seed
 

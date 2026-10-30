@@ -1,6 +1,7 @@
 import io
 import hashlib
 from types import SimpleNamespace
+from pathlib import Path
 import numpy as np
 import pytest
 torch = pytest.importorskip('torch')
@@ -363,3 +364,85 @@ def test_bad_requests_are_invalid_params(engine, tmp_path, params):
     with pytest.raises(EngineError) as exc:
         engine.vae_tools(dict(input_paths=[str(source)], **params) if 'input_paths' not in params else params, ctx())
     assert exc.value.code == 'invalid_params'
+
+
+def test_generation_recovery_scrambles_png_but_preserves_exact_tensor(engine, tmp_path, monkeypatch):
+    from pathlib import Path
+    from sdfx.encrypt_image import decode_png
+    vae = engine.pipe.vae
+    def broken(*args, **kwargs): raise RuntimeError('injected failure')
+    monkeypatch.setattr(vae, 'decode', broken)
+    context = ctx(); context.image_password = 'secret'
+    source = torch.arange(256, dtype=torch.float32).reshape(1, 4, 8, 8) / 100
+    with tools.catch_decode(engine, vae, tmp_path, context):
+        vae.decode(source, return_dict=False)
+    item = engine._vae_recovery[0]
+    with Image.open(item['path']) as stored:
+        assert stored.info['Encrypt'] == 'pixel_shuffle_3' and stored.mode == 'RGBA'
+    decoded, checked = decode_png(Path(item['path']).read_bytes(), 'secret')
+    with Image.open(io.BytesIO(decoded)) as image:
+        assert checked is True and image.mode == 'RGBA'
+        assert np.array_equal(tools.unpack(image, 'RGBA', 4), tools.unpack(tools.pack(tools._scale(vae, source).numpy(), 'RGBA')[0], 'RGBA', 4))
+    from safetensors.torch import load_file
+    assert torch.equal(load_file(item['latent_path'])['tensor'], source)
+    assert 'readable' in context.emitter._stream.getvalue().decode('utf-8').lower()
+
+
+def test_generation_recovery_protection_failure_leaves_no_plaintext_png(engine, tmp_path, monkeypatch):
+    from pathlib import Path
+    import sdfx.encrypt_image as encryption
+    def broken(*args, **kwargs): raise RuntimeError('injected VAE failure')
+    monkeypatch.setattr(engine.pipe.vae, 'decode', broken)
+    def fail(*args): raise RuntimeError('injected protection failure')
+    monkeypatch.setattr(encryption, 'encode_png', fail)
+    context = ctx(); context.image_password = 'secret'
+    with tools.catch_decode(engine, engine.pipe.vae, tmp_path, context), pytest.raises(RuntimeError, match='protection failure'):
+        engine.pipe.vae.decode(torch.zeros(1, 4, 8, 8), return_dict=False)
+    assert not list(Path(tmp_path).rglob('*.png')) and not list(Path(tmp_path).rglob('*.safetensors'))
+
+@pytest.mark.parametrize('representation', ['L', 'RGBA', 'CMYK'])
+def test_session_protected_vae_roundtrip_preserves_latent_modes(engine, tmp_path, representation):
+    from sdfx.encrypt_image import encode_png, decode_png
+    source = tmp_path / 'input.png'
+    Image.fromarray(np.random.default_rng(7).integers(0, 256, (64, 64, 3), dtype='uint8')).save(source)
+    plain_bytes = source.read_bytes()
+    protected = tmp_path / 'protected.png'
+    protected.write_bytes(encode_png(plain_bytes, 'secret'))
+    secret_ctx = ctx()
+    secret_ctx.image_password = 'secret'
+    options = dict(input_paths=[str(protected)], output_dir=str(tmp_path), representation=representation, operation='encode', seed=2)
+    with pytest.raises(EngineError, match='plaintext latent consent'):
+        engine.vae_tools(options, secret_ctx)
+    result = engine.vae_tools(dict(options, allow_plaintext_latent=True), secret_ctx)
+    item = result['results'][0]
+    assert item['status'] == 'complete', result
+    assert 'plaintext' in result['warnings'][0]
+    with Image.open(item['path']) as encoded:
+        assert encoded.mode == ('CMYK' if representation == 'CMYK' else representation)
+        assert ('Encrypt' in encoded.info) == (representation == 'RGBA')
+    baseline = engine.vae_tools(dict(options, input_paths=[str(source)]), ctx())['results'][0]
+    assert baseline['status'] == 'complete'
+    assert np.array_equal(tools.read_latent(item['latent_path'], 'L', 4), tools.read_latent(baseline['latent_path'], 'L', 4))
+    assert np.array_equal(tools.read_latent(item['path'], representation, 4, 'secret'), tools.read_latent(baseline['path'], representation, 4))
+    decoded = engine.vae_tools(dict(options, input_paths=[item['path']], operation='decode'), secret_ctx)
+    assert decoded['results'][0]['status'] == 'complete', decoded
+    output = decoded['results'][0]['path']
+    assert Image.open(output).info['Encrypt'] == 'pixel_shuffle_3'
+    assert Image.open(io.BytesIO(decode_png(Path(output).read_bytes(), 'secret')[0])).size == (64, 64)
+    wrong = ctx(); wrong.image_password = 'wrong'
+    rejected = engine.vae_tools(dict(options, operation='encode+decode'), wrong)
+    assert rejected['results'][0]['status'] == 'error'
+    assert protected.read_bytes() == encode_png(plain_bytes, 'secret')
+
+
+def test_vae_tools_reports_unverified_legacy_password(engine, tmp_path):
+    from PIL.PngImagePlugin import PngInfo
+    from sdfx.encrypt_image import scramble
+    info = PngInfo(); info.add_text('Encrypt', 'pixel_shuffle_3')
+    source = tmp_path / 'legacy.png'
+    scramble(Image.new('RGB', (64, 64), 'red'), 'secret').save(source, pnginfo=info)
+    context = ctx(); context.image_password = 'secret'
+    result = engine.vae_tools(dict(input_paths=[str(source)], operation='encode+decode',
+                                   output_dir=str(tmp_path)), context)
+    assert result['results'][0]['status'] == 'complete'
+    assert any('unverified' in warning.lower() for warning in result['warnings'])

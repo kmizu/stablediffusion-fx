@@ -118,10 +118,10 @@ object ExtrasOps:
     canvas
 
 private[plugins] object Extras:
-  def initImage(p: GenerationParams, plugin: String): (Path, BufferedImage) =
+  def initImage(p: GenerationParams, plugin: String, ctx: PluginContext): (Path, BufferedImage) =
     Support.requireImg2Img(p, plugin)
     val path = Paths.get(p.img2img.get.initImage)
-    (path, Support.readImage(path))
+    (path, Support.readImage(ctx, path))
 
   def infoOf(path: Path): Option[String] = scala.util.Try(PngMetadata.readParameters(path)).toOption.flatten
 
@@ -150,7 +150,7 @@ class OutpaintMk2Plugin extends Plugin:
   )
 
   override def run(p0: GenerationParams, v: Values, ctx: PluginContext): JobOutput =
-    val (_, img) = Extras.initImage(p0, name)
+    val (_, img) = Extras.initImage(p0, name, ctx)
     val i0 = p0.img2img.get
     val blur = v.int("mask_blur", 8)
     val e = ImageOps.expansion(img.getWidth, img.getHeight, v.int("pixels", 128),
@@ -206,9 +206,12 @@ class CustomCodePlugin extends Plugin:
   override def description = "Runs Python in the engine (engine, pipe, torch, Image, params available; set `result` / `images`)."
   override def controls: Seq[Control] = Seq(
     Note("warning", "Only enabled when 'Allow custom code' is on in Settings. Code runs with your user's rights."),
+    Note("scrambling_warning", "Image scrambling cannot protect files written by custom Python. Code can save readable images or other data anywhere it can access; these writes cannot be intercepted by the app."),
     Text("code", "Python code", "result = str(pipe)", multiline = true)
   )
   override def run(p0: GenerationParams, v: Values, ctx: PluginContext): JobOutput =
+    if ctx.imageScramblingEnabled then
+      ctx.log("Warning: custom Python can write readable files; image scrambling cannot intercept or protect those writes.")
     val r = ctx.engineCall("run_code", ujson.Obj("code" -> v.str("code")))
     val stdout = Extras.jsonPath(r, "stdout").getOrElse("")
     val result = Extras.jsonPath(r, "result").getOrElse("")
@@ -217,7 +220,7 @@ class CustomCodePlugin extends Plugin:
     val imgs = r match
       case o: ujson.Obj => o.value.get("images").collect { case a: ujson.Arr => a.value.collect { case ujson.Str(s) => s } }.getOrElse(Nil)
       case _            => Nil
-    JobOutput(imgs.toSeq.map(s => ctx.saveImage(Support.readImage(s), "custom", p0, s"Script: Custom code, Result: ${Infotext1(result)}")))
+    JobOutput(imgs.toSeq.map(s => ctx.saveImage(Support.readImage(ctx, s), "custom", p0, s"Script: Custom code, Result: ${Infotext1(result)}")))
 
 private[plugins] object Infotext1:
   def apply(s: String): String = s.replace("\n", " ").take(200)
@@ -241,7 +244,8 @@ class SvdPlugin extends Plugin:
     IntField("decode_chunk_size", "Decode chunk size", 1, 64, 4)
   )
   override def run(p0: GenerationParams, v: Values, ctx: PluginContext): JobOutput =
-    val (src, _) = Extras.initImage(p0, name)
+    ctx.requirePlaintextVideoAllowed()
+    val (src, _) = Extras.initImage(p0, name, ctx)
     val model = ctx.modelPath(ChoiceSource.SvdModels, v.str("model")).getOrElse(throw new IllegalArgumentException(s"SVD model not found: ${v.str("model")}"))
     val seed = Support.fixSeed(p0.seed)
     val params = ujson.Obj("model" -> model, "image_path" -> src.toString, "seed" -> seed)
@@ -254,7 +258,7 @@ class SvdPlugin extends Plugin:
       val preview = Extras.jsonPath(res, "preview").map(Paths.get(_))
       val info = s"Script: Stable Video Diffusion, Model: ${v.str("model")}, Seed: $seed, Frames: ${v.int("frames")}, FPS: ${v.int("fps")}, " +
         s"Motion bucket: ${v.int("motion_bucket_id")}"
-      val out = preview.map(pv => ctx.saveImage(Support.readImage(pv), "videos", p0.copy(seed = seed), info))
+      val out = preview.map(pv => ctx.saveImage(Support.readImage(ctx, pv), "videos", p0.copy(seed = seed), info))
       for o <- out; g <- gif do Files.copy(g, o.path.resolveSibling(o.path.getFileName.toString.replaceAll("\\.png$", ".gif")),
         StandardCopyOption.REPLACE_EXISTING)
       JobOutput(out.toSeq)
@@ -274,14 +278,14 @@ class Zero123Plugin extends Plugin:
     IntField("steps", "Steps", 1, 150, 50), Slider("cfg_scale", "CFG", 0, 15, 0.1, 3.0)
   )
   override def run(p0: GenerationParams, v: Values, ctx: PluginContext): JobOutput =
-    val (src, _) = Extras.initImage(p0, name)
+    val (src, _) = Extras.initImage(p0, name, ctx)
     val model = ctx.modelPath(ChoiceSource.Zero123Models, v.str("model")).getOrElse(throw new IllegalArgumentException(s"Zero123 model not found: ${v.str("model")}"))
     val seed = Support.fixSeed(p0.seed)
     val r = Support.step(ctx)(ctx.engineCall("novel_view", ujson.Obj("model" -> model, "image_path" -> src.toString,
       "elevation" -> v.double("elevation", 10), "azimuth" -> v.double("azimuth", 90), "steps" -> v.int("steps", 50),
       "cfg_scale" -> v.double("cfg_scale", 3.0), "seed" -> seed)))
     JobOutput(r.flatMap(Extras.jsonPath(_, "path")).toSeq.map { p =>
-      ctx.saveImage(Support.readImage(p), "img2img", p0.copy(seed = seed),
+      ctx.saveImage(Support.readImage(ctx, p), "img2img", p0.copy(seed = seed),
         s"Script: Zero123, Model: ${v.str("model")}, Elevation: ${Values.fmt(v.double("elevation", 10))}, Azimuth: ${Values.fmt(v.double("azimuth", 90))}, Seed: $seed")
     })
 
@@ -294,8 +298,8 @@ abstract class ExtrasPlugin extends Plugin:
     val sources: Seq[(BufferedImage, GenerationParams, Option[String])] = p0.img2img match
       case Some(i) =>
         val path = Paths.get(i.initImage)
-        Seq((Support.readImage(path), p0, Extras.infoOf(path)))
-      case None => Support.step(ctx)(ctx.generate(p0)).getOrElse(Nil).map(o => (Support.readImage(o.path), o.params, Some(o.infotext)))
+        Seq((Support.readImage(ctx, path), p0, Extras.infoOf(path)))
+      case None => Support.step(ctx)(ctx.generate(p0)).getOrElse(Nil).map(o => (Support.readImage(ctx, o.path), o.params, Some(o.infotext)))
     val outs = scala.collection.mutable.ArrayBuffer[OutputImage]()
     var running = true
     val it = sources.zipWithIndex.iterator
@@ -366,7 +370,7 @@ class FaceRestoreExtrasPlugin extends ExtrasPlugin:
     try
       val r = ctx.engineCall("restore_faces", ujson.Obj("image_path" -> src.toString, "model" -> model,
         "visibility" -> v.double("visibility", 1.0), "codeformer_weight" -> v.double("codeformer_weight", 0.5)))
-      Extras.jsonPath(r, "path").toSeq.map(pth => (Support.readImage(pth), Seq("Face restoration" -> v.str("model"),
+      Extras.jsonPath(r, "path").toSeq.map(pth => (Support.readImage(ctx, pth), Seq("Face restoration" -> v.str("model"),
         "Face restoration visibility" -> Values.fmt(v.double("visibility", 1.0)))))
     finally Support.deleteQuietly(src)
 

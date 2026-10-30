@@ -67,7 +67,7 @@ class PromptMatrixPlugin extends Plugin:
     if images.isEmpty then return JobOutput(Nil)
 
     val margin = v.int("margin", 0)
-    val cellsByIdx = outs.toMap.view.mapValues(o => Support.cellImage(o).map(ImageOps.withMargin(_, margin)).orNull).toMap
+    val cellsByIdx = outs.toMap.view.mapValues(o => Support.cellImage(ctx, o).map(ImageOps.withMargin(_, margin)).orNull).toMap
     val (cols, rows) = layout(variable.size)
     val cells = combos.map(c => outs.find(_._1 == c).flatMap(o => Option(cellsByIdx(o._1))).orNull)
     val colBits = variable.size - variable.size / 2

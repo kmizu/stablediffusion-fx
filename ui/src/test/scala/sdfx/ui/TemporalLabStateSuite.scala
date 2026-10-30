@@ -167,6 +167,23 @@ class TemporalLabStateSuite extends munit.FunSuite:
     assertEquals(shown.toVector, Vector("recovered"))
   }
 
+  test("session reset discards a pending old frame and starts the new one after stale completion") {
+    val callbacks = scala.collection.mutable.ArrayBuffer.empty[Either[String, String] => Unit]
+    val launched = scala.collection.mutable.ArrayBuffer.empty[Path]
+    val shown = scala.collection.mutable.ArrayBuffer.empty[String]
+    val slots = new TemporalPreviewSlots[String]((_, path, done) => { launched += path; callbacks += done; () => () })
+    val old = Path.of("old.png"); val current = Path.of("current.png")
+    slots.show("frame", old, shown += _, _ => ())
+    slots.clear()
+    slots.show("frame", current, shown += _, _ => ())
+    assertEquals(launched.toVector, Vector(old))
+    callbacks.head(Left("Image access changed"))
+    assertEquals(launched.toVector, Vector(old, current))
+    assertEquals(shown.toVector, Vector.empty)
+    callbacks(1)(Right("current pixels"))
+    assertEquals(shown.toVector, Vector("current pixels"))
+  }
+
   test("slow frame loading still presents completed frames under continuous playback ticks") {
     val callbacks = scala.collection.mutable.ArrayBuffer.empty[Either[String, String] => Unit]
     val started = scala.collection.mutable.ArrayBuffer.empty[Path]

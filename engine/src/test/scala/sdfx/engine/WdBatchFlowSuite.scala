@@ -10,6 +10,25 @@ import sdfx.core.model.GenerationParams
 import sdfx.core.protocol.{GenerationRequest, WdBatchPrepareRequest, EngineError}
 
 class WdBatchFlowSuite extends FunSuite:
+  test("WD password is scoped to execute, outside preparation and params") {
+    import FakeEngine.*
+    val sup = new EngineSupervisor(() => launch())
+    try
+      Await.result(sup.startAsync(), 20.seconds)
+      val session = new sdfx.core.png.ImageScrambleSession
+      session.unlock("wd-secret")
+      val secret = session.snapshot.map(_.withPlaintextVideoAllowed)
+      val control = new ExtrasBatchControl(() => Future.successful(accepted))
+      val request = WdBatchPrepareRequest("/images", GenerationRequest(GenerationParams(), ""), "/out", "result", "token")
+      val handle = new EngineClient(sup).wdBatchOwned(request, "queue-owner", control, imageSecret = secret)
+      assert(Await.result(handle.result, 20.seconds).partial)
+      val state = Await.result(sup.request("get_state"), 20.seconds)
+      assertEquals(state("wd_secret_presence")("batch_interrogate_prepare").bool, false)
+      assertEquals(state("wd_secret_presence")("batch_interrogate_execute").bool, true)
+      assertEquals(state("wd_video_permission")("batch_interrogate_execute").bool, false)
+      assert(!state.render().contains("wd-secret"))
+    finally sup.close()
+  }
   private val accepted = InterruptionDecision(true, false, InterruptionProtection(), affected = true)
 
   test("prepare token flows to execute and response remains partial") {

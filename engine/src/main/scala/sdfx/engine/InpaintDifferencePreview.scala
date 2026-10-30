@@ -4,7 +4,8 @@ import java.nio.file.{Files, LinkOption, Path}
 import scala.concurrent.{ExecutionContext, Future}
 
 object InpaintDifferencePreview:
-  final case class Artifact private[engine](directory: Path, mask: Path, preview: Path, width: Int, height: Int):
+  final case class Artifact private[engine](directory: Path, mask: Path, preview: Path, width: Int, height: Int,
+      warnings: Seq[String] = Nil):
     /** Never recurse: a replaced directory or unexpected file is not ours to remove. */
     def cleanup(): Unit =
       if !Files.isSymbolicLink(directory) && Files.isDirectory(directory, LinkOption.NOFOLLOW_LINKS) then
@@ -31,11 +32,16 @@ object InpaintDifferencePreview:
       "Invalid preview dimensions")
     Artifact(dir, mask, preview, width.toInt, height.toInt)
 
-  def run(services: AppServices, base: String, altered: String, output: Path, options: ujson.Obj)
+  def run(services: AppServices, base: String, altered: String, output: Path, options: ujson.Obj,
+      secret: Option[sdfx.core.png.ImageScrambleSecret] = None)
       (using ec: ExecutionContext): Future[Artifact] =
     Files.createDirectories(output)
     val params = ujson.Obj.from(options.value.toSeq)
     params("base_path") = base
     params("altered_path") = altered
     params("output_dir") = output.toAbsolutePath.normalize().toString
-    services.client.raw("inpaint_difference_preview", params).map(accept(output, _))
+    val warnings = scala.collection.mutable.ArrayBuffer.empty[String]
+    ScrambledInput.withObjectAsync(params, Seq("base_path", "altered_path"), services.home.tmpDir(services.settings), secret,
+      message => if !warnings.contains(message) then warnings += message) { resolved =>
+      services.client.raw("inpaint_difference_preview", resolved).map(value => accept(output, value).copy(warnings = warnings.toVector))
+    }

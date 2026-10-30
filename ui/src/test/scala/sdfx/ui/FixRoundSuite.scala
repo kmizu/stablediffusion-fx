@@ -102,6 +102,16 @@ class FixRoundSuite extends munit.FunSuite:
     assert(job.id.nonEmpty)
   }
 
+  test("JobBuilder captures the image session snapshot without serializing its secret") {
+    val session = new sdfx.core.png.ImageScrambleSession
+    session.unlock("queued secret")
+    val job = JobBuilder.build(new GenerationVM(Mode.Txt2Img), plugins(Mode.Txt2Img), imageSecret = session.snapshot)
+    session.lock()
+    assert(job.imageSecret.exists(_.use(identity) == "queued secret"))
+    assert(!job.toString.contains("queued secret"))
+    assert(!job.submittedContext.toString.contains("queued secret"))
+  }
+
   test("JobBuilder: img2img has the init image and no mask; hires is dropped") {
     val vm = new GenerationVM(Mode.Img2Img)
     vm.initImage.set("init.png")
