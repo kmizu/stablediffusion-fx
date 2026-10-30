@@ -21,6 +21,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # (repo, how it is used, what)
 BASE = [
+    ("klimaleksus/stable-diffusion-webui-embedding-merge", "reimplemented", "Pinned SDXL-branch behavior 40d439de3cda5965fc1f9cb4412ef329885d1d6d; independent native vector algebra, scoped prompt expressions, inspection and export; original parser used only in isolated numerical reference fixtures"),
     ("Tzigo/metadata_utils", "reimplemented", "GPL-3.0 behavior reference a4cda9fe899f95de769496946497d20daedb516b; independent native checkpoint/LoRA metadata editor with raw tensor preservation and no-overwrite copy publication"),
     ("Amadeus-AI/img2img-hires-fix", "reimplemented", "MIT behavior reference b8930527a8cc606dd79dd54ed23bc967314d1859; independent post-image pixel upscale, VAE re-encode and refinement controls for all generation modes"),
     ("w-e-w/embedding-inspector", "reimplemented", "Unlicense behavior reference 5f3451ec0cb5c9359feb37c0b0f984f09d337509; reupload of original tkalayci71 project; independent implementation"),
@@ -179,6 +180,7 @@ BASE = [
 # Keep these source-pinned original LICENSE bytes; do not normalize newlines.
 # (commit, license path, SHA-256, SPDX)
 PINNED_LICENSES = {
+    "klimaleksus/stable-diffusion-webui-embedding-merge": ("40d439de3cda5965fc1f9cb4412ef329885d1d6d", "LICENSE", "2c42de328b26a7318910d10b3cc4db282be0ad8146dc6543686797fbee4cde3b", "Unlicense (upstream also states WTFPL)"),
     "Tzigo/metadata_utils": ("a4cda9fe899f95de769496946497d20daedb516b", "LICENSE", "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986", "GPL-3.0"),
     "w-e-w/embedding-inspector": (
         "5f3451ec0cb5c9359feb37c0b0f984f09d337509", "LICENSE",

@@ -208,6 +208,8 @@ def test_unsupported_combinations_reject_before_pipeline_or_adapter_setup(monkey
     from sdfx.protocol import EngineError, UNSUPPORTED
     from sdfx import extensions
     monkeypatch.setattr(extensions, "pre_run", lambda *a, **kw: pytest.fail("unsupported request reached pipeline setup"))
+    from sdfx import photomaker_adapters
+    monkeypatch.setattr(photomaker_adapters, "adapter_scope", lambda *a, **kw: pytest.fail("unsupported request reached adapter snapshot"))
     engine = Engine.__new__(Engine)
     gp = GenerationParams(hooks={"neutral_prompt": {}, name: {}})
     with pytest.raises(EngineError) as error:

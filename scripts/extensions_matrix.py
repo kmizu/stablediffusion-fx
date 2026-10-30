@@ -28,7 +28,7 @@ S = {
     8: "todo:aesthetic_gradients", 9: "todo:train_dreambooth", 10: "todo:training_picker", 11: "todo:dataset_tag_editor",
     12: "todo:dreamartist", 13: "todo:hypernetwork_training", 14: "todo:custom_diffusion", 15: "todo:smart_process",
     16: "todo:embedding_editor", 17: "todo:model_merge", 18: "todo:model_converter", 19: "done:core:lora",
-    20: "todo:model_merge", 21: "todo:embedding_merge", 22: "todo:model_merge", 23: "todo:lora_block_weight",
+    20: "todo:model_merge", 21: "done:core:embedding-merge", 22: "todo:model_merge", 23: "todo:lora_block_weight",
     24: "done:core:gallery", 25: "done:core:gallery", 26: "todo:inspiration", 27: "todo:inspiration",
     28: "todo:prompt_gallery", 29: "todo:infinity_grid", 30: "todo:core:config-presets", 31: "todo:core:preset-utilities",
     32: "todo:outpaint_canvas", 33: "na:webui-css", 34: "done:core:size-presets", 35: "na:webui-css", 36: "na:webui-css",
@@ -145,6 +145,7 @@ IMPLEMENTED = {
 
 SCOPE_NOTES = {
     "core:embedding-inspector": "Native inspector, tokenizer, vector mixer, arbitrary-code-gated eval, atomic save and active-model refresh with SD1.5/SDXL support; loaded/catalog ownership is explicit. Eval can write readable files; SD2 actual checkpoints and A1111 training interoperability remain unverified. See embedding-inspector-verification.md.",
+    "core:embedding-merge": "Native raw CLIP/TI inspection with six groupings, bounded source-compatible expression algebra, scoped prompt expressions and PNG replay, PT/safetensors export and SD1/SDXL conversion. No-overwrite publication and fail-closed model restoration; SD2 checkpoint and A1111 training interoperability are unverified. Real SD1.5/SDXL, PhotoMaker/offload/cancellation and package evidence plus limits are in embedding-merge-verification.md.",
     "core:metadata-utils": "Native checkpoint/LoRA JSON metadata editing and non-overwriting copies preserving tensor bytes; cancellable source fingerprints bind edits to the loaded file and reject stale sources. Bounded safetensors/JSON input; atomic publication requires hard-link support. Real SD1.5/SDXL native and extracted-package read-back, cancellation/recovery and harmless-edit RGB equality verified. See metadata-utils-verification.md for evidence and retained timeout diagnostics.",
     "img2img_hires_fix": "Pinned source pixel upscale/VAE encode/refine behavior in all three modes, full controls and PNG replay; existing native latent Hires stays independent. SD1.5/SDXL extracted-package replay, cancellation and recovery verified. Refiner architectures remain unsupported; ControlNet/ADetailer interaction is not GPU-verified. See img2img-hires-fix-verification.md.",
     "core:image-scrambling": "Native session and batch compatibility with upstream pixel permutations. This is not secure encryption; readable metadata and temporary files remain. See encrypt-image-verification.md.",

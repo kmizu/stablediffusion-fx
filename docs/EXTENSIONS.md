@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 119, todo 183, na 51.
+Totals: done 120, todo 182, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-nui | Scope / notes |
 |---|---|---|---|---|---|
@@ -27,7 +27,7 @@ Totals: done 119, todo 183, na 51.
 | 18 | [Model Converter](https://github.com/Akegarasu/sd-webui-model-converter.git) | 336 | done | `model_converter` |  |
 | 19 | [Kohya-ss Additional Networks](https://github.com/kohya-ss/sd-webui-additional-networks.git) | 1814 | done | `core:lora` |  |
 | 20 | [Merge Block Weighted](https://github.com/bbc-mc/sdweb-merge-block-weighted-gui.git) | 320 | done | `model_merge` |  |
-| 21 | [Embedding Merge](https://github.com/klimaleksus/stable-diffusion-webui-embedding-merge.git) | 122 | todo | `embedding_merge` |  |
+| 21 | [Embedding Merge](https://github.com/klimaleksus/stable-diffusion-webui-embedding-merge.git) | 122 | done | `core:embedding-merge` | Native raw CLIP/TI inspection with six groupings, bounded source-compatible expression algebra, scoped prompt expressions and PNG replay, PT/safetensors export and SD1/SDXL conversion. No-overwrite publication and fail-closed model restoration; SD2 checkpoint and A1111 training interoperability are unverified. Real SD1.5/SDXL, PhotoMaker/offload/cancellation and package evidence plus limits are in embedding-merge-verification.md. |
 | 22 | [SuperMerger](https://github.com/hako-mikan/sd-webui-supermerger.git) | 837 | done | `model_merge` |  |
 | 23 | [LoRA Block Weight](https://github.com/hako-mikan/sd-webui-lora-block-weight.git) | 1167 | done | `lora_block_weight` |  |
 | 24 | [Image browser](https://github.com/AlUlkesh/stable-diffusion-webui-images-browser.git) | 648 | done | `core:gallery` |  |

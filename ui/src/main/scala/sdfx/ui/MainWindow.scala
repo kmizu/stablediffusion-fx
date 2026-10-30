@@ -178,6 +178,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   val stylesEditor = new StylesEditorTab(ctx)
   val vaeTools = new VaeToolsTab(ctx)
   val metadataUtils = new MetadataUtilsTab(ctx)
+  val embeddingMerge = new EmbeddingMergeTab(ctx)
   private val scrambleSession = new ScrambleSessionPane(services.imageScrambleSession, () => ctx.imageAccessChanged())
   private val scrambleBatch = new ScrambleBatchPane(stage)
   private val interruptionControls = new InterruptionControls(ctx)
@@ -209,6 +210,8 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   systemInfoTab.setId("system-info-tab")
   private val vaeToolsTab = new Tab("VAE Tools", vaeTools.node)
   vaeToolsTab.setId("vae-tools-tab")
+  private val embeddingMergeTab = new Tab("Embedding Merge", embeddingMerge.node)
+  embeddingMergeTab.setId("embedding-merge-tab")
   private val metadataUtilsTab = new Tab("Metadata Utils", metadataUtils.node)
   metadataUtilsTab.setId("metadata-utils-tab")
   private val stylesTab = new Tab("Styles", stylesEditor.view)
@@ -226,7 +229,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   scramblePages.setId("scramble-pages")
   private val scrambleTab = new Tab("Image Scrambling", scramblePages)
   scrambleTab.setId("image-scrambling-tab")
-  tabs.getTabs.addAll(pngTab, extrasTab, tokenizerTab, embeddingInspectorTab, temporalLabTab, systemInfoTab, stylesTab, comparisonTab, vaeToolsTab, metadataUtilsTab, scrambleTab)
+  tabs.getTabs.addAll(pngTab, extrasTab, tokenizerTab, embeddingInspectorTab, temporalLabTab, systemInfoTab, stylesTab, comparisonTab, vaeToolsTab, metadataUtilsTab, embeddingMergeTab, scrambleTab)
   tabs.getTabs.add(new Tab("VRAM Estimator", vramEstimator.node))
   private var comparisonDivider = initial.dividers.get("main").flatMap(_.headOption).getOrElse(.42)
   private var lastMode: Mode = Mode.Txt2Img
@@ -894,7 +897,8 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
       Mode.fromKey(t).foreach(select)
       if t == "pnginfo" then tabs.getSelectionModel.select(pngTab)
       if t == "extras" then tabs.getSelectionModel.select(extrasTab)
-      if t == "tokenizer" then tabs.getSelectionModel.select(tokenizerTab)
+      if t == "embedding_merge" then tabs.getSelectionModel.select(embeddingMergeTab)
+      else if t == "tokenizer" then tabs.getSelectionModel.select(tokenizerTab)
       if t == "temporal_lab" then tabs.getSelectionModel.select(temporalLabTab)
       if t == "systeminfo" then tabs.getSelectionModel.select(systemInfoTab)
       if t == "styles" then tabs.getSelectionModel.select(stylesTab)
@@ -911,6 +915,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
     val selected = Option(tabs.getSelectionModel.getSelectedItem) match
       case Some(t) if t eq pngTab    => "pnginfo"
       case Some(t) if t eq extrasTab => "extras"
+      case Some(t) if t eq embeddingMergeTab => "embedding_merge"
       case Some(t) if t eq tokenizerTab => "tokenizer"
       case Some(t) if t eq temporalLabTab => "temporal_lab"
       case Some(t) if t eq systemInfoTab => "systeminfo"
@@ -988,6 +993,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
       "system information" -> (() => systemInfo.dispose()),
       "VRAM estimator" -> (() => vramEstimator.dispose()),
       "VRAM estimates" -> (() => vramEstimates.values.foreach(_.dispose())),
+      "embedding merge" -> (() => embeddingMerge.dispose()),
       "temporal lab" -> (() => temporalLab.dispose()),
       "styles editor" -> (() => stylesEditor.dispose()),
       "metadata utils" -> (() => metadataUtils.dispose()),

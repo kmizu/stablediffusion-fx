@@ -148,7 +148,8 @@ object Infotext:
 
   /** Restores generation params from infotext on top of `base` (A1111 "send to txt2img"). */
   def toParams(pi: ParsedInfotext, base: GenerationParams = GenerationParams()): GenerationParams =
-    val f = pi.fields
+    val restored = EmbeddingMergeMetadata.restore(pi).getOrElse(pi)
+    val f = restored.fields
     def i(k: String) = f.get(k).flatMap(_.trim.toIntOption)
     def l(k: String) = f.get(k).flatMap(_.trim.toLongOption)
     def d(k: String) = f.get(k).flatMap(_.trim.toDoubleOption)
@@ -184,8 +185,8 @@ object Infotext:
     val restoredHooks = f.get(Img2ImgHiresMetadata.key).flatMap(Img2ImgHiresMetadata.parse)
       .fold(hiresHooks - "img2img_hires_fix")(h => hiresHooks.updated("img2img_hires_fix", h))
     base.copy(
-      prompt = pi.prompt,
-      negativePrompt = pi.negativePrompt,
+      prompt = restored.prompt,
+      negativePrompt = restored.negativePrompt,
       steps = i("Steps").getOrElse(base.steps),
       samplerName = sampler,
       scheduler = sched.getOrElse(base.scheduler),

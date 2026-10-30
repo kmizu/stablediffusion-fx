@@ -24,7 +24,7 @@ QUEUED_TYPES = ("list_models", "list_files", "list_samplers", "load_model", "set
                 "preprocess", "inpaint_difference_preview", "upscale", "unload", "memory", "restore_faces", "caption", "run_code", "img2vid",
                 "novel_view", "merge_models", "convert_model", "image_tool", "tokenize", "embedding_inspector", "system_info",
                 "vram_estimator", "system_benchmark", "system_submission_preview", "system_submit", "vae_tools", "temporal_lab",
-                "batch_interrogate_prepare", "batch_interrogate_execute", "metadata_utils")
+                "batch_interrogate_prepare", "batch_interrogate_execute", "metadata_utils", "embedding_merge")
 
 
 def classify_exception(e: BaseException) -> tuple[str, str, str]:

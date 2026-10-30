@@ -71,7 +71,7 @@ class BaseEngine:
         }
 
     def features(self) -> list[str]:
-        return ["metadata_utils", "prevent_interrupt", *self._batch_features()]
+        return ["embedding_merge", "metadata_utils", "prevent_interrupt", *self._batch_features()]
 
     def _batch_features(self) -> list[str]:
         if self.dry_run:
@@ -174,6 +174,10 @@ class BaseEngine:
                     os.remove(out + ".part")
                 except OSError:
                     pass
+
+    def embedding_merge(self, params: dict, ctx: JobContext) -> dict:
+        from .embedding_merge_service import run
+        return run(self, params, ctx)
 
     def metadata_utils(self, params: dict, ctx: JobContext) -> dict:
         from .metadata_utils import run

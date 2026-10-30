@@ -32,6 +32,7 @@ object Protocol:
     val Memory = "memory"
     val Tokenize = "tokenize"
     val MetadataUtils = "metadata_utils"
+    val EmbeddingMerge = "embedding_merge"
     val SystemInfo = "system_info"
     val VaeTools = "vae_tools"
     val TemporalLab = "temporal_lab"
@@ -75,6 +76,18 @@ case class EngineHello(
 
 case class ModelEntry(name: String, path: String, kind: String, sizeMb: Double = 0) derives RW
 case class FileEntry(name: String, path: String, sizeMb: Double = 0) derives RW
+
+case class EmbeddingMergeRequest(text: String, operation: String = "inspect", grouping: String = "parts",
+    name: String = "", outputDir: String = "", embeddingPaths: Seq[String] = Nil,
+    safetensors: Boolean = true, provenance: String = "") derives RW
+case class EmbeddingMergeStatistics(min: Double, max: Double, sum: Double, absSum: Double,
+    norm: Double, std: Option[Double] = None) derives RW
+case class EmbeddingMergeRow(start: Int, end: Int, count: Int, text: String,
+    tokens: Seq[ujson.Value], statistics: EmbeddingMergeStatistics) derives RW
+case class EmbeddingMergeStream(name: String, count: Int, rows: Seq[EmbeddingMergeRow],
+    total: EmbeddingMergeStatistics) derives RW
+case class EmbeddingMergeResult(text: String, streams: Seq[EmbeddingMergeStream] = Nil,
+    paths: Seq[String] = Nil, active: Boolean = false, warning: String = "") derives RW
 
 case class MetadataUtilsRequest(operation: String = "read", path: String,
     metadataJson: String = "", newName: String = "", sourceToken: String = "") derives RW

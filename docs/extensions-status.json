@@ -129,7 +129,7 @@
 "index": 21,
 "name": "Embedding Merge",
 "url": "https://github.com/klimaleksus/stable-diffusion-webui-embedding-merge.git",
-"status": "todo:embedding_merge"
+"status": "done:core:embedding-merge"
 },
 {
 "index": 22,

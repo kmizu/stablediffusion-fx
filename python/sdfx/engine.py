@@ -161,6 +161,7 @@ class Engine(BaseEngine):
         self.base_sched_config: dict = {}
         self.derived: "OrderedDict[tuple, Any]" = OrderedDict()   # LRU of from_pipe pipelines
         self.loaded_loras: "OrderedDict[str, str]" = OrderedDict()  # adapter -> path, LRU
+        self._photomaker_adapter_owner = None
         self.hook_owner = None
         self._pre: Optional[list] = None
         self._sampler_ok: Optional[dict] = None  # pipeline whose accelerate offload hooks are installed (offload modes)
@@ -191,7 +192,7 @@ class Engine(BaseEngine):
 
     def features(self) -> list[str]:
         # Temperature guard uses step callbacks and does not alter model weights.
-        f = ["metadata_utils", "img2img_hires_fix", "hires_fix_tweaks", "token_downsampling", "vram_estimator", "steps_animation", "pnginfo_injection", "gpu_temperature_guard", "freeu", "dynamic_thresholding", "hypertile", "system_info", "vae_tools", "prevent_interrupt"]
+        f = ["embedding_merge", "metadata_utils", "img2img_hires_fix", "hires_fix_tweaks", "token_downsampling", "vram_estimator", "steps_animation", "pnginfo_injection", "gpu_temperature_guard", "freeu", "dynamic_thresholding", "hypertile", "system_info", "vae_tools", "prevent_interrupt"]
         f += self._batch_features()
         if cn_mod._has("cv2"):
             f.append("inpaint_difference")
@@ -266,6 +267,7 @@ class Engine(BaseEngine):
         self.derived.clear()
         self.cn_cache.clear()
         self.loaded_loras.clear()
+        self._photomaker_adapter_owner = None
         self.loaded_embeddings.clear()
         self.loaded_embedding_files.clear()
         getattr(self, "embedding_token_owners", {}).clear()
@@ -482,13 +484,30 @@ class Engine(BaseEngine):
             torch.cuda.empty_cache()
 
     # -- loras / embeddings ----------------------------------------------------
+    def _set_inference_adapters(self, pipe, names, weights):
+        # Accelerate can move trainable PEFT parameters during sampling while
+        # inference mode is active. On a later job PEFT toggles requires_grad
+        # again; PyTorch permits that for inference tensors only inside the
+        # same mode. This worker is inference-only and does not train adapters.
+        from contextlib import nullcontext
+        with torch.inference_mode() if self._offload else nullcontext():
+            pipe.set_adapters(names, adapter_weights=weights)
+
+    def _set_inference_lora_enabled(self, pipe, enabled):
+        # PEFT's enable operation also reactivates adapters and toggles their
+        # gradient flags, including after an intervening no-LoRA job.
+        from contextlib import nullcontext
+        with torch.inference_mode() if self._offload else nullcontext():
+            (pipe.enable_lora if enabled else pipe.disable_lora)()
+
+
     def _apply_loras(self, gp: GenerationParams, req: GenerationRequest, ctx: JobContext) -> dict:
         hashes: dict = {}
         pipe = self.pipe
         if hooks_mod.hook_config(gp.hooks, "composable_lora", {}) is not None:
             self._lora_windows, self._lora_state = [], ([], [])
             if self.loaded_loras:
-                pipe.disable_lora()
+                self._set_inference_lora_enabled(pipe, False)
             try:
                 self._composable_job = composable_lora.Job(pipe, gp, req, ctx)
             except (ValueError, KeyError, OverflowError, RecursionError) as exc:
@@ -520,7 +539,7 @@ class Engine(BaseEngine):
         if not want:
             if self.loaded_loras:
                 try:
-                    pipe.disable_lora()
+                    self._set_inference_lora_enabled(pipe, False)
                 except Exception:
                     pass
             return hashes
@@ -563,11 +582,11 @@ class Engine(BaseEngine):
             getattr(self, "lora_snapshots", {}).pop(a, None)
         if names:
             try:
-                pipe.enable_lora()
+                self._set_inference_lora_enabled(pipe, True)
             except Exception:
                 pass
             try:
-                pipe.set_adapters(names, adapter_weights=weights)
+                self._set_inference_adapters(pipe, names, weights)
             except (ValueError, KeyError, TypeError) as e:
                 raise EngineError(INVALID_PARAMS, f"LoRA block weights could not be applied: {e}")
             self._lora_state = (names, weights)
@@ -575,7 +594,7 @@ class Engine(BaseEngine):
             self._lora_state = ([], [])
             if self.loaded_loras:
                 try:
-                    pipe.disable_lora()
+                    self._set_inference_lora_enabled(pipe, False)
                 except Exception:
                     pass
         return hashes
@@ -583,7 +602,18 @@ class Engine(BaseEngine):
     def _load_embeddings(self, req: GenerationRequest, texts: list[str], ctx: JobContext):
         pipe = self.pipe
         joined = " ".join(texts)
-        for path in req.embedding_paths:
+        paths = [path for path in req.embedding_paths
+                 if os.path.splitext(os.path.basename(path))[0] not in self.loaded_embeddings]
+        if len({os.path.splitext(os.path.basename(path))[0] for path in paths}) < len(paths):
+            from .embedding_merge_files import requested_paths
+            widths = {'clip_l': pipe.text_encoder.get_input_embeddings().weight.shape[1]}
+            if self.sdxl:
+                widths['clip_g'] = pipe.text_encoder_2.get_input_embeddings().weight.shape[1]
+            try:
+                paths = requested_paths(paths, texts, widths)
+            except (ValueError, OSError) as error:
+                raise EngineError(INVALID_PARAMS, f"Embedding file selection: {error}") from error
+        for path in paths:
             token = os.path.splitext(os.path.basename(path))[0]
             if token in self.loaded_embeddings or not os.path.isfile(path) \
                     or not re.search(r"(?<![\w-])" + re.escape(token) + r"(?![\w-])", joined):
@@ -648,7 +678,21 @@ class Engine(BaseEngine):
                 self.loaded_embeddings.add(token)
 
     # -- prompts -------------------------------------------------------------
+    def _merge_encoding(self, pos, neg, operation):
+        from .embedding_merge_backend import run_encoded
+        context = getattr(self, '_embedding_merge_ctx', None)
+        check = (lambda: context.check_interrupt()) if context is not None else lambda: None
+        try:
+            return run_encoded(self, (pos, neg), operation, check=check)
+        except (ValueError, KeyError) as error:
+            if "<'" not in pos + neg and "{'" not in pos + neg:
+                raise
+            raise EngineError(INVALID_PARAMS, f"Embedding Merge: {error}") from error
+
     def _encode(self, pos: str, neg: str, gp: GenerationParams, bs: int) -> dict:
+        return self._merge_encoding(pos, neg, lambda texts: self._encode_unmerged(texts[0], texts[1], gp, bs))
+
+    def _encode_unmerged(self, pos: str, neg: str, gp: GenerationParams, bs: int) -> dict:
         if hooks_mod.hook_config(gp.hooks, "negpip", {}) is not None:
             return negpip.encode(self, prompt.strip_extra_networks(pos), prompt.strip_extra_networks(neg), gp, bs)
         return self._encode_plain(pos, neg, gp, bs)
@@ -686,6 +730,11 @@ class Engine(BaseEngine):
 
     def _encode_scheduled(self, pos: str, neg: str, gp: GenerationParams, bs: int, steps: int,
                           hires_total: Optional[int] = None, gradient_total: Optional[int] = None) -> dict:
+        return self._merge_encoding(pos, neg, lambda texts: self._encode_scheduled_unmerged(
+            texts[0], texts[1], gp, bs, steps, hires_total, gradient_total))
+
+    def _encode_scheduled_unmerged(self, pos: str, neg: str, gp: GenerationParams, bs: int, steps: int,
+                                   hires_total: Optional[int] = None, gradient_total: Optional[int] = None) -> dict:
         """_encode plus A1111 prompt editing / alternation: returns the embeddings for step 1; when the prompt
         changes during sampling the result is a ScheduledEmbeds carrying [(end_step, embeds), ...] (equal lengths)."""
         job = getattr(self, "_composable_job", None)
@@ -781,7 +830,7 @@ class Engine(BaseEngine):
                 cur[idx] = lora_blocks.zero_unet(weights[idx], self.sdxl)
         key = tuple(i for i, w in enumerate(cur) if w is not weights[i])
         if key != getattr(self, "_lora_key", None):
-            self.pipe.set_adapters(names, adapter_weights=cur)
+            self._set_inference_adapters(self.pipe, names, cur)
             self._lora_key = key
 
     def _lora_window_callback(self):
@@ -981,16 +1030,26 @@ class Engine(BaseEngine):
             return None
         return hooks_mod.normalize_pag(cfg)
 
-    def _run(self, task: str, gp: GenerationParams, req: GenerationRequest, ctx: JobContext, *, sampler: str,
+    def _run(self, task, gp, req, ctx, **kwargs):
+        if kwargs.get('embeds', {}).get('_neutral'):
+            # Reject incompatible requests before inspecting or mutating adapters.
+            cn = kwargs.get('cn')
+            neutral_runtime.validate(gp.hooks, controlnet=bool(cn and cn[0]), pag=bool(kwargs.get('pag')))
+        if hooks_mod.hook_config(gp.hooks, 'photomaker', {}) is None:
+            return self._run_unscoped(task, gp, req, ctx, **kwargs)
+        from .photomaker_adapters import adapter_scope
+        # Enter before special_pipe can mutate shared PEFT layers, including
+        # partially failed adapter loads. Keep ownership in the normal registry.
+        with adapter_scope(self) as scope:
+            return self._run_unscoped(task, gp, req, ctx, _photomaker_scope=scope, **kwargs)
+
+    def _run_unscoped(self, task: str, gp: GenerationParams, req: GenerationRequest, ctx: JobContext, *, sampler: str,
              schedule: Optional[str], cfg_scale: float, embeds: dict, steps: int, w: int, h: int, seeds: list[int],
              pass_: str, image_idx: int, images_total: int, latents=None, image=None, mask=None, strength: float = 1.0,
              expected_steps: int = 0, cn: Optional[tuple] = None, output_type: str = "pil", pag: Optional[dict] = None,
-             hook_seed: int = 0, latent_source=None, hires_noise=None):
+             hook_seed: int = 0, latent_source=None, hires_noise=None, _photomaker_scope=None):
         cn_models, cn_images, cn_kw = cn if cn else ([], [], {})
         neutral_plan = embeds.get("_neutral")
-        if neutral_plan:
-            # Reject known incompatibilities before special pipelines can load extra adapter/encoder weights.
-            neutral_runtime.validate(gp.hooks, controlnet=bool(cn_models), pag=bool(pag))
         xplan = ext_mod.pre_run(self, task, gp, mask_present=mask is not None, controlnet=bool(cn_models), pag=bool(pag))
         for wmsg in xplan.warnings:
             ctx.warn(wmsg)
@@ -1004,6 +1063,8 @@ class Engine(BaseEngine):
                 pipe = self._get_pipe(task, cn_models or None, None)
             else:
                 raise
+        if _photomaker_scope is not None:
+            _photomaker_scope.activate(pipe)
         sched, plan = self._scheduler(sampler, schedule, ctx)
         if xplan.sag and type(sched).__name__ not in SAG_SCHEDULERS:
             ctx.warn(f"SAG does not work with sampler '{sampler}' (use DDIM, UniPC or a DPM++ sampler); ignored")
@@ -1221,7 +1282,16 @@ class Engine(BaseEngine):
                         resize_width, resize_height, draw_noise, slerp) for seed, sub in zip(seeds, subseeds)]
                     return torch.stack(noise).to(device=device, dtype=dtype)
             with torch.inference_mode(), recovery, prepare_noise(pipe, noise_factory):
-                out = pipe(**kw)
+                if xplan.photomaker:
+                    from .embedding_merge_pipeline import run_pipeline
+                    from .photomaker_adapters import id_encoder_scope
+                    def invoke(texts):
+                        with id_encoder_scope(self, pipe):
+                            return pipe(**dict(kw, prompt=texts[0], negative_prompt=texts[1]))
+                    out = run_pipeline(self, pipe, (kw['prompt'], kw['negative_prompt']),
+                                       invoke, check=ctx.check_interrupt)
+                else:
+                    out = pipe(**kw)
         finally:
             if todo is not None and todo.enabled:
                 log.info('Token Downsampling: %s', dict(evaluations=todo.evaluations, active_evaluations=min(todo.limit, todo.evaluations), token_shapes=todo.stats))
@@ -1236,6 +1306,7 @@ class Engine(BaseEngine):
         return imgs, plan
 
     def _generate(self, params: dict, ctx: JobContext, mode: str) -> dict:
+        self._embedding_merge_ctx = ctx
         self._intermediate_recorder = None
         self._composable_job = None
         self._vae_recovery = []
@@ -1269,6 +1340,7 @@ class Engine(BaseEngine):
                         log.warning("could not close intermediate manifest: %s", e)
             finally:
                 self._intermediate_recorder = None
+                self._embedding_merge_ctx = None
 
     def _generate_recorded(self, params: dict, ctx: JobContext, mode: str) -> dict:
         if getattr(self, "_embedding_reload_error", None):

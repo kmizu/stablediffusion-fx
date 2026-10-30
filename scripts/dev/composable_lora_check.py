@@ -103,11 +103,11 @@ def build_guards(init_image, allow_code=False):
 
 
 class Client:
-    def __init__(self, executable, root, output, allow_code):
+    def __init__(self, executable, root, output, allow_code, *, python_paths=()):
         self.counter, self.messages = 0, queue.Queue()
         self.stderr = (output / 'stderr.log').open('w', encoding='utf-8')
         self.journal = (output / 'protocol.jsonl').open('w', encoding='utf-8')
-        env = dict(os.environ, PYTHONPATH=str(root / 'python'), PYTHONUNBUFFERED='1')
+        env = dict(os.environ, PYTHONPATH=os.pathsep.join([str(root / 'python'), *map(str, python_paths)]), PYTHONUNBUFFERED='1')
         if allow_code:
             env['SDFX_ALLOW_CODE'] = '1'
         else:

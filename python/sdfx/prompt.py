@@ -239,6 +239,9 @@ def _encode_chunk(te, tokens, layer_from_end: Optional[int], final_norm: bool, d
 
 
 def _te_device(pipe, te):
+    merged = getattr(pipe, '_embedding_merge_execution_device', None)
+    if merged is not None:
+        return merged
     dev = getattr(pipe, "_execution_device", None)
     if dev is None:
         dev = next(te.parameters()).device

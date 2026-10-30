@@ -107,19 +107,32 @@ def special_pipe(engine, plan: RunPlan):
         key = ("photomaker", (pm["model"],), None)
         p = engine.derived.get(key)
         if p is None:
-            p = PhotoMakerStableDiffusionXLPipeline(**engine.pipe.components)
+            from .embedding_merge_pipeline import clone_tokenizers
+            p = PhotoMakerStableDiffusionXLPipeline(**clone_tokenizers(engine.pipe.components))
             # Pass the weights as a dict: loaded weights-only by us (no pickle code execution), and it avoids the
             # package's file-download helper, which uses diffusers arguments newer diffusers no longer accept.
             from .engine import safe_torch_load
             if "v2" in os.path.basename(pm["model"]).lower():
                 raise EngineError(UNSUPPORTED, "PhotoMaker v2 needs InsightFace face embeddings; use photomaker-v1.bin")
             sd = safe_torch_load(pm["model"], "PhotoMaker adapter")
-            p.load_photomaker_adapter(sd, weight_name=os.path.basename(pm["model"]), trigger_word=pm["trigger_word"],
-                                      pm_version="v1")
+            from .photomaker_adapters import load_owned_adapter
+            load_owned_adapter(engine, p, sd, weight_name=os.path.basename(pm["model"]),
+                               trigger_word=pm["trigger_word"], pm_version="v1")
             # upstream sets num_tokens = 2 for every version; v1 fuses one ID token per image
             p.num_tokens = 1
             p.set_progress_bar_config(disable=True)
             engine.derived[key] = p
+        else:
+            # Ordinary TI loading updates base tokenizers without evicting this
+            # cached adapter. Refresh private maps before adding its trigger.
+            from .embedding_merge_pipeline import clone_tokenizers
+            tokenizers = clone_tokenizers({name: getattr(engine.pipe, name, None)
+                                          for name in ('tokenizer', 'tokenizer_2')})
+            for name, tokenizer in tokenizers.items():
+                if tokenizer is not None:
+                    tokenizer.add_tokens([pm['trigger_word']], special_tokens=True)
+                setattr(p, name, tokenizer)
+            p.trigger_word = pm['trigger_word']
         return p
     return None
 
