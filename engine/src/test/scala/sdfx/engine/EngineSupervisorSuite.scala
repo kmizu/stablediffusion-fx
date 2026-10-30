@@ -262,3 +262,17 @@ class EngineSupervisorSuite extends munit.FunSuite:
         assertEquals(sup.loadedModel.map(_.path), Some(m.path))
     finally sup.close()
   }
+
+  test("worker no_model clears loaded model before failure reaches caller") {
+    val sup = supervisor()
+    try
+      sup.start()
+      await(sup.request(Protocol.Types.LoadModel, Json.toJs(LoadModelRequest("models/x.safetensors"))))
+      assert(sup.loadedModel.nonEmpty)
+      val failure = intercept[EngineError](await(sup.request("fail", ujson.Obj("code" -> Protocol.ErrorCodes.NoModel))))
+      assertEquals(failure.code, Protocol.ErrorCodes.NoModel)
+      assertEquals(sup.loadedModel, None)
+      await(sup.request(Protocol.Types.LoadModel, Json.toJs(LoadModelRequest("models/x.safetensors"))))
+      assert(sup.loadedModel.nonEmpty)
+    finally sup.close()
+  }

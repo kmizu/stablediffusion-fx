@@ -23,6 +23,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BASE = [
     ("Tzigo/metadata_utils", "reimplemented", "GPL-3.0 behavior reference a4cda9fe899f95de769496946497d20daedb516b; independent native checkpoint/LoRA metadata editor with raw tensor preservation and no-overwrite copy publication"),
     ("Amadeus-AI/img2img-hires-fix", "reimplemented", "MIT behavior reference b8930527a8cc606dd79dd54ed23bc967314d1859; independent post-image pixel upscale, VAE re-encode and refinement controls for all generation modes"),
+    ("w-e-w/embedding-inspector", "reimplemented", "Unlicense behavior reference 5f3451ec0cb5c9359feb37c0b0f984f09d337509; reupload of original tkalayci71 project; independent implementation"),
     ("haraldk/TwelveMonkeys", "dependency", "Bundled TwelveMonkeys ImageIO WebP reader 3.12.0 and its supporting modules"),
     ("viyiviyi/sd-encrypt-image", "reimplemented", "AGPL-3.0 behavior reference 3a44d3c264632aa90442bdc50e42af0770289bfd; independently implemented pixel-scrambling compatibility; upstream core used only for reference fixtures"),
     ("PladsElsker/sd-webui-inpaint-difference", "reimplemented", "MIT behavior reference 656eed0a214186f4fb12fd6100fef582a01558bf; native difference masks and preview; upstream pure functions used only for test fixtures"),
@@ -179,6 +180,9 @@ BASE = [
 # (commit, license path, SHA-256, SPDX)
 PINNED_LICENSES = {
     "Tzigo/metadata_utils": ("a4cda9fe899f95de769496946497d20daedb516b", "LICENSE", "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986", "GPL-3.0"),
+    "w-e-w/embedding-inspector": (
+        "5f3451ec0cb5c9359feb37c0b0f984f09d337509", "LICENSE",
+        "6b0382b16279f26ff69014300541967a356a666eb0b91b422f6862f6b7dad17e", "Unlicense"),
     "haraldk/TwelveMonkeys": (
         "119700487b78717d45ab74bf5a61ba9824442697", "LICENSE.txt",
         "10e1e2688c74b337e0ca9e3a6a02e16319c3ee4cec79b768bca28ab8823ffde2", "BSD-3-Clause"),

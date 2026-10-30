@@ -45,16 +45,23 @@ def test_embedding_provenance_records_only_successful_load(tmp_path, fail):
     from sdfx.engine import Engine
     path = tmp_path / 'my_token.safetensors'
     save_file({'emb_params': torch.zeros(1, 8)}, str(path))
+    class Tokenizer:
+        def __init__(self): self.added = {}
+        def get_added_vocab(self): return dict(self.added)
     class Pipe:
+        def __init__(self): self.tokenizer = Tokenizer()
         def load_textual_inversion(self, *args, **kwargs):
             if fail:
                 raise ValueError('incompatible embedding')
+            self.tokenizer.added[kwargs['token']] = 1
     engine = Engine.__new__(Engine)
     engine.pipe, engine.sdxl = Pipe(), False
     engine.loaded_embeddings = set()
     engine.loaded_embedding_files = {}
+    engine.embedding_token_owners = {}
     engine._load_embeddings(SimpleNamespace(embedding_paths=[str(path)]), ['my_token'], SimpleNamespace(warn=lambda _: None))
     assert engine.loaded_embedding_files == ({} if fail else {'my_token': str(path)})
+    assert engine.embedding_token_owners == ({} if fail else {'my_token': {'clip_l': ['my_token']}})
 
 
 def test_snapshot_rejects_replaced_or_modified_loaded_file(tmp_path):

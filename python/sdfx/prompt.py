@@ -215,7 +215,7 @@ def _emphasize(z, mults):
     return z
 
 
-def _encode_chunk(te, tokens, layer_from_end: Optional[int], final_norm: bool, device):
+def _encode_chunk(te, tokens, layer_from_end: Optional[int], final_norm: bool, device, eos_token_id: Optional[int] = None):
     import torch
     ids = torch.tensor([tokens], dtype=torch.long, device=device)
     out = te(ids, output_hidden_states=True)
@@ -226,6 +226,15 @@ def _encode_chunk(te, tokens, layer_from_end: Optional[int], final_norm: bool, d
         if final_norm:
             z = te.text_model.final_layer_norm(z)
     pooled = getattr(out, "text_embeds", None)
+    # Older SDXL CLIP configs use eos_token_id=2, causing Transformers to pool
+    # at the maximum token ID. Added textual-inversion IDs exceed the real EOS;
+    # pool at the tokenizer's first EOS in that case. Leave ordinary prompts
+    # and encoders with corrected EOS configuration on their original path.
+    if (pooled is not None and eos_token_id is not None and
+            getattr(getattr(te, "text_model", None), "eos_token_id", None) == 2 and
+            any(token > eos_token_id for token in tokens) and eos_token_id in tokens):
+        eos_pos = tokens.index(eos_token_id)
+        pooled = te.text_projection(out.last_hidden_state[:, eos_pos, :])
     return z, pooled
 
 
@@ -292,7 +301,7 @@ def encode_sdxl(pipe, text: str, clip_skip: int = 1):
                 z1, _ = _encode_chunk(te1, t1, layer, False, _te_device(pipe, te1))
                 parts.append(_emphasize(z1, m1))
             t2, m2 = chunks2[min(i, len(chunks2) - 1)]
-            z2, p2 = _encode_chunk(te2, t2, layer, False, _te_device(pipe, te2))
+            z2, p2 = _encode_chunk(te2, t2, layer, False, _te_device(pipe, te2), pipe.tokenizer_2.eos_token_id)
             if pooled is None:
                 pooled = p2
             z2 = _emphasize(z2, m2)

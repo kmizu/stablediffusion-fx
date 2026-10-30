@@ -187,6 +187,100 @@ class BaseEngine:
         from .tokenizer_tool import inspect
         return inspect(self.pipe, params, ctx)
 
+    def _with_embedding_encoder_access(self, operation):
+        offloaded = bool(getattr(self, "_offload", False))
+        if offloaded:
+            self._drop_hooks()
+        try:
+            if offloaded:
+                for attr in ("text_encoder", "text_encoder_2"):
+                    encoder = getattr(self.pipe, attr, None)
+                    if encoder is not None and encoder.get_input_embeddings().weight.is_meta:
+                        raise ValueError("offloaded text encoder could not be materialized")
+            return operation()
+        finally:
+            if offloaded and self.pipe is not None:
+                try:
+                    self._place(self.pipe)
+                except BaseException as exc:
+                    try:
+                        self._free()
+                    finally:
+                        self._embedding_reload_error = str(exc)
+                    raise EngineError(NO_MODEL,
+                        f"Embedding operation could not restore model offload; the checkpoint was unloaded; reload the checkpoint: {exc}") from exc
+
+    def embedding_inspector(self, params: dict, ctx: JobContext) -> dict:
+        if self.dry_run:
+            raise EngineError(UNSUPPORTED, "Embedding Inspector requires a real loaded model")
+        if self.model is None or getattr(self, "pipe", None) is None:
+            raise EngineError(NO_MODEL, "load a checkpoint before inspecting embeddings")
+        from .embedding_inspector import run_inspector
+        from .resource_hashes import FileSnapshot
+        loaded = {}
+        for name, path in getattr(self, "loaded_embedding_files", {}).items():
+            snapshot = getattr(self, "embedding_snapshots", {}).get(name)
+            try:
+                valid = snapshot is not None and FileSnapshot.identity_of(path) == snapshot.identity
+            except OSError:
+                valid = False
+            loaded[name] = {"path": path, "owners": getattr(self, "embedding_token_owners", {}).get(name, {}),
+                            "metadata_valid": valid}
+        params = {**params, "_loaded_owners": getattr(self, "embedding_token_owners", {}), "_list_loaded": loaded}
+        try:
+            if params.get("operation") == "export":
+                if ctx is None:
+                    raise EngineError(INVALID_PARAMS, "Vector export requires a job context")
+                return ctx.publish(lambda: self._with_embedding_encoder_access(lambda: run_inspector(self.pipe, params)))
+            if params.get("operation") != "save":
+                def inspect():
+                    if ctx is not None:
+                        ctx.check_interrupt()
+                    result = run_inspector(self.pipe, params)
+                    if ctx is not None:
+                        ctx.check_interrupt()
+                    return result
+                return self._with_embedding_encoder_access(inspect)
+            if getattr(self, "_embedding_reload_error", None):
+                raise EngineError(INVALID_PARAMS, "Reload the checkpoint before saving another embedding after a refresh failure")
+            if ctx is None:
+                raise EngineError(INVALID_PARAMS, "Embedding save requires a job context")
+            def publish():
+                from .embedding_refresh import refresh_saved_embeddings, validate_saved_names
+                from .embedding_inspector import planned_output_paths
+                from .resource_hashes import FileSnapshot
+                targets = planned_output_paths(params)
+                validate_saved_names(self, targets)
+                def identity(path):
+                    try:
+                        return FileSnapshot.identity_of(path)
+                    except FileNotFoundError:
+                        return None
+                before = [identity(path) for path in targets]
+                try:
+                    result = run_inspector(self.pipe, params)
+                except BaseException as exc:
+                    try:
+                        changed = any(identity(path) != previous for path, previous in zip(targets, before))
+                    except OSError:
+                        changed = True
+                    if changed:
+                        self._embedding_reload_error = str(exc)
+                        raise EngineError(INVALID_PARAMS,
+                            f"Some embedding files may have been saved; reload the checkpoint before generating: {exc}") from exc
+                    raise
+                try:
+                    refresh_saved_embeddings(self, result["paths"])
+                except BaseException as exc:
+                    self._embedding_reload_error = str(exc)
+                    raise EngineError(INVALID_PARAMS,
+                        f"Embedding files were saved but live refresh failed; reload the checkpoint before generating: {exc}") from exc
+                result["reloaded"] = True
+                return result
+            return ctx.publish(lambda: self._with_embedding_encoder_access(publish))
+        except (ValueError, TypeError, OSError, PermissionError) as exc:
+            raise EngineError(INVALID_PARAMS, f"Embedding Inspector: {exc}") from exc
+
     def vae_tools(self, params: dict, ctx: JobContext) -> dict:
         if self.dry_run:
             raise EngineError(UNSUPPORTED, 'VAE Tools requires a real loaded VAE; dry-run cannot encode or decode latents')

@@ -1611,7 +1611,7 @@
 "index": 268,
 "name": "embedding-inspector",
 "url": "https://github.com/w-e-w/embedding-inspector.git",
-"status": "todo:embedding_inspector"
+"status": "done:core:embedding-inspector"
 },
 {
 "index": 269,

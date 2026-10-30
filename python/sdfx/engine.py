@@ -166,6 +166,7 @@ class Engine(BaseEngine):
         self._sampler_ok: Optional[dict] = None  # pipeline whose accelerate offload hooks are installed (offload modes)
         self.loaded_embeddings: set[str] = set()
         self.loaded_embedding_files: dict[str, str] = {}
+        self.embedding_token_owners: dict[str, dict[str, list[str]]] = {}
         self.cn_cache: "OrderedDict[str, Any]" = OrderedDict()  # path -> ControlNetModel, LRU
         self.taesd = preview.TaesdPreviewer()
         self._extra: dict = {}
@@ -267,6 +268,8 @@ class Engine(BaseEngine):
         self.loaded_loras.clear()
         self.loaded_embeddings.clear()
         self.loaded_embedding_files.clear()
+        getattr(self, "embedding_token_owners", {}).clear()
+        self._embedding_reload_error = None
         getattr(self, "embedding_snapshots", {}).clear()
         getattr(self, "lora_snapshots", {}).clear()
         self.model = None
@@ -598,27 +601,49 @@ class Engine(BaseEngine):
                         ctx.warn(e.message)
                         self.loaded_embeddings.add(token)
                         continue
-                if self.sdxl:
-                    if not (isinstance(sd, dict) and "clip_g" in sd and "clip_l" in sd):
-                        ctx.warn(f"embedding '{token}' is not an SDXL embedding; skipped")
-                        self.loaded_embeddings.add(token)
-                        continue
-                    pipe.load_textual_inversion(sd["clip_g"], token=token, text_encoder=pipe.text_encoder_2,
-                                                tokenizer=pipe.tokenizer_2)
-                    pipe.load_textual_inversion(sd["clip_l"], token=token, text_encoder=pipe.text_encoder,
-                                                tokenizer=pipe.tokenizer)
-                else:
-                    if isinstance(sd, dict) and "clip_g" in sd:
-                        ctx.warn(f"embedding '{token}' is an SDXL embedding; skipped")
-                        self.loaded_embeddings.add(token)
-                        continue
-                    pipe.load_textual_inversion(sd, token=token)
+                before_l = set(pipe.tokenizer.get_added_vocab())
+                before_g = set(pipe.tokenizer_2.get_added_vocab()) if self.sdxl else set()
+                if self.sdxl and not (isinstance(sd, dict) and "clip_g" in sd and "clip_l" in sd):
+                    ctx.warn(f"embedding '{token}' is not an SDXL embedding; skipped")
+                    self.loaded_embeddings.add(token)
+                    continue
+                if not self.sdxl and isinstance(sd, dict) and "clip_g" in sd:
+                    ctx.warn(f"embedding '{token}' is an SDXL embedding; skipped")
+                    self.loaded_embeddings.add(token)
+                    continue
+                def load_embedding():
+                    if self.sdxl:
+                        pipe.load_textual_inversion(sd["clip_g"], token=token, text_encoder=pipe.text_encoder_2,
+                                                    tokenizer=pipe.tokenizer_2)
+                        pipe.load_textual_inversion(sd["clip_l"], token=token, text_encoder=pipe.text_encoder,
+                                                    tokenizer=pipe.tokenizer)
+                    else:
+                        pipe.load_textual_inversion(sd, token=token)
+                try:
+                    BaseEngine._with_embedding_encoder_access(self, load_embedding)
+                except BaseException as failure:
+                    # A loader may mutate one encoder or tokenizer before it raises.
+                    # Never leave that partially modified model available for inference.
+                    try:
+                        if self.pipe is not None:
+                            self._free()
+                    except BaseException as cleanup_error:
+                        failure.add_note(f"model unload also failed: {cleanup_error}")
+                    self._embedding_reload_error = str(failure)
+                    raise EngineError(NO_MODEL,
+                        f"Embedding '{token}' failed during loading; the checkpoint was unloaded; reload the checkpoint: {failure}") from failure
+                self.embedding_token_owners[token] = {
+                    "clip_l": sorted(set(pipe.tokenizer.get_added_vocab()) - before_l),
+                    **({"clip_g": sorted(set(pipe.tokenizer_2.get_added_vocab()) - before_g)} if self.sdxl else {}),
+                }
                 self.loaded_embedding_files[token] = path
                 if not hasattr(self, "embedding_snapshots"):
                     self.embedding_snapshots = {}
                 self.embedding_snapshots[token] = snapshot
                 self.loaded_embeddings.add(token)
             except Exception as e:
+                if getattr(self, "_embedding_reload_error", None):
+                    raise
                 ctx.warn(f"embedding '{token}' could not be loaded: {str(e).splitlines()[0] if str(e) else type(e).__name__}")
                 self.loaded_embeddings.add(token)
 
@@ -1246,6 +1271,8 @@ class Engine(BaseEngine):
                 self._intermediate_recorder = None
 
     def _generate_recorded(self, params: dict, ctx: JobContext, mode: str) -> dict:
+        if getattr(self, "_embedding_reload_error", None):
+            raise EngineError(INVALID_PARAMS, "Embedding live refresh failed; reload the checkpoint before generating")
         t0 = time.monotonic()
         hardware_started = time.perf_counter()
         req = self.parse_generation(params, mode, ctx)

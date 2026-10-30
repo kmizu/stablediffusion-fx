@@ -88,7 +88,7 @@ S = {
     253: "todo:core:api-payload", 254: "todo:adetailer", 255: "todo:lora_queue", 256: "done:kohya_hrfix",
     257: "todo:test_my_prompt", 258: "na:webui-ux", 259: "na:account", 260: "todo:replacer",
     261: "todo:color_correction", 262: "todo:core:state-manager", 263: "todo:agent_attention", 264: "todo:deepdanbooru",
-    265: "todo:deepdanbooru", 266: "todo:ocr", 267: "todo:characteristic_guidance", 268: "todo:embedding_inspector",
+    265: "todo:deepdanbooru", 266: "todo:ocr", 267: "todo:characteristic_guidance", 268: "done:core:embedding-inspector",
     269: "todo:lama_cleaner", 270: "todo:regional_prompter", 271: "todo:model_organizer", 272: "na:account",
     273: "todo:video_extras", 274: "todo:inpaint_background", 275: "todo:daam", 276: "todo:controlnet_preprocess_extras",
     277: "na:account", 278: "todo:rpg_diffusion", 279: "todo:creaprompt", 280: "todo:img2img_workflow",
@@ -144,6 +144,7 @@ IMPLEMENTED = {
 
 
 SCOPE_NOTES = {
+    "core:embedding-inspector": "Native inspector, tokenizer, vector mixer, arbitrary-code-gated eval, atomic save and active-model refresh with SD1.5/SDXL support; loaded/catalog ownership is explicit. Eval can write readable files; SD2 actual checkpoints and A1111 training interoperability remain unverified. See embedding-inspector-verification.md.",
     "core:metadata-utils": "Native checkpoint/LoRA JSON metadata editing and non-overwriting copies preserving tensor bytes; cancellable source fingerprints bind edits to the loaded file and reject stale sources. Bounded safetensors/JSON input; atomic publication requires hard-link support. Real SD1.5/SDXL native and extracted-package read-back, cancellation/recovery and harmless-edit RGB equality verified. See metadata-utils-verification.md for evidence and retained timeout diagnostics.",
     "img2img_hires_fix": "Pinned source pixel upscale/VAE encode/refine behavior in all three modes, full controls and PNG replay; existing native latent Hires stays independent. SD1.5/SDXL extracted-package replay, cancellation and recovery verified. Refiner architectures remain unsupported; ControlNet/ADetailer interaction is not GPU-verified. See img2img-hires-fix-verification.md.",
     "core:image-scrambling": "Native session and batch compatibility with upstream pixel permutations. This is not secure encryption; readable metadata and temporary files remain. See encrypt-image-verification.md.",

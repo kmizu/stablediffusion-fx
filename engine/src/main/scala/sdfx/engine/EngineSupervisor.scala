@@ -291,6 +291,13 @@ final class EngineSupervisor(
             lastLoad = None
             lastVae = None
             _loaded = None
+          case Failure(e: EngineError) if e.code == Protocol.ErrorCodes.NoModel && e.workerResponseConfirmed =>
+            lock.synchronized {
+              if proc.contains(p) then
+                lastLoad = None
+                lastVae = None
+                _loaded = None
+            }
           case _ => ()
         if heavy then markBusy(-1, p)
         r

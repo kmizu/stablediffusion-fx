@@ -171,6 +171,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
       }
   val comparison = new ImageComparisonTab(ctx, comparisonSource, () => preview.currentPath)
   val tokenizer = new TokenizerTab(ctx, () => vms(activeMode).prompt.get)
+  val embeddingInspector = new EmbeddingInspectorTab(ctx)
   val temporalLab = new TemporalLabTab(ctx)
   val systemInfo = new SystemInfoTab(ctx)
   val vramEstimator = new VramEstimatorTab(ctx)
@@ -200,6 +201,8 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   private val extrasTab = new Tab("Extras", extras.node)
   private val temporalLabTab = new Tab("Temporal Lab", temporalLab.node)
   temporalLabTab.setId("temporal-lab-tab")
+  private val embeddingInspectorTab = new Tab("Embedding Inspector", embeddingInspector.node)
+  embeddingInspectorTab.setId("embedding-inspector-tab")
   private val tokenizerTab = new Tab("Tokenizer", tokenizer.node)
   tokenizerTab.setId("tokenizer-tab")
   private val systemInfoTab = new Tab("System Info", systemInfo.node)
@@ -223,7 +226,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   scramblePages.setId("scramble-pages")
   private val scrambleTab = new Tab("Image Scrambling", scramblePages)
   scrambleTab.setId("image-scrambling-tab")
-  tabs.getTabs.addAll(pngTab, extrasTab, tokenizerTab, temporalLabTab, systemInfoTab, stylesTab, comparisonTab, vaeToolsTab, metadataUtilsTab, scrambleTab)
+  tabs.getTabs.addAll(pngTab, extrasTab, tokenizerTab, embeddingInspectorTab, temporalLabTab, systemInfoTab, stylesTab, comparisonTab, vaeToolsTab, metadataUtilsTab, scrambleTab)
   tabs.getTabs.add(new Tab("VRAM Estimator", vramEstimator.node))
   private var comparisonDivider = initial.dividers.get("main").flatMap(_.headOption).getOrElse(.42)
   private var lastMode: Mode = Mode.Txt2Img

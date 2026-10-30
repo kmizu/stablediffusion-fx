@@ -15,7 +15,7 @@ Baseline local and remote `main`: `83b00b598f48606eafe7266f03fcbab4c1b9c1a7`. At
 ## In progress
 
 - #85 is underway in isolated worktree `C:/Users/Mizushima/.codex/worktrees/d919/stablediffusion-nui`, now based on `777d128cd02762d4b8749ddefe3d7d70c83fc353`. No integration into main has occurred yet.
-- #46 is underway in isolated worktree `C:/Users/Mizushima/.codex/worktrees/embedding-inspector-main82/stablediffusion-nui`, based on `777d128cd02762d4b8749ddefe3d7d70c83fc353`; earlier worktrees are retained. No integration into main has occurred yet.
+- #46 passed local acceptance in `C:/Users/Mizushima/.codex/worktrees/embedding-inspector-main82/stablediffusion-nui` and is being integrated. Do not count it until push and issue closure are verified; see `embedding-inspector-verification.md`.
 - #47 is underway in isolated worktree `C:/Users/Mizushima/.codex/worktrees/690e/stablediffusion-nui` at the same base. No integration into main has occurred yet.
 
 ## Release gate
