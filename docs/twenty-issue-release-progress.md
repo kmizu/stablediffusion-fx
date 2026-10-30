@@ -8,14 +8,16 @@ Objective: resolve twenty issues, then publish and verify a release containing t
 |---|---|---|
 | #15 color_correction | 35f402f3db16a7618d0d62834078cfd696caeaca | docs/color-correction-verification.md; closed 2026-10-29T23:18:32Z |
 | #54 gpu_temperature_guard | 3663a6b8763b60f69bd64a371c8bd4d602a8fc59 | docs/temperature-guard-verification.md |
+| #98 pnginfo_injection | 1f701d74e532309ad745b7baf4391ab992da28bd | docs/pnginfo-injection-verification.md; closed 2026-10-30T00:15:30Z |
 
-Accepted count: **3 / 20** after the PNGINFO wave is pushed and #98 closed. Earlier closed #1, #7 and #141 predate this active goal and are not counted. No new release has been published for this goal.
+Accepted count: **4 / 20** after the Steps Animation wave is pushed and #120 closed. Earlier closed #1, #7 and #141 predate this active goal and are not counted. No new release has been published for this goal.
 
-| #98 pnginfo_injection | PNGINFO wave, 2026-10-30 | docs/pnginfo-injection-verification.md |
+
+| #120 steps_animation | Steps Animation wave, 2026-10-30 | docs/steps-animation-verification.md |
 
 ## In progress
 
-Next issue selection follows the PNGINFO wave. AMD providers in that wave have fixture/schema checks, not AMD hardware validation; this limitation remains explicit in its acceptance record.
+Next issue selection follows the Steps Animation wave. AMD providers in that wave have fixture/schema checks, not AMD hardware validation; this limitation remains explicit in its acceptance record.
 
 ## Final release gates
 

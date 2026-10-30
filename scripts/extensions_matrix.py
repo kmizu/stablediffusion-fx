@@ -116,6 +116,7 @@ S = {
 
 # plugin ids / core features that are implemented: their `todo:` entries are reported as `done:`
 IMPLEMENTED = {
+    "steps_animation",
     "pnginfo_injection",
     "gpu_temperature_guard",
     "color_correction",

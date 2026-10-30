@@ -16,7 +16,7 @@ import math
 import random
 from typing import Any, Optional
 
-KNOWN_HOOKS = ("pnginfo_injection", "gpu_temperature_guard", "freeu", "dynamic_thresholding", "hypertile", "pag", "apg", "mahiro", "rescale_cfg", "model_sampling",
+KNOWN_HOOKS = ("steps_animation", "pnginfo_injection", "gpu_temperature_guard", "freeu", "dynamic_thresholding", "hypertile", "pag", "apg", "mahiro", "rescale_cfg", "model_sampling",
                "kohya_hrfix", "multidiffusion", "latent_modifier", "soft_inpainting", "sag", "neveroom", "reference",
                "revision", "ip_adapter", "controllllite", "fooocus_inpaint", "photomaker", "face_restore", "img2imgalt",
                # sdfx.sampling_ext.HOOKS (extension index)

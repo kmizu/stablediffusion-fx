@@ -26,7 +26,7 @@ from . import controlnet as cn_mod
 from . import hires as hires_mod
 from . import hooks as hooks_mod
 from . import adapters, extras, inpaint, lora_blocks, models, preview, prompt, prompt_schedule, schedulers, upscalers
-from . import weight_gradient, save_intermediate, latent_upscale
+from . import weight_gradient, save_intermediate, latent_upscale, steps_animation
 from . import negpip
 from . import neutral_prompt, neutral_runtime, prompt_fusion
 from .clora import runtime as composable_lora
@@ -190,7 +190,7 @@ class Engine(BaseEngine):
 
     def features(self) -> list[str]:
         # Temperature guard uses step callbacks and does not alter model weights.
-        f = ["pnginfo_injection", "gpu_temperature_guard", "freeu", "dynamic_thresholding", "hypertile", "system_info", "vae_tools", "prevent_interrupt"]
+        f = ["steps_animation", "pnginfo_injection", "gpu_temperature_guard", "freeu", "dynamic_thresholding", "hypertile", "system_info", "vae_tools", "prevent_interrupt"]
         f += self._batch_features()
         if hasattr(diffusers, "StableDiffusionXLPAGPipeline"):
             f.append("pag")
@@ -1131,7 +1131,8 @@ class Engine(BaseEngine):
             if embeds.get("_negpip") or (neutral_plan and any(v.get("_negpip") for v in neutral_plan.branches)):
                 cleanups.append(negpip.install(pipe))
             recorder = getattr(self, "_intermediate_recorder", None)
-            if recorder is not None and hooks_mod.hook_config(gp.hooks, "save_intermediate", {}) is not None:
+            if recorder is not None and (hooks_mod.hook_config(gp.hooks, "save_intermediate", {}) is not None
+                                         or hooks_mod.hook_config(gp.hooks, "steps_animation", {}) is not None):
                 cleanups.append(save_intermediate.install(self, pipe, kw, recorder, seeds, pass_,
                     int(expected_steps or steps), gp.steps if pass_ == "hires" else 0,
                     image_idx // max(1, gp.batch_size)))
@@ -1215,6 +1216,12 @@ class Engine(BaseEngine):
         if latent_config is not None:
             latent_config = latent_upscale.normalize(latent_config)
             gp = replace(gp, scheduler=latent_upscale.schedule(latent_config, gp.scheduler))
+        animation = hooks_mod.hook_config(gp.hooks, "steps_animation", {})
+        if animation is not None:
+            steps_animation.validate_generation(gp)
+            self._intermediate_recorder = steps_animation.Recorder(req.output_dir, animation, ctx,
+                dict(prompt=gp.prompt, negative_prompt=gp.negative_prompt, seed=gp.seed, sampler=gp.sampler_name,
+                     steps=gp.steps, cfg_scale=gp.cfg_scale, mode=mode, generation=params.get("params", {})))
         intermediate = hooks_mod.hook_config(gp.hooks, "save_intermediate", {})
         if intermediate is not None:
             self._intermediate_recorder = save_intermediate.Recorder(intermediate.get("output_dir") or req.output_dir, intermediate, ctx,
@@ -1437,7 +1444,7 @@ class Engine(BaseEngine):
         }
 
     # hooks that must not run again on ADetailer's inpainting passes (whole-image effects, or ADetailer itself)
-    _ADETAILER_SKIP_HOOKS = ("adetailer", "save_intermediate", "tiling", "latent_mirroring", "multidiffusion", "kohya_hrfix", "reference",
+    _ADETAILER_SKIP_HOOKS = ("steps_animation", "adetailer", "save_intermediate", "tiling", "latent_mirroring", "multidiffusion", "kohya_hrfix", "reference",
                              "revision", "ip_adapter", "controllllite", "photomaker", "img2imgalt", "soft_inpainting")
 
     def _adetailer(self, gp, req, ctx, cfg, imgs, seeds, idx0, total, pag):

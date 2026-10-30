@@ -114,6 +114,10 @@ BASE = [
      "huchenlei/sd-webui-api-payload-display; behaviour independently reimplemented in Scala/JavaFX; "
      "no vendored JavaScript or CSS copied; "
      "[license source 6abfcc1](https://github.com/summerstyle/jsonTreeViewer/blob/6abfcc1202396af12e2806d129bcae0e75b37365/LICENSE)"),
+    ("vladmandic/sd-extension-steps-animation", "reimplemented", "Native Steps Animation: denoised-step movies, "
+     "duration, interpolation, codec choice and partial-export behavior; independently implemented using this app's recorder. "
+     "No upstream code or assets copied; no published license file at inspected revision. "
+     "[source acac7f1](https://github.com/vladmandic/sd-extension-steps-animation/tree/acac7f166d5613ebfddac4c0a286ba2e5f7f29d1)"),
     ("bluelovers/sd-webui-pnginfo-injection", "reimplemented", "Optional generation-time Hashes metadata -> pnginfo_injection; "
      "independent native and Python implementation of resource provenance; no upstream code, assets or static wildcard maps copied. "
      "No published license file at inspected revision; "
@@ -139,7 +143,7 @@ BASE = [
     ("microsoft/onnxruntime", "dependency", "WD14 tagger and optional local WD v3 batch inference"),
     ("ultralytics/ultralytics", "dependency", "YOLO detectors for ADetailer (optional Python package)"),
     ("danielgatis/rembg", "dependency", "background removal models (optional Python package)"),
-    ("FFmpeg/FFmpeg", "dependency", "Optional external ffmpeg executable for Save Intermediate video export; "
+    ("FFmpeg/FFmpeg", "dependency", "Optional external ffmpeg executable for Save Intermediate and Steps Animation video export; "
      "no FFmpeg binary is bundled or installed by this app. Upstream LICENSE.md explains build-dependent licensing: "
      "LGPL-2.1-or-later by default; --enable-gpl changes the combined build to GPL-2.0-or-later, "
      "--enable-version3 selects version 3, and linked libraries can change the terms. "

@@ -1381,3 +1381,7 @@ See [color-correction-verification.md](color-correction-verification.md) for nat
 ## PNGINFO Injection (2026-10-30)
 
 See [verification](pnginfo-injection-verification.md) for real SD1.5/SDXL native PNG, wildcard, ADetailer and embedding checks, SD1.5 ControlNet provenance, exact pixel parity, cache identity handling and license boundaries. Whole Python passed. Original whole Scala run had five Windows drive-probe timeouts; focused recheck passed all 22 tests.
+
+## Steps Animation (2026-10-30)
+
+See [verification](steps-animation-verification.md) for real SD1.5/SDXL native Generate/Interrupt/recovery, txt2img/img2img/hires pixel parity, actual encoded and decoded videos, five-codec checks, incomplete-export policy, mutation/error coverage and licensing. Whole Python passed; whole Scala passed 1269 tests with one skip; final assembly passed. See the linked record for artifact hash and measured limits.

@@ -138,7 +138,34 @@ def mask_png(size):
 
 t0 = time.time()
 r = None
-if CASE in ("pnginfo_sd15", "pnginfo_sdxl"):
+if CASE in ("steps_animation_sd15", "steps_animation_sdxl", "steps_animation_img_sd15", "steps_animation_img_sdxl", "steps_animation_hires_sd15", "steps_animation_hires_sdxl"):
+    from PIL import Image
+    import numpy as np
+    xl = CASE.endswith('sdxl')
+    load(SDXL if xl else SD15)
+    source = None
+    if '_img_' in CASE:
+        base = call('txt2img', req(gp(width=768 if xl else 512, height=768 if xl else 512, steps=4)))
+        assert base['type'] == 'result', base
+        source = keep(base, CASE + '_source')
+    paths, response = {}, None
+    for active in (False, True):
+        response = call('img2img' if source else 'txt2img', req(gp(width=768 if xl else 512, height=768 if xl else 512, steps=4,
+            img2img=i2i(source, denoise=1.0) if source else None,
+            hires=dict(gp()['hires'], enabled=True, scale=1.25, second_pass_steps=4) if '_hires_' in CASE else gp()['hires'], hooks={'steps_animation': {'duration': 1, 'fps': 10}} if active else {})))
+        assert response['type'] == 'result', response
+        paths[str(active)] = keep(response, CASE + '_' + str(active))
+    artifacts = response['result']['intermediate_artifacts']
+    assert len([entry for entry in artifacts if entry['type'] == 'image']) == (8 if '_hires_' in CASE else 4), artifacts
+    videos = [entry['path'] for entry in artifacts if entry['type'] == 'video']
+    assert len(videos) == 1 and os.path.getsize(videos[0]) > 0, artifacts
+    with Image.open(paths['False']) as before, Image.open(paths['True']) as after:
+        assert np.array_equal(np.asarray(before), np.asarray(after))
+    report = dict(paths=paths, artifacts=artifacts, exact_rgb=True)
+    with open(os.path.join(OUT, CASE + '.json'), 'w') as output:
+        json.dump(report, output, indent=2)
+    r = {'type': 'result', 'result': {'result': report}}
+elif CASE in ("pnginfo_sd15", "pnginfo_sdxl"):
     from PIL import Image
     import numpy as np
     import hashlib
@@ -272,6 +299,41 @@ elif CASE in ("temperature_modes_sd15", "temperature_modes_sdxl"):
                 images.append(np.asarray(image).copy())
         assert np.array_equal(*images), mode
         report[mode] = dict(exact_rgb=True, shape=list(images[0].shape))
+    with open(os.path.join(OUT, CASE + '.json'), 'w') as output:
+        json.dump(report, output, indent=2)
+    r = {'type': 'result', 'result': {'result': report}}
+elif CASE in ("steps_interrupt_sd15", "steps_interrupt_sdxl"):
+    from pathlib import Path
+    load(SDXL if CASE.endswith('sdxl') else SD15)
+    size = 768 if CASE.endswith('sdxl') else 512
+    report = {}
+    for partial in (False, True):
+        root = Path(OUT) / ('partial-' + str(partial))
+        request = req(gp(width=size, height=size, steps=40, hooks={'steps_animation': {
+            'run_incomplete': partial, 'duration': 1, 'fps': 10}}))
+        request['output_dir'] = str(root)
+        completed = []
+        worker = threading.Thread(target=lambda: completed.append(call('txt2img', request)), daemon=True)
+        worker.start()
+        deadline = time.monotonic() + 120
+        while len(list(root.rglob('*.png'))) < 2:
+            assert not completed, completed
+            assert time.monotonic() < deadline, 'no captured frames before interrupt'
+            time.sleep(.05)
+        started = time.monotonic()
+        decision = call('interrupt', {}, timeout=10)
+        worker.join(30)
+        assert not worker.is_alive(), 'interrupted animation did not finish'
+        assert completed[0].get('code') == 'interrupted', completed
+        manifests = [json.loads(path.read_text(encoding='utf-8')) for path in root.rglob('manifest.json')]
+        assert len(manifests) == 1 and manifests[0]['status'].startswith('incomplete'), manifests
+        videos = list(root.rglob('*.mp4'))
+        assert bool(videos) == partial, manifests
+        report[str(partial)] = dict(seconds=time.monotonic() - started, decision=decision,
+            frames=len(list(root.rglob('*.png'))), videos=[str(path) for path in videos])
+    recovery = call('txt2img', req(gp(width=size, height=size, steps=4)))
+    assert recovery['type'] == 'result', recovery
+    report['recovery'] = keep(recovery, CASE + '_recovery')
     with open(os.path.join(OUT, CASE + '.json'), 'w') as output:
         json.dump(report, output, indent=2)
     r = {'type': 'result', 'result': {'result': report}}

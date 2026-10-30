@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 108, todo 194, na 51.
+Totals: done 109, todo 193, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-nui | Scope / notes |
 |---|---|---|---|---|---|
@@ -63,7 +63,7 @@ Totals: done 108, todo 194, na 51.
 | 54 | [seed travel](https://github.com/yownas/seed_travel.git) | 312 | done | `seed_travel` |  |
 | 55 | [shift-attention](https://github.com/yownas/shift-attention.git) | 164 | done | `shift_attention` |  |
 | 56 | [prompt travel](https://github.com/Kahsolt/stable-diffusion-webui-prompt-travel.git) | 267 | todo | `prompt_travel` |  |
-| 57 | [Steps Animation](https://github.com/vladmandic/sd-extension-steps-animation.git) | 142 | todo | `steps_animation` |  |
+| 57 | [Steps Animation](https://github.com/vladmandic/sd-extension-steps-animation.git) | 142 | done | `steps_animation` |  |
 | 58 | [auto-sd-paint-ext](https://github.com/Interpause/auto-sd-paint-ext.git) | 482 | na | `external-app` | bridge to a specific external application (Photoshop, Krita, ComfyUI, ...) |
 | 59 | [Batch Face Swap](https://github.com/kex0/batch-face-swap.git) | 333 | todo | `batch_face_swap` |  |
 | 60 | [Depth Maps](https://github.com/thygate/stable-diffusion-webui-depthmap-script.git) | 1855 | todo | `depth_maps` |  |

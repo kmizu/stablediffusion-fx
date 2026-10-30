@@ -1,5 +1,10 @@
 # Handoff: bundling the A1111 extension index into stablediffusion-nui
 
+## 2026-10-30 update: Steps Animation
+
+Index 57 / issue #120 has native Script `steps_animation`: denoised-step movies, none/blend/MCI interpolation, duration/fps, five codecs, initial-frame skipping, optional export/cleanup, relative output locations, debug logging and bounded interruptible partial export. Actual native Generate/Interrupt/recovery and txt2img/img2img/hires checks passed on SD1.5/SDXL with exact enabled/off final RGB. See `steps-animation-verification.md`. Whole Python passed; whole Scala passed 1269 tests with one skip; assembly passed. Notices cover 146 projects. Current ledger: 109 done, 193 todo, 51 not applicable. This is fourth issue toward the twenty-issue release goal; no release published yet.
+
+
 ## 2026-10-30 update: PNGINFO Injection
 
 Index 336 / issue #98 has native opt-in `pnginfo_injection`, saved Hashes merge, confirmed local resource fingerprints and actual wildcard-source byte provenance. See `pnginfo-injection-verification.md` for real SD1.5/SDXL native PNG, embedding and ADetailer checks, SD1.5 ControlNet check, cache-mutation handling and explicit directory/Civitai limits. Whole Python passed; whole Scala had five Windows drive-probe timeouts and the focused 22-test recheck passed. Assembly and final native checks passed. Current ledger is 108 done, 194 todo, 51 not applicable. This is the third wave of the active twenty-issue goal; release remains unpublished.
