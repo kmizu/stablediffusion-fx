@@ -134,7 +134,8 @@ case class GenerationResult(
     intermediateArtifacts: Seq[IntermediateArtifact] = Nil,
     composableLoraTrace: Option[ComposableLoraTrace] = None,
     systemInfo: Option[ujson.Value] = None,
-    vaeRecovery: Seq[ujson.Value] = Nil
+    vaeRecovery: Seq[ujson.Value] = Nil,
+    resourceHashes: Map[String, String] = Map.empty
 ) derives RW
 
 case class UpscaleRequest(imagePath: String, upscaler: String, scale: Double, outputDir: String, upscalerPaths: Map[String, String] = Map.empty,

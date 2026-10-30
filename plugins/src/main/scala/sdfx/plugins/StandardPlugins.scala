@@ -9,6 +9,7 @@ object StandardPlugins:
   def alwaysOn: Seq[Plugin] = Seq(
     new PromptFusionPlugin,
     new ComposableLoraPlugin,
+    new PngInfoInjectionPlugin,
     // guidance
     new FreeUPlugin, new DynamicThresholdingPlugin, new ApgPlugin, new MahiroPlugin, new RescaleCfgPlugin, new PagPlugin,
     new SagPlugin,

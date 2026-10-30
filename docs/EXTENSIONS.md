@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 107, todo 195, na 51.
+Totals: done 108, todo 194, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-nui | Scope / notes |
 |---|---|---|---|---|---|
@@ -342,7 +342,7 @@ Totals: done 107, todo 195, na 51.
 | 333 | [stupid-nsfw-card-blur-a1111](https://github.com/CurtisDS/stupid-nsfw-card-blur-a1111.git) | 4 | done | `core:nsfw-card-blur` |  |
 | 334 | [extra-network-side-panel-for-a1111](https://github.com/CurtisDS/extra-network-side-panel-for-a1111.git) | 7 | na | `webui-ux` | Gradio page behaviour (tabs, buttons, dialogs); the desktop UI provides the equivalent natively |
 | 335 | [Face manipulations - extras](https://github.com/light-and-ray/sd-webui-face-manipulation-extras.git) | 19 | todo | `face_manipulation` |  |
-| 336 | [Stable Diffusion PNGINFO Injection extension](https://github.com/bluelovers/sd-webui-pnginfo-injection.git) | 14 | todo | `pnginfo_injection` |  |
+| 336 | [Stable Diffusion PNGINFO Injection extension](https://github.com/bluelovers/sd-webui-pnginfo-injection.git) | 14 | done | `pnginfo_injection` |  |
 | 337 | [sd-webui-decadetw-auto-prompt-llm](https://github.com/xlinx/sd-webui-decadetw-auto-prompt-llm.git) | 72 | todo | `llm_prompt` |  |
 | 338 | [GeekyRemB](https://github.com/GeekyGhost/Automatic1111-Geeky-Remb.git) | 17 | done | `remove_background` |  |
 | 339 | [img2img-hires-fix](https://github.com/Amadeus-AI/img2img-hires-fix.git) | 48 | todo | `img2img_hires_fix` |  |

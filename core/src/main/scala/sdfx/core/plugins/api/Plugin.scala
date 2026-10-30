@@ -76,6 +76,8 @@ case class JobOutput(images: Seq[OutputImage], grids: Seq[OutputImage] = Nil):
 
 /** Services the host offers to plugins. Calls are blocking and run on the job thread. */
 trait PluginContext:
+  /** Whether this job opted into recording consumed local resource hashes. */
+  def resourceHashesEnabled: Boolean = false
   /** Runs one generation (txt2img or img2img depending on params) and saves the images. */
   def generate(p: GenerationParams): Seq[OutputImage]
   /** Runs one generation without persisting it as a user output: images stay in the temp dir,

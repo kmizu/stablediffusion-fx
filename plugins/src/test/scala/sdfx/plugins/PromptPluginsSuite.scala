@@ -9,6 +9,33 @@ import java.nio.file.Files
 import scala.util.Random
 
 class PromptPluginsSuite extends munit.FunSuite:
+  test("dynamic prompt hash injection is opt-in and includes negative wildcard sources"):
+    val dir = Files.createTempDirectory("wildcard-injection")
+    Files.writeString(dir.resolve("positive.txt"), "teapot\n")
+    Files.writeString(dir.resolve("negative.txt"), "blurry\n")
+    val plugin = new DynamicPromptsPlugin
+    val values = defaults(plugin, "wildcard_dirs" -> dir.toString)
+    val params = GenerationParams(prompt = "__positive__", negativePrompt = "__negative__", seed = 7)
+    val off = plugin.expand(params, values)
+    val on = plugin.expand(params, values, trackSources = true)
+    assertEquals(on.head.prompt, off.head.prompt)
+    assertEquals(on.head.negativePrompt, off.head.negativePrompt)
+    assert(!off.head.extra.contains("Hashes"))
+    assertEquals(ujson.read(on.head.extra("Hashes")).obj.keySet.toSet,
+      Set("wildcards_file:positive", "wildcards_file:negative"))
+  test("wildcard provenance records consumed bytes and survives cached reads"):
+    val dir = Files.createTempDirectory("wildcard-provenance")
+    val bytes = "red\nblue\n".getBytes(java.nio.charset.StandardCharsets.UTF_8)
+    Files.write(dir.resolve("colors.txt"), bytes)
+    val wc = new DynamicPrompt.Wildcards(Seq(dir), trackSources = true)
+    assertEquals(wc.lines("colors"), Vector("red", "blue"))
+    val hash = java.security.MessageDigest.getInstance("SHA-256").digest(bytes).map(b => f"${b & 0xff}%02x").mkString.take(10)
+    assertEquals(wc.sourceHashes, Map("wildcards_file:colors" -> hash))
+    wc.clearTrace()
+    assert(wc.sourceHashes.isEmpty)
+    Files.writeString(dir.resolve("colors.txt"), "changed\n")
+    assertEquals(wc.lines("colors"), Vector("red", "blue"))
+    assertEquals(wc.sourceHashes, Map("wildcards_file:colors" -> hash))
   private def defaults(p: Plugin, extra: (String, String)*) = Values(Values.defaults(p.controls).map ++ extra.toMap)
 
   private lazy val wcDir =

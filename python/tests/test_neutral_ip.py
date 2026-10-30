@@ -168,10 +168,12 @@ def test_free_model_clears_loaded_ip_state(monkeypatch):
     old = engine.ip_state = IPAdapterState(); old.loaded = "adapter"
     engine._drop_hooks = lambda: None
     engine.derived, engine.cn_cache, engine.loaded_loras, engine.loaded_embeddings = {}, {}, {}, set()
+    engine.loaded_embedding_files = {"old": "old.safetensors"}
     engine.cuda = False
     monkeypatch.setattr(upscalers, "unload_models", lambda: None)
     engine._free()
     assert engine.ip_state is not old and engine.ip_state.loaded is None
+    assert engine.loaded_embedding_files == {}
 
 
 def test_encoder_switch_updates_retained_feature_extractor_size(tmp_path, monkeypatch):

@@ -147,6 +147,8 @@ final class Generator(
       override def onTempFile(path: Path): Unit = listener.onTempFile(path)
       override def isInterrupted: Boolean = listener.isInterrupted || engineInterrupted.get()
     new PluginContext:
+      override def resourceHashesEnabled: Boolean = alwaysOn.exists((plugin, values) =>
+        plugin.id == "pnginfo_injection" && plugin.isActive(values))
       def generate(p: GenerationParams): Seq[OutputImage] = guard(self.generateWith(limited(p), scopedListener))
       override def generateTransient(p: GenerationParams): Seq[OutputImage] =
         guard(self.generateTransientWith(limited(p), scopedListener))
@@ -426,6 +428,10 @@ final class Generator(
 
   private def describe(prep: PreparedGeneration, result: GenerationResult, img: GeneratedImage, loaded: Option[LoadedModel]): (GenerationParams, String) =
     val params = prep.recorded.copy(seed = img.seed, subseed = if img.subseed >= 0 then img.subseed else prep.recorded.subseed)
+    val resourceFields = Option.when(params.hooks.get("pnginfo_injection").exists(o =>
+      !o.obj.get("enabled").contains(ujson.Bool(false)))) {
+      "Hashes" -> sdfx.core.infotext.ResourceHashes.merge(params.extra.get("Hashes"), result.resourceHashes.toSeq)
+    }.toSeq
     val facts = ImageFacts(
       seed = img.seed,
       subseed = params.subseed,
@@ -436,7 +442,7 @@ final class Generator(
       loraHashes = result.loraHashes.toSeq.sortBy(_._1),
       scheduler = result.scheduler,
       extra = scala.collection.immutable.ListMap.from(result.systemInfo.toSeq.map(v => "System Info" -> v.render()) ++
-        Option.when(result.vaeRecovery.nonEmpty)("VAE recovery" -> ujson.Arr.from(result.vaeRecovery).render())) ++ HardwareInfo.fields(img.hardwareInfo)
+        Option.when(result.vaeRecovery.nonEmpty)("VAE recovery" -> ujson.Arr.from(result.vaeRecovery).render()) ++ resourceFields) ++ HardwareInfo.fields(img.hardwareInfo)
     )
     (params, Infotext.write(params, facts))
 

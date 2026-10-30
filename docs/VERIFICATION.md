@@ -1377,3 +1377,7 @@ The source reference is AbyszOne/Abysz-LAB-Ext commit `deff0d4b4a208f862299b14b9
 The subsequent GPU temperature wave is recorded in [temperature-guard-verification.md](temperature-guard-verification.md): real SD1.5/SDXL sampling and native cancellation/recovery, AMD fixture/schema limits, notices and whole regression results. It covers index 186; see the twenty-issue tracker for release scope.
 
 See [color-correction-verification.md](color-correction-verification.md) for native Extras/script implementation, real SD1.5/SDXL image inspection, native explicit-reference/fallback/comparison/error-retry checks, whole Python regression exit 0, Scala report/recheck scope, source licensing and numerical/visual limits. Final assembly and Java 21 dry-run launch passed. This wave covers index 261 only; the twenty-issue release goal remains unfinished.
+
+## PNGINFO Injection (2026-10-30)
+
+See [verification](pnginfo-injection-verification.md) for real SD1.5/SDXL native PNG, wildcard, ADetailer and embedding checks, SD1.5 ControlNet provenance, exact pixel parity, cache identity handling and license boundaries. Whole Python passed. Original whole Scala run had five Windows drive-probe timeouts; focused recheck passed all 22 tests.

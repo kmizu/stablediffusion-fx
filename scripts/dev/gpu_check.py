@@ -138,7 +138,114 @@ def mask_png(size):
 
 t0 = time.time()
 r = None
-if CASE in ("temperature_modes_sd15", "temperature_modes_sdxl"):
+if CASE in ("pnginfo_sd15", "pnginfo_sdxl"):
+    from PIL import Image
+    import numpy as np
+    import hashlib
+    checkpoint = SDXL if CASE.endswith("sdxl") else SD15
+    load(checkpoint)
+    size = 768 if CASE.endswith("sdxl") else 512
+    paths, responses = {}, {}
+    for name, hooks in (("off", {}), ("on", {"pnginfo_injection": {}})):
+        result = call("txt2img", req(gp(width=size, height=size, steps=8, hooks=hooks)))
+        assert result['type'] == 'result', result
+        responses[name] = result['result']
+        paths[name] = keep(result, CASE + '_' + name)
+    assert 'resource_hashes' not in responses['off']
+    digest = hashlib.sha256()
+    with open(checkpoint, 'rb') as weights:
+        for chunk in iter(lambda: weights.read(1024 * 1024), b''):
+            digest.update(chunk)
+    assert responses['on']['resource_hashes']['model'] == digest.hexdigest()[:10]
+    with Image.open(paths['off']) as source, Image.open(paths['on']) as output:
+        assert np.array_equal(np.asarray(source), np.asarray(output))
+    report = dict(exact_rgb=True, resource_hashes=responses['on']['resource_hashes'], paths=paths)
+    with open(os.path.join(OUT, CASE + '.json'), 'w') as output:
+        json.dump(report, output, indent=2)
+    r = {'type': 'result', 'result': {'result': report}}
+elif CASE == "pnginfo_controlnet_sd15":
+    import hashlib
+    from PIL import Image
+    import numpy as np
+    load(SD15)
+    weights = hf("lllyasviel/control_v11p_sd15_canny", "diffusion_pytorch_model.safetensors")
+    hint = os.path.join(OUT, 'control_hint.png')
+    Image.new('RGB', (512, 512), 'white').save(hint)
+    unit = dict(enabled=True, model="canny", image=hint, preprocessor="none", weight=0.5,
+                guidance_start=0.0, guidance_end=1.0)
+    paths, hashes = {}, {}
+    for active in (False, True):
+        request = req(gp(steps=8, controlnet=[unit], hooks={"pnginfo_injection": {}} if active else {}))
+        request['controlnet_paths'] = {'canny': weights}
+        result = call('txt2img', request)
+        assert result['type'] == 'result', result
+        hashes[str(active)] = result['result'].get('resource_hashes', {})
+        paths[str(active)] = keep(result, CASE + '_' + str(active))
+    expected = hashlib.sha256(open(weights, 'rb').read()).hexdigest()[:10]
+    assert hashes['True']['controlnet:diffusion_pytorch_model.safetensors'] == expected, hashes
+    assert not hashes['False']
+    with Image.open(paths['False']) as before, Image.open(paths['True']) as after:
+        assert np.array_equal(np.asarray(before), np.asarray(after))
+    report = dict(resource_hashes=hashes, paths=paths, weights=weights, exact_rgb=True)
+    with open(os.path.join(OUT, CASE + '.json'), 'w') as output:
+        json.dump(report, output, indent=2)
+    r = {'type': 'result', 'result': {'result': report}}
+elif CASE in ("pnginfo_embed_sd15", "pnginfo_embed_sdxl"):
+    import hashlib
+    import torch
+    from safetensors.torch import save_file
+    from PIL import Image
+    import numpy as np
+    xl = CASE.endswith("sdxl")
+    load(SDXL if xl else SD15)
+    embedding = os.path.join(OUT, "provenance_fixture.safetensors")
+    # Synthetic zero vectors exercise real tokenizer/encoder loading, not an artistic embedding.
+    save_file({"clip_l": torch.zeros(1, 768), "clip_g": torch.zeros(1, 1280)} if xl else
+              {"provenance_fixture": torch.zeros(1, 768)}, embedding)
+    paths, hashes = {}, {}
+    for active in (False, True):
+        request = req(gp(prompt="portrait photo of a woman provenance_fixture", width=768 if xl else 512,
+                         height=768 if xl else 512, steps=8, hooks={"pnginfo_injection": {}} if active else {}))
+        request['embedding_paths'] = [embedding]
+        result = call("txt2img", request)
+        assert result['type'] == 'result', result
+        hashes[str(active)] = result['result'].get('resource_hashes', {})
+        paths[str(active)] = keep(result, CASE + '_' + str(active))
+    expected = hashlib.sha256(open(embedding, 'rb').read()).hexdigest()[:10]
+    assert hashes['True']['embed:provenance_fixture'] == expected, hashes
+    assert not hashes['False']
+    with Image.open(paths['False']) as before, Image.open(paths['True']) as after:
+        assert np.array_equal(np.asarray(before), np.asarray(after))
+    report = dict(resource_hashes=hashes, paths=paths, synthetic_embedding=embedding, exact_rgb=True)
+    with open(os.path.join(OUT, CASE + '.json'), 'w') as output:
+        json.dump(report, output, indent=2)
+    r = {'type': 'result', 'result': {'result': report}}
+elif CASE in ("pnginfo_ad_sd15", "pnginfo_ad_sdxl"):
+    import hashlib
+    from PIL import Image
+    import numpy as np
+    load(SDXL if CASE.endswith("sdxl") else SD15)
+    detector = hf("Bingsu/adetailer", "face_yolov8n.pt")
+    hashes, paths = {}, {}
+    for active in (False, True):
+        hooks = {"adetailer": {"units": [{"model": detector}]}}
+        if active:
+            hooks["pnginfo_injection"] = {}
+        size = 768 if CASE.endswith("sdxl") else 512
+        result = call("txt2img", req(gp(width=size, height=size, steps=8, hooks=hooks)))
+        assert result['type'] == 'result', result
+        hashes[str(active)] = result['result'].get('resource_hashes', {})
+        paths[str(active)] = keep(result, CASE + '_' + str(active))
+    expected = hashlib.sha256(open(detector, 'rb').read()).hexdigest()[:10]
+    assert hashes['True']['adetailer:face_yolov8n.pt'] == expected, hashes
+    assert not hashes['False']
+    with Image.open(paths['False']) as before, Image.open(paths['True']) as after:
+        assert np.array_equal(np.asarray(before), np.asarray(after))
+    report = dict(resource_hashes=hashes, paths=paths, detector=detector, exact_rgb=True)
+    with open(os.path.join(OUT, CASE + '.json'), 'w') as output:
+        json.dump(report, output, indent=2)
+    r = {'type': 'result', 'result': {'result': report}}
+elif CASE in ("temperature_modes_sd15", "temperature_modes_sdxl"):
     from PIL import Image
     import numpy as np
     load(SDXL if CASE.endswith("sdxl") else SD15)

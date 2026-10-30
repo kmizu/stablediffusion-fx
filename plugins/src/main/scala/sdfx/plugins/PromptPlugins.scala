@@ -71,23 +71,33 @@ class DynamicPromptsPlugin extends Plugin:
     Note("help", "Wildcard files live in stablediffusion-fx/wildcards (one option per line, # comments).")
   )
 
-  def expand(p0: GenerationParams, v: Values): Seq[GenerationParams] =
-    val wc = new DynamicPrompt.Wildcards(Wildcards.dirs(v.str("wildcard_dirs")))
+  def expand(p0: GenerationParams, v: Values, trackSources: Boolean = false): Seq[GenerationParams] =
+    val wc = new DynamicPrompt.Wildcards(Wildcards.dirs(v.str("wildcard_dirs")), trackSources)
     val seed = Support.fixSeed(p0.seed)
     val n = p0.batchSize * p0.nIter
     val fixed = v.bool("fixed_seed")
     val prompts =
-      if v.str("mode", "random") == "combinatorial" then DynamicPrompt.combinatorial(p0.prompt, wc, v.int("max_images", 100))
-      else (0 until n).map(i => DynamicPrompt.random(p0.prompt, new Random(seed + i), wc))
-    prompts.zipWithIndex.map { (pr, i) =>
+      if v.str("mode", "random") == "combinatorial" then
+        val expanded = DynamicPrompt.combinatorial(p0.prompt, wc, v.int("max_images", 100))
+        expanded.map(prompt => prompt -> wc.sourceHashes)
+      else (0 until n).map { i =>
+        wc.clearTrace()
+        val prompt = DynamicPrompt.random(p0.prompt, new Random(seed + i), wc)
+        prompt -> wc.sourceHashes
+      }
+    prompts.zipWithIndex.map { case ((pr, sources), i) =>
       val sd = if fixed then seed else seed + i
+      wc.clearTrace()
       val neg = DynamicPrompt.random(p0.negativePrompt, new Random(if v.bool("unlink_negative") then sd else seed), wc)
+      val extras = p0.extra + ("Template" -> p0.prompt.take(500))
+      val recorded = if !trackSources then extras else extras + ("Hashes" ->
+        sdfx.core.infotext.ResourceHashes.merge(extras.get("Hashes"), (sources ++ wc.sourceHashes).toSeq))
       p0.copy(prompt = pr, negativePrompt = neg, seed = sd, batchSize = 1, nIter = 1,
-        extra = p0.extra + ("Template" -> p0.prompt.take(500)))
+        extra = recorded)
     }
 
   override def run(p0: GenerationParams, v: Values, ctx: PluginContext): JobOutput =
-    val items = expand(p0, v).map(p => Sequence.Item(p, p.prompt))
+    val items = expand(p0, v, ctx.resourceHashesEnabled).map(p => Sequence.Item(p, p.prompt))
     ctx.log(s"Dynamic Prompts: ${items.size} prompt(s)")
     JobOutput(Sequence.run(ctx, items, "Dynamic Prompts").flatMap(_._2))
 

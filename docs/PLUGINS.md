@@ -197,3 +197,7 @@ Per-plugin evidence of the final real-model runs (which run, duration, result): 
   affects future submissions only; init-image contents are always omitted. Limits produce visible diagnostics or
   continuation, and captured model facts are labelled snapshots rather than proof of execution identity. Opening
   the inspector never starts the engine. History is memory-only; this is not an HTTP request or replay editor.
+
+## PNG resource hashes
+
+AlwaysOn `pnginfo_injection` is opt-in. It merges confirmed loaded model, explicit VAE, LoRA, referenced textual inversion, single-file ControlNet and ADetailer fingerprints into saved PNG `Hashes`. Dynamic Prompts also records positive/negative wildcard source files as `wildcards_file:<name>`. These entries do not assert Civitai bundle identity. Missing, ambiguous or changed cached resources are warned and omitted. See [verification](pnginfo-injection-verification.md).

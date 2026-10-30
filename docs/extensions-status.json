@@ -2019,7 +2019,7 @@
 "index": 336,
 "name": "Stable Diffusion PNGINFO Injection extension",
 "url": "https://github.com/bluelovers/sd-webui-pnginfo-injection.git",
-"status": "todo:pnginfo_injection"
+"status": "done:pnginfo_injection"
 },
 {
 "index": 337,

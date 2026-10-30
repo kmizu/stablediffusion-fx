@@ -114,6 +114,10 @@ BASE = [
      "huchenlei/sd-webui-api-payload-display; behaviour independently reimplemented in Scala/JavaFX; "
      "no vendored JavaScript or CSS copied; "
      "[license source 6abfcc1](https://github.com/summerstyle/jsonTreeViewer/blob/6abfcc1202396af12e2806d129bcae0e75b37365/LICENSE)"),
+    ("bluelovers/sd-webui-pnginfo-injection", "reimplemented", "Optional generation-time Hashes metadata -> pnginfo_injection; "
+     "independent native and Python implementation of resource provenance; no upstream code, assets or static wildcard maps copied. "
+     "No published license file at inspected revision; "
+     "[source 93bf780](https://github.com/bluelovers/sd-webui-pnginfo-injection/tree/93bf780426d3571056c6ef96fb7734943f16e711)"),
     ("kohya-ss/sd-scripts", "ported", "ControlNet-LLLite module layout"),
     ("lllyasviel/Fooocus", "ported", "Fooocus inpaint patch / head application"),
     ("threestudio-project/threestudio", "reimplemented", "Zero123 diffusers layout and sampling"),

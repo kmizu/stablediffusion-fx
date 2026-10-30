@@ -19,8 +19,12 @@ object DynamicPrompt:
   final case class Variant(options: Vector[(Double, Vector[Node])], min: Int, max: Int, sep: String) extends Node
   final case class Wildcard(name: String) extends Node
 
-  final class Wildcards(dirs: Seq[Path]):
+  final class Wildcards(dirs: Seq[Path], trackSources: Boolean = false):
     private val cache = scala.collection.mutable.Map[String, Vector[String]]()
+    private val cachedSources = scala.collection.mutable.Map[String, Map[String, String]]()
+    private var consumed = Map.empty[String, String]
+    def sourceHashes: Map[String, String] = consumed
+    def clearTrace(): Unit = consumed = Map.empty
 
     /** All wildcard names (relative paths without .txt) for UI listing. */
     def names: Vector[String] =
@@ -31,7 +35,10 @@ object DynamicPrompt:
         }
       }.distinct.sorted.toVector
 
-    def lines(name: String): Vector[String] = cache.getOrElseUpdate(name, load(name))
+    def lines(name: String): Vector[String] =
+      val result = cache.getOrElseUpdate(name, load(name))
+      consumed ++= cachedSources.getOrElse(name, Map.empty)
+      result
 
     private def load(name: String): Vector[String] =
       val pattern = name.replace('\\', '/')
@@ -42,7 +49,12 @@ object DynamicPrompt:
         else Vector(pattern)
       matched.flatMap { n =>
         dirs.map(_.resolve(n + ".txt")).find(Files.isRegularFile(_)).toVector.flatMap { f =>
-          Files.readAllLines(f).asScala.map(_.trim).filter(l => l.nonEmpty && !l.startsWith("#")).toVector
+          val lines = if !trackSources then Files.readAllLines(f).asScala.toVector else
+            val bytes = Files.readAllBytes(f)
+            val hash = java.security.MessageDigest.getInstance("SHA-256").digest(bytes).map(b => f"${b & 0xff}%02x").mkString.take(10)
+            cachedSources(name) = cachedSources.getOrElse(name, Map.empty) + (s"wildcards_file:$n" -> hash)
+            java.nio.charset.StandardCharsets.UTF_8.newDecoder().decode(java.nio.ByteBuffer.wrap(bytes)).toString.linesIterator.toVector
+          lines.map(_.trim).filter(l => l.nonEmpty && !l.startsWith("#"))
         }
       }
 

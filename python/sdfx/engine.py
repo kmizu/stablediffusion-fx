@@ -165,6 +165,7 @@ class Engine(BaseEngine):
         self._pre: Optional[list] = None
         self._sampler_ok: Optional[dict] = None  # pipeline whose accelerate offload hooks are installed (offload modes)
         self.loaded_embeddings: set[str] = set()
+        self.loaded_embedding_files: dict[str, str] = {}
         self.cn_cache: "OrderedDict[str, Any]" = OrderedDict()  # path -> ControlNetModel, LRU
         self.taesd = preview.TaesdPreviewer()
         self._extra: dict = {}
@@ -189,7 +190,7 @@ class Engine(BaseEngine):
 
     def features(self) -> list[str]:
         # Temperature guard uses step callbacks and does not alter model weights.
-        f = ["gpu_temperature_guard", "freeu", "dynamic_thresholding", "hypertile", "system_info", "vae_tools", "prevent_interrupt"]
+        f = ["pnginfo_injection", "gpu_temperature_guard", "freeu", "dynamic_thresholding", "hypertile", "system_info", "vae_tools", "prevent_interrupt"]
         f += self._batch_features()
         if hasattr(diffusers, "StableDiffusionXLPAGPipeline"):
             f.append("pag")
@@ -263,6 +264,9 @@ class Engine(BaseEngine):
         self.cn_cache.clear()
         self.loaded_loras.clear()
         self.loaded_embeddings.clear()
+        self.loaded_embedding_files.clear()
+        getattr(self, "embedding_snapshots", {}).clear()
+        getattr(self, "lora_snapshots", {}).clear()
         self.model = None
         self.vae_info = None
         self.taesd = preview.TaesdPreviewer()
@@ -412,7 +416,7 @@ class Engine(BaseEngine):
                 raise EngineError(MODEL_LOAD_FAILED, f"failed to load VAE {os.path.basename(path)}: {e}", traceback.format_exc())
             if self.load_opts.vae_tiling:
                 vae.enable_tiling()
-            self.vae_info = {"vae_name": models.model_name(path), "vae_hash": models.path_hash(path)}
+            self.vae_info = {"vae_name": models.model_name(path), "vae_hash": models.path_hash(path), "path": path}
         else:
             vae = self.orig_vae
             self.vae_info = None
@@ -521,12 +525,23 @@ class Engine(BaseEngine):
                 self.loaded_loras.move_to_end(adapter)
             else:
                 try:
+                    from .resource_hashes import FileSnapshot
+                    snapshot = FileSnapshot.capture(path)
                     pipe.load_lora_weights(path, adapter_name=adapter)
+                    if not hasattr(self, "lora_snapshots"):
+                        self.lora_snapshots = {}
+                    self.lora_snapshots[adapter] = snapshot
                     self.loaded_loras[adapter] = path
                 except Exception as e:
                     ctx.warn(f"LoRA '{name}' could not be loaded: {str(e).splitlines()[0] if str(e) else type(e).__name__}")
                     hashes.pop(name, None)
                     continue
+            if hooks_mod.hook_config(gp.hooks, "pnginfo_injection", {}) is not None:
+                try:
+                    hashes[name] = self.lora_snapshots[adapter].digest()
+                except (KeyError, OSError, ValueError) as error:
+                    hashes.pop(name, None)
+                    ctx.warn(f"Resource hash unavailable for LoRA {name}: {error}")
             names.append(adapter)
             weights.append(w)
             if start is not None or stop is not None:
@@ -539,6 +554,7 @@ class Engine(BaseEngine):
             except Exception as e:
                 log.debug("delete_adapters(%s) failed: %s", a, e)
             self.loaded_loras.pop(a, None)
+            getattr(self, "lora_snapshots", {}).pop(a, None)
         if names:
             try:
                 pipe.enable_lora()
@@ -565,6 +581,8 @@ class Engine(BaseEngine):
                     or not re.search(r"(?<![\w-])" + re.escape(token) + r"(?![\w-])", joined):
                 continue
             try:
+                from .resource_hashes import FileSnapshot
+                snapshot = FileSnapshot.capture(path)
                 if path.lower().endswith(".safetensors"):
                     from safetensors.torch import load_file  # type: ignore
                     sd = load_file(path)
@@ -590,6 +608,10 @@ class Engine(BaseEngine):
                         self.loaded_embeddings.add(token)
                         continue
                     pipe.load_textual_inversion(sd, token=token)
+                self.loaded_embedding_files[token] = path
+                if not hasattr(self, "embedding_snapshots"):
+                    self.embedding_snapshots = {}
+                self.embedding_snapshots[token] = snapshot
                 self.loaded_embeddings.add(token)
             except Exception as e:
                 ctx.warn(f"embedding '{token}' could not be loaded: {str(e).splitlines()[0] if str(e) else type(e).__name__}")
@@ -882,7 +904,10 @@ class Engine(BaseEngine):
                 for old in [k for k in self.cn_cache if k not in wanted][: max(0, len(self.cn_cache) + 1 - MAX_CONTROLNETS)]:
                     self._evict_controlnet(old)
                 try:
+                    from .resource_hashes import FileSnapshot
+                    resource_snapshot = FileSnapshot.capture(path) if os.path.isfile(path) else None
                     cnm = cn_mod.load_controlnet(path, self.dtype)
+                    cnm._sdfx_resource_snapshot = resource_snapshot
                 except Exception as e:
                     raise EngineError(MODEL_LOAD_FAILED, f"failed to load ControlNet {os.path.basename(path)}: {e}{_hf_hint(e)}",
                                       traceback.format_exc())
@@ -1221,6 +1246,25 @@ class Engine(BaseEngine):
                 and any(negpip.extract(text)[1] for text in texts)):
             raise EngineError(UNSUPPORTED, "NegPiP negative weights are not available with PhotoMaker's text-only encoder")
         self._load_embeddings(req, texts, ctx)
+        ctx.resource_hashes = None
+        if hooks_mod.hook_config(gp.hooks, "pnginfo_injection", {}) is not None:
+            from .resource_hashes import record_file
+            from .resource_hashes import ResourceHashes
+            ctx.resource_hashes = ResourceHashes()
+            from .resource_hashes import file_resource_hash
+            for key, info, hash_key in (("model", self.model, "hash"), ("vae", self.vae_info, "vae_hash")):
+                # These digests were captured when the actual weights were loaded.
+                if info and info.get(hash_key) and os.path.isfile(info.get("path", "")):
+                    ctx.resource_hashes[key] = info[hash_key]
+            ctx.resource_hashes.update({f'lora:{name}': value for name, value in lora_hashes.items()})
+            for token, path in self.loaded_embedding_files.items():
+                if any(re.search(r'(?<![\w-])' + re.escape(token) + r'(?![\w-])', text) for text in texts):
+                    # Preserve the tokenizer token rather than the filename suffix.
+                    try:
+                        from .resource_hashes import file_resource_hash
+                        ctx.resource_hashes[f'embed:{token}'] = self.embedding_snapshots[token].digest()
+                    except (OSError, ValueError) as error:
+                        ctx.warn(f'Resource hash unavailable for embedding {token}: {error}')
         pag = self._pag_config(gp, ctx)
 
         alternative = (mode == "img2img" and gp.img2img.mask is None and not is_inpaint_model
@@ -1249,6 +1293,10 @@ class Engine(BaseEngine):
         if mode == "img2img":
             init_img = load_rgb(gp.img2img.init_image)
         cn = self._controlnets(gp, req, init_img, w, h, ctx)
+        if ctx.resource_hashes is not None:
+            from .resource_hashes import record_file
+            for path, model in cn[0]:
+                record_file(ctx.resource_hashes, 'controlnet', path, ctx.warn, getattr(model, '_sdfx_resource_snapshot', None))
         if gp.subseed_strength > 0 and mode == "img2img":
             ctx.warn("variation seed is only applied in txt2img")
 
@@ -1382,6 +1430,7 @@ class Engine(BaseEngine):
             "vae_name": self.vae_info["vae_name"] if self.vae_info else None,
             "vae_hash": self.vae_info["vae_hash"] if self.vae_info else None,
             "lora_hashes": lora_hashes,
+            **({"resource_hashes": ctx.resource_hashes} if ctx.resource_hashes is not None else {}),
             "scheduler": plan.schedule if plan else schedulers.resolve_schedule(gp.sampler_name, gp.scheduler),
             "warnings": list(ctx.warnings),
             "intermediate_artifacts": intermediate_artifacts,
@@ -1408,7 +1457,14 @@ class Engine(BaseEngine):
             for ui, u in enumerate(units):
                 ctx.check_interrupt()
                 try:
-                    masks = adm.unit_masks(im, u, dev, cfg.get("model_dirs"))
+                    if getattr(ctx, 'resource_hashes', None) is not None:
+                        resolved = adm.resolve_model(u['model'], cfg.get('model_dirs'))
+                        masks = adm.unit_masks(im, {**u, 'model': resolved}, dev, cfg.get("model_dirs"))
+                        if resolved != 'opencv_face':
+                            from .resource_hashes import record_file
+                            record_file(ctx.resource_hashes, 'adetailer', resolved, ctx.warn, adm.loaded_snapshot(resolved))
+                    else:
+                        masks = adm.unit_masks(im, u, dev, cfg.get("model_dirs"))
                 except ImportError as e:
                     raise EngineError(UNSUPPORTED, f"ADetailer model '{u['model']}' needs the ultralytics package: {e}")
                 except FileNotFoundError as e:

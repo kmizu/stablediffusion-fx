@@ -90,7 +90,10 @@ def detect(image, model: str, confidence: float, device: str = "cuda") -> Detect
     from ultralytics import YOLO
     y = _yolo_cache.get(model)
     if y is None:
+        from .resource_hashes import FileSnapshot
+        snapshot = FileSnapshot.capture(model)
         y = _yolo_cache[model] = YOLO(model)
+        y._sdfx_resource_snapshot = snapshot
     res = y(image, conf=confidence, device=device, verbose=False)[0]
     if res.boxes is None or len(res.boxes) == 0:
         return Detection([], [], [])
@@ -196,3 +199,8 @@ def unit_prompts(text: str, main: str, n: int) -> list[str]:
 
 __all__ = ["match_colors", "UNIT_DEFAULTS", "HF_MODELS", "normalize_units", "resolve_model", "detect", "unit_masks", "unit_prompts",
            "offset_dilate", "merge_invert", "filter_k_largest", "filter_by_ratio", "Detection"]
+
+
+def loaded_snapshot(model):
+    """Identity captured before loading the cached detector weights."""
+    return getattr(_yolo_cache.get(model), '_sdfx_resource_snapshot', None)

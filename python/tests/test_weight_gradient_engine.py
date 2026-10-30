@@ -48,7 +48,7 @@ def test_photomaker_rejects_dynamic_gradient_instead_of_silently_using_raw_tags(
     engine._apply_loras = lambda *args: {}
     engine._load_embeddings = lambda *args: None
     with pytest.raises(EngineError, match="PhotoMaker"):
-        engine._generate({}, None, "txt2img")
+        engine._generate({}, types.SimpleNamespace(), "txt2img")
 
 
 @pytest.mark.parametrize("hooks", [{}, {"weight_gradient": {"enabled": False}}])
@@ -78,7 +78,7 @@ def test_generation_reencodes_inherited_hires_prompt_for_new_step_count():
 
     engine._controlnets = stop
     with pytest.raises(StopBeforeSampling):
-        engine._generate({}, None, "txt2img")
+        engine._generate({}, types.SimpleNamespace(), "txt2img")
     assert calls == [("(cat:0)", ""), ("(cat:0.5)", ""), ("(cat:1)", ""), ("(cat:0)", ""), ("(cat:1)", "")]
 
 
@@ -110,7 +110,7 @@ def test_img2img_gradient_reaches_end_at_actual_last_step(tmp_path, alternative,
 
     engine._controlnets = stop
     with pytest.raises(StopBeforeSampling):
-        engine._generate({}, None, "img2img")
+        engine._generate({}, types.SimpleNamespace(), "img2img")
     assert len(calls) == actual
     assert calls[0] == ("(cat:0)", "") and calls[-1] == ("(cat:1)", "")
     if actual == 4:
