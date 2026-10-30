@@ -331,6 +331,10 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   ctx.showImage = p => preview.show(p)
   ctx.openStylesEditor = () => { stylesEditor.reload(); tabs.getSelectionModel.select(stylesTab) }
   ctx.currentGeneration = () => vms(activeMode).toParams
+  ctx.editPositivePrompt = (text, replace) =>
+    if !ctx.extendedStyleApplying.get then
+      val prompt = vms(activeMode).prompt
+      prompt.set(if replace then text else prompt.get + text)
   ctx.applyPromptStyle = style =>
     val mode = activeMode
     val vm = vms(mode)

@@ -29,6 +29,18 @@ object PluginForm:
           tp.getStyleClass.add("plugin-subsection")
           v.getChildren.add(tp)
     }
+    if form.plugin.promptActions.nonEmpty then
+      val actions = new javafx.scene.layout.FlowPane(8, 8)
+      form.plugin.promptActions.foreach { action =>
+        val button = new Button(action.label)
+        button.setId(form.plugin.id + "-action-" + action.id)
+        button.setOnAction { _ =>
+          try ctx.editPositivePrompt(action.text(form.values), action.replace)
+          catch case error: IllegalArgumentException => ctx.toaster.show(error.getMessage, Toaster.Kind.Error)
+        }
+        actions.getChildren.add(button)
+      }
+      v.getChildren.add(actions)
     v
 
   /** Splits controls at Section markers: (None, leading controls), (Some(section), its controls)... */
@@ -80,6 +92,8 @@ object PluginForm:
       W.doubleSlider(doubleProp(p, s.defaultValue), s.min, s.max, s.step)
     case (i: Control.IntField, _) =>
       if i.max - i.min <= 4096 then W.intSlider(intProp(p, i.defaultValue), i.min, i.max) else W.intSpinner(intProp(p, i.defaultValue), i.min, i.max)
+    case (ch: Control.Choice, _) if ch.previewResources.nonEmpty =>
+      PreviewChoice.render(ch, p)
     case (ch: Control.Choice, _) =>
       W.combo(FXCollections.observableArrayList(ch.options*), p)
     case (dc: Control.DynamicChoice, _) =>

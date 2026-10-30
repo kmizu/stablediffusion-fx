@@ -205,3 +205,9 @@ AlwaysOn `pnginfo_injection` is opt-in. It merges confirmed loaded model, explic
 ## Steps Animation
 
 Script `steps_animation` captures denoised steps during one txt2img or img2img generation and optionally exports a movie with external ffmpeg. Choose duration, frame rate, none/blend/MCI interpolation and codec. Batch size/count must be one; Save intermediate images must be disabled. Frames are retained unless deletion is requested and export succeeds. Optional partial export preserves the job's cancelled status; interrupt again to stop encoding. Paths are relative to the generation output folder. See [verification](steps-animation-verification.md) for codec, model and interrupt coverage.
+
+## StylePile
+
+Script `stylepile` combines weighted image types, concepts, view, mood, color, three artists and three art movements with presets. Browse examples offers searchable source references and editable artist/movement names. Variables X/Y sequence prompts; A/B/C (and legacy R alias) choose random lines. Noise-string placeholders and positive-prompt insertion tools are available. Random choices are deterministic from the resolved seed. Expanded prompts, settings and original template are saved in PNG metadata.
+
+The complete pinned GPL-3.0 source catalog includes 512 reference JPGs. Add JPG/JPEG/PNG/GIF images to `<app-home>/stylepile/<category>` to extend or override previews; use category `disabled.txt` to hide names. Categories are Artists, Art Movements, Colors, Directions and Moods. Inspiration text overrides go in `stylepile/Inspiration/{Subjects,Actions,Locations}.txt`. Restart to refresh; queued choices remain a snapshot. Invalid/ambiguous files produce visible warnings. See [verification](stylepile-verification.md) for measured coverage, adaptations and current acceptance gates.

@@ -1,0 +1,2356 @@
+{
+  "source": "https://github.com/some9000/StylePile",
+  "revision": "85b549a10ff6c5b1604e980cd2107253b088e832",
+  "license": "GPL-3.0",
+  "literals": {
+    "ElementConcept": [
+      "Acclaimed",
+      "Alternative",
+      "Amateur",
+      "Artificial",
+      "Award Winning",
+      "Basic",
+      "Beginner",
+      "Bipolar",
+      "Boyish",
+      "Childish",
+      "Cinematic",
+      "Clever",
+      "Clumsy",
+      "Cognitive",
+      "Complex",
+      "Compressed",
+      "Controllable",
+      "Corrupted",
+      "Damaged",
+      "Destroyed",
+      "Disgusting",
+      "Divisive",
+      "Dramatic",
+      "Dumb",
+      "Eliminated",
+      "Excessive",
+      "Exciting",
+      "Extreme",
+      "Feminine",
+      "Filtered",
+      "Fixated",
+      "Fixed",
+      "Foolish",
+      "Fragile",
+      "Girlish",
+      "Gorgeous",
+      "Groundbreaking",
+      "Hated",
+      "Hidden",
+      "Highly Rated",
+      "Horrifying",
+      "Imaginary",
+      "Imaginative",
+      "Imitated",
+      "Jaded",
+      "Light hearted",
+      "Loved",
+      "Low Rated",
+      "Magical",
+      "Masculine",
+      "Masterful",
+      "Masterpiece",
+      "Maximalist",
+      "Methodological",
+      "Misunderstood",
+      "Mundane",
+      "Overprocessed",
+      "Pathetic",
+      "Photoshopped",
+      "Preview",
+      "Raw",
+      "Recycled",
+      "Religious",
+      "Rough",
+      "Sacrificial",
+      "Sacrilegious",
+      "Schematic",
+      "Simple",
+      "Sophisticated",
+      "Stupid",
+      "Trustworthy",
+      "Unbelievable",
+      "Understandable",
+      "Unearthed",
+      "Unfiltered",
+      "Unfinished",
+      "Unhinged",
+      "Universal",
+      "Unsuccessful",
+      "Venerable",
+      "Visionary",
+      "Vivacious"
+    ],
+    "ResultNames": [
+      "Photo",
+      "Digital Artwork",
+      "3D Rendering",
+      "Painting",
+      "Drawing",
+      "Vector Art"
+    ],
+    "ResultTypeBefore": {
+      "Photo": "Photo",
+      "Digital Artwork": "Digital Artwork",
+      "3D Rendering": "Professional 3D rendering",
+      "Painting": "Painting",
+      "Drawing": "Drawing",
+      "Vector Art": "Vector image"
+    },
+    "ResultTypePositives": {
+      "Photo": ",Highly Detailed",
+      "Digital Artwork": ",CGSociety,ArtStation",
+      "3D Rendering": ",CGSociety,ArtStation",
+      "Painting": " ",
+      "Drawing": " ",
+      "Vector Art": ",(Flat style:1.3),Illustration,Behance"
+    },
+    "ResultTypeNegatives": {
+      "Photo": ",Amateur,Low rated,Phone,Wedding,Frame,Painting,tumblr",
+      "Digital Artwork": ",Scribbles,Low quality,Low rated,Mediocre,3D rendering,Screenshot,Software,UI",
+      "3D Rendering": ",((Wireframe)),Polygons,Screenshot,Character design,Software,UI",
+      "Painting": "Low quality,Bad composition,Faded,(Photo:1.5),(Frame:1.3)",
+      "Drawing": ",Low quality,Photo,Artifacts,Table,Paper,Pencils,Pages,Wall",
+      "Vector Art": ",(Watermark:1.5),(Text:1.3)"
+    },
+    "Preset": {
+      "None": "",
+      "Portraits": ",(close portrait:1.3),thematic background",
+      "Feminine portrait": ",(close portrait:1.3),(Feminine:1.4),(beautiful:1.4),(attractive:1.3),handsome,calendar pose,perfectly detailed eyes,studio lighting,thematic background",
+      "Masculine portrait": ",(close portrait:1.3),(Masculine:1.4),attractive,handsome,calendar pose,perfectly detailed eyes,studio lighting,thematic background",
+      "WaiFusion": ",close portrait,(manga:1.3),beautiful,attractive,handsome,trending on ArtStation,DeviantArt contest winner,CGSociety,ultrafine,detailed,studio lighting",
+      "Horrible Monsters": ",monster,ugly,surgery,evisceration,morbid,cut,open,rotten,mutilated,deformed,disfigured,malformed,missing limbs,extra limbs,bloody,slimy,goo,Richard Estes,Audrey Flack,Ralph Goings,Robert Bechtle,Tomasz Alen Kopera,H.R.Giger,Joel Boucquemont,ArtStation,DeviantArt contest winner,thematic background",
+      "Robots": ",robot,((cyborg)),machine,futuristic,concept Art by senior character Artist,featured on zbrush central,trending on polycount,trending on ArtStation,CGSociety,hard surface modeling",
+      "Retrofuturism": ",((retrofuturism)),(science fiction),dystopian Art,ultrafine,detailed,future tech,by Clarence Holbrook CArter,by Ed Emshwiller,CGSociety,ArtStation contest winner,trending on ArtStation,DeviantArt contest winner,Fallout",
+      "Propaganda": ",propaganda poster,soviet poster,sovietwave",
+      "Landscapes": ",naturalism,land Art,regionalism,shutterstock contest winner,trending on unsplash,featured on Flickr"
+    },
+    "PresetNegatives": {
+      "None": "",
+      "Portraits": ",robot eyes,distorted pupils,distorted eyes,Unnatural anatomy,strange anatomy,things on face",
+      "Feminine portrait": ",robot eyes,distorted pupils,distorted eyes,Unnatural anatomy,strange anatomy,things on face",
+      "Masculine portrait": ",robot eyes,distorted pupils,distorted eyes,Unnatural anatomy,strange anatomy,things on face",
+      "WaiFusion": ",things on face,Unnatural anatomy,strange anatomy",
+      "Horrible Monsters": ",(attractive),pretty,smooth,cArtoon,pixar,human",
+      "Robots": ",cartoon",
+      "Retrofuturism": ",extra limbs,malformed limbs,modern",
+      "Propaganda": ",extra limbs,malformed limbs,modern",
+      "Landscapes": ",((hdr)),((terragen)),((rendering)),(high contrast)"
+    },
+    "AlwaysBad": ",watermark,signature"
+  },
+  "choices": {
+    "Art Movements": [
+      {
+        "name": "50s Art",
+        "preview": "StylePile/Art Movements/50s Art.jpg"
+      },
+      {
+        "name": "60s Art",
+        "preview": "StylePile/Art Movements/60s Art.jpg"
+      },
+      {
+        "name": "70s Art",
+        "preview": "StylePile/Art Movements/70s Art.jpg"
+      },
+      {
+        "name": "80s Art",
+        "preview": "StylePile/Art Movements/80s Art.jpg"
+      },
+      {
+        "name": "Abstract Art",
+        "preview": "StylePile/Art Movements/Abstract Art.jpg"
+      },
+      {
+        "name": "Abstract Expressionism",
+        "preview": "StylePile/Art Movements/Abstract Expressionism.jpg"
+      },
+      {
+        "name": "Abstract Illusionism",
+        "preview": "StylePile/Art Movements/Abstract Illusionism.jpg"
+      },
+      {
+        "name": "Academism",
+        "preview": "StylePile/Art Movements/Academism.jpg"
+      },
+      {
+        "name": "Action Painting",
+        "preview": "StylePile/Art Movements/Action Painting.jpg"
+      },
+      {
+        "name": "Aestheticism",
+        "preview": "StylePile/Art Movements/Aestheticism.jpg"
+      },
+      {
+        "name": "Afrofuturism",
+        "preview": "StylePile/Art Movements/Afrofuturism.jpg"
+      },
+      {
+        "name": "American Impressionism",
+        "preview": "StylePile/Art Movements/American Impressionism.jpg"
+      },
+      {
+        "name": "American Scene Painting",
+        "preview": "StylePile/Art Movements/American Scene Painting.jpg"
+      },
+      {
+        "name": "Art Brut",
+        "preview": "StylePile/Art Movements/Art Brut.jpg"
+      },
+      {
+        "name": "Art Deco",
+        "preview": "StylePile/Art Movements/Art Deco.jpg"
+      },
+      {
+        "name": "Art Nouveau",
+        "preview": "StylePile/Art Movements/Art Nouveau.jpg"
+      },
+      {
+        "name": "Art Photography",
+        "preview": "StylePile/Art Movements/Art Photography.jpg"
+      },
+      {
+        "name": "Arts and Crafts Movement",
+        "preview": "StylePile/Art Movements/Arts and Crafts Movement.jpg"
+      },
+      {
+        "name": "Ascii Art",
+        "preview": "StylePile/Art Movements/Ascii Art.jpg"
+      },
+      {
+        "name": "Ashcan School",
+        "preview": "StylePile/Art Movements/Ashcan School.jpg"
+      },
+      {
+        "name": "Australian Tonalism",
+        "preview": "StylePile/Art Movements/Australian Tonalism.jpg"
+      },
+      {
+        "name": "Baroque Art",
+        "preview": "StylePile/Art Movements/Baroque Art.jpg"
+      },
+      {
+        "name": "Bauhaus Art",
+        "preview": "StylePile/Art Movements/Bauhaus Art.jpg"
+      },
+      {
+        "name": "Berlin Secession",
+        "preview": "StylePile/Art Movements/Berlin Secession.jpg"
+      },
+      {
+        "name": "CGI Art",
+        "preview": "StylePile/Art Movements/CGI Art.jpg"
+      },
+      {
+        "name": "Classical Realism",
+        "preview": "StylePile/Art Movements/Classical Realism.jpg"
+      },
+      {
+        "name": "Classicism Art",
+        "preview": "StylePile/Art Movements/Classicism Art.jpg"
+      },
+      {
+        "name": "Cloisonnism",
+        "preview": "StylePile/Art Movements/Cloisonnism.jpg"
+      },
+      {
+        "name": "Computer Art",
+        "preview": "StylePile/Art Movements/Computer Art.jpg"
+      },
+      {
+        "name": "Conceptual Art",
+        "preview": "StylePile/Art Movements/Conceptual Art.jpg"
+      },
+      {
+        "name": "Constructivism Art",
+        "preview": "StylePile/Art Movements/Constructivism Art.jpg"
+      },
+      {
+        "name": "Crystal Cubism",
+        "preview": "StylePile/Art Movements/Crystal Cubism.jpg"
+      },
+      {
+        "name": "Cubism",
+        "preview": "StylePile/Art Movements/Cubism.jpg"
+      },
+      {
+        "name": "Cubo-Futurism",
+        "preview": "StylePile/Art Movements/Cubo-Futurism.jpg"
+      },
+      {
+        "name": "Cutester Art",
+        "preview": "StylePile/Art Movements/Cutester Art.jpg"
+      },
+      {
+        "name": "Cybergoth Art",
+        "preview": "StylePile/Art Movements/Cybergoth Art.jpg"
+      },
+      {
+        "name": "Cyberpunk Art",
+        "preview": "StylePile/Art Movements/Cyberpunk Art.jpg"
+      },
+      {
+        "name": "Dada Art",
+        "preview": "StylePile/Art Movements/Dada Art.jpg"
+      },
+      {
+        "name": "Dark Wave Art",
+        "preview": "StylePile/Art Movements/Dark Wave Art.jpg"
+      },
+      {
+        "name": "Digital Art",
+        "preview": "StylePile/Art Movements/Digital Art.jpg"
+      },
+      {
+        "name": "Emo Art",
+        "preview": "StylePile/Art Movements/Emo Art.jpg"
+      },
+      {
+        "name": "Expressionism",
+        "preview": "StylePile/Art Movements/Expressionism.jpg"
+      },
+      {
+        "name": "Fauvism",
+        "preview": "StylePile/Art Movements/Fauvism.jpg"
+      },
+      {
+        "name": "Figurative Art",
+        "preview": "StylePile/Art Movements/Figurative Art.jpg"
+      },
+      {
+        "name": "Fluxus Art",
+        "preview": "StylePile/Art Movements/Fluxus Art.jpg"
+      },
+      {
+        "name": "Folk Art",
+        "preview": "StylePile/Art Movements/Folk Art.jpg"
+      },
+      {
+        "name": "Funk Art",
+        "preview": "StylePile/Art Movements/Funk Art.jpg"
+      },
+      {
+        "name": "Futurism",
+        "preview": "StylePile/Art Movements/Futurism.jpg"
+      },
+      {
+        "name": "Geometric Abstract Art",
+        "preview": "StylePile/Art Movements/Geometric Abstract Art.jpg"
+      },
+      {
+        "name": "Glitch Art",
+        "preview": "StylePile/Art Movements/Glitch Art.jpg"
+      },
+      {
+        "name": "Graffiti Street Art",
+        "preview": "StylePile/Art Movements/Graffiti Street Art.jpg"
+      },
+      {
+        "name": "Grunge Art",
+        "preview": "StylePile/Art Movements/Grunge Art.jpg"
+      },
+      {
+        "name": "Gutai Group",
+        "preview": "StylePile/Art Movements/Gutai Group.jpg"
+      },
+      {
+        "name": "Hardcore Art",
+        "preview": "StylePile/Art Movements/Hardcore Art.jpg"
+      },
+      {
+        "name": "Harlem Renaissance",
+        "preview": "StylePile/Art Movements/Harlem Renaissance.jpg"
+      },
+      {
+        "name": "Health Goth Art",
+        "preview": "StylePile/Art Movements/Health Goth Art.jpg"
+      },
+      {
+        "name": "Heidelberg School",
+        "preview": "StylePile/Art Movements/Heidelberg School.jpg"
+      },
+      {
+        "name": "Hippie Art",
+        "preview": "StylePile/Art Movements/Hippie Art.jpg"
+      },
+      {
+        "name": "Hipster Art",
+        "preview": "StylePile/Art Movements/Hipster Art.jpg"
+      },
+      {
+        "name": "Hyperrealism",
+        "preview": "StylePile/Art Movements/Hyperrealism.jpg"
+      },
+      {
+        "name": "Impressionism",
+        "preview": "StylePile/Art Movements/Impressionism.jpg"
+      },
+      {
+        "name": "Industrial Art",
+        "preview": "StylePile/Art Movements/Industrial Art.jpg"
+      },
+      {
+        "name": "Kinetic Pointillism",
+        "preview": "StylePile/Art Movements/Kinetic Pointillism.jpg"
+      },
+      {
+        "name": "Land Art",
+        "preview": "StylePile/Art Movements/Land Art.jpg"
+      },
+      {
+        "name": "Lowbrow Art",
+        "preview": "StylePile/Art Movements/Lowbrow Art.jpg"
+      },
+      {
+        "name": "Lyrical Abstraction",
+        "preview": "StylePile/Art Movements/Lyrical Abstraction.jpg"
+      },
+      {
+        "name": "Magical Realism",
+        "preview": "StylePile/Art Movements/Magical Realism.jpg"
+      },
+      {
+        "name": "Mannerism Art",
+        "preview": "StylePile/Art Movements/Mannerism Art.jpg"
+      },
+      {
+        "name": "Memecore Ar",
+        "preview": "StylePile/Art Movements/Memecore Ar.jpg"
+      },
+      {
+        "name": "Metaphysical Painting",
+        "preview": "StylePile/Art Movements/Metaphysical Painting.jpg"
+      },
+      {
+        "name": "Mingei",
+        "preview": "StylePile/Art Movements/Mingei.jpg"
+      },
+      {
+        "name": "Minimalism Art",
+        "preview": "StylePile/Art Movements/Minimalism Art.jpg"
+      },
+      {
+        "name": "Modern Art",
+        "preview": "StylePile/Art Movements/Modern Art.jpg"
+      },
+      {
+        "name": "Modern European Ink Painting",
+        "preview": "StylePile/Art Movements/Modern European Ink Painting.jpg"
+      },
+      {
+        "name": "Modernism Art",
+        "preview": "StylePile/Art Movements/Modernism Art.jpg"
+      },
+      {
+        "name": "Naive Art",
+        "preview": "StylePile/Art Movements/Naive Art.jpg"
+      },
+      {
+        "name": "Neo Dada Art",
+        "preview": "StylePile/Art Movements/Neo Dada Art.jpg"
+      },
+      {
+        "name": "Neo-Dadaism Art",
+        "preview": "StylePile/Art Movements/Neo-Dadaism Art.jpg"
+      },
+      {
+        "name": "Neo-Expressionism",
+        "preview": "StylePile/Art Movements/Neo-Expressionism.jpg"
+      },
+      {
+        "name": "Neo-Fauvism",
+        "preview": "StylePile/Art Movements/Neo-Fauvism.jpg"
+      },
+      {
+        "name": "Neo-Primitivism",
+        "preview": "StylePile/Art Movements/Neo-Primitivism.jpg"
+      },
+      {
+        "name": "Neo",
+        "preview": "StylePile/Art Movements/Neo.jpg"
+      },
+      {
+        "name": "Neoclassicism",
+        "preview": "StylePile/Art Movements/Neoclassicism.jpg"
+      },
+      {
+        "name": "Neogothic Art",
+        "preview": "StylePile/Art Movements/Neogothic Art.jpg"
+      },
+      {
+        "name": "New Wave Art",
+        "preview": "StylePile/Art Movements/New Wave Art.jpg"
+      },
+      {
+        "name": "Normcore Art",
+        "preview": "StylePile/Art Movements/Normcore Art.jpg"
+      },
+      {
+        "name": "Nu Goth Art",
+        "preview": "StylePile/Art Movements/Nu Goth Art.jpg"
+      },
+      {
+        "name": "Orphism",
+        "preview": "StylePile/Art Movements/Orphism.jpg"
+      },
+      {
+        "name": "Panfuturism",
+        "preview": "StylePile/Art Movements/Panfuturism.jpg"
+      },
+      {
+        "name": "Pastel Goth Art",
+        "preview": "StylePile/Art Movements/Pastel Goth Art.jpg"
+      },
+      {
+        "name": "Photorealism",
+        "preview": "StylePile/Art Movements/Photorealism.jpg"
+      },
+      {
+        "name": "Pixel Art",
+        "preview": "StylePile/Art Movements/Pixel Art.jpg"
+      },
+      {
+        "name": "Pointillism",
+        "preview": "StylePile/Art Movements/Pointillism.jpg"
+      },
+      {
+        "name": "Pop Art",
+        "preview": "StylePile/Art Movements/Pop Art.jpg"
+      },
+      {
+        "name": "Post-Impressionism",
+        "preview": "StylePile/Art Movements/Post-Impressionism.jpg"
+      },
+      {
+        "name": "Pre-Raphaelitism",
+        "preview": "StylePile/Art Movements/Pre-Raphaelitism.jpg"
+      },
+      {
+        "name": "Primitivism Art",
+        "preview": "StylePile/Art Movements/Primitivism Art.jpg"
+      },
+      {
+        "name": "Primitivism",
+        "preview": "StylePile/Art Movements/Primitivism.jpg"
+      },
+      {
+        "name": "Private Press",
+        "preview": "StylePile/Art Movements/Private Press.jpg"
+      },
+      {
+        "name": "Process Art",
+        "preview": "StylePile/Art Movements/Process Art.jpg"
+      },
+      {
+        "name": "Psychedelic Art",
+        "preview": "StylePile/Art Movements/Psychedelic Art.jpg"
+      },
+      {
+        "name": "Psytrance Art",
+        "preview": "StylePile/Art Movements/Psytrance Art.jpg"
+      },
+      {
+        "name": "Qajar Art",
+        "preview": "StylePile/Art Movements/Qajar Art.jpg"
+      },
+      {
+        "name": "Queercore Art",
+        "preview": "StylePile/Art Movements/Queercore Art.jpg"
+      },
+      {
+        "name": "Realism",
+        "preview": "StylePile/Art Movements/Realism.jpg"
+      },
+      {
+        "name": "Remodernism",
+        "preview": "StylePile/Art Movements/Remodernism.jpg"
+      },
+      {
+        "name": "Renaissance",
+        "preview": "StylePile/Art Movements/Renaissance.jpg"
+      },
+      {
+        "name": "Retrofuturism",
+        "preview": "StylePile/Art Movements/Retrofuturism.jpg"
+      },
+      {
+        "name": "Rococo",
+        "preview": "StylePile/Art Movements/Rococo.jpg"
+      },
+      {
+        "name": "Seapunk Art",
+        "preview": "StylePile/Art Movements/Seapunk Art.jpg"
+      },
+      {
+        "name": "Serial Art",
+        "preview": "StylePile/Art Movements/Serial Art.jpg"
+      },
+      {
+        "name": "Shin Hanga",
+        "preview": "StylePile/Art Movements/Shin Hanga.jpg"
+      },
+      {
+        "name": "Solarpunk Art",
+        "preview": "StylePile/Art Movements/Solarpunk Art.jpg"
+      },
+      {
+        "name": "Steampunk Art",
+        "preview": "StylePile/Art Movements/Steampunk Art.jpg"
+      },
+      {
+        "name": "Street Art",
+        "preview": "StylePile/Art Movements/Street Art.jpg"
+      },
+      {
+        "name": "Suprematism",
+        "preview": "StylePile/Art Movements/Suprematism.jpg"
+      },
+      {
+        "name": "Surrealism Art",
+        "preview": "StylePile/Art Movements/Surrealism Art.jpg"
+      },
+      {
+        "name": "Synthetism",
+        "preview": "StylePile/Art Movements/Synthetism.jpg"
+      },
+      {
+        "name": "Sōsaku Hanga",
+        "preview": "StylePile/Art Movements/Sōsaku Hanga.jpg"
+      },
+      {
+        "name": "Tonalism",
+        "preview": "StylePile/Art Movements/Tonalism.jpg"
+      },
+      {
+        "name": "Toyism Art",
+        "preview": "StylePile/Art Movements/Toyism Art.jpg"
+      },
+      {
+        "name": "Ukiyo-E",
+        "preview": "StylePile/Art Movements/Ukiyo-E.jpg"
+      },
+      {
+        "name": "Vanitas",
+        "preview": "StylePile/Art Movements/Vanitas.jpg"
+      },
+      {
+        "name": "Vaporwave Art",
+        "preview": "StylePile/Art Movements/Vaporwave Art.jpg"
+      },
+      {
+        "name": "Victorian Gothic Art",
+        "preview": "StylePile/Art Movements/Victorian Gothic Art.jpg"
+      },
+      {
+        "name": "Vorticism Art",
+        "preview": "StylePile/Art Movements/Vorticism Art.jpg"
+      },
+      {
+        "name": "Yuccie Art",
+        "preview": "StylePile/Art Movements/Yuccie Art.jpg"
+      }
+    ],
+    "Artists": [
+      {
+        "name": "Adam Hughes",
+        "preview": "StylePile/Artists/Adam Hughes.jpg"
+      },
+      {
+        "name": "Adi Granov",
+        "preview": "StylePile/Artists/Adi Granov.jpg"
+      },
+      {
+        "name": "Adolf Kosarek",
+        "preview": "StylePile/Artists/Adolf Kosarek.jpg"
+      },
+      {
+        "name": "Adolph Von Menzel",
+        "preview": "StylePile/Artists/Adolph Von Menzel.jpg"
+      },
+      {
+        "name": "Akihiko Yoshida",
+        "preview": "StylePile/Artists/Akihiko Yoshida.jpg"
+      },
+      {
+        "name": "Al Williamson",
+        "preview": "StylePile/Artists/Al Williamson.jpg"
+      },
+      {
+        "name": "Albert Lynch",
+        "preview": "StylePile/Artists/Albert Lynch.jpg"
+      },
+      {
+        "name": "Alberto Seveso",
+        "preview": "StylePile/Artists/Alberto Seveso.jpg"
+      },
+      {
+        "name": "Alberto Vargas",
+        "preview": "StylePile/Artists/Alberto Vargas.jpg"
+      },
+      {
+        "name": "Alena Aenami",
+        "preview": "StylePile/Artists/Alena Aenami.jpg"
+      },
+      {
+        "name": "Alex Andreev",
+        "preview": "StylePile/Artists/Alex Andreev.jpg"
+      },
+      {
+        "name": "Alex Grey",
+        "preview": "StylePile/Artists/Alex Grey.jpg"
+      },
+      {
+        "name": "Alex Ross",
+        "preview": "StylePile/Artists/Alex Ross.jpg"
+      },
+      {
+        "name": "Alex Toth",
+        "preview": "StylePile/Artists/Alex Toth.jpg"
+      },
+      {
+        "name": "Alexander Archipenko",
+        "preview": "StylePile/Artists/Alexander Archipenko.jpg"
+      },
+      {
+        "name": "Alexander Jansson",
+        "preview": "StylePile/Artists/Alexander Jansson.jpg"
+      },
+      {
+        "name": "Alfred Steiglitz",
+        "preview": "StylePile/Artists/Alfred Steiglitz.jpg"
+      },
+      {
+        "name": "Alphonse Mucha",
+        "preview": "StylePile/Artists/Alphonse Mucha.jpg"
+      },
+      {
+        "name": "Alvar Aalto",
+        "preview": "StylePile/Artists/Alvar Aalto.jpg"
+      },
+      {
+        "name": "Anato Finnstark",
+        "preview": "StylePile/Artists/Anato Finnstark.jpg"
+      },
+      {
+        "name": "Andre Masson",
+        "preview": "StylePile/Artists/Andre Masson.jpg"
+      },
+      {
+        "name": "Andrew Loomis",
+        "preview": "StylePile/Artists/Andrew Loomis.jpg"
+      },
+      {
+        "name": "Andy Fairhurst",
+        "preview": "StylePile/Artists/Andy Fairhurst.jpg"
+      },
+      {
+        "name": "Anna Dittman",
+        "preview": "StylePile/Artists/Anna Dittman.jpg"
+      },
+      {
+        "name": "Apollonia Saintclair",
+        "preview": "StylePile/Artists/Apollonia Saintclair.jpg"
+      },
+      {
+        "name": "Artgerm",
+        "preview": "StylePile/Artists/Artgerm.jpg"
+      },
+      {
+        "name": "Arthur Adams",
+        "preview": "StylePile/Artists/Arthur Adams.jpg"
+      },
+      {
+        "name": "Arthur Rackham",
+        "preview": "StylePile/Artists/Arthur Rackham.jpg"
+      },
+      {
+        "name": "Aubrey Beardsley",
+        "preview": "StylePile/Artists/Aubrey Beardsley.jpg"
+      },
+      {
+        "name": "Austin Briggs",
+        "preview": "StylePile/Artists/Austin Briggs.jpg"
+      },
+      {
+        "name": "Ayami Kojima",
+        "preview": "StylePile/Artists/Ayami Kojima.jpg"
+      },
+      {
+        "name": "Barbara Kruger",
+        "preview": "StylePile/Artists/Barbara Kruger.jpg"
+      },
+      {
+        "name": "Bastien Lecouffe Deharme",
+        "preview": "StylePile/Artists/Bastien Lecouffe Deharme.jpg"
+      },
+      {
+        "name": "Beeple",
+        "preview": "StylePile/Artists/Beeple.jpg"
+      },
+      {
+        "name": "Bill Sienkiewicz",
+        "preview": "StylePile/Artists/Bill Sienkiewicz.jpg"
+      },
+      {
+        "name": "Bill Ward",
+        "preview": "StylePile/Artists/Bill Ward.jpg"
+      },
+      {
+        "name": "Bo Bartlett",
+        "preview": "StylePile/Artists/Bo Bartlett.jpg"
+      },
+      {
+        "name": "Bob Byerley",
+        "preview": "StylePile/Artists/Bob Byerley.jpg"
+      },
+      {
+        "name": "Bob Eggleton",
+        "preview": "StylePile/Artists/Bob Eggleton.jpg"
+      },
+      {
+        "name": "Bob Haberfield",
+        "preview": "StylePile/Artists/Bob Haberfield.jpg"
+      },
+      {
+        "name": "Bob Peak",
+        "preview": "StylePile/Artists/Bob Peak.jpg"
+      },
+      {
+        "name": "Boris Vallejo",
+        "preview": "StylePile/Artists/Boris Vallejo.jpg"
+      },
+      {
+        "name": "Brandon Woelfel",
+        "preview": "StylePile/Artists/Brandon Woelfel.jpg"
+      },
+      {
+        "name": "Brian Bolland",
+        "preview": "StylePile/Artists/Brian Bolland.jpg"
+      },
+      {
+        "name": "Brian Froud",
+        "preview": "StylePile/Artists/Brian Froud.jpg"
+      },
+      {
+        "name": "Bruce Pennington",
+        "preview": "StylePile/Artists/Bruce Pennington.jpg"
+      },
+      {
+        "name": "Bryan Hitch",
+        "preview": "StylePile/Artists/Bryan Hitch.jpg"
+      },
+      {
+        "name": "Butcher Billy",
+        "preview": "StylePile/Artists/Butcher Billy.jpg"
+      },
+      {
+        "name": "Camille Walala",
+        "preview": "StylePile/Artists/Camille Walala.jpg"
+      },
+      {
+        "name": "Carel Willink",
+        "preview": "StylePile/Artists/Carel Willink.jpg"
+      },
+      {
+        "name": "Carmine Infantino",
+        "preview": "StylePile/Artists/Carmine Infantino.jpg"
+      },
+      {
+        "name": "Carrie Ann Baade",
+        "preview": "StylePile/Artists/Carrie Ann Baade.jpg"
+      },
+      {
+        "name": "Casey Baugh",
+        "preview": "StylePile/Artists/Casey Baugh.jpg"
+      },
+      {
+        "name": "Casey Weldon",
+        "preview": "StylePile/Artists/Casey Weldon.jpg"
+      },
+      {
+        "name": "Cedric Peyravernay",
+        "preview": "StylePile/Artists/Cedric Peyravernay.jpg"
+      },
+      {
+        "name": "Charles Adams",
+        "preview": "StylePile/Artists/Charles Adams.jpg"
+      },
+      {
+        "name": "Charlie Bowater",
+        "preview": "StylePile/Artists/Charlie Bowater.jpg"
+      },
+      {
+        "name": "Chesley Bonestell",
+        "preview": "StylePile/Artists/Chesley Bonestell.jpg"
+      },
+      {
+        "name": "Chris Foss",
+        "preview": "StylePile/Artists/Chris Foss.jpg"
+      },
+      {
+        "name": "Christopher Balaskas",
+        "preview": "StylePile/Artists/Christopher Balaskas.jpg"
+      },
+      {
+        "name": "Claude Monet",
+        "preview": "StylePile/Artists/Claude Monet.jpg"
+      },
+      {
+        "name": "Clive Barker",
+        "preview": "StylePile/Artists/Clive Barker.jpg"
+      },
+      {
+        "name": "Coles Phillips",
+        "preview": "StylePile/Artists/Coles Phillips.jpg"
+      },
+      {
+        "name": "Conrad Roset",
+        "preview": "StylePile/Artists/Conrad Roset.jpg"
+      },
+      {
+        "name": "Curt Swan",
+        "preview": "StylePile/Artists/Curt Swan.jpg"
+      },
+      {
+        "name": "Dan Mumford",
+        "preview": "StylePile/Artists/Dan Mumford.jpg"
+      },
+      {
+        "name": "Diego Rivera",
+        "preview": "StylePile/Artists/Diego Rivera.jpg"
+      },
+      {
+        "name": "Don Bergland",
+        "preview": "StylePile/Artists/Don Bergland.jpg"
+      },
+      {
+        "name": "Donato Giancola",
+        "preview": "StylePile/Artists/Donato Giancola.jpg"
+      },
+      {
+        "name": "Dorina Costras",
+        "preview": "StylePile/Artists/Dorina Costras.jpg"
+      },
+      {
+        "name": "E.H. Shepard",
+        "preview": "StylePile/Artists/E.H. Shepard.jpg"
+      },
+      {
+        "name": "Earl Norem",
+        "preview": "StylePile/Artists/Earl Norem.jpg"
+      },
+      {
+        "name": "Earle Bergey",
+        "preview": "StylePile/Artists/Earle Bergey.jpg"
+      },
+      {
+        "name": "Earnst Haeckel",
+        "preview": "StylePile/Artists/Earnst Haeckel.jpg"
+      },
+      {
+        "name": "Ed Emshwiller",
+        "preview": "StylePile/Artists/Ed Emshwiller.jpg"
+      },
+      {
+        "name": "Ed Mell",
+        "preview": "StylePile/Artists/Ed Mell.jpg"
+      },
+      {
+        "name": "Edith Head",
+        "preview": "StylePile/Artists/Edith Head.jpg"
+      },
+      {
+        "name": "Edmund Dulac",
+        "preview": "StylePile/Artists/Edmund Dulac.jpg"
+      },
+      {
+        "name": "Edvard Munch",
+        "preview": "StylePile/Artists/Edvard Munch.jpg"
+      },
+      {
+        "name": "Ellen Jewett",
+        "preview": "StylePile/Artists/Ellen Jewett.jpg"
+      },
+      {
+        "name": "Emily Balivet",
+        "preview": "StylePile/Artists/Emily Balivet.jpg"
+      },
+      {
+        "name": "Enki Bilal",
+        "preview": "StylePile/Artists/Enki Bilal.jpg"
+      },
+      {
+        "name": "Eric Kennington",
+        "preview": "StylePile/Artists/Eric Kennington.jpg"
+      },
+      {
+        "name": "Erin Hanson",
+        "preview": "StylePile/Artists/Erin Hanson.jpg"
+      },
+      {
+        "name": "Ernie Barnes",
+        "preview": "StylePile/Artists/Ernie Barnes.jpg"
+      },
+      {
+        "name": "Esao Andrews",
+        "preview": "StylePile/Artists/Esao Andrews.jpg"
+      },
+      {
+        "name": "Esteban Maroto",
+        "preview": "StylePile/Artists/Esteban Maroto.jpg"
+      },
+      {
+        "name": "Ethan Van Sciver",
+        "preview": "StylePile/Artists/Ethan Van Sciver.jpg"
+      },
+      {
+        "name": "Eve Ventrue",
+        "preview": "StylePile/Artists/Eve Ventrue.jpg"
+      },
+      {
+        "name": "Eyvind Earle",
+        "preview": "StylePile/Artists/Eyvind Earle.jpg"
+      },
+      {
+        "name": "F. Scott Hess",
+        "preview": "StylePile/Artists/F. Scott Hess.jpg"
+      },
+      {
+        "name": "Fernand Khnopff",
+        "preview": "StylePile/Artists/Fernand Khnopff.jpg"
+      },
+      {
+        "name": "Filippino Lippi",
+        "preview": "StylePile/Artists/Filippino Lippi.jpg"
+      },
+      {
+        "name": "Frank Bowling",
+        "preview": "StylePile/Artists/Frank Bowling.jpg"
+      },
+      {
+        "name": "Frank Cadogan Cowper",
+        "preview": "StylePile/Artists/Frank Cadogan Cowper.jpg"
+      },
+      {
+        "name": "Frank Frazetta",
+        "preview": "StylePile/Artists/Frank Frazetta.jpg"
+      },
+      {
+        "name": "Frank Tenney Johnson",
+        "preview": "StylePile/Artists/Frank Tenney Johnson.jpg"
+      },
+      {
+        "name": "Frank Xavier",
+        "preview": "StylePile/Artists/Frank Xavier.jpg"
+      },
+      {
+        "name": "Franklin Booth",
+        "preview": "StylePile/Artists/Franklin Booth.jpg"
+      },
+      {
+        "name": "Fred Calleri",
+        "preview": "StylePile/Artists/Fred Calleri.jpg"
+      },
+      {
+        "name": "Fujishima Takeji",
+        "preview": "StylePile/Artists/Fujishima Takeji.jpg"
+      },
+      {
+        "name": "Gabriel Von Max",
+        "preview": "StylePile/Artists/Gabriel Von Max.jpg"
+      },
+      {
+        "name": "Gediminas Pranckevicius",
+        "preview": "StylePile/Artists/Gediminas Pranckevicius.jpg"
+      },
+      {
+        "name": "Gene Colan",
+        "preview": "StylePile/Artists/Gene Colan.jpg"
+      },
+      {
+        "name": "Geof Darrow",
+        "preview": "StylePile/Artists/Geof Darrow.jpg"
+      },
+      {
+        "name": "Georgia O’Keeffe",
+        "preview": "StylePile/Artists/Georgia O’Keeffe.jpg"
+      },
+      {
+        "name": "Georgy Kurasov",
+        "preview": "StylePile/Artists/Georgy Kurasov.jpg"
+      },
+      {
+        "name": "Gerald Brom",
+        "preview": "StylePile/Artists/Gerald Brom.jpg"
+      },
+      {
+        "name": "Gertrude Abercrombie",
+        "preview": "StylePile/Artists/Gertrude Abercrombie.jpg"
+      },
+      {
+        "name": "Gil Elvgren",
+        "preview": "StylePile/Artists/Gil Elvgren.jpg"
+      },
+      {
+        "name": "Gil Kane",
+        "preview": "StylePile/Artists/Gil Kane.jpg"
+      },
+      {
+        "name": "Greg Manchess",
+        "preview": "StylePile/Artists/Greg Manchess.jpg"
+      },
+      {
+        "name": "Greg Rutkowski",
+        "preview": "StylePile/Artists/Greg Rutkowski.jpg"
+      },
+      {
+        "name": "Gustaf Tenggren",
+        "preview": "StylePile/Artists/Gustaf Tenggren.jpg"
+      },
+      {
+        "name": "Gustav Klimt",
+        "preview": "StylePile/Artists/Gustav Klimt.jpg"
+      },
+      {
+        "name": "H.P. Lovecraft",
+        "preview": "StylePile/Artists/H.P. Lovecraft.jpg"
+      },
+      {
+        "name": "H.R. Giger",
+        "preview": "StylePile/Artists/H.R. Giger.jpg"
+      },
+      {
+        "name": "Hannah Yata",
+        "preview": "StylePile/Artists/Hannah Yata.jpg"
+      },
+      {
+        "name": "Harrison Fisher",
+        "preview": "StylePile/Artists/Harrison Fisher.jpg"
+      },
+      {
+        "name": "Harry Clarke",
+        "preview": "StylePile/Artists/Harry Clarke.jpg"
+      },
+      {
+        "name": "Henri Matisse",
+        "preview": "StylePile/Artists/Henri Matisse.jpg"
+      },
+      {
+        "name": "Henry Clive",
+        "preview": "StylePile/Artists/Henry Clive.jpg"
+      },
+      {
+        "name": "Herbert James Gunn",
+        "preview": "StylePile/Artists/Herbert James Gunn.jpg"
+      },
+      {
+        "name": "Hikari Shimoda",
+        "preview": "StylePile/Artists/Hikari Shimoda.jpg"
+      },
+      {
+        "name": "Hiroshi Nagai",
+        "preview": "StylePile/Artists/Hiroshi Nagai.jpg"
+      },
+      {
+        "name": "Hiroshi Yoshida",
+        "preview": "StylePile/Artists/Hiroshi Yoshida.jpg"
+      },
+      {
+        "name": "Hsiao-Ron Cheng",
+        "preview": "StylePile/Artists/Hsiao-Ron Cheng.jpg"
+      },
+      {
+        "name": "Huang Guangjian",
+        "preview": "StylePile/Artists/Huang Guangjian.jpg"
+      },
+      {
+        "name": "Ian Kennedy",
+        "preview": "StylePile/Artists/Ian Kennedy.jpg"
+      },
+      {
+        "name": "Igor Morski",
+        "preview": "StylePile/Artists/Igor Morski.jpg"
+      },
+      {
+        "name": "Igor Zenin",
+        "preview": "StylePile/Artists/Igor Zenin.jpg"
+      },
+      {
+        "name": "Ilya Kuvshinov",
+        "preview": "StylePile/Artists/Ilya Kuvshinov.jpg"
+      },
+      {
+        "name": "Ilya Repin",
+        "preview": "StylePile/Artists/Ilya Repin.jpg"
+      },
+      {
+        "name": "Ivan Aivazovsky",
+        "preview": "StylePile/Artists/Ivan Aivazovsky.jpg"
+      },
+      {
+        "name": "Ivan Bilibin",
+        "preview": "StylePile/Artists/Ivan Bilibin.jpg"
+      },
+      {
+        "name": "J.C. Leyendecker",
+        "preview": "StylePile/Artists/J.C. Leyendecker.jpg"
+      },
+      {
+        "name": "Jacek Yerka",
+        "preview": "StylePile/Artists/Jacek Yerka.jpg"
+      },
+      {
+        "name": "Jack Kirby",
+        "preview": "StylePile/Artists/Jack Kirby.jpg"
+      },
+      {
+        "name": "Jackson Pollock",
+        "preview": "StylePile/Artists/Jackson Pollock.jpg"
+      },
+      {
+        "name": "James C. Christensen",
+        "preview": "StylePile/Artists/James C. Christensen.jpg"
+      },
+      {
+        "name": "James Gilleard",
+        "preview": "StylePile/Artists/James Gilleard.jpg"
+      },
+      {
+        "name": "James Gurney",
+        "preview": "StylePile/Artists/James Gurney.jpg"
+      },
+      {
+        "name": "James Jean",
+        "preview": "StylePile/Artists/James Jean.jpg"
+      },
+      {
+        "name": "Jan Hendrik Weissenbruch",
+        "preview": "StylePile/Artists/Jan Hendrik Weissenbruch.jpg"
+      },
+      {
+        "name": "Jan Urschel",
+        "preview": "StylePile/Artists/Jan Urschel.jpg"
+      },
+      {
+        "name": "Jasmine Becket-Griffith",
+        "preview": "StylePile/Artists/Jasmine Becket-Griffith.jpg"
+      },
+      {
+        "name": "Jason Edmiston",
+        "preview": "StylePile/Artists/Jason Edmiston.jpg"
+      },
+      {
+        "name": "Jay Anacleto",
+        "preview": "StylePile/Artists/Jay Anacleto.jpg"
+      },
+      {
+        "name": "Jean Giraud",
+        "preview": "StylePile/Artists/Jean Giraud.jpg"
+      },
+      {
+        "name": "Jeannette Guichard-Bunel",
+        "preview": "StylePile/Artists/Jeannette Guichard-Bunel.jpg"
+      },
+      {
+        "name": "Jeffrey Smith",
+        "preview": "StylePile/Artists/Jeffrey Smith.jpg"
+      },
+      {
+        "name": "Jeremiah Ketner",
+        "preview": "StylePile/Artists/Jeremiah Ketner.jpg"
+      },
+      {
+        "name": "Jeremy Lipking",
+        "preview": "StylePile/Artists/Jeremy Lipking.jpg"
+      },
+      {
+        "name": "Jian Chong Min",
+        "preview": "StylePile/Artists/Jian Chong Min.jpg"
+      },
+      {
+        "name": "Jim Burns",
+        "preview": "StylePile/Artists/Jim Burns.jpg"
+      },
+      {
+        "name": "Jim Holland",
+        "preview": "StylePile/Artists/Jim Holland.jpg"
+      },
+      {
+        "name": "Joao Ruas",
+        "preview": "StylePile/Artists/Joao Ruas.jpg"
+      },
+      {
+        "name": "Joe Jusko",
+        "preview": "StylePile/Artists/Joe Jusko.jpg"
+      },
+      {
+        "name": "Joe Kubert",
+        "preview": "StylePile/Artists/Joe Kubert.jpg"
+      },
+      {
+        "name": "Johan Heinrich Fussli",
+        "preview": "StylePile/Artists/Johan Heinrich Fussli.jpg"
+      },
+      {
+        "name": "John Howe",
+        "preview": "StylePile/Artists/John Howe.jpg"
+      },
+      {
+        "name": "John Lavery",
+        "preview": "StylePile/Artists/John Lavery.jpg"
+      },
+      {
+        "name": "John Philip Falter",
+        "preview": "StylePile/Artists/John Philip Falter.jpg"
+      },
+      {
+        "name": "John Romita Jr",
+        "preview": "StylePile/Artists/John Romita Jr.jpg"
+      },
+      {
+        "name": "John Singer Sargent",
+        "preview": "StylePile/Artists/John Singer Sargent.jpg"
+      },
+      {
+        "name": "John T. Biggers",
+        "preview": "StylePile/Artists/John T. Biggers.jpg"
+      },
+      {
+        "name": "Jon Whitcomb",
+        "preview": "StylePile/Artists/Jon Whitcomb.jpg"
+      },
+      {
+        "name": "Joop Polder",
+        "preview": "StylePile/Artists/Joop Polder.jpg"
+      },
+      {
+        "name": "Joseph Leyendecker",
+        "preview": "StylePile/Artists/Joseph Leyendecker.jpg"
+      },
+      {
+        "name": "Juan Gris",
+        "preview": "StylePile/Artists/Juan Gris.jpg"
+      },
+      {
+        "name": "Julian Onderdonk",
+        "preview": "StylePile/Artists/Julian Onderdonk.jpg"
+      },
+      {
+        "name": "Junji Ito",
+        "preview": "StylePile/Artists/Junji Ito.jpg"
+      },
+      {
+        "name": "Kadir Nelson",
+        "preview": "StylePile/Artists/Kadir Nelson.jpg"
+      },
+      {
+        "name": "Karel Thole",
+        "preview": "StylePile/Artists/Karel Thole.jpg"
+      },
+      {
+        "name": "Karol Bak",
+        "preview": "StylePile/Artists/Karol Bak.jpg"
+      },
+      {
+        "name": "Kawase Hasui",
+        "preview": "StylePile/Artists/Kawase Hasui.jpg"
+      },
+      {
+        "name": "Kaws",
+        "preview": "StylePile/Artists/Kaws.jpg"
+      },
+      {
+        "name": "Kehinde Wiley",
+        "preview": "StylePile/Artists/Kehinde Wiley.jpg"
+      },
+      {
+        "name": "Kelly McKernan",
+        "preview": "StylePile/Artists/Kelly McKernan.jpg"
+      },
+      {
+        "name": "Koho Shoda",
+        "preview": "StylePile/Artists/Koho Shoda.jpg"
+      },
+      {
+        "name": "Krenz Cushart",
+        "preview": "StylePile/Artists/Krenz Cushart.jpg"
+      },
+      {
+        "name": "Lee Bogle",
+        "preview": "StylePile/Artists/Lee Bogle.jpg"
+      },
+      {
+        "name": "Leonardo Coccorante",
+        "preview": "StylePile/Artists/Leonardo Coccorante.jpg"
+      },
+      {
+        "name": "Leonid Afremov",
+        "preview": "StylePile/Artists/Leonid Afremov.jpg"
+      },
+      {
+        "name": "Lisa Frank",
+        "preview": "StylePile/Artists/Lisa Frank.jpg"
+      },
+      {
+        "name": "Loish",
+        "preview": "StylePile/Artists/Loish.jpg"
+      },
+      {
+        "name": "Lyubov Popova",
+        "preview": "StylePile/Artists/Lyubov Popova.jpg"
+      },
+      {
+        "name": "M.C. Escher",
+        "preview": "StylePile/Artists/M.C. Escher.jpg"
+      },
+      {
+        "name": "Makoto Shinkai",
+        "preview": "StylePile/Artists/Makoto Shinkai.jpg"
+      },
+      {
+        "name": "Marc Chagall",
+        "preview": "StylePile/Artists/Marc Chagall.jpg"
+      },
+      {
+        "name": "Marc Simonetti",
+        "preview": "StylePile/Artists/Marc Simonetti.jpg"
+      },
+      {
+        "name": "Mark Ryden",
+        "preview": "StylePile/Artists/Mark Ryden.jpg"
+      },
+      {
+        "name": "Martin Ansin",
+        "preview": "StylePile/Artists/Martin Ansin.jpg"
+      },
+      {
+        "name": "Martin Schongauer",
+        "preview": "StylePile/Artists/Martin Schongauer.jpg"
+      },
+      {
+        "name": "Mary Jane Ansell",
+        "preview": "StylePile/Artists/Mary Jane Ansell.jpg"
+      },
+      {
+        "name": "Masamune Shirow",
+        "preview": "StylePile/Artists/Masamune Shirow.jpg"
+      },
+      {
+        "name": "Mati Klarwein",
+        "preview": "StylePile/Artists/Mati Klarwein.jpg"
+      },
+      {
+        "name": "Maxfield Parrish",
+        "preview": "StylePile/Artists/Maxfield Parrish.jpg"
+      },
+      {
+        "name": "Mead Schaeffer",
+        "preview": "StylePile/Artists/Mead Schaeffer.jpg"
+      },
+      {
+        "name": "Michael Cheval",
+        "preview": "StylePile/Artists/Michael Cheval.jpg"
+      },
+      {
+        "name": "Michael Whelan",
+        "preview": "StylePile/Artists/Michael Whelan.jpg"
+      },
+      {
+        "name": "Miho Hirano",
+        "preview": "StylePile/Artists/Miho Hirano.jpg"
+      },
+      {
+        "name": "Mike Allred",
+        "preview": "StylePile/Artists/Mike Allred.jpg"
+      },
+      {
+        "name": "Mike Mignola",
+        "preview": "StylePile/Artists/Mike Mignola.jpg"
+      },
+      {
+        "name": "Mike Winkelmann",
+        "preview": "StylePile/Artists/Mike Winkelmann.jpg"
+      },
+      {
+        "name": "Miles Aldridge",
+        "preview": "StylePile/Artists/Miles Aldridge.jpg"
+      },
+      {
+        "name": "Milton Caniff",
+        "preview": "StylePile/Artists/Milton Caniff.jpg"
+      },
+      {
+        "name": "Moebius",
+        "preview": "StylePile/Artists/Moebius.jpg"
+      },
+      {
+        "name": "Mort Kunstler",
+        "preview": "StylePile/Artists/Mort Kunstler.jpg"
+      },
+      {
+        "name": "Neal Adams",
+        "preview": "StylePile/Artists/Neal Adams.jpg"
+      },
+      {
+        "name": "Nikolai Astrup",
+        "preview": "StylePile/Artists/Nikolai Astrup.jpg"
+      },
+      {
+        "name": "Njideka Akunyili Crosby",
+        "preview": "StylePile/Artists/Njideka Akunyili Crosby.jpg"
+      },
+      {
+        "name": "Norman Rockwell",
+        "preview": "StylePile/Artists/Norman Rockwell.jpg"
+      },
+      {
+        "name": "P.A. Works",
+        "preview": "StylePile/Artists/P.A. Works.jpg"
+      },
+      {
+        "name": "Pang Xunqin",
+        "preview": "StylePile/Artists/Pang Xunqin.jpg"
+      },
+      {
+        "name": "Paul Cadmus",
+        "preview": "StylePile/Artists/Paul Cadmus.jpg"
+      },
+      {
+        "name": "Paul Lehr",
+        "preview": "StylePile/Artists/Paul Lehr.jpg"
+      },
+      {
+        "name": "Paul Signac",
+        "preview": "StylePile/Artists/Paul Signac.jpg"
+      },
+      {
+        "name": "Peter Elson",
+        "preview": "StylePile/Artists/Peter Elson.jpg"
+      },
+      {
+        "name": "Peter Gric",
+        "preview": "StylePile/Artists/Peter Gric.jpg"
+      },
+      {
+        "name": "Peter Mohrbacher",
+        "preview": "StylePile/Artists/Peter Mohrbacher.jpg"
+      },
+      {
+        "name": "Peter Wileman",
+        "preview": "StylePile/Artists/Peter Wileman.jpg"
+      },
+      {
+        "name": "Petros Afshar",
+        "preview": "StylePile/Artists/Petros Afshar.jpg"
+      },
+      {
+        "name": "Phil Noto",
+        "preview": "StylePile/Artists/Phil Noto.jpg"
+      },
+      {
+        "name": "Philippe Druillet",
+        "preview": "StylePile/Artists/Philippe Druillet.jpg"
+      },
+      {
+        "name": "RHADS",
+        "preview": "StylePile/Artists/RHADS.jpg"
+      },
+      {
+        "name": "Rafael Albuquerque",
+        "preview": "StylePile/Artists/Rafael Albuquerque.jpg"
+      },
+      {
+        "name": "Ralph Gibson",
+        "preview": "StylePile/Artists/Ralph Gibson.jpg"
+      },
+      {
+        "name": "Raymond Swanland",
+        "preview": "StylePile/Artists/Raymond Swanland.jpg"
+      },
+      {
+        "name": "Richard Avedon",
+        "preview": "StylePile/Artists/Richard Avedon.jpg"
+      },
+      {
+        "name": "Richard Corben",
+        "preview": "StylePile/Artists/Richard Corben.jpg"
+      },
+      {
+        "name": "Richard Lindner",
+        "preview": "StylePile/Artists/Richard Lindner.jpg"
+      },
+      {
+        "name": "Rob Gonsalves",
+        "preview": "StylePile/Artists/Rob Gonsalves.jpg"
+      },
+      {
+        "name": "Robert Bissell",
+        "preview": "StylePile/Artists/Robert Bissell.jpg"
+      },
+      {
+        "name": "Robert McCall",
+        "preview": "StylePile/Artists/Robert McCall.jpg"
+      },
+      {
+        "name": "Roberto Matta",
+        "preview": "StylePile/Artists/Roberto Matta.jpg"
+      },
+      {
+        "name": "Rolf Armstrong",
+        "preview": "StylePile/Artists/Rolf Armstrong.jpg"
+      },
+      {
+        "name": "Romero Britto",
+        "preview": "StylePile/Artists/Romero Britto.jpg"
+      },
+      {
+        "name": "Ron Miller",
+        "preview": "StylePile/Artists/Ron Miller.jpg"
+      },
+      {
+        "name": "Ross Tran",
+        "preview": "StylePile/Artists/Ross Tran.jpg"
+      },
+      {
+        "name": "RossDraws",
+        "preview": "StylePile/Artists/RossDraws.jpg"
+      },
+      {
+        "name": "Roy Lichtenstein",
+        "preview": "StylePile/Artists/Roy Lichtenstein.jpg"
+      },
+      {
+        "name": "Ruan Jia",
+        "preview": "StylePile/Artists/Ruan Jia.jpg"
+      },
+      {
+        "name": "Ryan Pancoast",
+        "preview": "StylePile/Artists/Ryan Pancoast.jpg"
+      },
+      {
+        "name": "Ryohei Hase",
+        "preview": "StylePile/Artists/Ryohei Hase.jpg"
+      },
+      {
+        "name": "Sabbas Apterus",
+        "preview": "StylePile/Artists/Sabbas Apterus.jpg"
+      },
+      {
+        "name": "Sachin Teng",
+        "preview": "StylePile/Artists/Sachin Teng.jpg"
+      },
+      {
+        "name": "Salvador Dali",
+        "preview": "StylePile/Artists/Salvador Dali.jpg"
+      },
+      {
+        "name": "Sam Gilliam",
+        "preview": "StylePile/Artists/Sam Gilliam.jpg"
+      },
+      {
+        "name": "Sam bosma",
+        "preview": "StylePile/Artists/Sam bosma.jpg"
+      },
+      {
+        "name": "Scott Listfield",
+        "preview": "StylePile/Artists/Scott Listfield.jpg"
+      },
+      {
+        "name": "Shigenori Soejima",
+        "preview": "StylePile/Artists/Shigenori Soejima.jpg"
+      },
+      {
+        "name": "Shinji Aramaki",
+        "preview": "StylePile/Artists/Shinji Aramaki.jpg"
+      },
+      {
+        "name": "Simon Bisley",
+        "preview": "StylePile/Artists/Simon Bisley.jpg"
+      },
+      {
+        "name": "Simon Stalenhag",
+        "preview": "StylePile/Artists/Simon Stalenhag.jpg"
+      },
+      {
+        "name": "Siya Oum",
+        "preview": "StylePile/Artists/Siya Oum.jpg"
+      },
+      {
+        "name": "Stanhope Forbes",
+        "preview": "StylePile/Artists/Stanhope Forbes.jpg"
+      },
+      {
+        "name": "Stanislaw Wyspianski",
+        "preview": "StylePile/Artists/Stanislaw Wyspianski.jpg"
+      },
+      {
+        "name": "Stephan Martinière",
+        "preview": "StylePile/Artists/Stephan Martinière.jpg"
+      },
+      {
+        "name": "Steve Ditko",
+        "preview": "StylePile/Artists/Steve Ditko.jpg"
+      },
+      {
+        "name": "Syd Mead",
+        "preview": "StylePile/Artists/Syd Mead.jpg"
+      },
+      {
+        "name": "Takashi Murakami",
+        "preview": "StylePile/Artists/Takashi Murakami.jpg"
+      },
+      {
+        "name": "Tara McPherson",
+        "preview": "StylePile/Artists/Tara McPherson.jpg"
+      },
+      {
+        "name": "Tarsila do Amaral",
+        "preview": "StylePile/Artists/Tarsila do Amaral.jpg"
+      },
+      {
+        "name": "Ted Nasmith",
+        "preview": "StylePile/Artists/Ted Nasmith.jpg"
+      },
+      {
+        "name": "Theo Van Rysselberghe",
+        "preview": "StylePile/Artists/Theo Van Rysselberghe.jpg"
+      },
+      {
+        "name": "Thomas Blackshear",
+        "preview": "StylePile/Artists/Thomas Blackshear.jpg"
+      },
+      {
+        "name": "Thomas Kinkade",
+        "preview": "StylePile/Artists/Thomas Kinkade.jpg"
+      },
+      {
+        "name": "Thomas Shotter Boys",
+        "preview": "StylePile/Artists/Thomas Shotter Boys.jpg"
+      },
+      {
+        "name": "Todd McFarlane",
+        "preview": "StylePile/Artists/Todd McFarlane.jpg"
+      },
+      {
+        "name": "Tom Bagshaw",
+        "preview": "StylePile/Artists/Tom Bagshaw.jpg"
+      },
+      {
+        "name": "Tom Lovell",
+        "preview": "StylePile/Artists/Tom Lovell.jpg"
+      },
+      {
+        "name": "Tom Whalen",
+        "preview": "StylePile/Artists/Tom Whalen.jpg"
+      },
+      {
+        "name": "Tomer Hanuka",
+        "preview": "StylePile/Artists/Tomer Hanuka.jpg"
+      },
+      {
+        "name": "Trevor Brown",
+        "preview": "StylePile/Artists/Trevor Brown.jpg"
+      },
+      {
+        "name": "Trina Robbins",
+        "preview": "StylePile/Artists/Trina Robbins.jpg"
+      },
+      {
+        "name": "Tsutomu Nihei",
+        "preview": "StylePile/Artists/Tsutomu Nihei.jpg"
+      },
+      {
+        "name": "Ulisse Aldrovandi",
+        "preview": "StylePile/Artists/Ulisse Aldrovandi.jpg"
+      },
+      {
+        "name": "Umberto Boccioni",
+        "preview": "StylePile/Artists/Umberto Boccioni.jpg"
+      },
+      {
+        "name": "Vasily Vereschagin",
+        "preview": "StylePile/Artists/Vasily Vereschagin.jpg"
+      },
+      {
+        "name": "Victo Ngai",
+        "preview": "StylePile/Artists/Victo Ngai.jpg"
+      },
+      {
+        "name": "Victor Nizovtsev",
+        "preview": "StylePile/Artists/Victor Nizovtsev.jpg"
+      },
+      {
+        "name": "Vincent DiFate",
+        "preview": "StylePile/Artists/Vincent DiFate.jpg"
+      },
+      {
+        "name": "Vittorio Reggianini",
+        "preview": "StylePile/Artists/Vittorio Reggianini.jpg"
+      },
+      {
+        "name": "W. Heath Robinson",
+        "preview": "StylePile/Artists/W. Heath Robinson.jpg"
+      },
+      {
+        "name": "WLOP",
+        "preview": "StylePile/Artists/WLOP.jpg"
+      },
+      {
+        "name": "Wadim Kashin",
+        "preview": "StylePile/Artists/Wadim Kashin.jpg"
+      },
+      {
+        "name": "Walter Crane",
+        "preview": "StylePile/Artists/Walter Crane.jpg"
+      },
+      {
+        "name": "Wangechi Mutu",
+        "preview": "StylePile/Artists/Wangechi Mutu.jpg"
+      },
+      {
+        "name": "Warwick Goble",
+        "preview": "StylePile/Artists/Warwick Goble.jpg"
+      },
+      {
+        "name": "Wayne Barlowe",
+        "preview": "StylePile/Artists/Wayne Barlowe.jpg"
+      },
+      {
+        "name": "Will Barnet",
+        "preview": "StylePile/Artists/Will Barnet.jpg"
+      },
+      {
+        "name": "William Dodge",
+        "preview": "StylePile/Artists/William Dodge.jpg"
+      },
+      {
+        "name": "William Eggleston",
+        "preview": "StylePile/Artists/William Eggleston.jpg"
+      },
+      {
+        "name": "William Holbrook Beard",
+        "preview": "StylePile/Artists/William Holbrook Beard.jpg"
+      },
+      {
+        "name": "William McGregor Paxton",
+        "preview": "StylePile/Artists/William McGregor Paxton.jpg"
+      },
+      {
+        "name": "Yanjun Cheng",
+        "preview": "StylePile/Artists/Yanjun Cheng.jpg"
+      },
+      {
+        "name": "Yoji Shinkawa",
+        "preview": "StylePile/Artists/Yoji Shinkawa.jpg"
+      },
+      {
+        "name": "Yoshitaka Amano",
+        "preview": "StylePile/Artists/Yoshitaka Amano.jpg"
+      },
+      {
+        "name": "Zdzislaw Beksinski",
+        "preview": "StylePile/Artists/Zdzislaw Beksinski.jpg"
+      }
+    ],
+    "Colors": [
+      {
+        "name": "Agfacolor",
+        "preview": "StylePile/Colors/Agfacolor.jpg"
+      },
+      {
+        "name": "BW",
+        "preview": "StylePile/Colors/BW.jpg"
+      },
+      {
+        "name": "Blue hue",
+        "preview": "StylePile/Colors/Blue hue.jpg"
+      },
+      {
+        "name": "CMYK Colors",
+        "preview": "StylePile/Colors/CMYK Colors.jpg"
+      },
+      {
+        "name": "Cathode tube",
+        "preview": "StylePile/Colors/Cathode tube.jpg"
+      },
+      {
+        "name": "CineColor",
+        "preview": "StylePile/Colors/CineColor.jpg"
+      },
+      {
+        "name": "Cold Colors",
+        "preview": "StylePile/Colors/Cold Colors.jpg"
+      },
+      {
+        "name": "Colorful",
+        "preview": "StylePile/Colors/Colorful.jpg"
+      },
+      {
+        "name": "Colorless",
+        "preview": "StylePile/Colors/Colorless.jpg"
+      },
+      {
+        "name": "Cyan hue",
+        "preview": "StylePile/Colors/Cyan hue.jpg"
+      },
+      {
+        "name": "Dark hue",
+        "preview": "StylePile/Colors/Dark hue.jpg"
+      },
+      {
+        "name": "Desaturated",
+        "preview": "StylePile/Colors/Desaturated.jpg"
+      },
+      {
+        "name": "Dichromatic",
+        "preview": "StylePile/Colors/Dichromatic.jpg"
+      },
+      {
+        "name": "Electric Colors",
+        "preview": "StylePile/Colors/Electric Colors.jpg"
+      },
+      {
+        "name": "Fujifilm Superia",
+        "preview": "StylePile/Colors/Fujifilm Superia.jpg"
+      },
+      {
+        "name": "Grayscale",
+        "preview": "StylePile/Colors/Grayscale.jpg"
+      },
+      {
+        "name": "Green hue",
+        "preview": "StylePile/Colors/Green hue.jpg"
+      },
+      {
+        "name": "High Contrast",
+        "preview": "StylePile/Colors/High Contrast.jpg"
+      },
+      {
+        "name": "Hypersaturated",
+        "preview": "StylePile/Colors/Hypersaturated.jpg"
+      },
+      {
+        "name": "Infrared",
+        "preview": "StylePile/Colors/Infrared.jpg"
+      },
+      {
+        "name": "Kinemacolor",
+        "preview": "StylePile/Colors/Kinemacolor.jpg"
+      },
+      {
+        "name": "Kodachrome",
+        "preview": "StylePile/Colors/Kodachrome.jpg"
+      },
+      {
+        "name": "Kodak Ektar",
+        "preview": "StylePile/Colors/Kodak Ektar.jpg"
+      },
+      {
+        "name": "Kodak Portra",
+        "preview": "StylePile/Colors/Kodak Portra.jpg"
+      },
+      {
+        "name": "Low Contrast",
+        "preview": "StylePile/Colors/Low Contrast.jpg"
+      },
+      {
+        "name": "Magenta hue",
+        "preview": "StylePile/Colors/Magenta hue.jpg"
+      },
+      {
+        "name": "Mono Color",
+        "preview": "StylePile/Colors/Mono Color.jpg"
+      },
+      {
+        "name": "Muted Colors",
+        "preview": "StylePile/Colors/Muted Colors.jpg"
+      },
+      {
+        "name": "Offset print",
+        "preview": "StylePile/Colors/Offset print.jpg"
+      },
+      {
+        "name": "One Color",
+        "preview": "StylePile/Colors/One Color.jpg"
+      },
+      {
+        "name": "Oversaturated",
+        "preview": "StylePile/Colors/Oversaturated.jpg"
+      },
+      {
+        "name": "Pastel Colors",
+        "preview": "StylePile/Colors/Pastel Colors.jpg"
+      },
+      {
+        "name": "Polychromatic",
+        "preview": "StylePile/Colors/Polychromatic.jpg"
+      },
+      {
+        "name": "Primary Colors",
+        "preview": "StylePile/Colors/Primary Colors.jpg"
+      },
+      {
+        "name": "Provia",
+        "preview": "StylePile/Colors/Provia.jpg"
+      },
+      {
+        "name": "Purple hue",
+        "preview": "StylePile/Colors/Purple hue.jpg"
+      },
+      {
+        "name": "Red hue",
+        "preview": "StylePile/Colors/Red hue.jpg"
+      },
+      {
+        "name": "Saturated",
+        "preview": "StylePile/Colors/Saturated.jpg"
+      },
+      {
+        "name": "Single Color",
+        "preview": "StylePile/Colors/Single Color.jpg"
+      },
+      {
+        "name": "Technicolor",
+        "preview": "StylePile/Colors/Technicolor.jpg"
+      },
+      {
+        "name": "Velvia",
+        "preview": "StylePile/Colors/Velvia.jpg"
+      },
+      {
+        "name": "Vivid Colors",
+        "preview": "StylePile/Colors/Vivid Colors.jpg"
+      },
+      {
+        "name": "Warm Colors",
+        "preview": "StylePile/Colors/Warm Colors.jpg"
+      },
+      {
+        "name": "Yellow hue",
+        "preview": "StylePile/Colors/Yellow hue.jpg"
+      }
+    ],
+    "Directions": [
+      {
+        "name": "Cel shaded",
+        "preview": "StylePile/Directions/Cel shaded.jpg"
+      },
+      {
+        "name": "Cel shading",
+        "preview": "StylePile/Directions/Cel shading.jpg"
+      },
+      {
+        "name": "Detailed illustration",
+        "preview": "StylePile/Directions/Detailed illustration.jpg"
+      },
+      {
+        "name": "Graphic novel",
+        "preview": "StylePile/Directions/Graphic novel.jpg"
+      },
+      {
+        "name": "Illustration",
+        "preview": "StylePile/Directions/Illustration.jpg"
+      },
+      {
+        "name": "Masterpiece",
+        "preview": "StylePile/Directions/Masterpiece.jpg"
+      },
+      {
+        "name": "Realistic",
+        "preview": "StylePile/Directions/Realistic.jpg"
+      },
+      {
+        "name": "Rough sketch",
+        "preview": "StylePile/Directions/Rough sketch.jpg"
+      },
+      {
+        "name": "Screen print",
+        "preview": "StylePile/Directions/Screen print.jpg"
+      },
+      {
+        "name": "Simple illustration",
+        "preview": "StylePile/Directions/Simple illustration.jpg"
+      },
+      {
+        "name": "Sketch",
+        "preview": "StylePile/Directions/Sketch.jpg"
+      },
+      {
+        "name": "Sketched",
+        "preview": "StylePile/Directions/Sketched.jpg"
+      },
+      {
+        "name": "Technical illustration",
+        "preview": "StylePile/Directions/Technical illustration.jpg"
+      },
+      {
+        "name": "Ultra detailed",
+        "preview": "StylePile/Directions/Ultra detailed.jpg"
+      },
+      {
+        "name": "Ultrarealistic",
+        "preview": "StylePile/Directions/Ultrarealistic.jpg"
+      },
+      {
+        "name": "Visual novel",
+        "preview": "StylePile/Directions/Visual novel.jpg"
+      }
+    ],
+    "Moods": [
+      {
+        "name": "Amusing",
+        "preview": "StylePile/Moods/Amusing.jpg"
+      },
+      {
+        "name": "Angry",
+        "preview": "StylePile/Moods/Angry.jpg"
+      },
+      {
+        "name": "Cosy",
+        "preview": "StylePile/Moods/Cosy.jpg"
+      },
+      {
+        "name": "Depressing",
+        "preview": "StylePile/Moods/Depressing.jpg"
+      },
+      {
+        "name": "Disgusting",
+        "preview": "StylePile/Moods/Disgusting.jpg"
+      },
+      {
+        "name": "Embarrassing",
+        "preview": "StylePile/Moods/Embarrassing.jpg"
+      },
+      {
+        "name": "Energetic",
+        "preview": "StylePile/Moods/Energetic.jpg"
+      },
+      {
+        "name": "Evil",
+        "preview": "StylePile/Moods/Evil.jpg"
+      },
+      {
+        "name": "Fearful",
+        "preview": "StylePile/Moods/Fearful.jpg"
+      },
+      {
+        "name": "Frightening",
+        "preview": "StylePile/Moods/Frightening.jpg"
+      },
+      {
+        "name": "Grim",
+        "preview": "StylePile/Moods/Grim.jpg"
+      },
+      {
+        "name": "Guilty",
+        "preview": "StylePile/Moods/Guilty.jpg"
+      },
+      {
+        "name": "Happy",
+        "preview": "StylePile/Moods/Happy.jpg"
+      },
+      {
+        "name": "Hopeful",
+        "preview": "StylePile/Moods/Hopeful.jpg"
+      },
+      {
+        "name": "Hopeless",
+        "preview": "StylePile/Moods/Hopeless.jpg"
+      },
+      {
+        "name": "Lonely",
+        "preview": "StylePile/Moods/Lonely.jpg"
+      },
+      {
+        "name": "Lustful",
+        "preview": "StylePile/Moods/Lustful.jpg"
+      },
+      {
+        "name": "Peaceful",
+        "preview": "StylePile/Moods/Peaceful.jpg"
+      },
+      {
+        "name": "Proud",
+        "preview": "StylePile/Moods/Proud.jpg"
+      },
+      {
+        "name": "Relieving",
+        "preview": "StylePile/Moods/Relieving.jpg"
+      },
+      {
+        "name": "Romantic",
+        "preview": "StylePile/Moods/Romantic.jpg"
+      },
+      {
+        "name": "Sad",
+        "preview": "StylePile/Moods/Sad.jpg"
+      },
+      {
+        "name": "Satisfying",
+        "preview": "StylePile/Moods/Satisfying.jpg"
+      },
+      {
+        "name": "Shameful",
+        "preview": "StylePile/Moods/Shameful.jpg"
+      },
+      {
+        "name": "Surprising",
+        "preview": "StylePile/Moods/Surprising.jpg"
+      }
+    ]
+  },
+  "inspiration": {
+    "Actions": [
+      "Standing",
+      "Sitting",
+      "Kneeling",
+      "Thinking",
+      "Looking into distance",
+      "Looking towards us",
+      "Being concerned",
+      "Riding a horse",
+      "Riding a beast",
+      "Riding a motorcycle",
+      "Holding a sword",
+      "Holding flowers",
+      "Running",
+      "Riding a dragon",
+      "Riding a robot",
+      "Holding a gun",
+      "Shooting",
+      "Action pose",
+      "Relaxed",
+      "Symmetric"
+    ],
+    "Locations": [
+      "In Postapocalyptic wasteland",
+      "In Deep forest",
+      "On Snowy mountaintop",
+      "In Dark cave",
+      "In Futuristic city",
+      "In Cyberpunk city",
+      "In Abandoned factory",
+      "In Windy desert",
+      "On Tropical island",
+      "In Military base",
+      "In Underground facility",
+      "In Ruined city",
+      "On Beautiful lake",
+      "In Dreamy landscape",
+      "Underwater",
+      "In space",
+      "On an asteroid",
+      "On the Moon",
+      "On Mars",
+      "Inside spaceship",
+      "In Warzone",
+      "In Mystical area",
+      "In Elegant room",
+      "In forest",
+      "In Jungle",
+      "In Enchanted Forest",
+      "In Alleyway",
+      "In Spaceship",
+      "In Space",
+      "Inside Temple",
+      "Inside Castle",
+      "In Cathedral",
+      "In Cyberspace",
+      "On Battlefield",
+      "On Ice",
+      "On Coastline",
+      "In Office",
+      "In front of Flower shop",
+      "In front of Armor shop",
+      "In front of Gun shop"
+    ],
+    "Subjects": [
+      "Knight",
+      "Futuristic Knight",
+      "Medieval Knight",
+      "Cyborg",
+      "Damaged Cyborg",
+      "Robot",
+      "Damaged Robot",
+      "Futuristic Soldier",
+      "Soldier",
+      "Beautiful lady",
+      "Lady",
+      "Georgeous young woman",
+      "Masculine man",
+      "Bearded man",
+      "Amazon",
+      "Sorceress",
+      "Witch",
+      "Priestess",
+      "Barbarian",
+      "Demon hunter",
+      "Necromancer",
+      "Wizard",
+      "Alien",
+      "Monster",
+      "Princess",
+      "Animal",
+      "Cat",
+      "Dog",
+      "Fox",
+      "Steampunk Robot",
+      "Scientist",
+      "Ghost",
+      "Demon",
+      "Technician",
+      "Car",
+      "Bicycle",
+      "Motorbike",
+      "Tree",
+      "Death",
+      "Life",
+      "Humanoid",
+      "Dragon",
+      "Minotaur",
+      "Golem",
+      "Vampire",
+      "Machine",
+      "Creature",
+      "Shiba Inu",
+      "Elemental",
+      "Frozen monster",
+      "Fire monster",
+      "Dinosaur",
+      "Skeleton",
+      "Bounty hunter",
+      "Pirate",
+      "Officer",
+      "Astronaut",
+      "Mech",
+      "Battle robot",
+      "Cute robot",
+      "Hero",
+      "Superhero",
+      "Hologram",
+      "Fashion Model",
+      "Panda",
+      "Tiger",
+      "Bear",
+      "Statue",
+      "Prince",
+      "Marine",
+      "Handsome man",
+      "Handsome woman",
+      "Cyborg cat",
+      "Cyborg dog",
+      "Ninja",
+      "Buff man",
+      "Buff woman",
+      "Attractive woman",
+      "Attractive man",
+      "Husky"
+    ]
+  }
+}

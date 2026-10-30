@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 109, todo 193, na 51.
+Totals: done 110, todo 192, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-nui | Scope / notes |
 |---|---|---|---|---|---|
@@ -46,7 +46,7 @@ Totals: done 109, todo 193, na 51.
 | 37 | [Bilingual Localization](https://github.com/journey-ad/sd-webui-bilingual-localization.git) | 907 | todo | `core:localization` |  |
 | 38 | [Dynamic Prompts](https://github.com/adieyal/sd-dynamic-prompts.git) | 2298 | done | `dynamic_prompts` |  |
 | 39 | [Unprompted](https://github.com/ThereforeGames/unprompted.git) | 805 | todo | `unprompted` |  |
-| 40 | [StylePile](https://github.com/some9000/StylePile.git) | 571 | todo | `stylepile` |  |
+| 40 | [StylePile](https://github.com/some9000/StylePile.git) | 571 | done | `stylepile` |  |
 | 41 | [Booru tag autocompletion](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete.git) | 2811 | todo | `core:tag-autocomplete` | v0.03: local CSV tag/alias completion and native keyboard/IME guards; upstream extras remain under #24. See tag-autocomplete.md. |
 | 42 | [novelai-2-local-prompt](https://github.com/animerl/novelai-2-local-prompt.git) | 73 | done | `novelai_prompt` |  |
 | 43 | [tokenizer](https://github.com/AUTOMATIC1111/stable-diffusion-webui-tokenizer.git) | 171 | done | `tokenizer` |  |

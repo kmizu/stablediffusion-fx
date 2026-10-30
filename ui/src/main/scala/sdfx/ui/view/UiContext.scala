@@ -20,6 +20,7 @@ final class UiContext(val services: AppServices, val catalog: CatalogVM, val sta
   lazy val tagDictionary = new TagDictionary(this)
   var openStylesEditor: () => Unit = () => ()
   var openModelBrowser: (String, Option[PromptInsertionTarget]) => Unit = (_, _) => ()
+  var editPositivePrompt: (String, Boolean) => Unit = (_, _) => ()
   var currentGeneration: () => GenerationParams = () => GenerationParams()
   /** Commits the named mode's existing numeric editor drafts before preset capture/apply. */
   var commitPresetEditors: Mode => Either[String, Unit] =

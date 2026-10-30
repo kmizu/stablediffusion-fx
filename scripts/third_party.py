@@ -114,6 +114,10 @@ BASE = [
      "huchenlei/sd-webui-api-payload-display; behaviour independently reimplemented in Scala/JavaFX; "
      "no vendored JavaScript or CSS copied; "
      "[license source 6abfcc1](https://github.com/summerstyle/jsonTreeViewer/blob/6abfcc1202396af12e2806d129bcae0e75b37365/LICENSE)"),
+    ("some9000/StylePile", "data", "Pinned GPL-3.0 StylePile catalog, reference images and inspiration texts; "
+     "original bytes and license are bundled under plugins/src/main/resources/stylepile, with SHA-256 provenance. "
+     "Processing and native UI are independently implemented; no WebUI script is bundled or executed. "
+     "[source 85b549a](https://github.com/some9000/StylePile/tree/85b549a10ff6c5b1604e980cd2107253b088e832)"),
     ("vladmandic/sd-extension-steps-animation", "reimplemented", "Native Steps Animation: denoised-step movies, "
      "duration, interpolation, codec choice and partial-export behavior; independently implemented using this app's recorder. "
      "No upstream code or assets copied; no published license file at inspected revision. "

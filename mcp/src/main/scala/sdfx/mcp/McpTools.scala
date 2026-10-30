@@ -528,8 +528,12 @@ final class McpTools(
         o("type") = "integer"; o("min") = min; o("max") = max; o("default") = d
       case Control.Check(_, _, d) =>
         o("type") = "boolean"; o("default") = d
-      case Control.Choice(_, _, opts, d) =>
+      case choice: Control.Choice =>
+        val opts = choice.options
+        val d = choice.defaultValue
         o("type") = "choice"; o("options") = ujson.Arr.from(opts); o("default") = d
+        if choice.allowCustom then o("allow_custom") = true
+        if choice.previewResources.nonEmpty then o("has_previews") = true
       case Control.DynamicChoice(_, _, src, d, allowNone) =>
         val opts = (if allowNone then Seq("None") else Nil) ++ (try catalog.choices(src) catch case NonFatal(_) => Nil)
         o("type") = "choice"; o("options") = ujson.Arr.from(opts); o("default") = d

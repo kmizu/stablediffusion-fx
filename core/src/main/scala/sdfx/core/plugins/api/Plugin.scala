@@ -34,7 +34,8 @@ object Control:
     def default: String = defaultValue.toString
   case class Check(key: String, label: String, defaultValue: Boolean = false) extends Control:
     def default: String = defaultValue.toString
-  case class Choice(key: String, label: String, options: Seq[String], defaultValue: String) extends Control:
+  case class Choice(key: String, label: String, options: Seq[String], defaultValue: String,
+      previewResources: Map[String, String] = Map.empty, allowCustom: Boolean = false) extends Control:
     def default: String = defaultValue
   case class DynamicChoice(key: String, label: String, source: ChoiceSource, defaultValue: String = "", allowNone: Boolean = true) extends Control:
     def default: String = defaultValue
@@ -118,6 +119,9 @@ object XyzAxis:
       override def choices = source
       def apply(p: GenerationParams, value: String) = f(p, value)
 
+/** An explicit user action that proposes text for the visible positive prompt. */
+final case class PromptAction(id: String, label: String, replace: Boolean, text: Values => String)
+
 trait Plugin:
   def id: String
   def name: String
@@ -127,6 +131,7 @@ trait Plugin:
   def kind: PluginKind
   def tabs: Set[Tab] = Set(Tab.Txt2Img, Tab.Img2Img)
   def controls: Seq[Control] = Nil
+  def promptActions: Seq[PromptAction] = Nil
 
   /** AlwaysOn: whether the plugin applies for these values (by convention the `enabled` checkbox). */
   def isActive(v: Values): Boolean = kind == PluginKind.Script || v.bool("enabled")

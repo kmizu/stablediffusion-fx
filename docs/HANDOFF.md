@@ -1,5 +1,10 @@
 # Handoff: bundling the A1111 extension index into stablediffusion-nui
 
+## 2026-10-30 update: StylePile
+
+Index 40 / issue #122 has native Script `stylepile`, full pinned GPL catalog (512 references), searchable lazy previews, weighted style/preset composition, X/Y/A/B/C and noise variables, prompt insertion helpers, custom image/inspiration overlays and interruption-safe sequences. Actual native SD1.5/SDXL configured-style/manual RGB and img2img RGB match exactly; four-image order/seeds and partial interruption/recovery pass. See `stylepile-verification.md`. Whole Scala passed 1289 tests with one skip; assembly and assembled-jar-only native/resource checks passed. All 517 bundled source-file hashes verified in staged Git and jar. Notices cover 147 projects. Current ledger: 110 done, 192 todo, 51 not applicable. This is the fifth issue of the active twenty-issue release goal; release remains unpublished.
+
+
 ## 2026-10-30 update: Steps Animation
 
 Index 57 / issue #120 has native Script `steps_animation`: denoised-step movies, none/blend/MCI interpolation, duration/fps, five codecs, initial-frame skipping, optional export/cleanup, relative output locations, debug logging and bounded interruptible partial export. Actual native Generate/Interrupt/recovery and txt2img/img2img/hires checks passed on SD1.5/SDXL with exact enabled/off final RGB. See `steps-animation-verification.md`. Whole Python passed; whole Scala passed 1269 tests with one skip; assembly passed. Notices cover 146 projects. Current ledger: 109 done, 193 todo, 51 not applicable. This is fourth issue toward the twenty-issue release goal; no release published yet.

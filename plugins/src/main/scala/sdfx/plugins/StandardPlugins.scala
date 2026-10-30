@@ -35,6 +35,7 @@ object StandardPlugins:
   def scripts(extraAxes: () => Seq[XyzAxis]): Seq[Plugin] = Seq(
     new XyzGridPlugin(extraAxes),
     new PromptMatrixPlugin,
+    new StylePilePlugin,
     new StepsAnimationPlugin,
     new PromptsFromFilePlugin,
     new LoopbackPlugin,

@@ -1,0 +1,7 @@
+StylePile catalog and reference images
+Source: https://github.com/some9000/StylePile
+Revision: 85b549a10ff6c5b1604e980cd2107253b088e832
+License: GNU GPL version 3; see LICENSE.
+Catalog JSON was mechanically extracted from pinned source literals and asset names.
+Reference images and inspiration texts retain original bytes. No WebUI script is executed or bundled.
+This app implements the processing separately. File provenance is in manifest.json.

@@ -1,0 +1,3633 @@
+{
+  "revision": "85b549a10ff6c5b1604e980cd2107253b088e832",
+  "source": "https://github.com/some9000/StylePile",
+  "archive_sha256": "aab69079ff53a8526b1be40506a641e3234d5c49bde6e9c2e020d9e091c8746c",
+  "files": [
+    {
+      "path": "LICENSE",
+      "bytes": 35149,
+      "git_blob": "f288702d2fa16d3cdf0035b15a9fcbc552cd88e7",
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/LICENSE"
+    },
+    {
+      "path": "StylePile/Art Movements/50s Art.jpg",
+      "bytes": 133212,
+      "git_blob": "7991b1b5d6079834c42cb446ffe24bb8c78c5739",
+      "sha256": "3d48f74f03f30d6a4fbdafa2b3817edee7a469a0772f550f184134a0d40a8be6",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/50s Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/60s Art.jpg",
+      "bytes": 144242,
+      "git_blob": "755fab125431cf62404763d39310b99fc0a5bc76",
+      "sha256": "221dec718c1130f4fc47d4c993432f0d8143c85c7007bf4476eb2f5cdcb68adc",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/60s Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/70s Art.jpg",
+      "bytes": 132394,
+      "git_blob": "410d80359e8cb42959d830a52d2bb8381743ccd0",
+      "sha256": "9c19506b5d3a9d513fd50dad43a176de90734e6957741b7321239af0e0639fdb",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/70s Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/80s Art.jpg",
+      "bytes": 139117,
+      "git_blob": "045266c8707879b7da9c3010c8ab587d1974de38",
+      "sha256": "ace474e6308924725f567dcb2a24fb81779f267cce9d58e257988f0f0b3938bb",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/80s Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Abstract Art.jpg",
+      "bytes": 190187,
+      "git_blob": "3a865cde7e0717e3958af51727bee31937dc34a2",
+      "sha256": "76acf91bdb5f8870afe80dcf95db90b1082a04867b635ef2400c0f1e563883d1",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Abstract Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Abstract Expressionism.jpg",
+      "bytes": 190675,
+      "git_blob": "c9afcd411649809f43f77bda4fefd28d570693df",
+      "sha256": "8403a349675d46fe84d526850b4c3698d8ac1a6b535c10867db09184736cee39",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Abstract Expressionism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Abstract Illusionism.jpg",
+      "bytes": 189451,
+      "git_blob": "e1088435e056eee978c4f9dbc245e059b980d650",
+      "sha256": "86c7c0ee00eceb0c45d9cb1eefd97de9acd3280a466ad86fe5cfd0612bfae6e0",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Abstract Illusionism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Academism.jpg",
+      "bytes": 151072,
+      "git_blob": "bb7a09b0f98ecb4003108b4b87c9de69be01b441",
+      "sha256": "b9c2341955d6723c39da99e23ee534fc231bf2a4b220d8254f698155a7d2b323",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Academism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Action Painting.jpg",
+      "bytes": 193743,
+      "git_blob": "eaa68f310c11426c734e1a571ab69a967fbca096",
+      "sha256": "f029cf1cf07ffcae8780fc3bbb413f987435af50cc5eb668fd2e690252cff0c0",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Action Painting.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Aestheticism.jpg",
+      "bytes": 161545,
+      "git_blob": "4361d60ac715f6ab899b396bedfdb87aa0a8c031",
+      "sha256": "c6c88f991b4e8afe94283fd6a9666aba8e8900efbdf6eb4b7ba7ac8df4594700",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Aestheticism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Afrofuturism.jpg",
+      "bytes": 172077,
+      "git_blob": "38612daa065677e2103b5a8c6550c7417b30f886",
+      "sha256": "c9d523d940bd6df65b492edb56b36691616bdfdac4ea586fad4efda91badcda6",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Afrofuturism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/American Impressionism.jpg",
+      "bytes": 184532,
+      "git_blob": "9d3dbe38d54b0eb38dd2228e93dc64f58676770d",
+      "sha256": "6f70183e389cf90906d1f2925f8272e8e7114236086b516efb3393ea3182be72",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/American Impressionism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/American Scene Painting.jpg",
+      "bytes": 168644,
+      "git_blob": "8d6017364bcc3f15dd9e9c24fdb8a8cf6413a258",
+      "sha256": "7f402754626940e4655041c47879ad1360fa7038f28992bd397a142920d4e2b4",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/American Scene Painting.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Art Brut.jpg",
+      "bytes": 267935,
+      "git_blob": "6ef5e38613b0be68000a24c6e3006ddb0230f34e",
+      "sha256": "8388478bc1f336dfb497adb80177077bb34cc0f53609ae4e99963f2868ce6471",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Art Brut.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Art Deco.jpg",
+      "bytes": 237470,
+      "git_blob": "8b33581e3f17a01c620d3a6a31de8bb3ef25bbef",
+      "sha256": "c20564370fa1c99cd6d14a16db3489ed6d62edabe9dd41fece2cee48e141d4fe",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Art Deco.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Art Nouveau.jpg",
+      "bytes": 238132,
+      "git_blob": "db65b3e05132608dcea2cc47e5e331cb4605ba30",
+      "sha256": "7df766e36ce3b72218037847a5f785e7f983599c27277c9a057f2a2a180c38c1",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Art Nouveau.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Art Photography.jpg",
+      "bytes": 147439,
+      "git_blob": "e11d19166d3b753d54d228878ef9c677445ab6e4",
+      "sha256": "e64d3248d6b4c312bead55cfa6f400e9175e6935b2ad615a73defc1f19e6abe1",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Art Photography.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Arts and Crafts Movement.jpg",
+      "bytes": 176360,
+      "git_blob": "d2ca87d7ac00d5de6000565aa4d2370181cc9268",
+      "sha256": "6e833d79cd77a9bc38d6d3131a8931fb9cd8d57f7fb71e5e44ca4af597996ba8",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Arts and Crafts Movement.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Ascii Art.jpg",
+      "bytes": 261779,
+      "git_blob": "4a4dc600372af81030bd88edaf398f28a067c1e4",
+      "sha256": "7f9dff3609caa2354c2fe1f239fb79c5af7d7ecea3ca08278fcd186a063fa726",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Ascii Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Ashcan School.jpg",
+      "bytes": 173420,
+      "git_blob": "e4b2372b6bad49d17d5f844130cf5ec4b9822747",
+      "sha256": "ae735c2dbede6834daa8f4683f2dcaad83e8ac4d63fa6105317748d548781319",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Ashcan School.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Australian Tonalism.jpg",
+      "bytes": 152641,
+      "git_blob": "b935394dcb505e331b9c065a98e3a96fbbd435c6",
+      "sha256": "8aab72884c007f4ec04759570a9cf0167003176aae29af0b610c358974452755",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Australian Tonalism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Baroque Art.jpg",
+      "bytes": 146849,
+      "git_blob": "37bd4e707f4f0b19be5c2a60310b38c644b1474f",
+      "sha256": "687b9f690ba0bb1df15d42c1f164a4d68bc07fb82aa11576063b9cae8fb64a6d",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Baroque Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Bauhaus Art.jpg",
+      "bytes": 147908,
+      "git_blob": "8d729d8a360360be07c35a15e5dbfe5c5e9fef75",
+      "sha256": "77a2b72eb1b3bdde0cf98f5a85f0ede06ccf17b1ce97104ff956c8222fbdec55",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Bauhaus Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Berlin Secession.jpg",
+      "bytes": 160681,
+      "git_blob": "5a7bb79ec778875a26526bccdd8ce09749370067",
+      "sha256": "bd332e3fa757ccc979fb9b41673142458bac88ad8a943cdc8b214cc3b8a9af05",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Berlin Secession.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/CGI Art.jpg",
+      "bytes": 117321,
+      "git_blob": "93709795ccfbe9eb990ca528ce6bd166c849d655",
+      "sha256": "65eb2716152da76aa09853f9e6abea59f3d9c0ffeda08496cf0e2662c200a290",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/CGI Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Classical Realism.jpg",
+      "bytes": 157888,
+      "git_blob": "d8ed3a4819198ec7da267dcd25448ba4dac7dd13",
+      "sha256": "361dd1f85933fb79b74aa6fa9aa03f0a92721249eb5a64da5345086fbe195046",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Classical Realism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Classicism Art.jpg",
+      "bytes": 136511,
+      "git_blob": "1a5362e2eb8227c305134ed7e440e04427f0b3e7",
+      "sha256": "19a7b321532c01c7114a80b396217e830aec6f66710cff1632b179481f61a728",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Classicism Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Cloisonnism.jpg",
+      "bytes": 212907,
+      "git_blob": "13cae2827ed3ffaec760b787be068a2685584db9",
+      "sha256": "e1ae9159a1abfa4b4ce0195402240e84b4381c001143a3c89d673450c480c5e8",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Cloisonnism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Computer Art.jpg",
+      "bytes": 168834,
+      "git_blob": "bcc5f8465d3726a33b577c6f723e8489393039ec",
+      "sha256": "8ddddc0238653afa2c056ae5433ffdfdf519328086128fafc0747e1549e632d9",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Computer Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Conceptual Art.jpg",
+      "bytes": 178857,
+      "git_blob": "7cafc9b9f416bddab9b3458f8730337471cc2a5e",
+      "sha256": "2631ce23e942a127a1169d10d66e141a5df73f97d79d5fc1146e237091b36772",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Conceptual Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Constructivism Art.jpg",
+      "bytes": 159340,
+      "git_blob": "855a1d57e6a020f30636346fb33085dc71e07f22",
+      "sha256": "341361bec2f317f046bcabe24a8317f090fa9c347bf3a2dc2acc8e63d9e59e4b",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Constructivism Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Crystal Cubism.jpg",
+      "bytes": 137650,
+      "git_blob": "52e22bee5a48c0feb8ad3a66651e83ca45fa5074",
+      "sha256": "bd68830a4c3d760b4f25cbe0c728c66e83dcb001d1034abdd2c817cb5710331e",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Crystal Cubism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Cubism.jpg",
+      "bytes": 155677,
+      "git_blob": "d5d5b27193bc663acbdbc83fb7455aef8cef6569",
+      "sha256": "cab1b4d1bfddf15da62ef8a9a458b6d5a9be0df74d786337bee48002ffae71d9",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Cubism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Cubo-Futurism.jpg",
+      "bytes": 149040,
+      "git_blob": "514f7777ec5f0ec5a172769fc3d7c676cf2ebfc6",
+      "sha256": "00b28345c6f44b69a365d5fc779c667a2526f323657edd0c8cd6f67eae56ab4b",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Cubo-Futurism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Cutester Art.jpg",
+      "bytes": 126112,
+      "git_blob": "7145567f1b9b04fe494306561625807e83f59a1b",
+      "sha256": "060cc15bb62041aefb5e6950d6b9f80da271952da5bdf1d67330042484f6813e",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Cutester Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Cybergoth Art.jpg",
+      "bytes": 136210,
+      "git_blob": "e22aa2cfe351150c390303cad0b1f65bc04e1d93",
+      "sha256": "1bf8a725477ef62a23df87d93c47872fc7cf3df7d0a42af876ee48f28e7ef50c",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Cybergoth Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Cyberpunk Art.jpg",
+      "bytes": 159795,
+      "git_blob": "c6b803e6323c8ba956575cdb3db064caf46ffb6b",
+      "sha256": "84373a6f7c678b173f370193e2fba355e648b14bb6d2f8c659d010d3447ffedf",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Cyberpunk Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Dada Art.jpg",
+      "bytes": 161125,
+      "git_blob": "7c70688c09dc4d11b60b3481207d5a7359fecb0f",
+      "sha256": "a5efa35f7a69f8e7c4c915ada264ae152b77f9a3f1e3c90af06dedae0a9866ff",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Dada Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Dark Wave Art.jpg",
+      "bytes": 130441,
+      "git_blob": "7ad634e7be39f07d7685fe2aaeb5ee967f9ab41e",
+      "sha256": "1caf13f27f7bae47688e5a8c4b4cda303ae08e4a2aba400e8f0dd0b14a068c72",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Dark Wave Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Digital Art.jpg",
+      "bytes": 151984,
+      "git_blob": "0b0213db563e5423b37d698914b12fc5818b41fd",
+      "sha256": "b64de01bbac97b9a5213b952e64eef9cfbe2398c649b695e9efea5e0b8fe6db0",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Digital Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Emo Art.jpg",
+      "bytes": 148250,
+      "git_blob": "b69531d8c2c89abff7480c07cfc906030aabc44c",
+      "sha256": "0373298e1c1ccb1914f3aa93b99c065c76eae9832f56246b6731bf314e50bf4a",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Emo Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Expressionism.jpg",
+      "bytes": 197048,
+      "git_blob": "9600fa72454982a0c880c6ad3a55ae1993cf7d01",
+      "sha256": "7ec34587c50123f60b61f74ddd10de0781a4b645a4b2bacf12e9aaf8e97726e3",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Expressionism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Fauvism.jpg",
+      "bytes": 191391,
+      "git_blob": "110fdf8552bed4e308072f14d5b341e76c4043b5",
+      "sha256": "5f19540bf94dcdabbfbee831556c6ced5406781d53077f5df79ddc41d8d7bca3",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Fauvism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Figurative Art.jpg",
+      "bytes": 168684,
+      "git_blob": "1e72c1735c0072a47d8f752bf8ac7975d1df8ada",
+      "sha256": "2783e8340952f1c3054336c94c3f661d376f82bca4080d40cf7ca905f142eb68",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Figurative Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Fluxus Art.jpg",
+      "bytes": 142440,
+      "git_blob": "9921d00fb9aefd4dbafda45eae1ecb7378039084",
+      "sha256": "607afd9b847d6e327bf30e753bd049ea2d3a2d2399c0b8c60bf02e30bce6d2de",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Fluxus Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Folk Art.jpg",
+      "bytes": 200642,
+      "git_blob": "6536cab38b3a971328c03372200d7e7431c8090f",
+      "sha256": "3a1d0407bffd7442e525d45a01fcc3d8f685d380056ee0e1eb5e2bb0a93702f1",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Folk Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Funk Art.jpg",
+      "bytes": 174397,
+      "git_blob": "b626082655f355d1b1c67fb11d5d7ffe8454dcc0",
+      "sha256": "886fe69d2f9a06c2a023f57ba4bbfb67ad53da5de30648fce626660f9b920f3c",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Funk Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Futurism.jpg",
+      "bytes": 173437,
+      "git_blob": "5e507b4152273a9716e075fc43a03a36e4f32cbe",
+      "sha256": "504671357841b28292d8e0bd5e99b7d2a131bace97a93d1ed3039ce6060b20e9",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Futurism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Geometric Abstract Art.jpg",
+      "bytes": 195697,
+      "git_blob": "74b0e95b07cb863d5ce70cffba0b9d74f9fa2028",
+      "sha256": "735ed2df99f4729074e043c186b9ffc17af9f88dfc3d820a09072d39ab85827f",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Geometric Abstract Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Glitch Art.jpg",
+      "bytes": 234949,
+      "git_blob": "bc313718088bf9fdcbca164fe92e295940292756",
+      "sha256": "74816e4f86fd6863bfaf17b9516d504159fc73782c213a9a4f0dbb92067e752a",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Glitch Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Graffiti Street Art.jpg",
+      "bytes": 185734,
+      "git_blob": "4c6208ccf7960062ddd8fcc395e8a4f1731c9c9e",
+      "sha256": "c1604bec1bb44ffd9be9f32ae3e9d732fecdc3b4a18675f1c78a131980445f1f",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Graffiti Street Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Grunge Art.jpg",
+      "bytes": 153674,
+      "git_blob": "26674a86a7945bffd8193a848a4776b039c6d1e3",
+      "sha256": "1d7bba48292c65e2de61ccbc7c582f604a1f8652f9241c5fb80ef4ebd14942b3",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Grunge Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Gutai Group.jpg",
+      "bytes": 188592,
+      "git_blob": "08b01c1c737b25040ad3dfb88f3b988172c8a2b2",
+      "sha256": "c365d413532546d1fbb43f394b0180a3078ac8954c6b5933d2055c5fe4ff8cf9",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Gutai Group.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Hardcore Art.jpg",
+      "bytes": 141956,
+      "git_blob": "a23f4bd097d127be145cbb530871d823c81f903c",
+      "sha256": "f20d8501593470db26b97782fb9080a44fc2f64a83e9b0cccd5ff0d47911ee67",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Hardcore Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Harlem Renaissance.jpg",
+      "bytes": 211594,
+      "git_blob": "5810901ca2d6786b6c7290c4ab9b341221e81387",
+      "sha256": "1474668ee5d850b80a5e11bf8b4c27f9e6120913ce355810d7d55bc3e50f32a6",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Harlem Renaissance.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Health Goth Art.jpg",
+      "bytes": 132399,
+      "git_blob": "0f6f779587b87e05d4d025563af39c52fb7c573e",
+      "sha256": "092792487b8ad27ae24a870378aba424f3ab315f0996c135d50b54a5ed1093df",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Health Goth Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Heidelberg School.jpg",
+      "bytes": 155319,
+      "git_blob": "6862844cce3f35ed7391c2f6b5327af0be132506",
+      "sha256": "4518fd3bcbef0ccc88b875166dd137431e88219c9ac9c8a907b176703b2758b6",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Heidelberg School.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Hippie Art.jpg",
+      "bytes": 148821,
+      "git_blob": "55082a4ba6ac9ff576849c05dbe3e711915ef87f",
+      "sha256": "c90a890fa1016083e168810d3973905a88af82ea9b1f2ebd213febd6c8c90858",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Hippie Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Hipster Art.jpg",
+      "bytes": 135163,
+      "git_blob": "4a6296e2b26bb33944ea2ef394364b3432be0e16",
+      "sha256": "8fa76e37b221895ed4ef9fbdf80dc2ec190e06fc49d7f3e0cd1987a5c96874a6",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Hipster Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Hyperrealism.jpg",
+      "bytes": 142969,
+      "git_blob": "c1e7ec5b77c585e26d5c475fabc2f691279cc114",
+      "sha256": "030f1806e8e27a61573a2b860ab3211014760784fadc45181c11c7a5a250c7fb",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Hyperrealism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Impressionism.jpg",
+      "bytes": 211811,
+      "git_blob": "39438d5d43cc739a943685fc6601a866bd93200b",
+      "sha256": "f027748bb1b312fd33b13174958f61e6cb072cbdac72b3217dd6e22b40525745",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Impressionism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Industrial Art.jpg",
+      "bytes": 147165,
+      "git_blob": "b54a979eebd5381abddb6a4c52d77bedcc9a64ea",
+      "sha256": "f37157cd4bcaaaf24e783ab8f96f7f561a264f4ad0cdf37b48c8c68fbf82aca5",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Industrial Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Kinetic Pointillism.jpg",
+      "bytes": 336217,
+      "git_blob": "3b34fb856cf7f4eb5da0624431ad819ae5f0b2c7",
+      "sha256": "204a5462deb42a4c50952bd2f14c5ad9b5933c6dd6a5d061771a4c0a81e73e57",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Kinetic Pointillism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Land Art.jpg",
+      "bytes": 139002,
+      "git_blob": "33714635bacc43cbe5dd7a057aca5a56737f2abc",
+      "sha256": "af6f026d017a8711a55589942e07c69407aa3c40ebe1dc30af32b3216a8f5b3c",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Land Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Lowbrow Art.jpg",
+      "bytes": 170954,
+      "git_blob": "b3d70b8673d465fae8f6c0438cb30fb735e95d13",
+      "sha256": "e7bb20db6ae39a3b019a66db1df30cee86cb194d1fa0112881ea552fad4e4e66",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Lowbrow Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Lyrical Abstraction.jpg",
+      "bytes": 154017,
+      "git_blob": "0f0c823b71e214b4bdac7cb748d8fc67d5e2c5ad",
+      "sha256": "0160f712a1a70353607fe36a4660a1606c7e94e28de3121e62678ca4e577e6e9",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Lyrical Abstraction.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Magical Realism.jpg",
+      "bytes": 138264,
+      "git_blob": "221e8a16ec27f8581a7e4141080d594255bb0c22",
+      "sha256": "ce40eef57cd5a3021641b7300bcd2635efe85f8e81b16a1620b09e4965278af6",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Magical Realism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Mannerism Art.jpg",
+      "bytes": 156365,
+      "git_blob": "322ce1425d01afdc6488985cd8a6382cb667cc51",
+      "sha256": "dbeca3796785a61e3e8c0fdbb4f29abd1196cbecbd0d42d0ce20ef2a40019356",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Mannerism Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Memecore Ar.jpg",
+      "bytes": 142598,
+      "git_blob": "39bf48dfd29bcd8265a94b41df7ee0e32de45caf",
+      "sha256": "93340d9552db1cf40756573aad614ae28c19c71b21c5ffeea4a1d54a39ce9fcb",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Memecore Ar.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Metaphysical Painting.jpg",
+      "bytes": 171315,
+      "git_blob": "788bed83bbd3782eaaa27737c644b6c5a39edc33",
+      "sha256": "67a5b729a68d6672d5f839d1651aea3520c4974531dd79562ddc73547850855f",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Metaphysical Painting.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Mingei.jpg",
+      "bytes": 163847,
+      "git_blob": "5c0056e0c51bf317cb468c16b55517d1912d747d",
+      "sha256": "00f7229fbe29c774545497611489e5d506c167145ec801fd42ccca0c4a50ff6b",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Mingei.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Minimalism Art.jpg",
+      "bytes": 117972,
+      "git_blob": "bbb621efb2326504eeb7d52232e5090cff7760b3",
+      "sha256": "655aebb5a163564a9a6d874fb75cce5da5766e71e10d6fc26122ce243c3516e8",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Minimalism Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Modern Art.jpg",
+      "bytes": 160269,
+      "git_blob": "6bedd5c8d4fb0c783d76d2d1f4d797b99bc3a850",
+      "sha256": "b99c1faf1977460841253358e91ab3eced8f677c18bb4b40aea34cfebf8a9220",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Modern Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Modern European Ink Painting.jpg",
+      "bytes": 144051,
+      "git_blob": "d1e70ae8acb48f784ff36267ff317f48d324f814",
+      "sha256": "b88cb9ac1c4f85784aec92d0f12cabbfcb9a49908e657fb5cf8d62105c0e3d86",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Modern European Ink Painting.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Modernism Art.jpg",
+      "bytes": 192917,
+      "git_blob": "94a1ab4374ea73da85bc11ab208d5558129baf6c",
+      "sha256": "385c5b80ad80f7ea87590fa528f7eb76774981649a7ce24833878173ba224048",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Modernism Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Naive Art.jpg",
+      "bytes": 188480,
+      "git_blob": "e5fd263348936453a2510fa907b7fa1f1da604ab",
+      "sha256": "bec827d88f43fd90f1439af2c8544a77de17c6aed93f8ba49d2d10ea4c6d296c",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Naive Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Neo Dada Art.jpg",
+      "bytes": 161299,
+      "git_blob": "3e0cfbe8efb560c90f99b3e917a3274268deffdd",
+      "sha256": "0157d34d0ba5b884dd5d1e763fa5ec53011efc8981d16d0bbaa72198cb3e43c3",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Neo Dada Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Neo-Dadaism Art.jpg",
+      "bytes": 187158,
+      "git_blob": "0f8a3a42a765f07c28e9c4960f5799f6c734f59e",
+      "sha256": "77d2c389c444db4c65a8415e745b49e1395f5cb01b1253c19bf4ddcc0d3f7e8d",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Neo-Dadaism Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Neo-Expressionism.jpg",
+      "bytes": 193108,
+      "git_blob": "1a456229d4d66a67662cf2c88e4276be89cdb117",
+      "sha256": "3a03862fd9d94960101a158d95a27a08b28bbb8282d7422610cb6a6897b355c8",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Neo-Expressionism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Neo-Fauvism.jpg",
+      "bytes": 209839,
+      "git_blob": "f3926182ddffccb8574ef3b9783daf01d86229f5",
+      "sha256": "426c41f48648bd88bc4cefc82eb4a58c05dd8594c86585a65bf0d939057b6e99",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Neo-Fauvism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Neo-Primitivism.jpg",
+      "bytes": 162457,
+      "git_blob": "6895598f656cdaffd9dd1d4e5ba9c0501cb49357",
+      "sha256": "ec015ff3eddfac6d5e255cb1da0c399651b55154b4050cc347ed762fd35e64da",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Neo-Primitivism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Neo.jpg",
+      "bytes": 172901,
+      "git_blob": "d2cc12e217638435219a866be35a9f12a6709627",
+      "sha256": "b2ce2e485a227f60a55a522a344f3ecf5f753321d287dbd67b94388891b98458",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Neo.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Neoclassicism.jpg",
+      "bytes": 143737,
+      "git_blob": "583e237b696abc39a88b464b043ff8dbba42b06a",
+      "sha256": "dfd4f64254af25c4075fdcd2871716cc2670b5906e3b729fd80835b06d9be217",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Neoclassicism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Neogothic Art.jpg",
+      "bytes": 166966,
+      "git_blob": "92f7631ee3770415535c71acd91bfb521ece26a0",
+      "sha256": "7ea5c85c12446e1b43de4d36dbea4f1c4f6adcbaaa05e23e5ac25bde3c6ab6cd",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Neogothic Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/New Wave Art.jpg",
+      "bytes": 132029,
+      "git_blob": "b622892c100eebee2ed1cc017c3ac9123f2fc2da",
+      "sha256": "e63711aa952e1daef1cb2e199f239836bc433bacc6dd3458f0343c7e026104e4",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/New Wave Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Normcore Art.jpg",
+      "bytes": 143637,
+      "git_blob": "2faba7d8451741c2b7f2e60425806e1bde1bc99e",
+      "sha256": "7e24a19ddd43ef6e0e3fc4b8a17f19076dfe15568144fe742e4ad512b682003b",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Normcore Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Nu Goth Art.jpg",
+      "bytes": 136586,
+      "git_blob": "5a96d715e932984cc9d73e0e5aa0a42c37c88713",
+      "sha256": "b32f28dbca78de4fdad69dba6b0add68df0c656f4730bf7a6e3bbf1a49415065",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Nu Goth Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Orphism.jpg",
+      "bytes": 177720,
+      "git_blob": "b1b34d198f77322c7d5610ca2f30062297b29880",
+      "sha256": "6688d5b9b288fa9031bd0d0d675d67ed665a608de30bcd3b70da4e69958bd032",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Orphism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Panfuturism.jpg",
+      "bytes": 207394,
+      "git_blob": "9a26468d29ab2ebc82a172e432fa81a422dfd29a",
+      "sha256": "5456efd3aa928b62c577a2ddfd00baa4db845b4504eaa5075bacc45954fe586b",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Panfuturism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Pastel Goth Art.jpg",
+      "bytes": 131459,
+      "git_blob": "cd5e251c6a8da32dce8f6d423837ebd23487c48b",
+      "sha256": "f76ffa27b342b62c8789e8c0f1072daf682202c703d60c8caab68a89b52a8e8c",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Pastel Goth Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Photorealism.jpg",
+      "bytes": 135438,
+      "git_blob": "4d3b72489b329716d8c28a220c035988c1899304",
+      "sha256": "8abcdcb46d45c50b4960c20b88a7148417d1f8895c182533ccdd3e1521bbd035",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Photorealism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Pixel Art.jpg",
+      "bytes": 178326,
+      "git_blob": "32e170dc5819a43ba36de17c2519aa2d81dd9d50",
+      "sha256": "e81a8e927eebbae96a5d2a447123bdacc6a8b35190c9626a83990c77b7253c08",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Pixel Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Pointillism.jpg",
+      "bytes": 308029,
+      "git_blob": "88dc11b6671fc3cfeb341e54bbc8e5f25fd47eb5",
+      "sha256": "936b005174af9b36257df074340ff5cbf62ea6ba88fc9ef9e080d8d630c5679d",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Pointillism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Pop Art.jpg",
+      "bytes": 220074,
+      "git_blob": "369a84c493d09c96163bc91f7d998a3ea397f1e6",
+      "sha256": "bdd065585ce31b96bc00cc2e64b2b087c2f1fee2942ac25696bca6fc4ce53f5b",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Pop Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Post-Impressionism.jpg",
+      "bytes": 221411,
+      "git_blob": "d4003bd216b3c7e6fd602aa92bd9babd32112702",
+      "sha256": "de570df463952537c37a5783b4fccb9dd28fd6ab648f407efaa6e5a3d7fe38af",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Post-Impressionism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Pre-Raphaelitism.jpg",
+      "bytes": 168149,
+      "git_blob": "e1ff52f838a4b43b909871f0a8d5057c62b5d2b9",
+      "sha256": "5daaa08b79361c28d723b710ba082808cb1590aa8c9cec8c8098cd4b535cf52d",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Pre-Raphaelitism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Primitivism Art.jpg",
+      "bytes": 164482,
+      "git_blob": "199c04b17e9106066a7df955ce29f104b133b4e3",
+      "sha256": "a45836abbe1fa051ea2e1484cbece0edc6e207c23a0a2f77b84466fdf4188580",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Primitivism Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Primitivism.jpg",
+      "bytes": 164306,
+      "git_blob": "809b4f02a59aeb7ea450b743da72f0d22e3fc51b",
+      "sha256": "5a025cf5fb5988ddee2de29b617ed129199f650d0d3d98557bff604807197c7e",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Primitivism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Private Press.jpg",
+      "bytes": 156801,
+      "git_blob": "44bebd1ac52e115ada3a7e9fe38d9810971a070b",
+      "sha256": "b15ba7c9efef5b8e0e3beb6c3851b586f51d699b610c3b4ed96a2e230b79589d",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Private Press.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Process Art.jpg",
+      "bytes": 171270,
+      "git_blob": "c6442156c46b3201b7155d6ffd079484e27e99f3",
+      "sha256": "28053e7dd637554f86e93e3f965cb64553f5470c0de064b549d3809072802400",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Process Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Psychedelic Art.jpg",
+      "bytes": 195672,
+      "git_blob": "550cf6dcd2c2af9a548f07f36feb8ad029d27c47",
+      "sha256": "2b5034bc804fe848838885fca44c8873ba4790657b4855393a38bafcab8d307a",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Psychedelic Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Psytrance Art.jpg",
+      "bytes": 168611,
+      "git_blob": "c79a1a2c58e44f0bb5e00984ce213b22f23280e1",
+      "sha256": "8e966fbd9912c419201dd603b3bf17d59a58191063ae15999bac167db5e0926d",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Psytrance Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Qajar Art.jpg",
+      "bytes": 187177,
+      "git_blob": "d5eae0b971d4849dce081a111cc20fd18ef31121",
+      "sha256": "845071e13a31dc5311656865499ffa6ad8866d8cc073ea648a3f7ea4250709c3",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Qajar Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Queercore Art.jpg",
+      "bytes": 168554,
+      "git_blob": "faface90d323821bf036c0c889fbb648f4929dfc",
+      "sha256": "00a9a0f8060c1abca2b88312a8aafacd954ac0bfd21d2207a6370ee819e80efc",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Queercore Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Realism.jpg",
+      "bytes": 129966,
+      "git_blob": "c2b094811de859fe35e9f585e41b611b0b4107bf",
+      "sha256": "3c0e1780ab89c41f116e315be214814c89353daee44d438e3348fb4c355066d4",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Realism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Remodernism.jpg",
+      "bytes": 198768,
+      "git_blob": "70f8a8dacae89b096857006c2ae51fed4468a536",
+      "sha256": "96606e6eebc3f3c9d33760d47963c56abaf7677e5a74e50b1d2454b67925908b",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Remodernism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Renaissance.jpg",
+      "bytes": 161445,
+      "git_blob": "37c91532d42118e989f8b724f15d41ee613058f6",
+      "sha256": "4d6a3d34c0aec5209f64cd1042684550fac4237913e089937dbcf9d0cf1e6935",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Renaissance.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Retrofuturism.jpg",
+      "bytes": 156302,
+      "git_blob": "940a9af1b71803cb34f278fac3daadefa16f51ef",
+      "sha256": "c075f4547cf5cd3abd72baa2c248bdeed4e254957947ba55c2d032a865ac5ed2",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Retrofuturism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Rococo.jpg",
+      "bytes": 147789,
+      "git_blob": "7bb784e2c5c8e3247ed4a73a4fcc1d79a91d2d34",
+      "sha256": "38bacaad845eb67dd1849ba47dc21956232574155f4a4ad8afa54237ea01cb12",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Rococo.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Seapunk Art.jpg",
+      "bytes": 129786,
+      "git_blob": "450bd1eef01d50e42933e2bdf1eb9d2077f422fb",
+      "sha256": "8b95b62337f726999fbf457ef23f25b2fe5aadd511aae282f4fae969623d451e",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Seapunk Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Serial Art.jpg",
+      "bytes": 170133,
+      "git_blob": "646323be4c8b82f8fa3b67968ed12759aa38d626",
+      "sha256": "cf0d5bf5c985aa18b76c18ca32b2e47d4bdd0fba263ce84151b03762d1ca846d",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Serial Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Shin Hanga.jpg",
+      "bytes": 138767,
+      "git_blob": "03cf641a48a46be101f4094ca516bfe93842464e",
+      "sha256": "6bf607fc2bfbe172aa1364a826acdd95f264a7807cee5ac7e86d6e2b6dd50297",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Shin Hanga.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Solarpunk Art.jpg",
+      "bytes": 139738,
+      "git_blob": "4a41a0bc78a2d69623d573fd1d4e6d7d1035d343",
+      "sha256": "7f160145c3ac3f822984807f8744a090f0beabd670999921fc7914e5de4ed04f",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Solarpunk Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Steampunk Art.jpg",
+      "bytes": 153524,
+      "git_blob": "b940d2d0d96bfb17c09d5e3b3f6943b80b0e3af3",
+      "sha256": "482bbe8e46619d3f8cc752bb3d6b20f06b89b24ff00a0d5efd5d0c99c3011c36",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Steampunk Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Street Art.jpg",
+      "bytes": 172573,
+      "git_blob": "2a331133663fe2a9cad92d275707cc6d4252e521",
+      "sha256": "ef9b983de997ca3e1957ac3580b4e816693c8c0bd03a2df3fe1de24d88c11529",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Street Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Suprematism.jpg",
+      "bytes": 143932,
+      "git_blob": "52a00e2c089af1feb1944b0d7ff599f7a0eb6c81",
+      "sha256": "73fa4a2f1d1e5a2d116f05cf1435a33945619d78e6a3ca128dceaede9b96471c",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Suprematism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Surrealism Art.jpg",
+      "bytes": 166174,
+      "git_blob": "ecef141891b6acad7c28eb8c4167a85ceea04eeb",
+      "sha256": "47571b9ef92df168d2f9ca48500cc8ab4aa04d651d253db44856678052691b33",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Surrealism Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Synthetism.jpg",
+      "bytes": 173141,
+      "git_blob": "1c7860f0f535c5ee115b70294145ceaecd307fbe",
+      "sha256": "fe5f959987488505f0145350bc95a84c3a5f2f36f5768b9a6960a12e1936e341",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Synthetism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Sōsaku Hanga.jpg",
+      "bytes": 153717,
+      "git_blob": "b643e268e1dc5b52292f9eac834c4aa230e57bcd",
+      "sha256": "3173bbe9c174a7eafda42485d3045c7be07df2ea107f9e63bcd45ec2ba3dcd7c",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Sōsaku Hanga.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Temp",
+      "bytes": 1,
+      "git_blob": "8b137891791fe96927ad78e64b0aad7bded08bdc",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Temp"
+    },
+    {
+      "path": "StylePile/Art Movements/Tonalism.jpg",
+      "bytes": 133352,
+      "git_blob": "da8d4568f870598469cd580b246bae8a5f5c32e0",
+      "sha256": "2e8eb473d247499b2a1a524fb07bbcf1cbaac3fbbe00bde3c85f8f24fd3be990",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Tonalism.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Toyism Art.jpg",
+      "bytes": 136202,
+      "git_blob": "232f0e7b72e471503726ba45316581cc67cf9cef",
+      "sha256": "702a069ab008c89e6801234833482fedf658b587790b3e30a22ba5da75e38cb1",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Toyism Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Ukiyo-E.jpg",
+      "bytes": 155701,
+      "git_blob": "c3f9843bae89156988a994f17c78527ddaf8220d",
+      "sha256": "5ce7a2ea303d57a399a95b22352284729dee34c77574a8b52857560177393625",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Ukiyo-E.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Vanitas.jpg",
+      "bytes": 139080,
+      "git_blob": "598357aae98cb7aa9e3409d0c616bc1fa94ee286",
+      "sha256": "b1462b9e5a3b02674450ddc958046b94e3b09cc80a850458e1928ccee9846ccd",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Vanitas.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Vaporwave Art.jpg",
+      "bytes": 157528,
+      "git_blob": "7daa85247df24911857dd416b35b1591f7996d65",
+      "sha256": "9d5f6ebf8637256794d706afdb5ac4afa6d926080e0a299a96d1456662a55fed",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Vaporwave Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Victorian Gothic Art.jpg",
+      "bytes": 180470,
+      "git_blob": "70c0485ecbc498d8eb9ac016a818a43bb6eabfd1",
+      "sha256": "1d8ac30b7a3bdd736bce19d0583239ff166bd9c231c780cc8e8586b09e500328",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Victorian Gothic Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Vorticism Art.jpg",
+      "bytes": 153550,
+      "git_blob": "03fe34661bdfa0aae209c62e4740e2186c4b52f7",
+      "sha256": "c2fd7f2dd270864ea06f4b61836c20967150909fd211074a1fe0ee364496424a",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Vorticism Art.jpg"
+    },
+    {
+      "path": "StylePile/Art Movements/Yuccie Art.jpg",
+      "bytes": 129410,
+      "git_blob": "e25e30b95a9591c52acf4ccae110c03a5b146512",
+      "sha256": "a954bce4dfdb33055ba0c69ea5e3ee2aee77198c924d0596a9e4790b82d97270",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Art Movements/Yuccie Art.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Adam Hughes.jpg",
+      "bytes": 227713,
+      "git_blob": "136d3a079943e4d4ed191948fde05d6f29f1ca1c",
+      "sha256": "5b3fd65825b1c6513e417f05c1068b52f69701b21a94215b5415a7368601739b",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Adam Hughes.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Adi Granov.jpg",
+      "bytes": 243391,
+      "git_blob": "6b4147f96adf8a060bc2b584c20845555a789e07",
+      "sha256": "bdbe345550b67dbe6e8aefdee921bfe8f9469e6d727bd98d7867eb0b6b80f275",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Adi Granov.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Adolf Kosarek.jpg",
+      "bytes": 262912,
+      "git_blob": "1268c90e74a49c05b848df866b3e50a6a0dcb316",
+      "sha256": "c74ffe9856f7ae207565c608edc0affb80f72879b9012e1b5cf886fa002d3b23",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Adolf Kosarek.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Adolph Von Menzel.jpg",
+      "bytes": 321195,
+      "git_blob": "b5b447fefad151965e68cca1865d001602eb75c4",
+      "sha256": "83eeadf3baedafc0b438360e805285851d4a2e66fede3c98345934d22e93f2db",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Adolph Von Menzel.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Akihiko Yoshida.jpg",
+      "bytes": 288999,
+      "git_blob": "34343124c0ae5321dff4b2d29121189677fff810",
+      "sha256": "3a91f1d491ace895097211ce2d21d4545b0a2ff27c9decd325fef7d57f1bd350",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Akihiko Yoshida.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Al Williamson.jpg",
+      "bytes": 318428,
+      "git_blob": "41ab6ba978cb100783fe4a4e48798aabc8a434f4",
+      "sha256": "f22462b62e7f80323eeb827745b30166a6acaae5c551f0eba6b97eca12030141",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Al Williamson.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Albert Lynch.jpg",
+      "bytes": 245543,
+      "git_blob": "70bf23189b1083ab9755edbb09c265fc0d1165b2",
+      "sha256": "d65cf2c5c7a1bf3238827cd4446c16a74fa2df75d918460f64da77e06fc5be0c",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Albert Lynch.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Alberto Seveso.jpg",
+      "bytes": 261289,
+      "git_blob": "c06a26b911ddbabd02510c5e01da3a07b78fbc11",
+      "sha256": "a117007f315a0951e53f0f14fe6b5830718997380ee4c4e755660683b09c3f99",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Alberto Seveso.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Alberto Vargas.jpg",
+      "bytes": 254507,
+      "git_blob": "8325c9c75bd06267aa023c8f06a95d04011c8efd",
+      "sha256": "768f4fa76bbfb5bcfd1a8a099e7155f528c32dabbec34661cab9a2b1a9b2edc9",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Alberto Vargas.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Alena Aenami.jpg",
+      "bytes": 236186,
+      "git_blob": "d8a8dbc3b27694bf6f115784e8000fc754c500e6",
+      "sha256": "17a56169736e018f7b798c2e89a798e8ef577e0a078d4815a8a41424ecc75758",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Alena Aenami.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Alex Andreev.jpg",
+      "bytes": 181684,
+      "git_blob": "22d778cb096f4beead4b13e1e4404db16d070a53",
+      "sha256": "48f5c611872254b6d8a0fdb7bee3f8588a30fa3808737a7d2d2917673eaa6a20",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Alex Andreev.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Alex Grey.jpg",
+      "bytes": 338438,
+      "git_blob": "d5d5e4a6e6c4781c8228a789a94c83a1bac0c911",
+      "sha256": "b7132d2241c306e45cabf575a8356cb37720f16352ff345a626d523821c06cb4",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Alex Grey.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Alex Ross.jpg",
+      "bytes": 202175,
+      "git_blob": "871834618984b4ed977ac48a9718bff40799f795",
+      "sha256": "885ad77de7c867a50b2d157c9334dd16bc09b3de2d19e8421e31c67bdafb75e3",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Alex Ross.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Alex Toth.jpg",
+      "bytes": 232037,
+      "git_blob": "cab8a188ddf0a72ab5a94ec9ede2625db10a9fab",
+      "sha256": "89f161078e6d6c43d6ef27d197271b67743471c5528d1540f4c00c69c996b283",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Alex Toth.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Alexander Archipenko.jpg",
+      "bytes": 239119,
+      "git_blob": "ff9bf28383e87458adb9c6e138c7c3ba9eb3cb60",
+      "sha256": "02f0e3865319db440984b7f7b990948170710eb3e6e1df7007abbfc23c5416dc",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Alexander Archipenko.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Alexander Jansson.jpg",
+      "bytes": 318997,
+      "git_blob": "3d2d3cd2b61794c99b54d39574ad038cb2ccaf72",
+      "sha256": "b497f78457a6814daeb24c34312adaf57ef9ccc38418c3aad02c80888b46a5a9",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Alexander Jansson.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Alfred Steiglitz.jpg",
+      "bytes": 277803,
+      "git_blob": "76a65e1da62e214126e5431b9a80cc1ff7ac05b1",
+      "sha256": "14f4fbdc6aa7ff703bf2cfa1738bea15b97112dae346a8fd1c2a04468c52ce07",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Alfred Steiglitz.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Alphonse Mucha.jpg",
+      "bytes": 356455,
+      "git_blob": "5c92f775eb490e2dec2933df16a3e6641dbed746",
+      "sha256": "ad362d1dd3cfd90cc582191123b023203137941522806ce2b177a2859718702f",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Alphonse Mucha.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Alvar Aalto.jpg",
+      "bytes": 235173,
+      "git_blob": "40a45a3763db4c0a83c6fba9e730d4ff8b8a303d",
+      "sha256": "e03653708751d07e5d5e389fbcdc615a9593f3889c22ed45395cc802ca104059",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Alvar Aalto.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Anato Finnstark.jpg",
+      "bytes": 201698,
+      "git_blob": "8fda8dc5dbeb95addfaa5083f0464d0bdf62a852",
+      "sha256": "591940b22d5473ec126472adf0c84b9bce0099a14a9e4572874def6cdc09f417",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Anato Finnstark.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Andre Masson.jpg",
+      "bytes": 356820,
+      "git_blob": "2f9c7dfc511ba61ffd75d013235220c77019271b",
+      "sha256": "66a0493d40edd8aeedeb2b9c0044182b6a2da74dcf2f551923b988ca2fdb3f0a",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Andre Masson.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Andrew Loomis.jpg",
+      "bytes": 251691,
+      "git_blob": "338ecfe1886aaf08351e83a8af718feb30632b42",
+      "sha256": "439a00b97b9f2100f42b0df803aca2991ee63d615d1c3e4ff87581a50be39fde",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Andrew Loomis.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Andy Fairhurst.jpg",
+      "bytes": 231459,
+      "git_blob": "db440b6329aa6f28b367d3552c10ba48a462103f",
+      "sha256": "15c3c431072843bce152cc7aacc158ede22ecb8278f68400a6085e1bbc4eea58",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Andy Fairhurst.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Anna Dittman.jpg",
+      "bytes": 232737,
+      "git_blob": "47100d0e398b301e87e0c65d0e066cc1ff3b7e61",
+      "sha256": "b319d7c1facf5aa55821f4d2766a898584dc29acd61ee70a1618b6c22cc0df2f",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Anna Dittman.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Apollonia Saintclair.jpg",
+      "bytes": 440783,
+      "git_blob": "f05421cc5fa98a6bf069a97a666906dfe2ca8126",
+      "sha256": "a3d9b51fb663b7b4dec5da7f0d57c77b7ace52b47fbccd0bd9a97dde80ab13ef",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Apollonia Saintclair.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Artgerm.jpg",
+      "bytes": 199969,
+      "git_blob": "1e30e8f0eb095224afa3f56b9ce03b79c025dea8",
+      "sha256": "3885634f46f5029eba3e938258e5f7f3b3ece9b9e346b029c8c9dfc5ed6f81a3",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Artgerm.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Arthur Adams.jpg",
+      "bytes": 310928,
+      "git_blob": "86811983a489d64b9458baae250c6d2e205d82b4",
+      "sha256": "ed1da3ca19d68e98bb278ffd971cf2f039970d86cfc8fef7b0bf5e89e1aec03e",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Arthur Adams.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Arthur Rackham.jpg",
+      "bytes": 427442,
+      "git_blob": "a6d2e4962ebd19513ee03b678dc5d91fdf594283",
+      "sha256": "f2c7095e1114d064c9f547f958683454067f925ce232b69b3cdeb5c268d4975a",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Arthur Rackham.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Aubrey Beardsley.jpg",
+      "bytes": 371713,
+      "git_blob": "d37c7d583ad07eb89706e6c48ce5de0f2334e2c8",
+      "sha256": "76a7d2555ab0541965d9f08fb548ab7679df4e21d7de616a87a4b34a9a8d7390",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Aubrey Beardsley.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Austin Briggs.jpg",
+      "bytes": 241725,
+      "git_blob": "2e08dde881fe6a9dbb4ac9956115174088cb34be",
+      "sha256": "6c5fed90d69d9b0b29b54e4961b52c75ae8a2253fd50cbdb03b45b311e9ba52a",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Austin Briggs.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Ayami Kojima.jpg",
+      "bytes": 305239,
+      "git_blob": "a4630da67332115ce7cc80b9b61ebb551bc91b6b",
+      "sha256": "73bd3f2d3cfd3e340786a4ae7f49614d5a2936c3db922f7489938d87e42f5e2f",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Ayami Kojima.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Barbara Kruger.jpg",
+      "bytes": 249558,
+      "git_blob": "026c02c1c424b38434c6f7389616976d8f57b888",
+      "sha256": "d598e143e7f3949ca9dad1c6bafa734767526f53bbacdc052fe35cb23295cce4",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Barbara Kruger.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Bastien Lecouffe Deharme.jpg",
+      "bytes": 188818,
+      "git_blob": "6226b06500418e87d931a717dcc0370b0c735ad4",
+      "sha256": "08e9afc34b287dd3d7ff7bfc0a84e47ac15de44f8a0a1c093d42a6e2ef0c76dc",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Bastien Lecouffe Deharme.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Beeple.jpg",
+      "bytes": 168089,
+      "git_blob": "bbe4bacc0c808b609e346562f92008cdc12f4e79",
+      "sha256": "402fb374e13b5f791b37a1963d03f91c8ff4af12010fcd9189f0719c929f522c",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Beeple.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Bill Sienkiewicz.jpg",
+      "bytes": 315251,
+      "git_blob": "52734b209a34257c8e924fdb9712ed4bf031a03e",
+      "sha256": "a935b7d9dbc25f5c424811b99a8e0485931086f95d7a33b3f1f666f54c1382c9",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Bill Sienkiewicz.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Bill Ward.jpg",
+      "bytes": 260011,
+      "git_blob": "f31bbe17bca2efc2271d5fcb827b9874d0961677",
+      "sha256": "0e5b0edae268123a7532d841ad1831eb28b9eba2d8284a025c10bcc8291ea52c",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Bill Ward.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Bo Bartlett.jpg",
+      "bytes": 176534,
+      "git_blob": "406a371ae5e411a8c7ae3f542073ae435ee49498",
+      "sha256": "12fab84bb895c23011294387275697e65be2ef43e11d8f40c43fabf78a969c4d",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Bo Bartlett.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Bob Byerley.jpg",
+      "bytes": 283591,
+      "git_blob": "35b52b3fe72e877277516c23d56d52836012f6e2",
+      "sha256": "1b1a89424a4b4eeb35176a0d45a5a41cd4cc62877f2dfccd3c474f3b152a6fa0",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Bob Byerley.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Bob Eggleton.jpg",
+      "bytes": 278922,
+      "git_blob": "7031c7f308457e9265eb5804ab4e99282eb9cb6f",
+      "sha256": "3f0ec149f0e60fe26a9b9af5294bad8ec895dabdffafbe692a74007c7fbfb70e",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Bob Eggleton.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Bob Haberfield.jpg",
+      "bytes": 315625,
+      "git_blob": "c9d9410408c55dab69c305d4810820f5b2995622",
+      "sha256": "097beeee986594e141446b67b69c6c2a70a5b643e3a49925ddc1a5eb60c8f6ed",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Bob Haberfield.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Bob Peak.jpg",
+      "bytes": 269340,
+      "git_blob": "39fc923d3639eee23203dbb7d643759d52f29be2",
+      "sha256": "02b0c6d9751ef697227fd0d9fa2b76e34f2e9e9b786bcfff1692e10fbdb77187",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Bob Peak.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Boris Vallejo.jpg",
+      "bytes": 235821,
+      "git_blob": "fa977197277ec98947310c9463812f80da1d26db",
+      "sha256": "ddaf7f522c84edd8b02507cea6731c98b6e3ae68df86ec10ea72fd1a1c58caab",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Boris Vallejo.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Brandon Woelfel.jpg",
+      "bytes": 206128,
+      "git_blob": "bb90a27a0f6b94e391f0c6f482c87f6f3ac67c11",
+      "sha256": "ecc1a757decee05711edbebff30e677305f3e997aae185b15766a42094ac5cd9",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Brandon Woelfel.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Brian Bolland.jpg",
+      "bytes": 374387,
+      "git_blob": "078d7237a1ea9e40247a11fa250f0278901eced0",
+      "sha256": "1559babe177faee9dac2cbabfe1338d698f373d31088b298218dac8afaf67d58",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Brian Bolland.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Brian Froud.jpg",
+      "bytes": 258273,
+      "git_blob": "a51c655fd95c6e3bf992adf6b3bc4fe60a069e11",
+      "sha256": "966b76694ca377bc1171073db65da15b9101658929d56318b364d3e1602f131e",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Brian Froud.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Bruce Pennington.jpg",
+      "bytes": 251655,
+      "git_blob": "e8c05ad266b4063e24502db7a84e2f2b7c8d239e",
+      "sha256": "15b8c77c2f719f01b012c292166ffa7d49c93f80fc010b142b2d916e893bb397",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Bruce Pennington.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Bryan Hitch.jpg",
+      "bytes": 305033,
+      "git_blob": "61d0aa79ebc17da47e4d93fd814ec19383220570",
+      "sha256": "69215f2169be41434019a18e2b0e90f5d7f24c2d48b8a2681bbe15a440ccdafd",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Bryan Hitch.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Butcher Billy.jpg",
+      "bytes": 277007,
+      "git_blob": "20ff36f2b67f6b629f922f5300bb4323a50a1181",
+      "sha256": "e7653f078f9e178013e3b65c09a933347f27ebff3ccfc89c08275924b70f64e5",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Butcher Billy.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Camille Walala.jpg",
+      "bytes": 262513,
+      "git_blob": "ecef23c297ff9708803f9a5afdfee6e71e4bb37b",
+      "sha256": "174f5fcffac925f64761b605e918512fade902a779c647810910eaabdb016ddb",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Camille Walala.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Carel Willink.jpg",
+      "bytes": 244326,
+      "git_blob": "fb074190a9ca4ab63e9700d6a1be7ef7c44f6712",
+      "sha256": "0fdebccd37dd25cdbf1129e590ee371958c1d4428772e36f6fa24339277cd834",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Carel Willink.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Carmine Infantino.jpg",
+      "bytes": 326937,
+      "git_blob": "7647b2e6cb5c1f0b2e6973d43bed2d84bee60087",
+      "sha256": "0108c2800854c8340de79b1d377b7d80bd23be5c2b898e9907414890b7dafc2b",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Carmine Infantino.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Carrie Ann Baade.jpg",
+      "bytes": 262830,
+      "git_blob": "6a8c67f427cb88af5eb26414e745b767e5e46e7c",
+      "sha256": "0fffd598b07e32ba250561873b46932aba1c3114584e3231b68754b4a7437c78",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Carrie Ann Baade.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Casey Baugh.jpg",
+      "bytes": 254278,
+      "git_blob": "beab2500e79491681099e07d7040df817eb36e37",
+      "sha256": "e867216ec2c7fec271a7a91114e8fd1b25e86619c3f59a2bf2c978212fea5353",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Casey Baugh.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Casey Weldon.jpg",
+      "bytes": 266798,
+      "git_blob": "4196b5dfdbcf330ccdaea3a3ffbaf79e145e2e27",
+      "sha256": "df03da24465e3169c2681ce1c3c6a6085812da557a96b5873bbc3559a07f4bbb",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Casey Weldon.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Cedric Peyravernay.jpg",
+      "bytes": 214345,
+      "git_blob": "386a60fd74e78a4bbe3629889387733404225685",
+      "sha256": "0ff408e6dafeb800c6f19c84b2be6ae92698bc8b0050cd5464c0f8296da3e7f9",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Cedric Peyravernay.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Charles Adams.jpg",
+      "bytes": 238107,
+      "git_blob": "4efde847ca7d5b79c87054a5d2d937b74b05de69",
+      "sha256": "43ba67dd30c739ac1e34b061b8cf9705f9a13beffa31f88e90cfc09705c904bd",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Charles Adams.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Charlie Bowater.jpg",
+      "bytes": 167907,
+      "git_blob": "dd5a1fdedd8d5449261dff099338ccf515956fb2",
+      "sha256": "bdb9099dcc39090e0ae0d3bb54e2d40bdf9713ee7fdf220b295717b80dcfd71f",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Charlie Bowater.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Chesley Bonestell.jpg",
+      "bytes": 252343,
+      "git_blob": "e72046ecf237de73ef051ca31f57a6915a188e29",
+      "sha256": "3c57df7cec7ae04e93a39feb267573bef32224ea4c0cbe32c6488570fa0e94cb",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Chesley Bonestell.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Chris Foss.jpg",
+      "bytes": 247398,
+      "git_blob": "70f1f1b0b1a35ad8de039aa5f39deeb43ecfddb5",
+      "sha256": "83cdb89a2ef1c30764ce67ca1ffb9cd244dfe77a891036c9f15e8f147c53a89f",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Chris Foss.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Christopher Balaskas.jpg",
+      "bytes": 193968,
+      "git_blob": "af51f5cada2d6d15eea232499413ac6bbacc6a3a",
+      "sha256": "f3003c18e17ab6c105b49e45309777518d2548ade71f8f67c42ab04d27e9e17f",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Christopher Balaskas.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Claude Monet.jpg",
+      "bytes": 320565,
+      "git_blob": "dec7906e29d55e870b06190b5914f44f5af01d25",
+      "sha256": "95e2f9dae4ac71169cad56e410f8072f1c4298bc5ea70ce564bb3938cd5e2027",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Claude Monet.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Clive Barker.jpg",
+      "bytes": 454086,
+      "git_blob": "4d90eb3325e9c1e29085edb053baa4a02a6331d6",
+      "sha256": "ab46587c62b7c21fc1a49052ca338cdf5f192660cf1b8e066436e19602ba02de",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Clive Barker.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Coles Phillips.jpg",
+      "bytes": 283907,
+      "git_blob": "ccb0effb20729fd2473527ce70d10f5758f6812c",
+      "sha256": "33b88c4348bb3f3697fa7716f2442509b3b2f9a81c58da61c990c4c1a8bd852b",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Coles Phillips.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Conrad Roset.jpg",
+      "bytes": 237681,
+      "git_blob": "ea85cc7c79a19ef1e3211bcbdfceb13c2e300df6",
+      "sha256": "aa4b5d80d50c077cc7e9de6adec4b9d8c9fb8edf421de52f4051c98f1c535b00",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Conrad Roset.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Curt Swan.jpg",
+      "bytes": 291389,
+      "git_blob": "b87135537e0b3b1c6d8e23383d2fdf60fde3bc02",
+      "sha256": "eaf739e87c9f82f7512b8f4c2bdaa25e138fa6e0130c4d957e275b2b123546ed",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Curt Swan.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Dan Mumford.jpg",
+      "bytes": 355617,
+      "git_blob": "a7c53a7a186ce02b5eb4599d3504101ae119694b",
+      "sha256": "504f4d5ca63556a1dda611d85fbd5159924d4a26d0453de2813e66422f629e6f",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Dan Mumford.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Diego Rivera.jpg",
+      "bytes": 300996,
+      "git_blob": "72e1fdd7d6c45cb3eb9cfae6f8389d26f55074c8",
+      "sha256": "a246622b1aeae7132ab9449228bfec85db8561a851ffd4046df21ee5cdd0e335",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Diego Rivera.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Don Bergland.jpg",
+      "bytes": 219801,
+      "git_blob": "0e271e584a5d94d9e9a4f109973a3ab9c9cbc634",
+      "sha256": "ea16cd477eda05288657a755699043fe964a80276409e7ffaa9518908342f344",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Don Bergland.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Donato Giancola.jpg",
+      "bytes": 245542,
+      "git_blob": "9041be7422b9169314ea572e580ba1b5fc7dd862",
+      "sha256": "2731d39ceb4004d6647dc73d648e3a7a3f47709470330787088bbceabb33af71",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Donato Giancola.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Dorina Costras.jpg",
+      "bytes": 287682,
+      "git_blob": "af6ab7383ea7f85b80358dfe01b1ecd7c9329b74",
+      "sha256": "c5d18780dce1657f21151cec5e92c76eeb1cd758827900d3a49579ac06a5c499",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Dorina Costras.jpg"
+    },
+    {
+      "path": "StylePile/Artists/E.H. Shepard.jpg",
+      "bytes": 316197,
+      "git_blob": "3c8fe37ea671f98dd9f696ca590a803d76324618",
+      "sha256": "c711ffdc43d68aa94415d1482de7b78576942080574182afc06cc42e5fe42d29",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/E.H. Shepard.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Earl Norem.jpg",
+      "bytes": 275305,
+      "git_blob": "ebbd701f0c4c9e0de53c5df648398939ab679be3",
+      "sha256": "a0505dec6207d8886a2d3e05a3db9c2ff20da14b72effb0083a5d0b3104c80f4",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Earl Norem.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Earle Bergey.jpg",
+      "bytes": 232302,
+      "git_blob": "a83cbd1b9652b642c1d261d7593b76ad06d182c9",
+      "sha256": "768033e169c15fd7e74eacc53004ed796832d89d98838aa3b7ea1a3eab0104a9",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Earle Bergey.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Earnst Haeckel.jpg",
+      "bytes": 258812,
+      "git_blob": "14ae4374649b731e4cc4d97fc1d84c7b97bd9022",
+      "sha256": "132251f604a6e50364fb01c4fd4d0eebaea98cef8ea153bcd281862e557481fd",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Earnst Haeckel.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Ed Emshwiller.jpg",
+      "bytes": 322820,
+      "git_blob": "7bfb808ce716a15235ba53ed5cd381723943d4ff",
+      "sha256": "3c7cc4f5bf8710fc77287b88d2ef5bc98d8bca2189a2613c26e8d0d8b90303c0",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Ed Emshwiller.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Ed Mell.jpg",
+      "bytes": 197740,
+      "git_blob": "ade131d9aff03457a0f3e9163b4aa2811e6d3105",
+      "sha256": "1d1ed3bea0b0464b3412342106c1de6f89fd32bc075612669c32814932c9976c",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Ed Mell.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Edith Head.jpg",
+      "bytes": 225252,
+      "git_blob": "99500df5360747a027490c2f575e06c7bc538f50",
+      "sha256": "eb14e035729941f2cbf82231781395fda9adbcb5c83026b303dfae68193dc97c",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Edith Head.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Edmund Dulac.jpg",
+      "bytes": 364908,
+      "git_blob": "8a26e2e3dba8704cc40f7a78416d8ba4a8cbeafd",
+      "sha256": "d35511f405edb048f0fb9eb1e53c4b30143a5d91f3fd340af76204d175a135a3",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Edmund Dulac.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Edvard Munch.jpg",
+      "bytes": 342142,
+      "git_blob": "badc2f5aff9c48e05d6461b38526bca7b2ef67dd",
+      "sha256": "91035055ced8aa5308fcab61819c2f7cec210e9967d23cb591faa227e30dc93d",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Edvard Munch.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Ellen Jewett.jpg",
+      "bytes": 228902,
+      "git_blob": "723b721f25fa996ad36ebf858b4306fd82a0dae2",
+      "sha256": "72c1c7becc4dd8504d1445cb4e31b4687bec1f916ef8d462feef4db603f87d58",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Ellen Jewett.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Emily Balivet.jpg",
+      "bytes": 333617,
+      "git_blob": "152f0802e9d14390a1cd6aff2683ad213ea2250e",
+      "sha256": "017c50b911e5c109663c9906d0d64b4f50d72a926970e981e3207abdffa38328",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Emily Balivet.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Enki Bilal.jpg",
+      "bytes": 236150,
+      "git_blob": "b72c699c558032292083b788a4d6001fa1bf8e77",
+      "sha256": "0f49cddbb80d801745f41e8e2cbe3b1e72398f041ebf235b3dc462aab5e46aa8",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Enki Bilal.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Eric Kennington.jpg",
+      "bytes": 278041,
+      "git_blob": "00272f0768c1da7eb49b64b17034c2dc426cf187",
+      "sha256": "f3b74011937d9ab82605cf6788e7ed198970b5c4599983c79fcac166220dcdc0",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Eric Kennington.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Erin Hanson.jpg",
+      "bytes": 371967,
+      "git_blob": "36497ebc7fdd5960f16cc99884324b19e16c5d6c",
+      "sha256": "08332a0cfa2e4857050b587889648b884018e29142c1dc9c5674b8f2ce9052fd",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Erin Hanson.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Ernie Barnes.jpg",
+      "bytes": 255830,
+      "git_blob": "561f3da0b00b99b2a51ab12e8e31f5896d548557",
+      "sha256": "bef4a03f84fef2b30a49f229fd85c23ce49b947982c1c41219d033bb6b9da244",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Ernie Barnes.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Esao Andrews.jpg",
+      "bytes": 237350,
+      "git_blob": "b82bbfb9fc1e72599ceebffd1be76dea0bbed8c0",
+      "sha256": "4ee57dad9f690819bfa3326aa43dda7f286f9a7ea91d19b425ae7a041c33a285",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Esao Andrews.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Esteban Maroto.jpg",
+      "bytes": 326469,
+      "git_blob": "f6d6d65552386a96ea8058eba118dd9da73eba9c",
+      "sha256": "a350ce0085267bbf4756b0991d0ca284a992ebbae554dfeddbc16b806de56ff1",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Esteban Maroto.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Ethan Van Sciver.jpg",
+      "bytes": 333318,
+      "git_blob": "1d9e17b5a0c1ecec0b2e758e2e030e3f802e6bbd",
+      "sha256": "44de4b21711ceac8e6ab889ad2e2d24173e5c98b64c5aadec4b46772d904ba35",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Ethan Van Sciver.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Eve Ventrue.jpg",
+      "bytes": 251700,
+      "git_blob": "a9335fd0d39880464306d7b40f1abc40d852b7c0",
+      "sha256": "a928181b72fd2dc92b763e44fb7977cbe2a043b20e37688a038d6fa50cf88564",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Eve Ventrue.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Eyvind Earle.jpg",
+      "bytes": 211069,
+      "git_blob": "919704ccf709ce9c36a83a7bf9f35778f7b86996",
+      "sha256": "3b2eff779f7f35b87697c2cc2270e24d1974aac8a78edb9fd8b096d1b80ab7c1",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Eyvind Earle.jpg"
+    },
+    {
+      "path": "StylePile/Artists/F. Scott Hess.jpg",
+      "bytes": 192231,
+      "git_blob": "be71ed5c7478030733b0f6c4b742d1a222b39618",
+      "sha256": "0c1ba2cb875e1534bcab38575274cf39e5b4ba796b29f9ec28af21662fe73102",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/F. Scott Hess.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Fernand Khnopff.jpg",
+      "bytes": 252463,
+      "git_blob": "aca3453005f5aed7f8a022df1e0638195b82938b",
+      "sha256": "10f248952a51aaecef7bab6bcd8e784c6edad5aee712b34dc7d6069987fa5e0c",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Fernand Khnopff.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Filippino Lippi.jpg",
+      "bytes": 277040,
+      "git_blob": "bd2be524524e37b26fa9661ab4afb4207463b1a4",
+      "sha256": "5133ffedc4b4f755d8d671ad866a2d762ca2d528c973667b218774415ee370fa",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Filippino Lippi.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Frank Bowling.jpg",
+      "bytes": 278997,
+      "git_blob": "40076e5b1cb9b015c2d94d0101402bd2dc2c9c50",
+      "sha256": "626092a4391691c117bbe7e8866175569546645c8d9059e0963d0273b38e03b2",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Frank Bowling.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Frank Cadogan Cowper.jpg",
+      "bytes": 259927,
+      "git_blob": "31f86f014e8256b1f243d226df083bbeedcdd4d1",
+      "sha256": "dbabb194019a3631362fb1333f7ecacaa5e3986f04c8559775830aab49b4a11f",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Frank Cadogan Cowper.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Frank Frazetta.jpg",
+      "bytes": 262889,
+      "git_blob": "f85166870b91bd889f420efb4db474646b450a2f",
+      "sha256": "3a6308ae031667e222ca5bb3e8638dbb3a01e348d83900533dffaf043600f4fa",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Frank Frazetta.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Frank Tenney Johnson.jpg",
+      "bytes": 261250,
+      "git_blob": "1bae54c8f1710a1aa6be6436523167f911bc7e3b",
+      "sha256": "bfdea39d36e94f8df09062b5b7e00c3e571cdee82c6fe62b304357b7b97e6539",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Frank Tenney Johnson.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Frank Xavier.jpg",
+      "bytes": 239191,
+      "git_blob": "48bb63e27c9e7bfd4525e1a981fb7ce80a3a26cc",
+      "sha256": "ca4211c1a2bb1a9df6230e8338a45d54e0bbee4e5c1824bd9e3ab3ed75ffaf6c",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Frank Xavier.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Franklin Booth.jpg",
+      "bytes": 323283,
+      "git_blob": "7449aadacc8a4e912b502dd2fb719d2a9f59f5c7",
+      "sha256": "de1fe04e6a1c36cb0c833b604deef02115d7bcc44f48b7947e17dc34d2a07bf3",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Franklin Booth.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Fred Calleri.jpg",
+      "bytes": 219520,
+      "git_blob": "6ed25be5e675d05f028a38d87e08baa13d73226d",
+      "sha256": "0415e4902c2136c05eb6e89c71ae17031a2f8bc3dce1fa0961ee4633cc39c874",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Fred Calleri.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Fujishima Takeji.jpg",
+      "bytes": 338568,
+      "git_blob": "61b1d7807ca581839177a7880056019dff5ba04e",
+      "sha256": "469cf37748244595af78d4a201df64ece54b8e0de512dd9ef4c7eaea0a0454c5",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Fujishima Takeji.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Gabriel Von Max.jpg",
+      "bytes": 231507,
+      "git_blob": "d116fc501473cff42a852672bcce1465bd892021",
+      "sha256": "92dbafa19fa503df86b1b18e4a38dfca42ce79d2c2bde7cb4009ec11590eaf07",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Gabriel Von Max.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Gediminas Pranckevicius.jpg",
+      "bytes": 224787,
+      "git_blob": "9540edb56ce93514e3ab631895d2470dce32cca8",
+      "sha256": "5006ea2a1b2d31416aaf27fc97e112348423b237e68aa9b0931adbecef4119ea",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Gediminas Pranckevicius.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Gene Colan.jpg",
+      "bytes": 249150,
+      "git_blob": "182c99fcf0cc4f649b9503448f6d31c433c73533",
+      "sha256": "8fad1a3495da1e02b462702d624f7289552cb6d0799088fa77cdb51a6d487024",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Gene Colan.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Geof Darrow.jpg",
+      "bytes": 364477,
+      "git_blob": "02365ff7a62ce7a3f3e58cce42c3cdb369a1a3b5",
+      "sha256": "74354191a16c6ca6ed42e702dbf40c485de02a45f977bb4f66dfbc11860f46ad",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Geof Darrow.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Georgia O’Keeffe.jpg",
+      "bytes": 267297,
+      "git_blob": "3a8b738ab8d5f0d95afde00f572f40dca9e4dd84",
+      "sha256": "ccc853bc594e383ab43cd246b3f09bf5fb0290ed05132a4ed4af3f67fd482f2c",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Georgia O’Keeffe.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Georgy Kurasov.jpg",
+      "bytes": 206091,
+      "git_blob": "6ba6ccb89db97b1d359c3301a328b15b2d4a8149",
+      "sha256": "d6ae2cf083c96c8876ec746838b6403138d0ede76a85a7db7633bcf7ab46707d",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Georgy Kurasov.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Gerald Brom.jpg",
+      "bytes": 222437,
+      "git_blob": "b7d3b2b433b1a6e06b724324b963bf50a5f9a8be",
+      "sha256": "dbe3cbf5f0f89eafc5b2965ec2b6a3d80d80da5c7cc5784d25837f5ff6e48d71",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Gerald Brom.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Gertrude Abercrombie.jpg",
+      "bytes": 249709,
+      "git_blob": "972666c0cb67c2285aedce7ddce2b46ebe571c9f",
+      "sha256": "77be98884ce9145bceb8ad9ca8976186059213181c10994abca0a8527e3cb1d6",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Gertrude Abercrombie.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Gil Elvgren.jpg",
+      "bytes": 231627,
+      "git_blob": "04636128a95b533f03aa7ad81405ac9a6bc7f7d7",
+      "sha256": "ce67aadff8a671c1fa87e76db94d0643e4ae21510ab13e912e188a6e34716301",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Gil Elvgren.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Gil Kane.jpg",
+      "bytes": 378853,
+      "git_blob": "73d9c504709117b72a55d8db6bb129de24822d05",
+      "sha256": "4d41caac060cd0d0b1b61d2c30f8162b9fb09d375b7fbafebac3309fedf8f9e4",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Gil Kane.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Greg Manchess.jpg",
+      "bytes": 230942,
+      "git_blob": "40d7f15a5d892c5ce893fcd4f4e436ba1584b14c",
+      "sha256": "4580a5d5bfed66d369ba554d14b733928741815ad8ec4cb2c6929a4c1edaa883",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Greg Manchess.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Greg Rutkowski.jpg",
+      "bytes": 200877,
+      "git_blob": "515c3fb6509ea99cea3a6e20895aa9f7a22e6c62",
+      "sha256": "0301991ce931cfd096d2e7aca31e790ecd73e72345a5a6f5e930b8702cd119e6",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Greg Rutkowski.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Gustaf Tenggren.jpg",
+      "bytes": 301739,
+      "git_blob": "14db6f19633e17f8226e1ad0da9b672e32207691",
+      "sha256": "1b1391b5f372db55a5ab9f7dc9e7a9df5aedfbbe6d1c422eb299f7c13e642fbf",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Gustaf Tenggren.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Gustav Klimt.jpg",
+      "bytes": 424822,
+      "git_blob": "f6f590fafbf9858d0e5da6d42f8de30b1232aa67",
+      "sha256": "c6f1cd34a9cfb80f2335bb979d5d7b2fa08c3f1723a2521c645cb5c906fb6b0c",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Gustav Klimt.jpg"
+    },
+    {
+      "path": "StylePile/Artists/H.P. Lovecraft.jpg",
+      "bytes": 303778,
+      "git_blob": "1d61dfe67d557ab526b79c71479feaae5b36014b",
+      "sha256": "58ff6a20cf4f7f97b0ecd4eca0e65e7da4b3dc99639123254949a72d19a64bd5",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/H.P. Lovecraft.jpg"
+    },
+    {
+      "path": "StylePile/Artists/H.R. Giger.jpg",
+      "bytes": 298877,
+      "git_blob": "868bf326ed18d398fddcb47e7473409506247c33",
+      "sha256": "5f7c2ecbfdaeb25e47155830d978c96eb29960238bbebe07befe06328d3a4432",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/H.R. Giger.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Hannah Yata.jpg",
+      "bytes": 295601,
+      "git_blob": "bd4674a45fbc692d6dfbfb45624a96b184ac5f9b",
+      "sha256": "09ea09e00920f8b4b681c1d5db13fd0f47555c1a544afefe93ecc809d7f128af",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Hannah Yata.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Harrison Fisher.jpg",
+      "bytes": 263122,
+      "git_blob": "787bf68b88a9fdde600951bb4271c1b990bacbc3",
+      "sha256": "b8fc5db0fd9928264aea70883e6c7e89865df7256c539b8d7b51fd5800bf2dee",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Harrison Fisher.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Harry Clarke.jpg",
+      "bytes": 431437,
+      "git_blob": "b11d8657e9ad23c6bcac31dff39784f2c0b8aa4c",
+      "sha256": "0cf312be973e3a200fb71381333fb035b17f8e8684e6dabbf88187e0bd5cebce",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Harry Clarke.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Henri Matisse.jpg",
+      "bytes": 288698,
+      "git_blob": "031f2a6302598f6e119392a85d258143a91bf7f6",
+      "sha256": "1234eb0226dfbb0d27049421a92b7c23ef00bdb61f6d0d725d33bc4c70b0b99f",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Henri Matisse.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Henry Clive.jpg",
+      "bytes": 273469,
+      "git_blob": "194949f32526fa081a425b6dc95d4cab389b7280",
+      "sha256": "0371b74cf65fb78a3fad49fa13f82dcd23ad7d32c5f0b2cb4caa013abcdbb54a",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Henry Clive.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Herbert James Gunn.jpg",
+      "bytes": 231136,
+      "git_blob": "cc88d4e4342c6ceeaed530af5c53e74527ff2110",
+      "sha256": "3efb7dc18bcd6526a6c0ee558d099dfdeda43796b4436de5a09d70b54c81117a",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Herbert James Gunn.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Hikari Shimoda.jpg",
+      "bytes": 299613,
+      "git_blob": "da3ac96225842249c51713ea61bbfee50acb35ff",
+      "sha256": "5fcf6e36c082103f5a924be94dc733fea8c0601ae2e14eb5170d9ea88f5b76b9",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Hikari Shimoda.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Hiroshi Nagai.jpg",
+      "bytes": 276687,
+      "git_blob": "d501a4bc746ca17f5d45d757b9cbbbe52d6bdcd4",
+      "sha256": "3b555f5b6628cfa0da4ad8a6a21747eadb0f21498d7509133273b388ca5eb3c0",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Hiroshi Nagai.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Hiroshi Yoshida.jpg",
+      "bytes": 346461,
+      "git_blob": "3465cdd2977a0decc268ead2a37fadcc15524c6d",
+      "sha256": "3d546505d912f436f237e9ac0cda590384c0d6613e61ee2d44c85295dc4740e8",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Hiroshi Yoshida.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Hsiao-Ron Cheng.jpg",
+      "bytes": 167241,
+      "git_blob": "4e9f0a9172df5c68ea0b1a050f1b7ef992da9db0",
+      "sha256": "c40fab7795a70f221f1ca3905dad03d09b937143af3a2f5300f16f112de831b7",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Hsiao-Ron Cheng.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Huang Guangjian.jpg",
+      "bytes": 266299,
+      "git_blob": "6efcb1a587b6ddd0b25e648f7d9af0734e11a9bc",
+      "sha256": "95e53c6ddc65a56dfada2a7ec1618c9c1fe24fea596ad23e3afc6b418c603cbc",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Huang Guangjian.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Ian Kennedy.jpg",
+      "bytes": 255459,
+      "git_blob": "f8f079c1e00a753b32e8b69d52d7a2f0975bccab",
+      "sha256": "42427613aa6489d56e0fe12dedd15b492e1fbc97a547fc7b8bbc693ba897693f",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Ian Kennedy.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Igor Morski.jpg",
+      "bytes": 240991,
+      "git_blob": "8a21482471c5dddb018d2c08a95f5d6a2e8c7b50",
+      "sha256": "aa5753c9bd8a4a6c01f4841b1fd1d101029673dd7bd9cfac5da17a4e019b618d",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Igor Morski.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Igor Zenin.jpg",
+      "bytes": 265177,
+      "git_blob": "5975b36ac123feb1e85493b9154c986cceac277e",
+      "sha256": "f6548d704797818e4887ad0b80c7f686e1e239b4d9083fdfd8e4c5ff05ccbf47",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Igor Zenin.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Ilya Kuvshinov.jpg",
+      "bytes": 199801,
+      "git_blob": "5765c7fb0464f188fe412e63de04117a94692248",
+      "sha256": "d0b49a7912e5768d926680285cbed2256baf2adfb58a1388a0968fbb093c49cd",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Ilya Kuvshinov.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Ilya Repin.jpg",
+      "bytes": 285890,
+      "git_blob": "ea98b24c618a4e19c17d98bed61dd47ecc92a417",
+      "sha256": "2a822944d4df948d5963f3b8e412474b2dd895aad84c1fa5c48aa512fc5c42f0",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Ilya Repin.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Ivan Aivazovsky.jpg",
+      "bytes": 205402,
+      "git_blob": "fefb352b67f3a6f0fcb17d18306246dc0a6354d7",
+      "sha256": "d70c7345a0edccfb7e10a32eb2f95bb5e193810cb323e844e5afd694c399ae7a",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Ivan Aivazovsky.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Ivan Bilibin.jpg",
+      "bytes": 328958,
+      "git_blob": "4e72dee2a41f4c9f47fe8af07032aeb17f081d4d",
+      "sha256": "73ba7486652c1249859f7b22f5c002c99e32a1c3be26c66d84fed43745cba7f1",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Ivan Bilibin.jpg"
+    },
+    {
+      "path": "StylePile/Artists/J.C. Leyendecker.jpg",
+      "bytes": 241394,
+      "git_blob": "7e5674d3e269af896dc6efccc289d2219015da11",
+      "sha256": "71836e6540898ba159154674a4efb730a355284347709f1d28c6be9348c57ce6",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/J.C. Leyendecker.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Jacek Yerka.jpg",
+      "bytes": 386693,
+      "git_blob": "12be1657fda29d8fb9a99851364b219d60281aa4",
+      "sha256": "e3d81a76010dd14893679b1ca6fa5cb075e7cc0d3066b6999bd5fc157d42d660",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Jacek Yerka.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Jack Kirby.jpg",
+      "bytes": 291868,
+      "git_blob": "b359e3da5e114b43b24350d0efbdbec2d31f9a5b",
+      "sha256": "4434b4d830a58ed2ac72005ef8a2225f9eb28acf141ba3ed29bbe8617ef98251",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Jack Kirby.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Jackson Pollock.jpg",
+      "bytes": 529878,
+      "git_blob": "8d43d55a7f4be861717b8821e8a2d75118137132",
+      "sha256": "972738277a139812cff19c0613ce219587d8dd26117e6eed11a9f47270e13c92",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Jackson Pollock.jpg"
+    },
+    {
+      "path": "StylePile/Artists/James C. Christensen.jpg",
+      "bytes": 228104,
+      "git_blob": "5f7cfdb3fc68ae25040a4dfed7566a744ac8fa18",
+      "sha256": "379c1222a22c0408bad88e2ab237b57b8f7d9b523bb877dfcb3f2166daae318b",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/James C. Christensen.jpg"
+    },
+    {
+      "path": "StylePile/Artists/James Gilleard.jpg",
+      "bytes": 190370,
+      "git_blob": "757b246ac6d707cda211b1048d5fdf0cb3d4b0c5",
+      "sha256": "1356201430da7b5f00f922e8d7ad5e492c0c72b9163948c70c659488f8314ff6",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/James Gilleard.jpg"
+    },
+    {
+      "path": "StylePile/Artists/James Gurney.jpg",
+      "bytes": 259971,
+      "git_blob": "beafc7b2ff8676801b1cda54c9791ffcc5044d01",
+      "sha256": "1930ed88f10dc6c48fe766ec390f5f0c83867a3807c992dbc15518e44d9dcaa5",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/James Gurney.jpg"
+    },
+    {
+      "path": "StylePile/Artists/James Jean.jpg",
+      "bytes": 231865,
+      "git_blob": "33a804134c42a58e01cc8bf657c3b383cb0a07fc",
+      "sha256": "169140c5b1a22a566d9ad5df10afb123ed0889ef1fc26e9eebbce3086081250c",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/James Jean.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Jan Hendrik Weissenbruch.jpg",
+      "bytes": 309411,
+      "git_blob": "8f5dcee64e4bf4909b7e01cf8e289c1175f89c39",
+      "sha256": "75293599746ff969577841be91426018508c5643aca6be6d46fce32dce1a593f",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Jan Hendrik Weissenbruch.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Jan Urschel.jpg",
+      "bytes": 242568,
+      "git_blob": "63dea908e346eaafe404d37b875571e6e79e5786",
+      "sha256": "8e254c0aac4baa1ec27f68d90411f995a9b9d06af0fbaacfe46c655315737a5c",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Jan Urschel.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Jasmine Becket-Griffith.jpg",
+      "bytes": 273132,
+      "git_blob": "edfe6a0fb2864073a76806277662cc3601b2f203",
+      "sha256": "f208da3d8cea36200d5603e89894e1aa93cdce431279239397ee995bb2b34a95",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Jasmine Becket-Griffith.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Jason Edmiston.jpg",
+      "bytes": 253319,
+      "git_blob": "680dcce22c75b0eb43b4ae02c6641fc3321e0979",
+      "sha256": "95d4e6c86c5d367c4b6c07e5420fd5394a7f9ca684a823c9b1149289723059ca",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Jason Edmiston.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Jay Anacleto.jpg",
+      "bytes": 249967,
+      "git_blob": "bbe23894ff11a6ce8fd46b0784571ca66a3fe204",
+      "sha256": "790f60bbf5618feb2fff973bcc1899f4ec3fb6c5567a0274b80b70eb7f8eaa7a",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Jay Anacleto.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Jean Giraud.jpg",
+      "bytes": 255998,
+      "git_blob": "0a3f20fcaaee16358e279cbb401157e47731f806",
+      "sha256": "8dd8a30077405910e231ed216dcfba3ce7abb9fd7aca7423b54503f765734378",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Jean Giraud.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Jeannette Guichard-Bunel.jpg",
+      "bytes": 292629,
+      "git_blob": "4995473b101aa50885a6953ab97cf778a557679c",
+      "sha256": "07db22b42439f1fe35f686c291cd24ec26c164a729c847b51042319a4c61bf20",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Jeannette Guichard-Bunel.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Jeffrey Smith.jpg",
+      "bytes": 280951,
+      "git_blob": "2acd4bd821ddaa28f781d2a9a0b6747e78783bea",
+      "sha256": "464a2b695e6a4eb5d91488699f282d98725cb18798df7d101f5c12ccfd3eee1f",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Jeffrey Smith.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Jeremiah Ketner.jpg",
+      "bytes": 283237,
+      "git_blob": "6d76c47ce783ef8f79c9c2c0619c852a31ef3923",
+      "sha256": "9c55d54295787a93e19f6e858c70fab916f51668874c36adc1169484def98588",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Jeremiah Ketner.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Jeremy Lipking.jpg",
+      "bytes": 214493,
+      "git_blob": "5ba4b5682e2aa121d1b5232592d20898cfd2e5b7",
+      "sha256": "9d0a61bb72340359bde49e99bf18e717c145c0254b8f2d38665e63587db95e59",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Jeremy Lipking.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Jian Chong Min.jpg",
+      "bytes": 226449,
+      "git_blob": "9ac5982e3423b8983a6b424795b593415c57db79",
+      "sha256": "f18726847941a491bd2915bc061eb6c7ddead7e33117a9ee8956f8e186842ddc",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Jian Chong Min.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Jim Burns.jpg",
+      "bytes": 218755,
+      "git_blob": "6691f0ef35493ba742c3bd07947e787d0d8f1472",
+      "sha256": "5cb5707e3c7016fdb8ca2f17c3d0a93720a44aa7e33461aa96122759f5e59e89",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Jim Burns.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Jim Holland.jpg",
+      "bytes": 197940,
+      "git_blob": "71bb997b8df913cbfc5ff3a44548d3e8cb332563",
+      "sha256": "90ed50e46a70a3433a40b00175d2cbaa35e6c647d58852c1a332d9f545a4100c",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Jim Holland.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Joao Ruas.jpg",
+      "bytes": 213061,
+      "git_blob": "a5bbf0e48902e1599245e27af46e85ca4aac2af8",
+      "sha256": "10a2b3b46576df7d17c94866859a6843a119d46223bc935f95ff3b3c1a3b2810",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Joao Ruas.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Joe Jusko.jpg",
+      "bytes": 207942,
+      "git_blob": "218de43f73cc87dda4261d268aada3fa2adf5c69",
+      "sha256": "fa2031a565ecca54292f0105a9793aab63b53c4e16aa0dce7e27dbbbb0de6806",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Joe Jusko.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Joe Kubert.jpg",
+      "bytes": 347102,
+      "git_blob": "83150aded62dff631b615683166376601a75fba6",
+      "sha256": "9698901f980c6bdd97908ac2c0e8961f728aa049dbd9658a99a23c1fa9b7fd41",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Joe Kubert.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Johan Heinrich Fussli.jpg",
+      "bytes": 230486,
+      "git_blob": "2d249038f310f60a32e20282d254851f23a47a90",
+      "sha256": "cab8dd27765f40782e8a77bf5857829efa8a365720bc402dd95f2a89d36369af",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Johan Heinrich Fussli.jpg"
+    },
+    {
+      "path": "StylePile/Artists/John Howe.jpg",
+      "bytes": 249625,
+      "git_blob": "fb1a605bec8b396196529743a40247b541293c58",
+      "sha256": "17200671e37359bfea0af32b9dafcd3b76379214e1e5ed7ad00152f4b5be1d95",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/John Howe.jpg"
+    },
+    {
+      "path": "StylePile/Artists/John Lavery.jpg",
+      "bytes": 290935,
+      "git_blob": "f2cd7a1054b81e5b3668c71f3a9baa71c9e17410",
+      "sha256": "b4579e6fa2b48ef08667f873befd12389fb3ff3fd4b523b9e07cac84c403df9d",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/John Lavery.jpg"
+    },
+    {
+      "path": "StylePile/Artists/John Philip Falter.jpg",
+      "bytes": 259452,
+      "git_blob": "947bcf9ba448ca180ef78b262eeacdbb98d84ff1",
+      "sha256": "92151a02e65c15d043aa9b4c894b55946d80b283ec1da3dc252bb82101bf75fd",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/John Philip Falter.jpg"
+    },
+    {
+      "path": "StylePile/Artists/John Romita Jr.jpg",
+      "bytes": 304930,
+      "git_blob": "6ddfe0419c9ef46b2947607303aff7701ce4addf",
+      "sha256": "6f7fcd5ec80ec359effb81dee0e5412dba36218f38992518eb23689abe246e44",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/John Romita Jr.jpg"
+    },
+    {
+      "path": "StylePile/Artists/John Singer Sargent.jpg",
+      "bytes": 287016,
+      "git_blob": "7c76b7d84af0d46419194101df720de1a8344a00",
+      "sha256": "7eeff20a1f876075954866271343697623dfc26f06ec73a87bbd892e71ae9d5a",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/John Singer Sargent.jpg"
+    },
+    {
+      "path": "StylePile/Artists/John T. Biggers.jpg",
+      "bytes": 261111,
+      "git_blob": "5f9da78286f624b54d6ab4aac8c3dc486af47557",
+      "sha256": "105c6edd7221afb36b5d8cc25377cb1231128d612741a8a41dc7db477f076382",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/John T. Biggers.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Jon Whitcomb.jpg",
+      "bytes": 260904,
+      "git_blob": "990b3e74aa8e9fb3599ed4b9393adc126f08d146",
+      "sha256": "cc7ce44a4a8fd23c588fc5c7e83609b2e2020285ab4e7b403a7cadd5e713be51",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Jon Whitcomb.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Joop Polder.jpg",
+      "bytes": 247738,
+      "git_blob": "576f2b15fbbd0ac5c7a106e94b0815d7b018563e",
+      "sha256": "6aa349bde3b7f8024dd6bb602ac76b5d2aeceacf8f16011e96935031f1f39cb5",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Joop Polder.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Joseph Leyendecker.jpg",
+      "bytes": 237345,
+      "git_blob": "c0f2a071abdcaeaabb0e170148729544476da1d5",
+      "sha256": "5309dfb094665718365b13745d8d960442cb6ab4d286195d1626a1c2b8bccd99",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Joseph Leyendecker.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Juan Gris.jpg",
+      "bytes": 227980,
+      "git_blob": "e96caafa2d2307bef6951f8395cfc07f0138e674",
+      "sha256": "49b07855eda87d92e3fc533709b40f8cbb941ef80ed5546257788db2779e6ed2",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Juan Gris.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Julian Onderdonk.jpg",
+      "bytes": 284949,
+      "git_blob": "e639b42ab12240ac53320c533dc1034d4e9b8b9a",
+      "sha256": "b772ddcae0867dc47d70d96603fb6369646c91c779d3911c2b2743efff4f6ea0",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Julian Onderdonk.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Junji Ito.jpg",
+      "bytes": 446488,
+      "git_blob": "c419cdd8c7622b605b8a3323342167dd424e2fba",
+      "sha256": "af3efc3d9c96a9b152a5ba87bd18f719ed888214d4c858156ea3a44b540df1c6",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Junji Ito.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Kadir Nelson.jpg",
+      "bytes": 206997,
+      "git_blob": "e17772c2dca1fc5062313648c7f588dfb61d4d2f",
+      "sha256": "2a7861f3a252013ea6535195c3957005bc81e4d23f37a77084cb0d64ab6aef1b",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Kadir Nelson.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Karel Thole.jpg",
+      "bytes": 250481,
+      "git_blob": "f57e50f5b23643894c34187a464f3147463e7575",
+      "sha256": "24c40f2b581d28e5590724555554726dbb0b9005aa11eea3f4b41b3ea82b2f86",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Karel Thole.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Karol Bak.jpg",
+      "bytes": 260854,
+      "git_blob": "4f778d4366a61ef5904ffc828a8d6ff087d96655",
+      "sha256": "2804970b1dab156f9a1a06cacf0bf9d16150724a7b71706101824b8ee6cbc03c",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Karol Bak.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Kawase Hasui.jpg",
+      "bytes": 348300,
+      "git_blob": "045c263f33bf128c1a01392c1e4776be13c685f6",
+      "sha256": "1180c01f78ef8c2f3c4ef8ee28af69ab88b0553027b0398a60d5d52b75538e2a",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Kawase Hasui.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Kaws.jpg",
+      "bytes": 291610,
+      "git_blob": "a303830fafb330f3d1ef81b8c6810b3847e7ba0a",
+      "sha256": "51ff56691feff2087db55b4d5e792ae0ee3a60a0831444b9e76898442dc5a00a",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Kaws.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Kehinde Wiley.jpg",
+      "bytes": 443474,
+      "git_blob": "66f62868c7a54b7c4492d017a936f35b3b690b92",
+      "sha256": "c671cbd6c0e8eee9f28c9f8fb0148506150880e7c538a45fecb6f34dca61b269",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Kehinde Wiley.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Kelly McKernan.jpg",
+      "bytes": 267265,
+      "git_blob": "d34fb192e787565fd4a40db93a2aa36e960ddfa2",
+      "sha256": "6f0f2571e75daefcfec90b2cff5ba2b8723065ca7405533b836f04625e9b4d64",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Kelly McKernan.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Koho Shoda.jpg",
+      "bytes": 281533,
+      "git_blob": "15f68bdfd1303f7b3cb0e4f67b02da0e0da01406",
+      "sha256": "f2f11f7e45dd88593a773f5c0d020f7406bc3eab029ad53c46bf37a689d9e497",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Koho Shoda.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Krenz Cushart.jpg",
+      "bytes": 176446,
+      "git_blob": "07e62bac8ba5159e0845b849bb37bc72a7942fa8",
+      "sha256": "f117dde8b315b87b31467cdd7c294226e5e2bd5f2524e09a133f4d3c8d7970df",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Krenz Cushart.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Lee Bogle.jpg",
+      "bytes": 227134,
+      "git_blob": "365f6fd0f909db333d964ff868dbcab21c126d6e",
+      "sha256": "5bacb1cb657be66d2e35d933681d9d67a35ab10b3065e4bc75112a56348ab894",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Lee Bogle.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Leonardo Coccorante.jpg",
+      "bytes": 270499,
+      "git_blob": "8b5d9f78cb89a92157b844f6c24fc3c49acb273e",
+      "sha256": "9febb403dd4f790d0f5fa2d588a5634a6aeecb385f4c73e7b64d563709118970",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Leonardo Coccorante.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Leonid Afremov.jpg",
+      "bytes": 406077,
+      "git_blob": "47cfca2c5d3fe4e084b2ebbcab7056e565c02602",
+      "sha256": "b0b5428786c4ccb493413b1ee18493a4b65089dbbcabfd0e4423aedbced709ed",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Leonid Afremov.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Lisa Frank.jpg",
+      "bytes": 351412,
+      "git_blob": "78935cdcb96e53287b78412a7dea0d986167d6a2",
+      "sha256": "a0c4052dfbd3137cfc3471a410bcbb6c7f1d218eb49ee1d955d687ecca405cfb",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Lisa Frank.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Loish.jpg",
+      "bytes": 204233,
+      "git_blob": "53ce118c805f88d04e1e09f4d003034519f520c0",
+      "sha256": "33326a9957c8fe062617a6e8e842fc2e4ac749f8cf4497e1891d9d2bd760f3fc",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Loish.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Lyubov Popova.jpg",
+      "bytes": 282500,
+      "git_blob": "17222673eac5faed24ac8768a28a90bd4c775e61",
+      "sha256": "a85c1314ad91b9fb33da30c1d87a9e4cc6640061eda4956a16c59df218cfe80d",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Lyubov Popova.jpg"
+    },
+    {
+      "path": "StylePile/Artists/M.C. Escher.jpg",
+      "bytes": 294994,
+      "git_blob": "8d6d3faa6db14614626d1f01a4af47d96c68be3a",
+      "sha256": "6126e1072e7dd005029811733995de60d58480ffbccb401f337e255e28c1779f",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/M.C. Escher.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Makoto Shinkai.jpg",
+      "bytes": 188614,
+      "git_blob": "67961be555179f3eeae6c71876f7bd5469465b89",
+      "sha256": "b279f2f602ce37db2a2358c41807ea83b2f59a536a6d23514810ca09f07ec1c3",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Makoto Shinkai.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Marc Chagall.jpg",
+      "bytes": 373915,
+      "git_blob": "dea1b6e0f4a83636cd0c9d398bea05c93c8773e9",
+      "sha256": "f80eb7bdce4e00e7b55467cf050c548a3b28da3a6fce777d4c91dbda662e7ae6",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Marc Chagall.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Marc Simonetti.jpg",
+      "bytes": 187379,
+      "git_blob": "58927da5bada05902d70733acd20630810a04b7a",
+      "sha256": "1638c19352cce4934493a37211548d037055d8dc3889d79d350729ec5b6447cf",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Marc Simonetti.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Mark Ryden.jpg",
+      "bytes": 232119,
+      "git_blob": "d240eea616eee093a60f5987aebf7bea79f7314e",
+      "sha256": "f7a9ec516925cfb51468d4590d5209dcaf66fb44bc9e14c6325ba747c7d90922",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Mark Ryden.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Martin Ansin.jpg",
+      "bytes": 264006,
+      "git_blob": "cf6b35e12653f0fc7e8589e790f049e9b0ace860",
+      "sha256": "41507f51a77fb3c46cffa08afe3fed2dadea27bc14f5d5eb9de98331d3bbb630",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Martin Ansin.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Martin Schongauer.jpg",
+      "bytes": 320044,
+      "git_blob": "845033cc4051df68fad5392c333ae122d1c24d1d",
+      "sha256": "f7bcbbd3e33fdd82a93caf08eb3ee44abf6e8799e3b10fe80c9a9c360dccce1b",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Martin Schongauer.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Mary Jane Ansell.jpg",
+      "bytes": 192988,
+      "git_blob": "c3fe052c1e54ff9410b7df9ad305f0e20ef81d12",
+      "sha256": "546ce4fb9f62de57d88dd8f7399dc134087ff10f0ecbc980ba48b8fa547eda4d",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Mary Jane Ansell.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Masamune Shirow.jpg",
+      "bytes": 300968,
+      "git_blob": "aad2030ecacb6cdc3b91303a23d9eea59013b3b9",
+      "sha256": "3f4528b2957fce2b00f6589642acc49ebdd18bda8081204a9c99ac1978bb1760",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Masamune Shirow.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Mati Klarwein.jpg",
+      "bytes": 380288,
+      "git_blob": "f59ea612226118e851ad0caf23e3f1487a044652",
+      "sha256": "b683592ea52562f57dbbbe57cecea3f3406b8ba748fa6e97ba9b35d60181651a",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Mati Klarwein.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Maxfield Parrish.jpg",
+      "bytes": 315694,
+      "git_blob": "3f37d0060ad15c8b7bd0d4d5d7665ce4fc0d0ca2",
+      "sha256": "d6a8cdff49aa9abdd451a7fc9c9ae72d7880c832990a054cd519c7c11fdcbb84",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Maxfield Parrish.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Mead Schaeffer.jpg",
+      "bytes": 232136,
+      "git_blob": "f563c5b5c42d80094289b7c310729af5a4e1a300",
+      "sha256": "210c6fed4a706e250eb8a82a58be0141f50ccc02a9ac80a18f8be158041fcbcd",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Mead Schaeffer.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Michael Cheval.jpg",
+      "bytes": 339203,
+      "git_blob": "15d526ffa5ba7b31542b4809d7fef14eacad6ee0",
+      "sha256": "440bc45f610ca42211f3dfdca048fbfc5494858d6db1167a948e00e12239c215",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Michael Cheval.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Michael Whelan.jpg",
+      "bytes": 228408,
+      "git_blob": "5a59faf097d50ec236b4d08d3fc8ba19332a0ba8",
+      "sha256": "b81867c0de4026dad7449fafa12a9dbbca2195bc1d2f4ef351944cbe3f2e9add",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Michael Whelan.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Miho Hirano.jpg",
+      "bytes": 241787,
+      "git_blob": "f17c3136df00d937e2e89bdcb24b798444f89a34",
+      "sha256": "4dc93f1a845c9d2d38fd3a993773293aa941f3a472bd16db61be991d7377fead",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Miho Hirano.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Mike Allred.jpg",
+      "bytes": 233945,
+      "git_blob": "1171447b98242a6d1aee6a1d77203f03d9ab1277",
+      "sha256": "0a4bcd36e716dcb52e83637b45c7553d10209cae75c1578345d1a62cd278bca1",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Mike Allred.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Mike Mignola.jpg",
+      "bytes": 197133,
+      "git_blob": "eaf09afbc1134464f072f731cec8cdbca73ae233",
+      "sha256": "9a6c939ed0665628ee8bdf688dd6e2db87a4721a10fd920b0ea51217d33becc1",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Mike Mignola.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Mike Winkelmann.jpg",
+      "bytes": 200051,
+      "git_blob": "24539f13796b4097c4c39be0f804df8875997f25",
+      "sha256": "8e93b154add40f4e6d2d94e43780f80b35b477bf0f75362a3196027dc9237311",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Mike Winkelmann.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Miles Aldridge.jpg",
+      "bytes": 244642,
+      "git_blob": "4b586a5324bef200c16b36d5998e5d3bc6a0b867",
+      "sha256": "dc36c0c62e303a9e0bcda65e8200c2250ed1ff50cc62e32da071ec2417ae956c",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Miles Aldridge.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Milton Caniff.jpg",
+      "bytes": 335473,
+      "git_blob": "e63ba6312c75505dd36e6d6be046fb96f48eafd3",
+      "sha256": "7087b03e657c53e469e823aeb1ed182cfb5f95a88d92398d50092e93cb488bb2",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Milton Caniff.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Moebius.jpg",
+      "bytes": 298747,
+      "git_blob": "3517622ace6a8ed5c9fbd5123f8b3ecd06169e93",
+      "sha256": "9854f0f11406c245da19fc701b4374c892cd54336cd112eb8306bf232764341d",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Moebius.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Mort Kunstler.jpg",
+      "bytes": 274587,
+      "git_blob": "8dfab675746b8adfddc8a70f2bdbe93b1d6e5314",
+      "sha256": "c865975267e8081c2b6fc59e62674cdf2aeeeac7baac8b02d655c4dce9d2ddac",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Mort Kunstler.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Neal Adams.jpg",
+      "bytes": 311962,
+      "git_blob": "3a05e07c1daedc580b548eb3220752a867ef9f63",
+      "sha256": "36269dfdda9b0d9c3f8622c62d568861281ce20dcb590a0a53d072235bd3e7cb",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Neal Adams.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Nikolai Astrup.jpg",
+      "bytes": 381495,
+      "git_blob": "df64f944d2c47711decd96b079e371b7280b047c",
+      "sha256": "3c407803d33f26b1297be295171c1ee94ba014668bb101fb1b8e9162e8da41f4",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Nikolai Astrup.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Njideka Akunyili Crosby.jpg",
+      "bytes": 269224,
+      "git_blob": "57b1b0de52bd49947d61b7c4bcb108fdf3d5b8d1",
+      "sha256": "92f5588e077d7d65cadd333cd08750dead1b9778608a0856d161695593464dc3",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Njideka Akunyili Crosby.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Norman Rockwell.jpg",
+      "bytes": 328835,
+      "git_blob": "cc2d00498a43e0dc2fc9063cc427c3eb104ab518",
+      "sha256": "7b5b47c2a48d9b710fc28842ab1fedbc9049655bc0b9300d975360c8ad4adf80",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Norman Rockwell.jpg"
+    },
+    {
+      "path": "StylePile/Artists/P.A. Works.jpg",
+      "bytes": 251962,
+      "git_blob": "8213afdff30b27fa6897aca1cf650e7b2cac7718",
+      "sha256": "a493432ec2ee604595dbeaa97cb7462f320d27aa84f31719e161d78db3e06bcc",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/P.A. Works.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Pang Xunqin.jpg",
+      "bytes": 219449,
+      "git_blob": "bae82603640a5de5631650716c544ef2543fada0",
+      "sha256": "14e7b06e79067991896a6fa35a1ef3504fb8e0b8c880bfc77a3304739e9b5aaa",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Pang Xunqin.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Paul Cadmus.jpg",
+      "bytes": 230078,
+      "git_blob": "891f29f26ed2d365bb1df4fe801aa240da6401d3",
+      "sha256": "c65c51b62de7e10771557e5f993d78c7198f9fc5f03fe4f6bf99368d2c393ecb",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Paul Cadmus.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Paul Lehr.jpg",
+      "bytes": 243855,
+      "git_blob": "1a8b9525aa0bf9e28c8b25cd79400c7635d71bc7",
+      "sha256": "99944048dedf6a744ed1cec35cb5d689feaa9adf1e8cbb162c10d2fa57958777",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Paul Lehr.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Paul Signac.jpg",
+      "bytes": 484971,
+      "git_blob": "0e071c0d90beb45f4b7b44b933f0cfb1c260af27",
+      "sha256": "67d28f1937026caffa583b0c9d372f98c6dce573a1e22ed63bc871bd46434c07",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Paul Signac.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Peter Elson.jpg",
+      "bytes": 246703,
+      "git_blob": "0a588251cbf5b8ac48664d6c6be72f95eb6f258a",
+      "sha256": "9e6295d46768526c675639dd8945e3b4b27d8deb3e4a76d01004d973831ee012",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Peter Elson.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Peter Gric.jpg",
+      "bytes": 338132,
+      "git_blob": "99bc8bd95e88d85ecec6106755526bb2e85573a3",
+      "sha256": "cd02f1b7abd48f44f807336add175b767d72afaabb18f065a009c8b81e8b14d8",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Peter Gric.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Peter Mohrbacher.jpg",
+      "bytes": 176905,
+      "git_blob": "2c39a70eeb337cf671e453ee16628267d1859c55",
+      "sha256": "3beb43167c26e3740da40da648f20bdbff042a9023cd2f3aa7ef22bbcf89dbb5",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Peter Mohrbacher.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Peter Wileman.jpg",
+      "bytes": 254699,
+      "git_blob": "c12e55c9e38de3c4d33d519d8363c830f879f2da",
+      "sha256": "6949717e4d3c3cfb44b8e9c11ee5f63df628a715286a4510d45f446210396396",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Peter Wileman.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Petros Afshar.jpg",
+      "bytes": 233796,
+      "git_blob": "d5dd34741f442a9d5ea396dda6b4efa823f1fdfd",
+      "sha256": "f2e2368c49193b7d6c32c81dc1917690f86eb540153330827a0a3eea927562eb",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Petros Afshar.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Phil Noto.jpg",
+      "bytes": 169335,
+      "git_blob": "fe8c6fe58fdbe8ea96c11c09179e3e5769490352",
+      "sha256": "7e81f41d0864feaaea8f039540c3b51dd9863fcf25ac7a3c3d417bd45de6c1c2",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Phil Noto.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Philippe Druillet.jpg",
+      "bytes": 481408,
+      "git_blob": "a1e8d250933b2d2b9981a63217baf269ff7f217e",
+      "sha256": "0fd0acab053747591eb59cf28978b58b023c8861da509b4f88b1da41d77a67f4",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Philippe Druillet.jpg"
+    },
+    {
+      "path": "StylePile/Artists/RHADS.jpg",
+      "bytes": 198392,
+      "git_blob": "4ce7d320946c5842e7601a6dda20b238fe86a9b9",
+      "sha256": "09b96d2d67b7b6714bd2f16a959c96a920593b304daccbd28a78fc62f2c062bd",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/RHADS.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Rafael Albuquerque.jpg",
+      "bytes": 260577,
+      "git_blob": "844b5c6a1e4a4292bbe2207823ee110f9efb16a3",
+      "sha256": "bbdca05c0a5095d06b24b0b49ed5744b872581231bbc50eaabd67dcf5b6e52ea",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Rafael Albuquerque.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Ralph Gibson.jpg",
+      "bytes": 238128,
+      "git_blob": "1272eb84f989d29724c1ae97b67d25bffcdd7f5f",
+      "sha256": "f57d1fe5b87c04700c7082c1bbf961dbb32764906d625c1ab9a442ca71c16a22",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Ralph Gibson.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Raymond Swanland.jpg",
+      "bytes": 183236,
+      "git_blob": "d332626a0a36bf5bc2b97d22f387b500f1165d3e",
+      "sha256": "d81a93e46451c93189b94b428c349c7a69d9c232d40d54230f5722a1002807cc",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Raymond Swanland.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Richard Avedon.jpg",
+      "bytes": 219131,
+      "git_blob": "5c3def696dde497610ba68b0679a99c5f696c099",
+      "sha256": "7c1dfee37e6f78d5c6ed9705272960c2737a894fc3d656d3549e6b659c291eb2",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Richard Avedon.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Richard Corben.jpg",
+      "bytes": 260682,
+      "git_blob": "8a5a2ae85f0da35a42efce5a423f571a5b53fd30",
+      "sha256": "0dc825f3a3c15c976ef740e3780c0e925316e3eb07365dc6d8a7d5a11db58ff2",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Richard Corben.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Richard Lindner.jpg",
+      "bytes": 241622,
+      "git_blob": "c2d6edc08af5ba4c5d2c6a61b2faa51f128a0228",
+      "sha256": "410d2527325dbecf23506a5ea00a3be22f4d23eb81d891bb581a2107e11789ca",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Richard Lindner.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Rob Gonsalves.jpg",
+      "bytes": 374692,
+      "git_blob": "08597bb5d7321864ac8ef6531c291242dccbcfed",
+      "sha256": "c408608a76b701959e9715af2062ac2fc829f32d61696c327bd7a887811cc32b",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Rob Gonsalves.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Robert Bissell.jpg",
+      "bytes": 221612,
+      "git_blob": "86b920159be05268dda28d91976b9c442b42ef96",
+      "sha256": "cc0b0b2fa73748623e965388a782e53de6b8dcdd88c414316dd0c93a3e5a1ec0",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Robert Bissell.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Robert McCall.jpg",
+      "bytes": 314943,
+      "git_blob": "523b525a4b5d10cb7f7e47ebd9dad6c5d991ccaf",
+      "sha256": "73bc42ece4b780a405260ecc17af3839805bd7cd1df180a3a4396ec49c95cd57",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Robert McCall.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Roberto Matta.jpg",
+      "bytes": 260211,
+      "git_blob": "4ff16afa160afccbd1f11decef88846522829746",
+      "sha256": "d3aeef2d22c611a40a5f1b6ca7457298759fb13584a988040036cbabeca86731",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Roberto Matta.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Rolf Armstrong.jpg",
+      "bytes": 201894,
+      "git_blob": "989b91a1b4b18ebb400c0e7580f81915ee354081",
+      "sha256": "793a6708b619fe96c71f52b9abd5cf2cf217e17fd1beea49e45629b99bbd303c",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Rolf Armstrong.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Romero Britto.jpg",
+      "bytes": 281958,
+      "git_blob": "1279642e84e6f1ac35b88e85871b8139230f6d16",
+      "sha256": "2fdd6fcca586244640bde0db34c801704a53ddc847536d63d8bd25734fab7298",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Romero Britto.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Ron Miller.jpg",
+      "bytes": 220770,
+      "git_blob": "20490b15e73692801b787066080d9098f68a90ec",
+      "sha256": "f3214d5b3d49df8ceb06098d706726a81ec61487a4cd581717bbd070278e033a",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Ron Miller.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Ross Tran.jpg",
+      "bytes": 184919,
+      "git_blob": "bd92119e9297f2406335444a304f61784043453c",
+      "sha256": "3adc61ad5b4320144584121433f49fdf0f5118095cae19382e03c3f72158cc25",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Ross Tran.jpg"
+    },
+    {
+      "path": "StylePile/Artists/RossDraws.jpg",
+      "bytes": 194633,
+      "git_blob": "5d6d4e2f04d16c23c54f293bbd02eb0739600f75",
+      "sha256": "4b67f43d762ea1d593a13e83e20a1630f69a801a91638e7540cc6f8e2fc00a46",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/RossDraws.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Roy Lichtenstein.jpg",
+      "bytes": 345883,
+      "git_blob": "939180bf33bb89618a6c86bc281b7d7460d42c7a",
+      "sha256": "cb0723fc1fd423fafa0a086ac3b812428c4661a827b507fa55fd1edda021cd3b",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Roy Lichtenstein.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Ruan Jia.jpg",
+      "bytes": 207936,
+      "git_blob": "6a03727acbbc4541b9bfd2f1a7791cf8029ecb73",
+      "sha256": "8b84af241e0ea26cdd05e6ca2471c4d10b7ffb21f48414c2aa6a70c46c6c9be6",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Ruan Jia.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Ryan Pancoast.jpg",
+      "bytes": 251195,
+      "git_blob": "21e349d131c09edf59a367d54d93f3d010d649a2",
+      "sha256": "247d0e89931102f2a16859c6bec7f7617a6a24e68010f96b50976a934851a75c",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Ryan Pancoast.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Ryohei Hase.jpg",
+      "bytes": 236400,
+      "git_blob": "be5e5f1aed2ddf1df0eeeea882c5bd81c4f424c6",
+      "sha256": "22931c7d627f5eb1ce35db45fa4bcef9db89ccf2fabef6331f19ffbfe461eb0d",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Ryohei Hase.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Sabbas Apterus.jpg",
+      "bytes": 175993,
+      "git_blob": "efe86153492c3bb9cf31341c491fa8cafff666c0",
+      "sha256": "82758256b15f9543613615f26754191ba6af8ed516ab7c1aaa3632844d1aa4af",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Sabbas Apterus.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Sachin Teng.jpg",
+      "bytes": 216846,
+      "git_blob": "c7cd54f16c47868be905388f51293684e1c6c5a7",
+      "sha256": "fb49528d03792f17bd64456de49d66e7ec2a226bfaeaf8147dc7f8f7b8b55724",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Sachin Teng.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Salvador Dali.jpg",
+      "bytes": 301400,
+      "git_blob": "1d8775e4c6a344144b7f670ccbda0b8985fe9138",
+      "sha256": "b4161800b3540bb741222fd6d6c5a5879a3c446d0af3457ea632ce784ff1d1f7",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Salvador Dali.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Sam Gilliam.jpg",
+      "bytes": 274900,
+      "git_blob": "b84651eff03e866c2a1b1e7ef4652a44d14b45b2",
+      "sha256": "9593c3bb4c6be2cfe6224e14fafdb437f2f906d7ea5d5541a9c95b26f1094b0c",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Sam Gilliam.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Sam bosma.jpg",
+      "bytes": 253208,
+      "git_blob": "712dd919a374902b47d921a0b2e420ddfdf2d0f6",
+      "sha256": "5bc30e94673fd07dea8e01ce2aef34b87b65a3921ffb2ee8ad536593270f67e9",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Sam bosma.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Scott Listfield.jpg",
+      "bytes": 211325,
+      "git_blob": "5bf7b30dbb8da2276ed91b90f6239222f16fe3b0",
+      "sha256": "34cc671db6c1d56715a65c51042e40865b4c4708082bb9a6d361b119e6b40e6c",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Scott Listfield.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Shigenori Soejima.jpg",
+      "bytes": 277218,
+      "git_blob": "d94686ae61dc1532b6e4377ced6fbbbc0f45f5e5",
+      "sha256": "c60d28577d9f68fec1ba95244350d8555100533ec294c69a5ff13b61f6b0d279",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Shigenori Soejima.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Shinji Aramaki.jpg",
+      "bytes": 304746,
+      "git_blob": "27848fd01b29d9914f260e55c83d30c918612250",
+      "sha256": "6201fe522a40e3295f9cea395e02ebb695ee9ffbbea5bf860e9a573767fc96ee",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Shinji Aramaki.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Simon Bisley.jpg",
+      "bytes": 268199,
+      "git_blob": "6b48fa3d676528f0a41b75480e2a5e45922e3a4f",
+      "sha256": "65905feb007e356a545d85c8345c68f5f7e0f075b36b5259d8c4da942b32c387",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Simon Bisley.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Simon Stalenhag.jpg",
+      "bytes": 173499,
+      "git_blob": "e4a26b8febebedcb3c13eb88c740f5492d31f403",
+      "sha256": "21aa247dac8bd92c27a01616c098d4a9884274dfcd2b17c11fb756f2d60974b1",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Simon Stalenhag.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Siya Oum.jpg",
+      "bytes": 236986,
+      "git_blob": "7a96070559e5eab6cc0a30f0b790b85430189cda",
+      "sha256": "024cfb947b3cc8649138b09f800033a34823080918b25cc1d3d4461e7692b847",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Siya Oum.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Stanhope Forbes.jpg",
+      "bytes": 325090,
+      "git_blob": "4ba1b6c0020fcddf53cd1ad6422ee8fce4d538e9",
+      "sha256": "7780bf4bf7b4c471bb54acde26f6eedeeffe995618bdbdd86baa0258e1555bb7",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Stanhope Forbes.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Stanislaw Wyspianski.jpg",
+      "bytes": 279212,
+      "git_blob": "d8e4db7b3a07ec741e10e2b3032b2c2203864c0e",
+      "sha256": "cfd1706a80288b5fca0299271e340472c83fe2dac31bae498743d47c15fc4236",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Stanislaw Wyspianski.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Stephan Martinière.jpg",
+      "bytes": 241670,
+      "git_blob": "23614a337ae8273c43910572dfdcfe3634b84e25",
+      "sha256": "d3efe630bf0800cf07e8b808061ca0e590594922fc200ef2146b303f8dc51212",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Stephan Martinière.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Steve Ditko.jpg",
+      "bytes": 435169,
+      "git_blob": "b17512681afbe2c9dea076dd1180275533775efd",
+      "sha256": "0ec72ac97764425f77cbbed8411d2b6c6c77bebe6a2f01c35d58838696bfb9fe",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Steve Ditko.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Syd Mead.jpg",
+      "bytes": 243058,
+      "git_blob": "a2e31ce224639a846e74d39a3babed6384df1a1f",
+      "sha256": "3dff765d5cd30042b46d2e13b3d938f4fb3dd056a8655be9b8876250efe5b153",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Syd Mead.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Takashi Murakami.jpg",
+      "bytes": 407994,
+      "git_blob": "4f66f156a25d26720c593ee4ba611354c9bb8048",
+      "sha256": "09d528235c0c2ae7ca2e01746d984b871c32f0cc3a4119e475fa47127634c2a4",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Takashi Murakami.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Tara McPherson.jpg",
+      "bytes": 244422,
+      "git_blob": "707afff80e0c4410a2b5e27e118985f6bf8ec8c6",
+      "sha256": "28e5ca23ffcf966d77fa3533109e81fe895f2551dd7c41783037a94b01c8d609",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Tara McPherson.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Tarsila do Amaral.jpg",
+      "bytes": 231787,
+      "git_blob": "0e1a932f2ac289420df4afd8952cd8a336a2df2e",
+      "sha256": "a40ce9f5cd99645577ab22c4550b8217e3b1be7edb26c055b10e5551318bc007",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Tarsila do Amaral.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Ted Nasmith.jpg",
+      "bytes": 245168,
+      "git_blob": "774ed0fad24e531d844f47b64b376e44d7250474",
+      "sha256": "0e6b916ab1ff6df88f794089d915fe41273a5d6605caa5f3e176901def370356",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Ted Nasmith.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Theo Van Rysselberghe.jpg",
+      "bytes": 454278,
+      "git_blob": "2c838c341b2afbaf7654b71405ccdb1ca4a635cd",
+      "sha256": "cdc049931505d618d25e2482c4f230fc3434f9dfe3ee7775e9ca6662cc026c5f",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Theo Van Rysselberghe.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Thomas Blackshear.jpg",
+      "bytes": 243579,
+      "git_blob": "0ecba1579130a7b7f08f159184e840f8eebe77ce",
+      "sha256": "35dc56e6d014ea36c9297cb0a30123922a85868026a955b28d964aa7a45d1009",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Thomas Blackshear.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Thomas Kinkade.jpg",
+      "bytes": 295273,
+      "git_blob": "ae39c7a434c7e05b83a30749c400264f94b68f81",
+      "sha256": "8cc8343c9572fcd268365a5d85873d306cccffce15ef33173476cd3e208dc97e",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Thomas Kinkade.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Thomas Shotter Boys.jpg",
+      "bytes": 294085,
+      "git_blob": "34ed2be5e38786b31c0553cba964ea7e566a2460",
+      "sha256": "919964359cf5a96a80ea7b136de6f9578f8363956c3dca972c3ba972892a60a0",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Thomas Shotter Boys.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Todd McFarlane.jpg",
+      "bytes": 368528,
+      "git_blob": "9d72033c37febf828b538c68d64d4a6eaa8e70b1",
+      "sha256": "4c672c5c77072059c03355ec804689f6c6f18a47a173737e525f8e7bdc009d99",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Todd McFarlane.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Tom Bagshaw.jpg",
+      "bytes": 195222,
+      "git_blob": "bb4aa19eb00b98c8c7a70d4852d80f9a62f11aa9",
+      "sha256": "c4d1051179a72f68168be7146157751ea96bc32c9e6c5fce053a185fac9605e4",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Tom Bagshaw.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Tom Lovell.jpg",
+      "bytes": 237059,
+      "git_blob": "ba095db053de0db04b46a6f354d6e219e7ba76b4",
+      "sha256": "406c400f1c55b44ceca155b100dbe0af46f8ef91b05ab52c4ddcc5e6fdaa690a",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Tom Lovell.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Tom Whalen.jpg",
+      "bytes": 202798,
+      "git_blob": "1642d5fffb13e8e7ab71b90611d2c8739e7ff3cd",
+      "sha256": "e537605791af8951d5fc712e7adabdf9f4b5435c66cdcb0d13a46981ce887356",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Tom Whalen.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Tomer Hanuka.jpg",
+      "bytes": 205721,
+      "git_blob": "b3e00fbf3e04c5c05df147bad2a9f694e47fa6d4",
+      "sha256": "61555670b41b75cfe285454fa2135041147d62558dececf215c06536cc932f80",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Tomer Hanuka.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Trevor Brown.jpg",
+      "bytes": 276392,
+      "git_blob": "197edb097d45868a49f10df063ff74ebd3093769",
+      "sha256": "ad65bf4882da488caff00e330fb2fb554e1a136c02939b4d77394a34f6162ffd",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Trevor Brown.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Trina Robbins.jpg",
+      "bytes": 456553,
+      "git_blob": "ad07d401c79f3c0980a78498f93459c5d7a7ca9a",
+      "sha256": "1ca2b9b27a89a193df57105169e345279aa9467aacec1d9c869b5092250bf4cb",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Trina Robbins.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Tsutomu Nihei.jpg",
+      "bytes": 327531,
+      "git_blob": "15569b5a0bb7493b967c72a8704d6839835db27f",
+      "sha256": "903f1a2475951c1a478dc25e27f0b459423b0552a79a9c9ae926dc05c2e8e300",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Tsutomu Nihei.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Ulisse Aldrovandi.jpg",
+      "bytes": 255607,
+      "git_blob": "acf44d04dc1b5ff2e8731df766cbb1315217b9ef",
+      "sha256": "d1f532f834a0c9cf6d821ec8e4d4b359ff137c5d4c16422db9dce0f4e013880e",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Ulisse Aldrovandi.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Umberto Boccioni.jpg",
+      "bytes": 412066,
+      "git_blob": "cf2b5ab38567e12d0645b5023e5e6a842e6b9a2d",
+      "sha256": "4d5c54a382a6d096437dee38d8c3bb71351302e1fd3a001049f51c99bd07075c",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Umberto Boccioni.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Vasily Vereschagin.jpg",
+      "bytes": 283835,
+      "git_blob": "47ccfa9ec91198512c333b32c0afdc80d3bb5b3a",
+      "sha256": "5c923496e24334216d06f97f12169725f49744f7f9bb608cba44f2caaea9d4d7",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Vasily Vereschagin.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Victo Ngai.jpg",
+      "bytes": 292741,
+      "git_blob": "47cc2f5b9bb2c65da92044af6a3525e679494f4b",
+      "sha256": "e6afae8a28ba2ae9ab71b463cd30be14d8464c30dcf131672769f3a5c952d571",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Victo Ngai.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Victor Nizovtsev.jpg",
+      "bytes": 316573,
+      "git_blob": "fc7c167b0d56c27332e97f774f72c8772e3d089f",
+      "sha256": "7c0bee77ad8cdf0b687cb10b2199a74e6c973288126423cc3dd0b7755ebb8457",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Victor Nizovtsev.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Vincent DiFate.jpg",
+      "bytes": 261248,
+      "git_blob": "29dc8ca24251a6e048a8d75820a359445e34b399",
+      "sha256": "87b154ede9108f99bbf24c4044be8df4a609cf4b32980d45d6496e64ebb8e5d1",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Vincent DiFate.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Vittorio Reggianini.jpg",
+      "bytes": 254096,
+      "git_blob": "7a484fa6d15a9462ae5fc800888e3f72d0b80194",
+      "sha256": "42f44ea4a149a7f2c2706372e22235aa0124b8331c36ec8a2c31886c13bb029d",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Vittorio Reggianini.jpg"
+    },
+    {
+      "path": "StylePile/Artists/W. Heath Robinson.jpg",
+      "bytes": 356239,
+      "git_blob": "7370003c97a351a4ee8e261701d58875eaba0c7d",
+      "sha256": "7a88a39ae4db4ec31dba2d78cde1247489aafecb2026a7a3e83546e03ca3ffbe",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/W. Heath Robinson.jpg"
+    },
+    {
+      "path": "StylePile/Artists/WLOP.jpg",
+      "bytes": 189682,
+      "git_blob": "2f5ea66e392c5e4744167af2ba2bdb1364ac91b6",
+      "sha256": "1dcee50ab6f026e443e8a28492217693d6c2424617a7e37c8e0a62a618d6d768",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/WLOP.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Wadim Kashin.jpg",
+      "bytes": 241337,
+      "git_blob": "292e1e20440cfed0f1711f5b2825a124ba038ffb",
+      "sha256": "c3d0b44f0b24e948410510eb613cf19f175a132cc3befb4e8dd39f240907f58a",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Wadim Kashin.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Walter Crane.jpg",
+      "bytes": 420298,
+      "git_blob": "6ec9fc4cd4fbba3518b36ba701ed56da3fef40e1",
+      "sha256": "38b680a42a2542c2a35710ecde5819c86287d6b121df4c004abb592b9278b6e6",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Walter Crane.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Wangechi Mutu.jpg",
+      "bytes": 292022,
+      "git_blob": "e271b25f998c179c5bd3d37be28e90d14d29d6d6",
+      "sha256": "81a2a05cf45012e0e49e2d5e6feb60036314c1eded9fedf36772371d8f2c1750",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Wangechi Mutu.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Warwick Goble.jpg",
+      "bytes": 360580,
+      "git_blob": "9457dd76ac5bff8f0116ac53bd725e7f29e31c82",
+      "sha256": "2446052ae128a693d6292c55b492c0612f97a4e22357e5c18cfac0d6ed3c106d",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Warwick Goble.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Wayne Barlowe.jpg",
+      "bytes": 215195,
+      "git_blob": "c4ac884b9921b4edf69d127378357743fc2befb4",
+      "sha256": "8245b67a2de3bff996346507dd5baa827ddf6b2757fec78030556d1cb9818fc8",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Wayne Barlowe.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Will Barnet.jpg",
+      "bytes": 226073,
+      "git_blob": "22a3ed80160fb9011ef2bd213b0026461b6e4076",
+      "sha256": "e782fd1012f2c8f29d498aca4f1ede73fd8502c6b6a1a35966de1aa563d42634",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Will Barnet.jpg"
+    },
+    {
+      "path": "StylePile/Artists/William Dodge.jpg",
+      "bytes": 246926,
+      "git_blob": "2c2a503638c6bec9102dc70332cb3ac18665f58d",
+      "sha256": "3365e5938c5c80bb76883c6715fe63a0dc5d7be73191098f2173a5cd348bbac2",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/William Dodge.jpg"
+    },
+    {
+      "path": "StylePile/Artists/William Eggleston.jpg",
+      "bytes": 224740,
+      "git_blob": "b0c9d7de9b63f6b649bbc5e95be3b36d5cc453e0",
+      "sha256": "01a69dbd7e5664de7618efcc08fa1dee32ef650755c3108765ffbd18e0f3046a",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/William Eggleston.jpg"
+    },
+    {
+      "path": "StylePile/Artists/William Holbrook Beard.jpg",
+      "bytes": 247056,
+      "git_blob": "1e3c01b055f6fd6799c3f9bd67d13aba75dec7cb",
+      "sha256": "53dadaa5254d9ce7b0dd460b3f7497a22ee566fac7be197af3855767ee2fe212",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/William Holbrook Beard.jpg"
+    },
+    {
+      "path": "StylePile/Artists/William McGregor Paxton.jpg",
+      "bytes": 207110,
+      "git_blob": "cc2f8db8216c2089820487ea19a468aa4cee39d3",
+      "sha256": "4d4aa6f157da70687808bcfdacea6e5ab62108e378dafccaf5aa29496c463b0b",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/William McGregor Paxton.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Yanjun Cheng.jpg",
+      "bytes": 146058,
+      "git_blob": "a5ee795acd7d212361f12565a24ac1e1e5c8c32c",
+      "sha256": "63aca4de1327a36b8b832e7bbb42ee9531bd514a7ff73d1e1644bc85f3c82f7e",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Yanjun Cheng.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Yoji Shinkawa.jpg",
+      "bytes": 264038,
+      "git_blob": "ddfc8d726f215eff0998977adc4fa83331b918f0",
+      "sha256": "38136fcf1091bcb81dcfa2fec9c8893c232657d4dbcb294556a7e44027090b7a",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Yoji Shinkawa.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Yoshitaka Amano.jpg",
+      "bytes": 267355,
+      "git_blob": "a601cc32c0dc4f7c67db67b91fd7595983fbdd5b",
+      "sha256": "be6e62af8924f03b494543bf8921f5178489373895b3bb8fdd753f23bb09cadc",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Yoshitaka Amano.jpg"
+    },
+    {
+      "path": "StylePile/Artists/Zdzislaw Beksinski.jpg",
+      "bytes": 249549,
+      "git_blob": "ee3d226ab06011da5003c31ebf31e27ce8ef7a90",
+      "sha256": "f26c256834e937b3330943306fe160c3e58b8dcdcf658d8214fc0102505c1d43",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Artists/Zdzislaw Beksinski.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Agfacolor.jpg",
+      "bytes": 127389,
+      "git_blob": "39782fc422ad4af528e8e98f1a0704c1b4786b9d",
+      "sha256": "8d5d0da40ba5cc067a1c0c9ba783aa732af5004a61630cedcae4079191bdcd75",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Agfacolor.jpg"
+    },
+    {
+      "path": "StylePile/Colors/BW.jpg",
+      "bytes": 118686,
+      "git_blob": "7a7e352d26bf469ffc100e408a411b5c15940c8c",
+      "sha256": "ce62f1c41b5c347eeffd84905f395f0418da5e98c4e539c09ae69da90f1a88e3",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/BW.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Blue hue.jpg",
+      "bytes": 118244,
+      "git_blob": "2328567362d2eec053300e38ec8c210ac22f98ec",
+      "sha256": "8d62477a33642873eb8145633b58fd65bfbd858af2611e544ab5cf6a12e52a3a",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Blue hue.jpg"
+    },
+    {
+      "path": "StylePile/Colors/CMYK Colors.jpg",
+      "bytes": 132061,
+      "git_blob": "ce4e11940a9be49254a6219ac7647d36ffd66e3d",
+      "sha256": "cc6dd2aa41a964e86261476c282b3cace570389fb0b903a7abb362a02b8fab94",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/CMYK Colors.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Cathode tube.jpg",
+      "bytes": 142644,
+      "git_blob": "eb80d90fd7815e18fd01107f6e77bea81cf94a42",
+      "sha256": "463fcfc7fbe700d7950e545d73b9bc9bcd2e38abe156a01c6147617dbdafd53d",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Cathode tube.jpg"
+    },
+    {
+      "path": "StylePile/Colors/CineColor.jpg",
+      "bytes": 127643,
+      "git_blob": "67ccfa79b0ba5ad1616f9f1fcdd37d8731fa6614",
+      "sha256": "2e61d06595bccaf62a10f9e5b13dc3ae8c1333b44b3d2b7457d6c5417546f64d",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/CineColor.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Cold Colors.jpg",
+      "bytes": 148593,
+      "git_blob": "e569411d7f1b0e9fd96a8af16fe179c3f064d7cc",
+      "sha256": "eb0429927874e643d94422fc9f31f9bb2e75f960a64d5ea7faee8d21577d2ec9",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Cold Colors.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Colorful.jpg",
+      "bytes": 145262,
+      "git_blob": "21f1381aada08458a252487dcbd746df3ff200a2",
+      "sha256": "95e869fb99d3adde5a114d1704cdc1ceb81583cd8fdcd3f63e15f98e107f858b",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Colorful.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Colorless.jpg",
+      "bytes": 129060,
+      "git_blob": "e6c0935cdad06bf1375e8ffb201074255c3ed636",
+      "sha256": "6e1691abc4ca3e93dc4fbbd94b2f54261435e42dcab42bd398a040f77c2bd676",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Colorless.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Cyan hue.jpg",
+      "bytes": 97522,
+      "git_blob": "b7c0e80f1d2d47094b3009563e2d568367b0f90e",
+      "sha256": "44b135c40813608a85f9e0f47bea31ac9857dcaf86def943cf9270b1c9e1d05b",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Cyan hue.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Dark hue.jpg",
+      "bytes": 109548,
+      "git_blob": "8b86b8e08ea3f1db7979520e5a4d1e9eb1743c8d",
+      "sha256": "699cc9027b1c7b8b04a7a4c1d16a9026a737730ac4655c06ab3a5fdbf685fedb",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Dark hue.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Desaturated.jpg",
+      "bytes": 138290,
+      "git_blob": "60c32aede391f8477f4d7ff706853e24bc3dbd1c",
+      "sha256": "897d9194e69ed27b318e630060f4293f0200816fa525a8decdb8a3abd96da1ea",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Desaturated.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Dichromatic.jpg",
+      "bytes": 130142,
+      "git_blob": "0aff4b018a5798f095d9c567f4b03e13fdffee04",
+      "sha256": "2c975e3713db56778da2b60fac23bb6429a04d2b8f4b15318eb5e406cf462d92",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Dichromatic.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Electric Colors.jpg",
+      "bytes": 150742,
+      "git_blob": "81b5406169d47abc7e30bae81e81406b39e04a39",
+      "sha256": "3d777108ce8e3a8bc1f8088470fb2fdf152597eca3b590824a54394fb5ca36a9",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Electric Colors.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Fujifilm Superia.jpg",
+      "bytes": 134514,
+      "git_blob": "b5e33ffda6f6decc0c8caebc11d7e983393dbdd4",
+      "sha256": "843e536d3ae2cf501d47e7f2e8446e8e913346f7aacc7d8d9407435887669804",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Fujifilm Superia.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Grayscale.jpg",
+      "bytes": 104910,
+      "git_blob": "07c36b803d925e156d39027aec85377b8fdd68e0",
+      "sha256": "51f263bada7557e1e118d755045c628404c908c541ed6955bdf530ba0ffe2ba2",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Grayscale.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Green hue.jpg",
+      "bytes": 117998,
+      "git_blob": "cfd82e017156735e8d2609e4f07019559bd8c996",
+      "sha256": "d76c206da79f3634ecd61859e8f9a5974ac0d22b9fd2bbefda44e39dc0b3c696",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Green hue.jpg"
+    },
+    {
+      "path": "StylePile/Colors/High Contrast.jpg",
+      "bytes": 145904,
+      "git_blob": "b278f572b299dbfb1482009b8572f38a9e5c4701",
+      "sha256": "1ff436b0caf7e7c21406555d90f863d09649e621620fb2dda40e57e0c4452c45",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/High Contrast.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Hypersaturated.jpg",
+      "bytes": 158130,
+      "git_blob": "80b28cf6b240310ead46441232b435bed74e0ff8",
+      "sha256": "4680a7d6b4200f4e837353025b51b093995538771f16e24eca8d7ee9ff8b24be",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Hypersaturated.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Infrared.jpg",
+      "bytes": 132358,
+      "git_blob": "7edb6659882e8efe699afe018f9f5abefe97e486",
+      "sha256": "b17fd1e5123923829bae93bccdab03d764d1ae4b0f4e1d30b0291a7b10ca1877",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Infrared.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Kinemacolor.jpg",
+      "bytes": 135868,
+      "git_blob": "eb5fe3669627340187b3a7560e295ac77647f514",
+      "sha256": "ec0dd14c9048946ae23b3f0ce1efb1ca6da17f455c8f7b56c64c8bbfd9917f08",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Kinemacolor.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Kodachrome.jpg",
+      "bytes": 130851,
+      "git_blob": "23cbaab6a7ae0f7febf54cf34bb5346348f872a0",
+      "sha256": "f7d557a72cb696318a4a9e3b8d76e245f9ff464e3fe514a509798c83ed368348",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Kodachrome.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Kodak Ektar.jpg",
+      "bytes": 137535,
+      "git_blob": "f39ab72a20830e33c769b94a32a9502b6d0d3889",
+      "sha256": "8cf7d00487fe351ba1b1cf6d5443844acccdf0c7ec1ea5e6b8c26cc2c6a5c0eb",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Kodak Ektar.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Kodak Portra.jpg",
+      "bytes": 130442,
+      "git_blob": "e60344d2f149e67bfe6702bb104e8f3782ec3be5",
+      "sha256": "31f446e8fc5cf25b3b1db43818f88ab49f02a1f64fea9aa7236132aa244e1406",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Kodak Portra.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Low Contrast.jpg",
+      "bytes": 128958,
+      "git_blob": "30d71de8139f60820888c21d37fd66e38b049db7",
+      "sha256": "37c58a41265b08f48ffa54892c91c4d88bb13beb74371692638416836852ce9f",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Low Contrast.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Magenta hue.jpg",
+      "bytes": 125841,
+      "git_blob": "4560d3e1d73265cd051368e06acc48a182695a0f",
+      "sha256": "3b8268c97bf3e6e7f0d7a4205e855841dc1a46c6cdce05d9b028965b75fc14ad",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Magenta hue.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Mono Color.jpg",
+      "bytes": 135632,
+      "git_blob": "98c1fb5f1cba50a6432bb7867f1709dde329c346",
+      "sha256": "eb31b2a49e74415fefc9f71b67a1e6b7268a0c76fe4ab90376aea46639e65ff4",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Mono Color.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Muted Colors.jpg",
+      "bytes": 105674,
+      "git_blob": "1cc63dd75c6f64e2f4ba21b644022c2d934b0175",
+      "sha256": "54b237ef234d027b50ca9777d587f61c2d8b27c5271b622b32a6db8b99f1b191",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Muted Colors.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Offset print.jpg",
+      "bytes": 166724,
+      "git_blob": "093537128a335fdd125a1f0e6984ce444a82ae94",
+      "sha256": "ddb00cd5f2c1731308234aa72ff580058ea1e969460b1e7228c9a267ba6c7688",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Offset print.jpg"
+    },
+    {
+      "path": "StylePile/Colors/One Color.jpg",
+      "bytes": 139105,
+      "git_blob": "39c86f74ad0ec1c2460bd45cd8565b108aff0dee",
+      "sha256": "4936fb87d6be6c5d9cda6ec454485dc865da90e7fd76ae4860e68386f2c560f0",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/One Color.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Oversaturated.jpg",
+      "bytes": 140145,
+      "git_blob": "191bd8ae12f49a1e278c0fcce254b8d0ea197f6c",
+      "sha256": "0570f85edd453ae386fe3c4ca57e1d659e05de7b530b94c84ee9be0a455ed110",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Oversaturated.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Pastel Colors.jpg",
+      "bytes": 114732,
+      "git_blob": "db96dabfbe3df38f682b0c732d9c6ade4c66ac15",
+      "sha256": "749e782b3ce84d196b61d737f9f8a6dd835d42c961feac51ddbbc4bc3b446ee7",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Pastel Colors.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Polychromatic.jpg",
+      "bytes": 130659,
+      "git_blob": "aa3a0319717fe470af081c64f18feb997fcc7687",
+      "sha256": "f5c48f7e8db125912c923331f3afd043ce2efae64bc5612d5c9a4651b4d87c6f",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Polychromatic.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Primary Colors.jpg",
+      "bytes": 141186,
+      "git_blob": "9db22d2ccbda8f2720c9bcbbbfdbf5276b328c8f",
+      "sha256": "9a79f8455e413a6d255acc62597961e63190cc50497a63fa7da497ea4699d531",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Primary Colors.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Provia.jpg",
+      "bytes": 122484,
+      "git_blob": "35d6a95368c909428302b4adbe53ab6ccc84b5e3",
+      "sha256": "370e9a27cd1f1b47826f414dbe8b1da60112c3d291a4953d0ca8f115b5593983",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Provia.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Purple hue.jpg",
+      "bytes": 113336,
+      "git_blob": "a095590c94eaf09615b409712138db3d6e51873f",
+      "sha256": "e1d77537aff3fb5634d99c9674f9dcd075f0165dfdc5b678ac1e0de775c285dc",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Purple hue.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Red hue.jpg",
+      "bytes": 101804,
+      "git_blob": "134f212a7c2542a9762714fecf9fffb48b041ef5",
+      "sha256": "4d6d394d598ae6e3973bd85d7725b58f9df59de68ce7226eb4cdc26190e1b252",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Red hue.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Saturated.jpg",
+      "bytes": 125641,
+      "git_blob": "0ab54a0b0c861525eeb05f984ae82d4a3a343452",
+      "sha256": "55c384ad3fd55ade3b3da639c68198d90b02932c8263b49139991909967693b5",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Saturated.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Single Color.jpg",
+      "bytes": 145294,
+      "git_blob": "70a578af34e1447ea1d58bd23442e693c8a273c0",
+      "sha256": "2d0798b3d5ee90045a4f52764b4d2fc45a79673826256c12442f98be5303d5f7",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Single Color.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Technicolor.jpg",
+      "bytes": 132909,
+      "git_blob": "b563b6872091c42c071c7309ca7038c6f73e757e",
+      "sha256": "81c6efc3f0a1aa27d9d92420ea59dd525533fa68d1853f8681dcc79a70f88865",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Technicolor.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Velvia.jpg",
+      "bytes": 118927,
+      "git_blob": "125423cde8952b69289585e3bfc4aea15cce1e4a",
+      "sha256": "d7ba6472c8f2bcb897d7d27bb3c5f870d54a0f486ee7e9569842d53930b46122",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Velvia.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Vivid Colors.jpg",
+      "bytes": 146384,
+      "git_blob": "67c16928a78077f0d26ca82bc335041a63e03676",
+      "sha256": "46baf8231e5dbad35441c672ded90e22ada32e6b1e269258f6e3579d87efcbcf",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Vivid Colors.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Warm Colors.jpg",
+      "bytes": 111604,
+      "git_blob": "92f6fcd1ca4ad564ab84af189b708fa2b7e45925",
+      "sha256": "93b615ef99d13669f830abb4b3a142c1ec3d1b74159cbead0bb10d848c67189a",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Warm Colors.jpg"
+    },
+    {
+      "path": "StylePile/Colors/Yellow hue.jpg",
+      "bytes": 131206,
+      "git_blob": "974c5949014cb955440ff48911f8c85c1393e504",
+      "sha256": "27320a59e32cafa1a1262bb1664bedacd3e0226019e187fa1da555fac332b073",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Colors/Yellow hue.jpg"
+    },
+    {
+      "path": "StylePile/Directions/Cel shaded.jpg",
+      "bytes": 134077,
+      "git_blob": "56e658435a6ca6d0c8b95dae7cc3a023d6004297",
+      "sha256": "52f1091bdabcdb70cfe1a0759f33d444c190bdbbdad2da8616e1e15a73006d5f",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Directions/Cel shaded.jpg"
+    },
+    {
+      "path": "StylePile/Directions/Cel shading.jpg",
+      "bytes": 140568,
+      "git_blob": "ae56bd526c4d1f7bafba9b77148882248c201c0b",
+      "sha256": "03dd2dbdc5d3ad781aa9ebf7ff50d8a1ae8a61a40c503427172e3016da8d87e9",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Directions/Cel shading.jpg"
+    },
+    {
+      "path": "StylePile/Directions/Detailed illustration.jpg",
+      "bytes": 162591,
+      "git_blob": "0cc0ec974da70a02049df1d89a66ba318a2404d1",
+      "sha256": "b834172d46a2f0cd1de9ac64648796ae1999e48018295bad6833fda0e115de6c",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Directions/Detailed illustration.jpg"
+    },
+    {
+      "path": "StylePile/Directions/Graphic novel.jpg",
+      "bytes": 166554,
+      "git_blob": "c607fd27a80bee8c65516cc6a9baab680aaec543",
+      "sha256": "a58cab64754f64fa1fdf3e775c0a8a10fd2c448d6e2b7666fc113b38d9beb721",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Directions/Graphic novel.jpg"
+    },
+    {
+      "path": "StylePile/Directions/Illustration.jpg",
+      "bytes": 149750,
+      "git_blob": "58f2713f6c5cdb6d01d557f48ef90b77b812da6d",
+      "sha256": "5db86718d6ea09b03f4aff850b15b40ccd4edb24d699b38ffdc8f44fbaae0d03",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Directions/Illustration.jpg"
+    },
+    {
+      "path": "StylePile/Directions/Masterpiece.jpg",
+      "bytes": 182749,
+      "git_blob": "985fcc0609fac40585c287b4321a8cc656045d50",
+      "sha256": "aa4228bd3d79eb60236e2094585bc03b4d98d2cb64b5e97376fb43e14fa25011",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Directions/Masterpiece.jpg"
+    },
+    {
+      "path": "StylePile/Directions/Realistic.jpg",
+      "bytes": 144621,
+      "git_blob": "5dfcf823bed9f6dd0a5699ae3a572300d34cdcef",
+      "sha256": "04c1f1c93dd165ec58683b954b2e33271a26e80fd97685839fd6b1d24714496b",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Directions/Realistic.jpg"
+    },
+    {
+      "path": "StylePile/Directions/Rough sketch.jpg",
+      "bytes": 164654,
+      "git_blob": "fbae212286cc680a5e0345eb7dab8093a2d62a49",
+      "sha256": "9ac011cab804df1a8cb9c3f8f239eb43f527414573ecc1c230ca298ff11c320f",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Directions/Rough sketch.jpg"
+    },
+    {
+      "path": "StylePile/Directions/Screen print.jpg",
+      "bytes": 158600,
+      "git_blob": "a1fa430bd8e2a64a2121ba713a5a474f981ed1c0",
+      "sha256": "6dfb0e8955dcbfe6ff4dc33ca9cf9be09b95f48fcd6bd51146cf85f03fbaff65",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Directions/Screen print.jpg"
+    },
+    {
+      "path": "StylePile/Directions/Simple illustration.jpg",
+      "bytes": 118236,
+      "git_blob": "c362d0a0ce9fee773816adecc80a46986b150569",
+      "sha256": "28c9e1e9bf666533d84f9cb06d50d879bf2cb5b7e8c35fe0dde8468b1b5f4d5f",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Directions/Simple illustration.jpg"
+    },
+    {
+      "path": "StylePile/Directions/Sketch.jpg",
+      "bytes": 144324,
+      "git_blob": "f47cdcd6d51df5202832728f1431fee510f56566",
+      "sha256": "d778b74a411c7a73c317021725202bf56f1b44db5324b96545d77e08340d8546",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Directions/Sketch.jpg"
+    },
+    {
+      "path": "StylePile/Directions/Sketched.jpg",
+      "bytes": 162660,
+      "git_blob": "5189e0bad509fe6580ac51b8acd2c093867d977f",
+      "sha256": "558f7885d16ade55487a59cdd345d8eb337c0e8b1a9490e6b02bd1802038fb7b",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Directions/Sketched.jpg"
+    },
+    {
+      "path": "StylePile/Directions/Technical illustration.jpg",
+      "bytes": 128951,
+      "git_blob": "566e58465f4a4bccd4f4729685a94e3d85271fc4",
+      "sha256": "545f3c28115ce188975f712c390e46572a55cbcc722d969cd943d6f9ffa26e60",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Directions/Technical illustration.jpg"
+    },
+    {
+      "path": "StylePile/Directions/Ultra detailed.jpg",
+      "bytes": 146587,
+      "git_blob": "db7737cc4b6cd8805cb4a7d36ceed916a5bff036",
+      "sha256": "c59c150357cfb14110a09bfa193f226719a9ec0f909e63fb03663896a6e24b59",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Directions/Ultra detailed.jpg"
+    },
+    {
+      "path": "StylePile/Directions/Ultrarealistic.jpg",
+      "bytes": 143254,
+      "git_blob": "79f2d80c31d3918b156af890385e262f34dace76",
+      "sha256": "79eddef7886e4c4d2df57060deb8d9117bcf62571e44a86b73c6bf9ba68e7d2b",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Directions/Ultrarealistic.jpg"
+    },
+    {
+      "path": "StylePile/Directions/Visual novel.jpg",
+      "bytes": 148360,
+      "git_blob": "3fd21160e00571e76faea168bdc1ea3e5bae05dd",
+      "sha256": "52a2a77103cf38feca90d3953e58c98c7391a1a0338cf3d28d42e163462ce7ce",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Directions/Visual novel.jpg"
+    },
+    {
+      "path": "StylePile/Inspiration/Actions.txt",
+      "bytes": 284,
+      "git_blob": "19cae4544c48ef5d41cd10fd293ad4d1d8284b29",
+      "sha256": "77d6dc976168931220791381d31e38dca9999df2b8107b84e96aaea3f745e60d",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Inspiration/Actions.txt"
+    },
+    {
+      "path": "StylePile/Inspiration/Locations.txt",
+      "bytes": 661,
+      "git_blob": "ebbbb401735d80e004766cb423847985dc6c5ba3",
+      "sha256": "bec75ed0d58a0694756d1ce199f21e380899468eac11590c217dc2eca0d2f4b0",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Inspiration/Locations.txt"
+    },
+    {
+      "path": "StylePile/Inspiration/Subjects.txt",
+      "bytes": 840,
+      "git_blob": "6d8adc0cc8a043030a568ae29524da452fd01b31",
+      "sha256": "7e0b985ff31c5fdc7d7210b94b5c92240370aee31f714bc926b8b27524fe7ed8",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Inspiration/Subjects.txt"
+    },
+    {
+      "path": "StylePile/Moods/Amusing.jpg",
+      "bytes": 150999,
+      "git_blob": "bcf8d7712d4b6a3ad4e2a450cfb8f09cc0dc5caf",
+      "sha256": "8c31ad4bc0c4ff583711c47190a05ff447bb4431c4d15bd0cfc754e9a6d0002e",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Moods/Amusing.jpg"
+    },
+    {
+      "path": "StylePile/Moods/Angry.jpg",
+      "bytes": 160738,
+      "git_blob": "392feed0928279953d73d640d939793576e2ce0c",
+      "sha256": "e1361271e9207acdff9105c12a182e767e6b3bc9dbb3aab6143266abe8cf560d",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Moods/Angry.jpg"
+    },
+    {
+      "path": "StylePile/Moods/Cosy.jpg",
+      "bytes": 161540,
+      "git_blob": "501220d5b03dbd81d0430beac5d167c80b1f658f",
+      "sha256": "d5a46994a047051e8ead526b8c19beae5c3e6ccb8ac2c17c10f083329d6faa6b",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Moods/Cosy.jpg"
+    },
+    {
+      "path": "StylePile/Moods/Depressing.jpg",
+      "bytes": 161413,
+      "git_blob": "05d920d163425f80813b22929b49edd209757e8c",
+      "sha256": "027b39e5c172356b640332cd25a7c15619372d20706829c2b737858570323cc9",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Moods/Depressing.jpg"
+    },
+    {
+      "path": "StylePile/Moods/Disgusting.jpg",
+      "bytes": 165439,
+      "git_blob": "742e064356264f16318e5f8a7ad48140147ad5a7",
+      "sha256": "4ad3be372225f41603ac067075680ea5bee00f7446959caee793eb337b7acaf9",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Moods/Disgusting.jpg"
+    },
+    {
+      "path": "StylePile/Moods/Embarrassing.jpg",
+      "bytes": 173558,
+      "git_blob": "8cfadc22fddec55b08c421a64f9dfd607a617b13",
+      "sha256": "eedccc1e1d14e66409a35bf2d9620be654390efd5819a112f6ee49d3f849a946",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Moods/Embarrassing.jpg"
+    },
+    {
+      "path": "StylePile/Moods/Energetic.jpg",
+      "bytes": 161610,
+      "git_blob": "03a98974e103f5a49109e7b74acb02808eef3edf",
+      "sha256": "c93918911b138720d96627c7bf2c96a027fe193e985d8b9f5a6a458e6607b832",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Moods/Energetic.jpg"
+    },
+    {
+      "path": "StylePile/Moods/Evil.jpg",
+      "bytes": 153488,
+      "git_blob": "7fd31d7df554221d0dec7e154e19e98a226eb4a0",
+      "sha256": "e9de703e47dc9e4894482a34891e6878f2d277906e7fc9cff1ab27aac352ae8e",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Moods/Evil.jpg"
+    },
+    {
+      "path": "StylePile/Moods/Fearful.jpg",
+      "bytes": 155201,
+      "git_blob": "0acddbaebe6fd9c97bb908e7e405674b998095df",
+      "sha256": "c58142f467324601a12ab4a64a996e7a41d292bd2eb82ac723d5d46fb790482c",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Moods/Fearful.jpg"
+    },
+    {
+      "path": "StylePile/Moods/Frightening.jpg",
+      "bytes": 165574,
+      "git_blob": "eb7460fb8d233d1e2a9ca685867539bfe6ad94aa",
+      "sha256": "d97c1a5455c6758772991b7c9e1aea718576b7a0bda3a23dbefb817b7c23dbdc",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Moods/Frightening.jpg"
+    },
+    {
+      "path": "StylePile/Moods/Grim.jpg",
+      "bytes": 153038,
+      "git_blob": "ce026c9abb1ffb2ff9a66354b5034143f1c9790a",
+      "sha256": "f6faa68693f69162e2df974313bef83a1a13dd7d8b3d07e51992f3b3699109c3",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Moods/Grim.jpg"
+    },
+    {
+      "path": "StylePile/Moods/Guilty.jpg",
+      "bytes": 161889,
+      "git_blob": "368bfd4a0932e269b56f916a2eafc5b13c1b559c",
+      "sha256": "41e6610ee529952c7ce2df27ccf6f3b05be56c4cf3baabd119407326435aa3ba",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Moods/Guilty.jpg"
+    },
+    {
+      "path": "StylePile/Moods/Happy.jpg",
+      "bytes": 157029,
+      "git_blob": "9bbca210eeadb06cf207696cabc5178af2a54828",
+      "sha256": "f9e9c7ff6374711986373fecbb10bbb8ecd781b772d5e274b9f2e5c2d1462b80",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Moods/Happy.jpg"
+    },
+    {
+      "path": "StylePile/Moods/Hopeful.jpg",
+      "bytes": 157047,
+      "git_blob": "b09408f3ea82c054dd74224407b578164d1b975f",
+      "sha256": "02516ca22920148258fdd6f07f1e8d79399b4ff562c8ffe64d682e7bb3c1c302",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Moods/Hopeful.jpg"
+    },
+    {
+      "path": "StylePile/Moods/Hopeless.jpg",
+      "bytes": 159826,
+      "git_blob": "e51882db2a27223761d285ae48a3990434326e2e",
+      "sha256": "184c3c05ffb7498e8a1fb2e3d1c6073d253c7a7b420b035b34b5166eb29586d4",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Moods/Hopeless.jpg"
+    },
+    {
+      "path": "StylePile/Moods/Lonely.jpg",
+      "bytes": 137838,
+      "git_blob": "f03ce662f5ebb2d720951883275b024ce5890117",
+      "sha256": "cba1ec75dcef5a83c410142171b8f1be0bc270ffa4f56b683c86bd125d9fbe58",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Moods/Lonely.jpg"
+    },
+    {
+      "path": "StylePile/Moods/Lustful.jpg",
+      "bytes": 156051,
+      "git_blob": "290df352612bbd3c32dd092b444e9795d58e07fd",
+      "sha256": "653519da309a9909f42548818cb3cd0cc909061514a2025d5baced46c629a69c",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Moods/Lustful.jpg"
+    },
+    {
+      "path": "StylePile/Moods/Peaceful.jpg",
+      "bytes": 151747,
+      "git_blob": "cfaa5295c610c1f4037e02f580bc68705d701124",
+      "sha256": "fd48134a2dd152e1780a250f2795cc3e84cc1398c8db03dc0f4275dd48e3320e",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Moods/Peaceful.jpg"
+    },
+    {
+      "path": "StylePile/Moods/Proud.jpg",
+      "bytes": 151225,
+      "git_blob": "7cb577b7ebb254e4f2bcd43a106dd391a32302a2",
+      "sha256": "d30ccd2e6617b74be7ca8e0d113d2ab62b5b6c215d6281b16a0e2f0fb9d270ab",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Moods/Proud.jpg"
+    },
+    {
+      "path": "StylePile/Moods/Relieving.jpg",
+      "bytes": 168885,
+      "git_blob": "b0aa613c3f751fe94427d0e67ee5d60340897edc",
+      "sha256": "129c96ddb30b1245a6be543594e5f5ba44acafeb0d76c5880cd1c9cdafca0903",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Moods/Relieving.jpg"
+    },
+    {
+      "path": "StylePile/Moods/Romantic.jpg",
+      "bytes": 163472,
+      "git_blob": "0664f4f576f6a5fb44bce7fac67b079afc1b9dea",
+      "sha256": "42dd74d978516fe1b2bab50f5166610bd769b3921c959da2a215513991ccb949",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Moods/Romantic.jpg"
+    },
+    {
+      "path": "StylePile/Moods/Sad.jpg",
+      "bytes": 156561,
+      "git_blob": "68cb3ace6368738681405b9e7be06204d3454665",
+      "sha256": "71280aa80b5174bf0b1e854dda1395357e4f49fa3743d4cfcd2d4bfbf9542378",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Moods/Sad.jpg"
+    },
+    {
+      "path": "StylePile/Moods/Satisfying.jpg",
+      "bytes": 157085,
+      "git_blob": "0d023dbd2c428f430b0d80a813b061b70fb0c510",
+      "sha256": "56fe83bcdbe28da6710754833fd2b6226e73d864b4192491bf68676d0bdaf403",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Moods/Satisfying.jpg"
+    },
+    {
+      "path": "StylePile/Moods/Shameful.jpg",
+      "bytes": 157943,
+      "git_blob": "bf210f0f6b8b6703fc13158188d4dd4afbdd9a8b",
+      "sha256": "e517cbb8f7b9dce5649865a45f20dd2cd452c26a9d82841bfb9eb66926a4b582",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Moods/Shameful.jpg"
+    },
+    {
+      "path": "StylePile/Moods/Surprising.jpg",
+      "bytes": 159685,
+      "git_blob": "2d98bd098a312d1ec1746f08fc9cfaec7de0501f",
+      "sha256": "f6a867fd8073389987df65e3f769e7a5212b5b78c8e0059e56f5b379e18ccc2c",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/StylePile/Moods/Surprising.jpg"
+    },
+    {
+      "path": "scripts/StylePile.py",
+      "bytes": 48409,
+      "git_blob": "f203d75fa234867381dcd07fb7806919ff5538ea",
+      "sha256": "7a1d2ecfe72936f3a2faba6641609afa0880fdf1cf5af7fbaab41962961a6479",
+      "source": "https://github.com/some9000/StylePile/blob/85b549a10ff6c5b1604e980cd2107253b088e832/scripts/StylePile.py"
+    }
+  ]
+}

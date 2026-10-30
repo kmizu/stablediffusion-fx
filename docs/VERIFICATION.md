@@ -1385,3 +1385,7 @@ See [verification](pnginfo-injection-verification.md) for real SD1.5/SDXL native
 ## Steps Animation (2026-10-30)
 
 See [verification](steps-animation-verification.md) for real SD1.5/SDXL native Generate/Interrupt/recovery, txt2img/img2img/hires pixel parity, actual encoded and decoded videos, five-codec checks, incomplete-export policy, mutation/error coverage and licensing. Whole Python passed; whole Scala passed 1269 tests with one skip; final assembly passed. See the linked record for artifact hash and measured limits.
+
+## StylePile (2026-10-30)
+
+See [verification](stylepile-verification.md) for source/blob/SHA provenance, complete reference catalog, native gallery and custom data, SD1.5/SDXL configured prompt and img2img RGB parity, sequence/interrupt/recovery, whole Scala (1289 passed, one skip), assembly and assembled-jar-only native checks. Source adaptations and limits are explicit; no release publication is claimed.
