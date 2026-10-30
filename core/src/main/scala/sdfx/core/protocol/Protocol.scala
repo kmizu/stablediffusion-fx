@@ -94,7 +94,9 @@ case class GenerationRequest(
     lbwPresets: Map[String, String] = Map.empty,
     systemInfoFields: Seq[String] = Nil,
     vaeRecoveryDir: String = "",
-    hardwareInfo: HardwareInfo.Options = HardwareInfo.Options()
+    hardwareInfo: HardwareInfo.Options = HardwareInfo.Options(),
+    hiresLoras: Option[Seq[sdfx.core.model.LoraRef]] = None,
+    manualLoras: Option[Seq[sdfx.core.model.LoraRef]] = None
 ) derives RW
 
 /** Partial WD v3 worker preparation; the worker owns image snapshots and assets. */
@@ -114,7 +116,10 @@ case class WdBatchItem(status: String, input: String, positive: Option[String] =
 case class WdBatchResult(rows: Seq[WdBatchItem], partial: Boolean) derives RW
 
 case class GeneratedImage(path: String, seed: Long, subseed: Long = -1L, width: Int = 0, height: Int = 0,
-    hardwareInfo: Option[HardwareInfo.Record] = None) derives RW
+    hardwareInfo: Option[HardwareInfo.Record] = None,
+    hiresSeed: Option[Long] = None, hiresSubseed: Option[Long] = None,
+    hiresSubseedStrength: Option[Double] = None, hiresRepeat: Option[Int] = None,
+    hiresSeedResizeFromW: Option[Int] = None, hiresSeedResizeFromH: Option[Int] = None) derives RW
 
 /** Persistent auxiliary output; not an engine temp file or a final-image gallery member. */
 case class IntermediateArtifact(path: String, `type`: String = "image") derives RW
@@ -136,7 +141,8 @@ case class GenerationResult(
     composableLoraTrace: Option[ComposableLoraTrace] = None,
     systemInfo: Option[ujson.Value] = None,
     vaeRecovery: Seq[ujson.Value] = Nil,
-    resourceHashes: Map[String, String] = Map.empty
+    resourceHashes: Map[String, String] = Map.empty,
+    interrupted: Boolean = false
 ) derives RW
 
 case class UpscaleRequest(imagePath: String, upscaler: String, scale: Double, outputDir: String, upscalerPaths: Map[String, String] = Map.empty,

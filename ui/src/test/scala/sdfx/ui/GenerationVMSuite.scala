@@ -128,15 +128,18 @@ class GenerationVMSuite extends munit.FunSuite:
     assertEquals(vm.snapshot.controlnet(1), units(1))
   }
 
-  test("lora tags stay in the prompt and structured loras become tags") {
+  test("manual LoRAs retain full settings separately from same-name prompt tags") {
     val vm = new GenerationVM(Mode.Txt2Img)
     vm.load(GenerationParams(prompt = "girl, <lora:detail:0.8>"))
     assertEquals(vm.toParams.prompt, "girl, <lora:detail:0.8>")
     assertEquals(vm.toParams.loras, Nil)
-    vm.load(GenerationParams(prompt = "girl, <lora:detail:0.8>", loras = Seq(LoraRef("detail", 0.8), LoraRef("style", 1.0))))
-    assertEquals(vm.prompt.get, "girl, <lora:detail:0.8>, <lora:style:1.0>")
+    val manual = Seq(LoraRef("detail", 0.8, Some(.4), Some("CUSTOM"), Some(.1), Some(.9)), LoraRef("style", 1.0))
+    vm.load(GenerationParams(prompt = "girl, <lora:detail:0.8>", loras = manual))
+    assertEquals(vm.prompt.get, "girl, <lora:detail:0.8>")
+    assertEquals(vm.toParams.loras, manual)
+    assertEquals(vm.snapshot.loras, manual)
     val extracted = LoraSyntax.extract(vm.toParams.prompt)
-    assertEquals(extracted.loras.map(_.name), Seq("detail", "style"))
+    assertEquals(extracted.loras.map(_.name), Seq("detail"))
   }
 
   test("restore from infotext text keeps the init image") {

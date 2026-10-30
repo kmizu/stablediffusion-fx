@@ -20,6 +20,16 @@ final class SettingsDialog(owner: Stage, initial: Settings, initialTab: Int = 0,
     Seq(d.checkpoints, d.vae, d.lora, d.controlnet, d.embeddings, d.upscalers, d.faceRestore, d.svd, d.zero123, d.photomaker).zip(kinds).map((xs, k) => k -> FXCollections.observableArrayList(xs*)).toMap
 
   private val outputDir = new SimpleStringProperty(initial.outputDir)
+  private val hiresOutputDir = new SimpleStringProperty(initial.hiresFixTweaks.outputDir)
+  private val hiresShowCfg = new SimpleBooleanProperty(initial.hiresFixTweaks.showCfg)
+  private val hiresShowBatchSeed = new SimpleBooleanProperty(initial.hiresFixTweaks.showBatchSeed)
+  private val hiresShowPromptModes = new SimpleBooleanProperty(initial.hiresFixTweaks.showPromptModes)
+  private val hiresShowRemove = new SimpleBooleanProperty(initial.hiresFixTweaks.showRemoveNetworks)
+  private val hiresShowStyles = new SimpleBooleanProperty(initial.hiresFixTweaks.showStyles)
+  private val hiresRadio = new SimpleBooleanProperty(initial.hiresFixTweaks.promptModeRadio)
+  private val hiresSaveTemplate = new SimpleBooleanProperty(initial.hiresFixTweaks.saveTemplate)
+  private val hiresRestoreTemplate = new SimpleBooleanProperty(initial.hiresFixTweaks.restoreTemplate)
+  private val hiresCheckpointLabels = new SimpleStringProperty(initial.hiresFixTweaks.checkpointLabels)
   private val pythonExe = new SimpleStringProperty(initial.pythonExe.getOrElse(""))
   private val dtype = new SimpleStringProperty(initial.dtype)
   private val vramIndex = new SimpleIntegerProperty(VramModes.index(initial.vramMode).max(0))
@@ -103,6 +113,8 @@ final class SettingsDialog(owner: Stage, initial: Settings, initialTab: Int = 0,
     page(
       W.form()
         .add("Output folder", browseRow(outputDir, true, "Choose the output folder"), "Where generated images are saved (relative = inside the app folder)")
+        .add("Hires output folder", browseRow(hiresOutputDir, true, "Choose the Hires output folder"),
+          "Optional separate folder for Hires results. Empty uses Output folder. A non-default Output folder takes priority. Relative paths are inside the app folder.")
         .add("Named NSFW previews default", W.combo(FXCollections.observableArrayList("Blur", "Hide", "Show"), cardDefault), "Saved default for a new app session; changing it does not change the current temporary mode.")
         .add("Theme", W.combo(FXCollections.observableArrayList("dark", "light"), theme), "Color theme")
         .add("Live preview", W.intSlider(previewEvery, 0, 20), "Send a preview image every N sampling steps (0 = off)")
@@ -156,7 +168,19 @@ final class SettingsDialog(owner: Stage, initial: Settings, initialTab: Int = 0,
     scroll.setFitToWidth(true)
     new Tab("WD v3 (partial)", scroll)
 
-  private val tabs = new TabPane(modelsTab, generalTab, engineTab, mcpTab, wdTab)
+  private val hiresTab = new Tab("Hires", page(W.form()
+    .full(W.label("Hidden controls retain their values. Display changes apply when settings are saved.", "hint"))
+    .full(W.check("Show Hires CFG", hiresShowCfg))
+    .full(W.check("Show Hires batches and seed", hiresShowBatchSeed))
+    .full(W.check("Show prompt modes", hiresShowPromptModes))
+    .full(W.check("Show removal of first-pass network tags", hiresShowRemove))
+    .full(W.check("Show Hires styles", hiresShowStyles))
+    .full(W.check("Use radio buttons for prompt modes (off = dropdown)", hiresRadio))
+    .full(W.check("Save Hires prompt templates in image metadata", hiresSaveTemplate))
+    .full(W.check("Restore matching Hires prompt templates from image metadata", hiresRestoreTemplate))
+    .add("Checkpoint labels", W.combo(FXCollections.observableArrayList(sdfx.ui.vm.CheckpointLabels.modes*), hiresCheckpointLabels),
+      "Changes displayed names only. Hires uses the first-pass checkpoint; duplicate filenames retain an identifier.")))
+  private val tabs = new TabPane(modelsTab, generalTab, engineTab, mcpTab, wdTab, hiresTab)
   tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE)
   tabs.setPrefSize(720, 440)
   tabs.getSelectionModel.select(initialTab.max(0).min(tabs.getTabs.size - 1))
@@ -178,6 +202,11 @@ final class SettingsDialog(owner: Stage, initial: Settings, initialTab: Int = 0,
         initial.copy(
           modelDirs = currentDirs,
           outputDir = Option(outputDir.get).map(_.trim).filter(_.nonEmpty).getOrElse("outputs"),
+          hiresFixTweaks = initial.hiresFixTweaks.copy(outputDir = Option(hiresOutputDir.get).fold("")(_.trim),
+            showCfg = hiresShowCfg.get, showBatchSeed = hiresShowBatchSeed.get,
+            showPromptModes = hiresShowPromptModes.get, showRemoveNetworks = hiresShowRemove.get,
+            showStyles = hiresShowStyles.get, promptModeRadio = hiresRadio.get, checkpointLabels = hiresCheckpointLabels.get,
+            saveTemplate = hiresSaveTemplate.get, restoreTemplate = hiresRestoreTemplate.get),
           pythonExe = Option(pythonExe.get).map(_.trim).filter(_.nonEmpty),
           dtype = dtype.get,
           vramMode = VramModes.Modes(vramIndex.get.max(0).min(VramModes.Modes.size - 1))._1,

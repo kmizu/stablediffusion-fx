@@ -84,13 +84,18 @@ object Infotext:
       "Hires sampler" -> Option.when(hrOn)(hr.samplerName).flatten.filter(_ != p.samplerName),
       "Hires prompt" -> Option.when(hrOn && hr.prompt.nonEmpty)(hr.prompt),
       "Hires negative prompt" -> Option.when(hrOn && hr.negativePrompt.nonEmpty)(hr.negativePrompt),
+      "Hires empty prompt" -> Option.when(hrOn && hr.prompt.isEmpty && HiresPreparation.active(p)
+        .exists(_.value.get("prompts_resolved").contains(ujson.Bool(true))))("True"),
+      "Hires empty negative prompt" -> Option.when(hrOn && hr.negativePrompt.isEmpty && HiresPreparation.active(p)
+        .exists(_.value.get("prompts_resolved").contains(ujson.Bool(true))))("True"),
       "Hires CFG Scale" -> Option.when(hrOn)(hr.cfgScale).flatten.map(num),
       "Hires schedule type" -> Option.when(hrOn)(hr.scheduler).flatten.filter(_ != schedule),
       "Hires upscale" -> Option.when(hrOn && hr.resizeX == 0 && hr.resizeY == 0)(num(hr.scale)),
       "Hires resize" -> Option.when(hrOn && (hr.resizeX != 0 || hr.resizeY != 0))(s"${hr.resizeX}x${hr.resizeY}"),
       "Hires steps" -> Option.when(hrOn && hr.secondPassSteps > 0)(hr.secondPassSteps.toString),
       "Hires upscaler" -> Option.when(hrOn)(hr.upscaler),
-      "Lora hashes" -> Option.when(f.loraHashes.nonEmpty)(f.loraHashes.map((n, h) => s"$n: $h").mkString(", "))
+      "Lora hashes" -> Option.when(f.loraHashes.nonEmpty)(f.loraHashes.map((n, h) => s"$n: $h").mkString(", ")),
+      ManualLoraMetadata.key -> Option.when(p.loras.nonEmpty)(ManualLoraMetadata.encode(p.loras))
     )
     val base = ListMap.from(entries.collect { case (k, Some(v)) => k -> v })
     val extras = p.extra ++ f.extra
@@ -137,7 +142,8 @@ object Infotext:
     "Variation seed", "Variation seed strength", "Denoising strength", "Mask mode", "Mask blur", "Inpaint area",
     "Masked area padding", "Masked content",
     "Clip skip", "Batch size", "Batch count", "Eta", "Resize mode", "Hires upscale", "Hires resize", "Hires steps", "Hires upscaler", "Hires sampler", "Hires schedule type",
-    "Hires prompt", "Hires negative prompt", "Hires CFG Scale", "Lora hashes", "Version", "TI hashes"
+    "Hires prompt", "Hires negative prompt", "Hires empty prompt", "Hires empty negative prompt",
+    "Hires CFG Scale", "Hires CFG scale", "Lora hashes", "Version", "TI hashes", ManualLoraMetadata.key
   )
 
   /** Restores generation params from infotext on top of `base` (A1111 "send to txt2img"). */
@@ -169,10 +175,12 @@ object Infotext:
           scheduler = f.get("Hires schedule type"),
           prompt = f.getOrElse("Hires prompt", ""),
           negativePrompt = f.getOrElse("Hires negative prompt", ""),
-          cfgScale = d("Hires CFG Scale")
+          cfgScale = d("Hires CFG Scale").orElse(d("Hires CFG scale"))
         )
       else base.hires.copy(enabled = false)
     val subStrength = d("Variation seed strength").getOrElse(0.0)
+    val restoredHooks = f.get("Hires seed").flatMap(HiresSeedMetadata.parse)
+      .fold(base.hooks)(h => base.hooks.updated("hires_fix_tweaks", h))
     base.copy(
       prompt = pi.prompt,
       negativePrompt = pi.negativePrompt,
@@ -189,12 +197,13 @@ object Infotext:
       subseed = l("Variation seed").getOrElse(-1L),
       subseedStrength = subStrength,
       clipSkip = i("Clip skip").getOrElse(1),
+      loras = f.get(ManualLoraMetadata.key).flatMap(ManualLoraMetadata.parse).getOrElse(Nil),
       hooks =
         if f.get("Composable LoRA").exists(_.equalsIgnoreCase("true")) then
           val keys = Seq("with_step", "uc_text_model_encoder", "uc_diffusion_model", "plot_weights", "single_no_uc", "hires_global_step")
-          base.hooks + ("composable_lora" -> ujson.Obj.from(keys.map(k =>
+          restoredHooks + ("composable_lora" -> ujson.Obj.from(keys.map(k =>
             k -> ujson.Bool(f.get("Composable LoRA " + k).exists(_.equalsIgnoreCase("true"))))))
-        else base.hooks,
+        else restoredHooks,
       hires = hires,
       // Inpaint fields use A1111's paste defaults when absent (Whole picture, padding 32, original, Inpaint masked).
       img2img = base.img2img.map(ii =>

@@ -1,0 +1,569 @@
+{
+  "pin": "28902f742a795afc31d86641ad85466afdd280e6",
+  "cases": [
+    {
+      "base": "cat",
+      "hires": "",
+      "mode": "Default",
+      "remove": false,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "cat",
+        "cat"
+      ]
+    },
+    {
+      "base": "cat",
+      "hires": "",
+      "mode": "Default",
+      "remove": true,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "cat",
+        "cat"
+      ]
+    },
+    {
+      "base": "cat <lora:x:1> embedding",
+      "hires": "dog",
+      "mode": "Default",
+      "remove": false,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "cat <lora:x:1> embedding",
+        "dog"
+      ]
+    },
+    {
+      "base": "cat <lora:x:1> embedding",
+      "hires": "dog",
+      "mode": "Default",
+      "remove": true,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "cat <lora:x:1> embedding",
+        "dog"
+      ]
+    },
+    {
+      "base": "cat <hypernet:x:1>",
+      "hires": "  ",
+      "mode": "Default",
+      "remove": false,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "cat <hypernet:x:1>",
+        "  "
+      ]
+    },
+    {
+      "base": "cat <hypernet:x:1>",
+      "hires": "  ",
+      "mode": "Default",
+      "remove": true,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "cat <hypernet:x:1>",
+        "  "
+      ]
+    },
+    {
+      "base": "cat\n犬",
+      "hires": "red\r\nblue",
+      "mode": "Default",
+      "remove": false,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "cat\n犬",
+        "red\r\nblue"
+      ]
+    },
+    {
+      "base": "cat\n犬",
+      "hires": "red\r\nblue",
+      "mode": "Default",
+      "remove": true,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "cat\n犬",
+        "red\r\nblue"
+      ]
+    },
+    {
+      "base": "a",
+      "hires": "{braces}",
+      "mode": "Default",
+      "remove": false,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "a",
+        "{braces}"
+      ]
+    },
+    {
+      "base": "a",
+      "hires": "{braces}",
+      "mode": "Default",
+      "remove": true,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "a",
+        "{braces}"
+      ]
+    },
+    {
+      "base": "cat",
+      "hires": "",
+      "mode": "Append",
+      "remove": false,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "cat",
+        ""
+      ]
+    },
+    {
+      "base": "cat",
+      "hires": "",
+      "mode": "Append",
+      "remove": true,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "cat",
+        "cat\n"
+      ]
+    },
+    {
+      "base": "cat <lora:x:1> embedding",
+      "hires": "dog",
+      "mode": "Append",
+      "remove": false,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "cat <lora:x:1> embedding",
+        "cat <lora:x:1> embedding\ndog"
+      ]
+    },
+    {
+      "base": "cat <lora:x:1> embedding",
+      "hires": "dog",
+      "mode": "Append",
+      "remove": true,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "cat <lora:x:1> embedding",
+        "cat  embedding\ndog"
+      ]
+    },
+    {
+      "base": "cat <hypernet:x:1>",
+      "hires": "  ",
+      "mode": "Append",
+      "remove": false,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "cat <hypernet:x:1>",
+        "  "
+      ]
+    },
+    {
+      "base": "cat <hypernet:x:1>",
+      "hires": "  ",
+      "mode": "Append",
+      "remove": true,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "cat <hypernet:x:1>",
+        "cat \n  "
+      ]
+    },
+    {
+      "base": "cat\n犬",
+      "hires": "red\r\nblue",
+      "mode": "Append",
+      "remove": false,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "cat\n犬",
+        "cat\n犬\nred\r\nblue"
+      ]
+    },
+    {
+      "base": "cat\n犬",
+      "hires": "red\r\nblue",
+      "mode": "Append",
+      "remove": true,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "cat\n犬",
+        "cat\n犬\nred\r\nblue"
+      ]
+    },
+    {
+      "base": "a",
+      "hires": "{braces}",
+      "mode": "Append",
+      "remove": false,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "a",
+        "a\n{braces}"
+      ]
+    },
+    {
+      "base": "a",
+      "hires": "{braces}",
+      "mode": "Append",
+      "remove": true,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "a",
+        "a\n{braces}"
+      ]
+    },
+    {
+      "base": "cat",
+      "hires": "",
+      "mode": "Prepend",
+      "remove": false,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "cat",
+        ""
+      ]
+    },
+    {
+      "base": "cat",
+      "hires": "",
+      "mode": "Prepend",
+      "remove": true,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "cat",
+        "\ncat"
+      ]
+    },
+    {
+      "base": "cat <lora:x:1> embedding",
+      "hires": "dog",
+      "mode": "Prepend",
+      "remove": false,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "cat <lora:x:1> embedding",
+        "dog\ncat <lora:x:1> embedding"
+      ]
+    },
+    {
+      "base": "cat <lora:x:1> embedding",
+      "hires": "dog",
+      "mode": "Prepend",
+      "remove": true,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "cat <lora:x:1> embedding",
+        "dog\ncat  embedding"
+      ]
+    },
+    {
+      "base": "cat <hypernet:x:1>",
+      "hires": "  ",
+      "mode": "Prepend",
+      "remove": false,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "cat <hypernet:x:1>",
+        "  "
+      ]
+    },
+    {
+      "base": "cat <hypernet:x:1>",
+      "hires": "  ",
+      "mode": "Prepend",
+      "remove": true,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "cat <hypernet:x:1>",
+        "  \ncat "
+      ]
+    },
+    {
+      "base": "cat\n犬",
+      "hires": "red\r\nblue",
+      "mode": "Prepend",
+      "remove": false,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "cat\n犬",
+        "red\r\nblue\ncat\n犬"
+      ]
+    },
+    {
+      "base": "cat\n犬",
+      "hires": "red\r\nblue",
+      "mode": "Prepend",
+      "remove": true,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "cat\n犬",
+        "red\r\nblue\ncat\n犬"
+      ]
+    },
+    {
+      "base": "a",
+      "hires": "{braces}",
+      "mode": "Prepend",
+      "remove": false,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "a",
+        "{braces}\na"
+      ]
+    },
+    {
+      "base": "a",
+      "hires": "{braces}",
+      "mode": "Prepend",
+      "remove": true,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "a",
+        "{braces}\na"
+      ]
+    },
+    {
+      "base": "cat @slot@ red",
+      "hires": "@slot@blue\n@red@green",
+      "mode": "Prompt S/R",
+      "remove": false,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "cat  red",
+        "cat blue\n green"
+      ]
+    },
+    {
+      "base": "a@b",
+      "hires": "@a@@b@x@@y",
+      "mode": "Prompt S/R",
+      "remove": false,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "a@b",
+        "x@y"
+      ]
+    },
+    {
+      "base": "cat #slot# red",
+      "hires": "#slot#blue\n#red#green",
+      "mode": "Prompt S/R",
+      "remove": false,
+      "separator": "{newline}",
+      "marker": "#",
+      "expected": [
+        "cat  red",
+        "cat blue\n green"
+      ]
+    },
+    {
+      "base": "a#b",
+      "hires": "#a##b#x##y",
+      "mode": "Prompt S/R",
+      "remove": false,
+      "separator": "{newline}",
+      "marker": "#",
+      "expected": [
+        "a#b",
+        "x#y"
+      ]
+    },
+    {
+      "base": "cat *slot* red",
+      "hires": "*slot*blue\n*red*green",
+      "mode": "Prompt S/R",
+      "remove": false,
+      "separator": "{newline}",
+      "marker": "*",
+      "expected": [
+        "cat  red",
+        "cat blue\n green"
+      ]
+    },
+    {
+      "base": "a*b",
+      "hires": "*a**b*x**y",
+      "mode": "Prompt S/R",
+      "remove": false,
+      "separator": "{newline}",
+      "marker": "*",
+      "expected": [
+        "a*b",
+        "x*y"
+      ]
+    },
+    {
+      "base": "cat \\slot\\ red",
+      "hires": "\\slot\\blue\n\\red\\green",
+      "mode": "Prompt S/R",
+      "remove": false,
+      "separator": "{newline}",
+      "marker": "\\",
+      "expected": [
+        "cat  red",
+        "cat blue\n green"
+      ]
+    },
+    {
+      "base": "a\\b",
+      "hires": "\\a\\\\b\\x\\\\y",
+      "mode": "Prompt S/R",
+      "remove": false,
+      "separator": "{newline}",
+      "marker": "\\",
+      "expected": [
+        "a\\b",
+        "x\\y"
+      ]
+    },
+    {
+      "base": "cat ★slot★ red",
+      "hires": "★slot★blue\n★red★green",
+      "mode": "Prompt S/R",
+      "remove": false,
+      "separator": "{newline}",
+      "marker": "★",
+      "expected": [
+        "cat  red",
+        "cat blue\n green"
+      ]
+    },
+    {
+      "base": "a★b",
+      "hires": "★a★★b★x★★y",
+      "mode": "Prompt S/R",
+      "remove": false,
+      "separator": "{newline}",
+      "marker": "★",
+      "expected": [
+        "a★b",
+        "x★y"
+      ]
+    },
+    {
+      "base": "cat 😀slot😀 red",
+      "hires": "😀slot😀blue\n😀red😀green",
+      "mode": "Prompt S/R",
+      "remove": false,
+      "separator": "{newline}",
+      "marker": "😀",
+      "expected": [
+        "cat  red",
+        "cat blue\n green"
+      ]
+    },
+    {
+      "base": "a😀b",
+      "hires": "😀a😀😀b😀x😀😀y",
+      "mode": "Prompt S/R",
+      "remove": false,
+      "separator": "{newline}",
+      "marker": "😀",
+      "expected": [
+        "a😀b",
+        "x😀y"
+      ]
+    },
+    {
+      "base": "a\nb",
+      "hires": "@a\nb@multi\nline\n",
+      "mode": "Prompt S/R",
+      "remove": false,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "a\nb",
+        "multi\nline\n"
+      ]
+    },
+    {
+      "base": "red red",
+      "hires": "@red@blue\n@blue@",
+      "mode": "Prompt S/R",
+      "remove": false,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "red red",
+        "\n \n"
+      ]
+    },
+    {
+      "base": "cat @slot@",
+      "hires": "ignored prefix\n@slot@\r\nnew\r\n",
+      "mode": "Prompt S/R",
+      "remove": false,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "cat ",
+        "cat new\r\n"
+      ]
+    },
+    {
+      "base": "cat",
+      "hires": "no instruction",
+      "mode": "Prompt S/R",
+      "remove": false,
+      "separator": "{newline}",
+      "marker": "@",
+      "expected": [
+        "cat",
+        "cat"
+      ]
+    },
+    {
+      "base": "a",
+      "hires": "b",
+      "mode": "Append",
+      "remove": false,
+      "separator": "{{literal}}{newline}",
+      "marker": "@",
+      "expected": [
+        "a",
+        "a{literal}\nb"
+      ]
+    }
+  ]
+}

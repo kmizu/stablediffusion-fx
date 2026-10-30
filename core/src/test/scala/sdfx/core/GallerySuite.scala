@@ -79,6 +79,21 @@ class OutputNamingSuite extends munit.FunSuite with TempDir:
   }
 
 class GalleryIndexSuite extends munit.FunSuite with TempDir:
+  tmp.test("additional roots rescan dynamically and deduplicate while excluding temporary files") { dir =>
+    val root = dir.resolve("normal")
+    val other = dir.resolve("hires")
+    val a = png(root.resolve("a.png"), None, T0)
+    val b = png(other.resolve("b.png"), None, T0 + 1)
+    png(other.resolve(".tmp/hidden.png"), None, T0 + 2)
+    png(other.resolve("vae-recovery/hidden.png"), None, T0 + 3)
+    var extra = Seq.empty[Path]
+    val index = new GalleryIndex(root, () => extra)
+    assertEquals(index.scan().map(_.path), Vector(a))
+    extra = Seq(other, root, other)
+    assertEquals(index.scan().map(_.path), Vector(b, a))
+    assertEquals(index.scan(1).map(_.path), Vector(b))
+    assertEquals(new GalleryIndex(root, () => extra).scan().map(_.path), Vector(b, a))
+  }
   import TestFiles.*
 
   private def png(p: Path, params: Option[String], mtime: Long): Path =

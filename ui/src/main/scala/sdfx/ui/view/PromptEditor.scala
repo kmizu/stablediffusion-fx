@@ -1,16 +1,19 @@
 package sdfx.ui.view
 
 import javafx.beans.property.StringProperty
+import javafx.collections.{FXCollections, ObservableList, ListChangeListener}
 import javafx.geometry.Pos
 import javafx.scene.control.*
 import javafx.scene.input.{KeyCode, KeyEvent}
 import javafx.scene.layout.{StackPane, VBox}
-import sdfx.core.model.{LoraSyntax, PromptStyle}
+import sdfx.core.model.{LoraSyntax, LoraRef, PromptStyle}
 import sdfx.engine.CatalogSnapshot
 import sdfx.ui.vm.{PromptEdit, PromptInsertionTarget}
 
 /** Prompt + negative prompt with token counters, Ctrl+Up/Down attention editing, LoRA picker and styles. */
-final class PromptEditor(ctx: UiContext, prompt: StringProperty, negative: StringProperty, modeKey: String):
+final class PromptEditor(ctx: UiContext, prompt: StringProperty, negative: StringProperty, modeKey: String,
+                         promptStyles: ObservableList[String] = FXCollections.observableArrayList[String](),
+                         manualLoras: ObservableList[LoraRef] = FXCollections.observableArrayList[LoraRef]()):
   val promptArea: TextArea = area(prompt, "Prompt — what you want to see (Ctrl+Enter to generate)", 4)
   val negativeArea: TextArea = area(negative, "Negative prompt — what to avoid", 2)
   private var lastFocused: TextArea = promptArea
@@ -157,7 +160,36 @@ final class PromptEditor(ctx: UiContext, prompt: StringProperty, negative: Strin
   private def loraButtonAnchor = toolbar.getChildren.get(0)
 
   val view: VBox =
-    val v = new VBox(6, withCounter(promptArea), withCounter(negativeArea), toolbar)
+    val names = W.label("", "hint")
+    names.setId(s"$modeKey-prompt-style-order")
+    names.setWrapText(true)
+    val clear = W.button("Clear styles", "Remove the styles applied at generation time") { promptStyles.clear() }
+    clear.setId(s"$modeKey-clear-prompt-styles")
+    val selected = new VBox(4, names, clear)
+    def updateStyles(): Unit =
+      names.setText("Styles applied at generation: " + promptStyles.toArray(Array.empty[String]).mkString(" → "))
+      selected.setVisible(!promptStyles.isEmpty)
+      selected.setManaged(!promptStyles.isEmpty)
+    promptStyles.addListener((_: ListChangeListener.Change[? <: String]) => updateStyles())
+    updateStyles()
+    val manual = new VBox(4)
+    manual.setId(s"$modeKey-manual-loras")
+    def updateManual(): Unit =
+      manual.getChildren.clear()
+      manual.getChildren.add(W.label("Manual LoRAs (kept when Hires removes prompt tags)", "hint"))
+      manualLoras.toArray(Array.empty[LoraRef]).zipWithIndex.foreach { (ref, index) =>
+        val detail = Seq(s"${ref.name} · TE ${ref.weight}", s"UNet ${ref.unet.getOrElse(ref.weight)}") ++
+          ref.lbw.map("Blocks " + _) ++ ref.start.map("Start " + _) ++ ref.stop.map("Stop " + _)
+        val label = W.label(detail.mkString(" · "), "hint")
+        label.setWrapText(true)
+        val remove = W.button("Remove", s"Remove manual LoRA ${ref.name}") { manualLoras.remove(index); () }
+        manual.getChildren.add(new VBox(2, label, remove))
+      }
+      manual.setVisible(!manualLoras.isEmpty)
+      manual.setManaged(!manualLoras.isEmpty)
+    manualLoras.addListener((_: ListChangeListener.Change[? <: LoraRef]) => updateManual())
+    updateManual()
+    val v = new VBox(6, withCounter(promptArea), withCounter(negativeArea), toolbar, selected, manual)
     v.getStyleClass.add("prompt-editor")
     W.tip(promptArea, "Ctrl+Up / Ctrl+Down change the attention weight of the selection or the word under the caret")
     v

@@ -14,6 +14,13 @@ import scala.util.control.NonFatal
 final class UiContext(val services: AppServices, val catalog: CatalogVM, val stage: Stage):
   val toaster = new Toaster
   val styles: ObservableList[PromptStyle] = FXCollections.observableArrayList()
+  var hiresSeedHistory = new sdfx.ui.vm.HiresSeedHistory
+  lazy val hiresPreferences = new javafx.beans.property.SimpleObjectProperty(services.settings.hiresFixTweaks)
+  val checkpointName = new javafx.beans.property.SimpleStringProperty("")
+  def checkpointLabel(name: String, hires: Boolean = false): String =
+    val entries = catalog.snapshot.get.checkpoints
+    entries.find(_.name == name).map(sdfx.ui.vm.CheckpointLabels.label(_, entries,
+      hiresPreferences.get.checkpointLabels, hires)).getOrElse(name)
   private var styleRefresh = 0L
   lazy val styleLibrary = new StyleLibrary(services.home.stylesFile)
   lazy val hardwareInfo = new sdfx.engine.HardwareInfoService(services)

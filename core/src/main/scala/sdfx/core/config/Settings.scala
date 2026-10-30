@@ -41,6 +41,11 @@ case class ModelDirs(
       photomaker = add(photomaker, "models/photomaker")
     )
 
+case class HiresFixTweaksPreferences(outputDir: String = "", showCfg: Boolean = true,
+    showBatchSeed: Boolean = true, showPromptModes: Boolean = true, showRemoveNetworks: Boolean = true,
+    showStyles: Boolean = true, promptModeRadio: Boolean = true, checkpointLabels: String = "Default",
+    saveTemplate: Boolean = true, restoreTemplate: Boolean = true) derives RW
+
 case class Settings(
     modelDirs: ModelDirs = ModelDirs(),
     outputDir: String = "outputs",
@@ -73,7 +78,8 @@ case class Settings(
     modelPreviewFolders: Map[String, Seq[String]] = Map.empty,
     wdV3Model: Option[String] = None,
     wdV3Tags: Option[String] = None,
-    tagAutocompleteCsv: Option[String] = None
+    tagAutocompleteCsv: Option[String] = None,
+    hiresFixTweaks: HiresFixTweaksPreferences = HiresFixTweaksPreferences()
 ) derives RW
 
 case class SettingsRecovery(reason: String, originalSha256: Option[String])

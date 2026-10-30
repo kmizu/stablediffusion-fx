@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 113, todo 189, na 51.
+Totals: done 114, todo 188, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-nui | Scope / notes |
 |---|---|---|---|---|---|
@@ -303,7 +303,7 @@ Totals: done 113, todo 189, na 51.
 | 294 | [Easy Tag Insert](https://github.com/Haoming02/sd-webui-easy-tag-insert.git) | 54 | todo | `core:prompt-tools` |  |
 | 295 | [Token Downsampling](https://github.com/feffy380/sd-webui-token-downsampling.git) | 25 | done | `token_downsampling` | Native two-depth K/V resampling, requested-step evaluation cutoff, XYZ axes and PNG replay. Actual SD1.5/SDXL extracted-package interruption/recovery verified; explicit PAG/HyperTile conflict and per-pass hires clock adaptation. See token-downsampling-verification.md. |
 | 296 | [Aspect Ratio Resolutions selector-xhox](https://github.com/xhoxye/sd-webui-ar_xhox.git) | 40 | done | `core:size-presets` |  |
-| 297 | [Hires Fix Tweaks](https://github.com/w-e-w/sd-webui-hires-fix-tweaks.git) | 43 | todo | `hires_fix_tweaks` |  |
+| 297 | [Hires Fix Tweaks](https://github.com/w-e-w/sd-webui-hires-fix-tweaks.git) | 43 | done | `hires_fix_tweaks` |  |
 | 298 | [Simple Manga Maker](https://github.com/new-sankaku/stable-diffusion-webui-simple-manga-maker.git) | 393 | todo | `manga_maker` |  |
 | 299 | [Card Master](https://github.com/SenshiSentou/sd-webui-cardmaster.git) | 53 | todo | `model_organizer` |  |
 | 300 | [cli-interruption](https://github.com/light-and-ray/sd-webui-cli-interruption.git) | 10 | na | `server-ops` | operating a shared web server (tunnels, TLS, multi-instance, kill buttons) |

@@ -274,6 +274,19 @@ class JobQueueSuite extends munit.FunSuite:
     finally remove()
   }
 
+  test("backend partial result reaches cancelled gallery without a finished event") {
+    val (events, remove) = recording()
+    try
+      val job = Job(base.copy(extra = Map("partial_interrupted" -> "true")))
+      val error = intercept[JobCancelledException](await(queue.submit(job)))
+      assertEquals(error.partial.images.size, 1)
+      assert(java.nio.file.Files.isRegularFile(error.partial.images.head.path))
+      assert(events.asScala.exists { case JobEvent.JobCancelled(id, p) => id == job.id && p.images.size == 1; case _ => false })
+      assert(!events.asScala.exists { case JobEvent.JobFinished(id, _) => id == job.id; case _ => false })
+      assertEquals(await(queue.submit(Job(base))).images.size, 1)
+    finally remove()
+  }
+
   test("cancel of the running plain job ends as cancelled") {
     val f = queue.submit(Job(Job.newId(), slow("0.1")))
     assert(eventually()(queue.current.isDefined))

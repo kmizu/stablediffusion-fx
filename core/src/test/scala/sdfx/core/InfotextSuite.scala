@@ -10,6 +10,14 @@ class InfotextSuite extends munit.FunSuite:
 
   val V: String = Version.label
 
+  test("upstream Hires CFG scale spelling restores and is consumed") {
+    val text = "cat\nSteps: 12, CFG scale: 7, Hires upscale: 1.5, Hires CFG scale: 3"
+    val p = toParams(parse(text))
+    assertEquals(p.hires.cfgScale, Some(3.0))
+    assert(!p.extra.contains("Hires CFG scale"))
+    assertEquals(toParams(parse(text + ", Hires CFG Scale: 4")).hires.cfgScale, Some(4.0))
+  }
+
   // Exactly as reForge (f1.0.0v2-v1.10.1RC) writes it.
   val reforgeHires: String =
     "masterpiece, 1girl\nNegative prompt: lowres, bad hands\n" +

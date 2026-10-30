@@ -133,6 +133,11 @@ def generate(rid, kind, req):
         with open(path, "wb") as f:
             f.write(png_bytes(w, h, ((seed + i) % 256, 80, 160)))
         image_result = {"path": path, "seed": seed + i, "subseed": sub + i if sub >= 0 else -1, "width": w, "height": h}
+        if extra.get("hires_metadata") == "true":
+            image_result.update(hires_seed=100 + i, hires_subseed=200 + i, hires_subseed_strength=0.4,
+                hires_repeat=1, hires_seed_resize_from_w=512, hires_seed_resize_from_h=768)
+        if extra.get("hires_metadata_large") == "true":
+            image_result.update(hires_seed="9007199254740993", hires_subseed="9223372036854775807")
         # Synthetic typed provenance for Generator transport tests, not hardware/timing simulation.
         hardware = req.get("hardware_info", {})
         if hardware.get("enabled"):
@@ -154,6 +159,7 @@ def generate(rid, kind, req):
     m = model_info() or {}
     result(rid, {
         "images": images,
+        "interrupted": extra.get("partial_interrupted") == "true",
         "composable_lora_trace": trace,
         "timing_s": 0.01,
         "model_name": m.get("name"),

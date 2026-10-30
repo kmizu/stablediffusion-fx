@@ -8,6 +8,13 @@ import sdfx.core.infotext.HardwareInfo
 class ProtocolSuite extends munit.FunSuite:
   import EngineEvent.*
 
+  test("large Hires output seeds decode exactly from decimal text") {
+    val raw = ujson.read("""{"path":"a.png","seed":1,"width":64,"height":64,"hires_seed":"9007199254740993","hires_subseed":"9223372036854775807"}""")
+    val image = Json.fromJs[GeneratedImage](raw)
+    assertEquals(image.hiresSeed, Some(9007199254740993L))
+    assertEquals(image.hiresSubseed, Some(Long.MaxValue))
+  }
+
   test("intermediate artifacts are typed auxiliary outputs and old responses still decode") {
     val old = SnakePickle.read[GenerationResult]("""{"images":[]}""")
     assertEquals(old.intermediateArtifacts, Nil)
@@ -106,7 +113,15 @@ class ProtocolSuite extends munit.FunSuite:
     )
     val js = Json.toJs(req)
     assertEquals(js.obj.keys.toSet, Set("params", "output_dir", "lora_paths", "embedding_paths", "controlnet_paths",
-      "upscaler_paths", "preview_every", "preview_method", "lbw_presets", "system_info_fields", "vae_recovery_dir", "hardware_info"))
+      "upscaler_paths", "preview_every", "preview_method", "lbw_presets", "system_info_fields", "vae_recovery_dir", "hardware_info", "hires_loras", "manual_loras"))
+    assertEquals(js("hires_loras"), ujson.Null)
+    assertEquals(js("manual_loras"), ujson.Null)
+    val noManual = req.copy(manualLoras = Some(Nil))
+    assertEquals(Json.toJs(noManual).obj("manual_loras"), ujson.Arr())
+    assertEquals(Json.fromJs[GenerationRequest](Json.toJs(noManual)).manualLoras, Some(Nil))
+    val explicitEmpty = req.copy(hiresLoras = Some(Nil))
+    assertEquals(Json.toJs(explicitEmpty).obj("hires_loras"), ujson.Arr())
+    assertEquals(Json.fromJs[GenerationRequest](Json.toJs(explicitEmpty)).hiresLoras, Some(Nil))
     assertEquals(js("hardware_info"), ujson.Obj("enabled" -> true, "remark" -> "quiet, 日本語\nsecond line"))
     assertEquals(js("vae_recovery_dir").str, "D:/out")
     assertEquals(js("system_info_fields").arr.map(_.str).toSeq, Seq("version.app", "platform.python"))

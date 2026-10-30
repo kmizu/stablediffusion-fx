@@ -39,7 +39,7 @@ private[engine] object PayloadCaptureContext:
     }
 
   def captured(submitted: SubmittedPayloadContext, p: GenerationParams, at: Long, model: Option[LoadedModel],
-      limits: PayloadJsonBudget.Limits): Either[String, String] =
+      limits: PayloadJsonBudget.Limits, finalOutputDir: Option[String] = None): Either[String, String] =
     document(submitted, limits).flatMap { context =>
       context("reported_at_capture") = ujson.Obj("captured_at_millis" -> at,
         "meaning" -> "currently reported model snapshot, not proof of the model used by concurrent execution",
@@ -48,6 +48,7 @@ private[engine] object PayloadCaptureContext:
         "subseed_strength" -> p.subseedStrength, "extras_requested" -> (p.subseed != -1 || p.subseedStrength != 0),
         "extras_requested_basis" -> "native_params_inference",
         "seed_resize" -> "not_in_native_schema")
+      finalOutputDir.foreach(path => context("final_output_root") = path)
       PayloadJsonBudget.write(context, limits)
     }
 

@@ -14,7 +14,8 @@ from sdfx import latent_upscale
 
 @pytest.mark.parametrize('masked,sdxl,nine_channel', [(False, False, False), (True, False, False),
                                                    (True, False, True), (False, True, False), (True, True, False)])
-def test_actual_engine_run_passes_resized_source_latents_and_preserves_batch(masked, sdxl, nine_channel):
+@pytest.mark.parametrize('custom_noise', [False, True])
+def test_actual_engine_run_passes_resized_source_latents_and_preserves_batch(masked, sdxl, nine_channel, custom_noise, monkeypatch):
     previous_threads = torch.get_num_threads()
     torch.set_num_threads(1)
     try:
@@ -56,11 +57,20 @@ def test_actual_engine_run_passes_resized_source_latents_and_preserves_batch(mas
         embeds = {'prompt_embeds': torch.zeros(2, 4, 8)}
         if sdxl:
             embeds['pooled_prompt_embeds'] = torch.zeros(2, 8)
+        from sdfx import hires_tweaks
+        noise_calls = []
+        original_noise = hires_tweaks.resized_noise
+        def record_noise(shape, seed, subseed, *args):
+            noise_calls.append((tuple(shape), seed, subseed))
+            return original_noise(shape, seed, subseed, *args)
+        monkeypatch.setattr(hires_tweaks, 'resized_noise', record_noise)
         images, _ = engine._run('inpaint' if masked else 'img2img', gp, GenerationRequest(params=gp), ctx,
             sampler='Euler', schedule='Simple', cfg_scale=1, embeds=embeds,
             steps=n, strength=strength, expected_steps=actual, w=64, h=64, seeds=[1, 2],
             pass_='base', image_idx=0, images_total=2, image=[target] * 2,
-            mask=[Image.new('L', (64, 64), 255)] * 2, latent_source=(source, mask if masked else None))
+            mask=[Image.new('L', (64, 64), 255)] * 2, latent_source=(source, mask if masked else None),
+            hires_noise=([11, 12], .4, 32, 48) if custom_noise else None)
+        assert noise_calls == ([((4, 8, 8), 1, 11), ((4, 8, 8), 2, 12)] if custom_noise else [])
         assert len(images) == 2 and all(im.size == (64, 64) for im in images)
         assert calls and set(calls) == {(32, 48)}, 'no target-sized pixel re-encoding is allowed'
         assert len(calls) == (2 if masked else 1)

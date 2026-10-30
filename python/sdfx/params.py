@@ -195,6 +195,8 @@ class GenerationRequest:
     system_info_fields: List[str] = field(default_factory=list)  # explicit opt-in only
     vae_recovery_dir: str = ""  # persistent recovery artifacts; never overwrite source inputs
     hardware_info: HardwareInfoOptions = field(default_factory=HardwareInfoOptions)
+    hires_loras: Optional[List[LoraRef]] = None
+    manual_loras: Optional[List[LoraRef]] = None
 
 
 @dataclass

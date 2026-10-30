@@ -37,14 +37,22 @@ class Job:
         self.handles, self.adapters, self.compiled, self.trace, self.pass_info = [], {}, {}, {}, {}
         self.with_step = coerce_bool(self.config.get('with_step', False))
         from .. import neutral_prompt
-        self.explicit = {spec.name for spec in gp.loras} - set(self._tag_weights(gp.prompt + ' ' + gp.hires.prompt))
+        self.manual = getattr(req, 'manual_loras', None)
+        self.explicit = ({spec.name for spec in gp.loras} - set(self._tag_weights(gp.prompt + ' ' + gp.hires.prompt))) if self.manual is None else set()
         try:
+            for spec in self.manual or []:
+                if spec.lbw or spec.start is not None or spec.stop is not None:
+                    raise EngineError(UNSUPPORTED, 'Composable LoRA manual Block Weight/start/stop fields are not supported')
+                if not all(math.isfinite(v) for v in (spec.weight, spec.unet if spec.unet is not None else spec.weight)):
+                    raise ValueError('Composable LoRA manual weights must be finite')
+                if spec.name not in {item.name for item in gp.loras}:
+                    raise ValueError(f'Composable LoRA manual adapter is not resolved: {spec.name}')
             for spec in gp.loras:
                 if spec.name in self.adapters:
                     continue
                 if spec.lbw or spec.start is not None or spec.stop is not None:
                     raise EngineError(UNSUPPORTED, 'Composable LoRA with native LoRA Block Weight/start/stop fields is not supported; use its step controllers or cmd layer_name')
-                if spec.unet is not None and spec.weight == 0 and spec.unet != 0:
+                if self.manual is None and spec.unet is not None and spec.weight == 0 and spec.unet != 0:
                     raise EngineError(UNSUPPORTED, 'Composable LoRA requires nonzero TE weight when using a separate UNet multiplier')
                 path = req.lora_paths.get(spec.name)
                 if not path or not Path(path).is_file():
@@ -78,11 +86,15 @@ class Job:
                 raise ValueError(f'Composable LoRA tag has no resolved adapter: {name}')
 
     def _controllers(self, text):
+        if self.manual is not None:
+            text = tags.component_prompt(text)
         if text not in self.compiled:
             self.compiled[text] = ctl.parse_step_rendering_syntax(text)[0]
         return self.compiled[text]
 
     def _tag_weights(self, text):
+        if self.manual is not None:
+            text = tags.component_prompt(text)
         values = {}
         for match in tags.TAG.finditer(text):
             parts = match[2].split(':')
@@ -104,6 +116,11 @@ class Job:
             self.state = previous
 
     def _weight(self, adapter, patch, layer, text, negative, step, total, phase, full_prompt, negative_prompt):
+        # New hosts identify manual references independently of adapter discovery.
+        # Select the tag's component weight before parsing controllers so zero TE
+        # and nonzero UNet weights need no division and schedules stay scoped.
+        if self.manual is not None:
+            text, full_prompt = (tags.component_prompt(prompt, unet=phase == 'unet') for prompt in (text, full_prompt))
         spec = adapter.spec
         if full_prompt not in self.pass_info:
             from .. import neutral_prompt
@@ -132,8 +149,11 @@ class Job:
                 value = weights.get(adapter.name, ('lora', 0.))[1]
             if adapter.name in self.explicit and adapter.name not in weights:
                 value = spec.weight
-        if phase == 'unet' and spec.unet is not None:
+        if self.manual is None and phase == 'unet' and spec.unet is not None:
             value *= spec.unet / spec.weight if spec.weight else 0.
+        if self.manual is not None:
+            value += sum(item.unet if phase == 'unet' and item.unet is not None else item.weight
+                         for item in self.manual if item.name == adapter.name)
         if not math.isfinite(value):
             raise ValueError('Composable LoRA controller weight must be finite')
         return value

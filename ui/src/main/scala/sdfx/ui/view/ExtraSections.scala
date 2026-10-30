@@ -14,7 +14,14 @@ import java.nio.file.Paths
 
 /** Hires fix and ControlNet sections of the generation panel. */
 object ExtraSections:
-  def hires(ctx: UiContext, vm: GenerationVM, expanded: Boolean): TitledPane =
+  def hires(ctx: UiContext, vm: GenerationVM, expanded: Boolean, tweaks: Option[sdfx.ui.vm.PluginValuesVM] = None): TitledPane =
+    val checkpoint = W.label("", "hint")
+    checkpoint.setId("hires-checkpoint-label")
+    def updateCheckpoint(): Unit = checkpoint.setText(ctx.checkpointLabel(ctx.checkpointName.get, hires = true))
+    ctx.checkpointName.addListener((_, _, _) => updateCheckpoint())
+    ctx.hiresPreferences.addListener((_, _, _) => updateCheckpoint())
+    ctx.catalog.snapshot.addListener((_, _, _) => updateCheckpoint())
+    updateCheckpoint()
     val target = W.label("", "hint")
     def updateTarget(): Unit =
       val (w, h) = vm.hiresTarget
@@ -38,16 +45,20 @@ object ExtraSections:
     hrNeg.setPrefRowCount(1)
     hrNeg.setWrapText(true)
 
+    val cfg = W.form().add("CFG", W.doubleSlider(vm.hiresCfg, 0, 30, 0.5), "CFG scale for the second pass (0 = same as first pass)").grid
+    cfg.setId("hires-tweaks-cfg")
+    HiresTweaksControls.showWhen(ctx, cfg)(_.showCfg)
     val advanced = W.form()
       .add("Sampler", W.combo(samplers, samplerProp), "Sampler for the second pass")
       .add("Schedule", W.combo(schedulers, schedProp), "Schedule type for the second pass")
-      .add("CFG", W.doubleSlider(vm.hiresCfg, 0, 30, 0.5), "CFG scale for the second pass (0 = same as first pass)")
+      .full(cfg)
       .full(hrPrompt)
       .full(hrNeg)
     val adv = W.section("Advanced", advanced.grid, false)
     adv.getStyleClass.add("subsection")
 
     val f = W.form()
+      .add("Checkpoint", checkpoint, "Uses the first-pass checkpoint")
       .add("Upscaler", W.combo(ctx.catalog.hiresUpscalers, vm.hiresUpscaler), "Latent upscalers stay in latent space; ESRGAN-type models upscale the decoded image")
       .add("Upscale by", W.doubleSlider(vm.hiresScale, 1, 5, 0.05), "Scale factor of the second pass (ignored when Resize width/height are set)")
       .add("Hires steps", W.intSlider(vm.hiresSteps, 0, 150), "Second pass steps (0 = same as sampling steps)")
@@ -56,6 +67,7 @@ object ExtraSections:
       .add("Resize H", W.intSlider(vm.hiresResizeY, 0, 4096, 8), "Explicit target height (0 = use Upscale by)")
       .add("Target", target, "Final image size after the hires pass")
       .full(adv)
+    tweaks.foreach(form => f.full(HiresTweaksControls.render(ctx, vm, form)))
     val pane = W.section("Hires. fix", f.grid, expanded, "Generate at the base size, then upscale and refine (A1111 Hires. fix)")
     val cb = new CheckBox()
     cb.selectedProperty.bindBidirectional(vm.hiresEnabled)

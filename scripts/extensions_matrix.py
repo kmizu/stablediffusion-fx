@@ -96,7 +96,7 @@ S = {
     286: "todo:core:image-compare", 287: "na:webui-ux", 288: "todo:mosaic_outpaint", 289: "na:webui-ux",
     290: "todo:color_grading", 291: "na:webui-ux", 292: "todo:old_photo_restoration", 293: "na:webui-ux",
     294: "todo:core:prompt-tools", 295: "todo:token_downsampling", 296: "done:core:size-presets",
-    297: "todo:hires_fix_tweaks", 298: "todo:manga_maker", 299: "todo:model_organizer", 300: "na:server-ops",
+    297: "done:hires_fix_tweaks", 298: "todo:manga_maker", 299: "todo:model_organizer", 300: "na:server-ops",
     301: "todo:demofusion", 302: "todo:incantations", 303: "todo:old_sd_firstpasser", 304: "todo:image_editor",
     305: "todo:triposr", 306: "na:webui-ux", 307: "todo:core:prompt-tools", 308: "todo:model_merge",
     309: "todo:core:hardware-info", 310: "done:core:png-info", 311: "na:webui-css", 312: "todo:metadata_utils",

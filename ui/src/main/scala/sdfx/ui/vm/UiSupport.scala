@@ -83,6 +83,7 @@ object SettingsMerge:
     current.copy(
       modelDirs = edited.modelDirs,
       outputDir = edited.outputDir,
+      hiresFixTweaks = edited.hiresFixTweaks,
       pythonExe = edited.pythonExe,
       dtype = edited.dtype,
       vramMode = edited.vramMode,

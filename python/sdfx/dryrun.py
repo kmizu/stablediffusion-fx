@@ -75,7 +75,7 @@ class FakeEngine(BaseEngine):
         self.vae: Optional[dict] = None
 
     def features(self) -> list[str]:
-        return ["token_downsampling", "vram_estimator", "steps_animation", "pnginfo_injection", "gpu_temperature_guard", "freeu", "dynamic_thresholding", "hypertile", "pag", "controlnet", "apg", "mahiro", "rescale_cfg",
+        return ["hires_fix_tweaks", "token_downsampling", "vram_estimator", "steps_animation", "pnginfo_injection", "gpu_temperature_guard", "freeu", "dynamic_thresholding", "hypertile", "pag", "controlnet", "apg", "mahiro", "rescale_cfg",
                 "model_sampling", "kohya_hrfix", "multidiffusion", "latent_modifier", "soft_inpainting", "sag", "neveroom",
                 "reference", "revision", "ip_adapter", "controllllite", "fooocus_inpaint", "photomaker", "img2imgalt",
                 "face_restore", "caption", "img2vid", "novel_view", "ldsr", "marigold", "adetailer", "weight_gradient", "negpip", "neutral_prompt", "prompt_fusion", "save_intermediate", "latent_upscale", "composable_lora", "system_info", "prevent_interrupt"] + list(SAMPLING_HOOKS) + (
@@ -199,6 +199,18 @@ class FakeEngine(BaseEngine):
         hardware_started = time.perf_counter()
         req = self.parse_generation(params, mode, ctx)
         gp = req.params
+        from .hooks import hook_config
+        from .hires_tweaks import seed_plan, wire_seed
+        seed, subseed = resolve_seed(gp.seed), resolve_seed(gp.subseed)
+        bs, n_iter = gp.batch_size, gp.n_iter
+        hires = mode == "txt2img" and gp.hires.enabled
+        tweaks = hook_config(gp.hooks, "hires_fix_tweaks", {}) if hires else None
+        hr_plan = seed_plan(tweaks, [seed + i for i in range(bs * n_iter)],
+            [subseed + i for i in range(bs * n_iter)], gp.subseed_strength) if tweaks is not None else None
+        repeats = hr_plan.count if hr_plan is not None else 1
+        total = bs * n_iter * repeats
+        if total > 1600:
+            raise EngineError(INVALID_PARAMS, "Hires repeats exceed the 1600-image generation limit")
         hardware_timer = None
         hardware_profile = None
         if req.hardware_info.enabled:
@@ -214,10 +226,6 @@ class FakeEngine(BaseEngine):
             # dry run stays usable without any checkpoint (UI development / smoke tests)
             m = {"name": "dry-run", "path": "", "kind": "sd15", "hash": "0000000000"}
             ctx.log("info", "dry run: no model loaded, using placeholder model 'dry-run'")
-        seed = resolve_seed(gp.seed)
-        subseed = resolve_seed(gp.subseed)
-        bs, n_iter = gp.batch_size, gp.n_iter
-        total = bs * n_iter
         w, h = gp.width, gp.height
         hires = mode == "txt2img" and gp.hires.enabled
         out_w, out_h = gp.hires.target_size(w, h) if hires else (w, h)
@@ -238,47 +246,61 @@ class FakeEngine(BaseEngine):
             init = load_rgb(gp.img2img.init_image)
 
         images = []
-        for it in range(n_iter):
-            idx0 = it * bs
-            self._run_pass(ctx, base_steps, "base", idx0, total, seed + idx0, req.preview_every, (w, h))
-            if hires:
-                self._run_pass(ctx, hr_steps, "hires", idx0, total, seed + idx0 + 7, req.preview_every, (out_w, out_h))
-            for j in range(bs):
-                k = idx0 + j
-                s, ss = seed + k, subseed + k
-                path = next_output_path(req.output_dir, str(s))
-                hardware_record = None
-                if HAVE_PIL:
-                    img = fake_image(out_w, out_h, s, ss, gp.subseed_strength)
-                    if init is not None:
-                        ip = gp.img2img
-                        if ip.mask is not None:
-                            job = inpaint.prepare(init, load_mask(ip.mask), w, h, ip.resize_mode, ip.mask_blur,
-                                                  ip.inpainting_fill, ip.inpaint_full_res, ip.inpaint_full_res_padding,
-                                                  ip.inpainting_mask_invert, s)
-                            img = job.finalize(Image.blend(job.image, img, ip.denoising_strength))
+        interrupted = False
+        try:
+            for it in range(n_iter):
+                idx0 = it * bs
+                self._run_pass(ctx, base_steps, "base", idx0 * repeats, total, seed + idx0, req.preview_every, (w, h))
+                for repeat in range(repeats):
+                    hr_seeds, hr_subs = hr_plan.batch(idx0, bs, repeat) if hr_plan else (
+                        [seed + idx0 + j for j in range(bs)], [subseed + idx0 + j for j in range(bs)])
+                    if hires:
+                        self._run_pass(ctx, hr_steps, "hires", (it * repeats + repeat) * bs, total, hr_seeds[0] + 7, req.preview_every, (out_w, out_h))
+                    for j in range(bs):
+                        k = idx0 + j
+                        s, ss = seed + k, subseed + k
+                        path = next_output_path(req.output_dir, str(s))
+                        hardware_record = None
+                        if HAVE_PIL:
+                            img = fake_image(out_w, out_h, hr_seeds[j], hr_subs[j], hr_plan.strength if hr_plan else gp.subseed_strength)
+                            if init is not None:
+                                ip = gp.img2img
+                                if ip.mask is not None:
+                                    job = inpaint.prepare(init, load_mask(ip.mask), w, h, ip.resize_mode, ip.mask_blur,
+                                                          ip.inpainting_fill, ip.inpaint_full_res, ip.inpaint_full_res_padding,
+                                                          ip.inpainting_mask_invert, s)
+                                    img = job.finalize(Image.blend(job.image, img, ip.denoising_strength))
+                                else:
+                                    base = resize_image(ip.resize_mode, init, w, h)
+                                    img = Image.blend(base, img, ip.denoising_strength)
+                            if hardware_timer is not None:
+                                from .hardware_info import record
+                                hardware_record = record(hardware_profile, hardware_timer.next_image(), req.hardware_info.remark)
+                            save_png(img, path)
+                            iw, ih = img.size
                         else:
-                            base = resize_image(ip.resize_mode, init, w, h)
-                            img = Image.blend(base, img, ip.denoising_strength)
-                    if hardware_timer is not None:
-                        from .hardware_info import record
-                        hardware_record = record(hardware_profile, hardware_timer.next_image(), req.hardware_info.remark)
-                    save_png(img, path)
-                    iw, ih = img.size
-                else:
-                    rows = fake_rows(out_w, out_h, s)
-                    if hardware_timer is not None:
-                        from .hardware_info import record
-                        hardware_record = record(hardware_profile, hardware_timer.next_image(), req.hardware_info.remark)
-                    write_png_rgb(path, out_w, out_h, rows)
-                    iw, ih = out_w, out_h
-                entry = {"path": path, "seed": s, "subseed": ss, "width": iw, "height": ih}
-                if hardware_record is not None:
-                    entry['hardware_info'] = hardware_record
-                images.append(entry)
+                            rows = fake_rows(out_w, out_h, hr_seeds[j])
+                            if hardware_timer is not None:
+                                from .hardware_info import record
+                                hardware_record = record(hardware_profile, hardware_timer.next_image(), req.hardware_info.remark)
+                            write_png_rgb(path, out_w, out_h, rows)
+                            iw, ih = out_w, out_h
+                        entry = {"path": path, "seed": s, "subseed": ss, "width": iw, "height": ih}
+                        if hr_plan is not None:
+                            entry.update(hires_seed=wire_seed(hr_seeds[j]), hires_subseed=wire_seed(hr_subs[j]),
+                                hires_subseed_strength=hr_plan.strength, hires_repeat=repeat,
+                                hires_seed_resize_from_w=hr_plan.resize_width, hires_seed_resize_from_h=hr_plan.resize_height)
+                        if hardware_record is not None:
+                            entry['hardware_info'] = hardware_record
+                        images.append(entry)
+        except EngineError as error:
+            if error.code != "interrupted" or hr_plan is None or not images:
+                raise
+            interrupted = True
 
         return {
             "images": images,
+            "interrupted": interrupted,
             "timing_s": round(time.monotonic() - t0, 3),
             "model_name": m["name"], "model_hash": m["hash"],
             "vae_name": self.vae["vae_name"] if self.vae else None,

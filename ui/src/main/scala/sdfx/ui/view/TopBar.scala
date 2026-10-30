@@ -31,7 +31,7 @@ final class TopBar(
   private val popup = new SearchPopup[ModelEntry](
     "Checkpoint",
     () => ctx.catalog.snapshot.get.checkpoints,
-    _.name,
+    m => ctx.checkpointLabel(m.name),
     m => Option(m.kind).filter(_.nonEmpty),
     m => onCheckpoint(m.name),
     "No checkpoints found.\nPut .safetensors in models/checkpoints or add folders in Settings."
@@ -43,7 +43,7 @@ final class TopBar(
 
   def refreshCheckpoint(): Unit =
     val n = model.checkpoint.get
-    ckptName.setText(if n.isEmpty then "Select checkpoint…" else n)
+    ckptName.setText(if n.isEmpty then "Select checkpoint…" else ctx.checkpointLabel(n))
     val k = kindOf(n)
     ckptBadge.setText(k.getOrElse(""))
     ckptBadge.setVisible(k.isDefined)
@@ -51,6 +51,7 @@ final class TopBar(
     k.foreach(x => ckptBadge.getStyleClass.add(s"badge-${x.toLowerCase.replaceAll("[^a-z0-9]", "")}"))
   model.checkpoint.addListener((_, _, _) => refreshCheckpoint())
   ctx.catalog.snapshot.addListener((_, _, _) => refreshCheckpoint())
+  ctx.hiresPreferences.addListener((_, _, _) => refreshCheckpoint())
   refreshCheckpoint()
 
   private val refreshBtn = W.iconButton("⟳", "Rescan model folders")(onRefresh())

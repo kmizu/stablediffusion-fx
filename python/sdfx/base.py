@@ -354,7 +354,7 @@ class BaseEngine:
             up = gp.hires.upscaler
             if up not in LATENT_UPSCALERS and up not in PIXEL_UPSCALERS:
                 self.check_model_upscaler(up, req.upscaler_paths)
-        for lr in gp.loras:
+        for lr in gp.loras + (req.hires_loras or []) + (req.manual_loras or []):
             if lr.name not in req.lora_paths:
                 raise EngineError(INVALID_PARAMS, f"no path for LoRA '{lr.name}' in lora_paths")
             if not os.path.isfile(req.lora_paths[lr.name]):

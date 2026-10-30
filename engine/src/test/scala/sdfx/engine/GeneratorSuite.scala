@@ -2,7 +2,7 @@ package sdfx.engine
 
 import sdfx.core.config.Settings
 import sdfx.core.infotext.Infotext
-import sdfx.core.model.{GenerationParams, Img2ImgParams}
+import sdfx.core.model.{GenerationParams, Img2ImgParams, HiresParams, LoraRef}
 import sdfx.core.png.PngMetadata
 import sdfx.core.protocol.*
 
@@ -85,9 +85,17 @@ class GeneratorSuite extends munit.FunSuite:
     assertEquals(enabled.request.params.loras.map(_.name), Seq("My Lora"))
     assertEquals(enabled.request.params.loras.head.weight, .5)
     assertEquals(enabled.request.loraPaths.keySet, Set("My Lora"))
+    assertEquals(enabled.request.manualLoras, Some(Nil))
+    val manual = LoraRef("My Lora", weight = .6, unet = Some(.3))
+    val overlap = services.generator.prepare(GenerationParams(prompt = prompt, loras = Seq(manual),
+      hires = HiresParams(enabled = true, prompt = "sky"),
+      hooks = Map("composable_lora" -> ujson.Obj("with_step" -> true))))
+    assertEquals(overlap.request.manualLoras, Some(Seq(manual)))
+    assertEquals(overlap.request.params.loras.map(_.name), Seq("My Lora"))
     val disabled = services.generator.prepare(GenerationParams(prompt = prompt, seed = 7,
       hooks = Map("composable_lora" -> ujson.Obj("enabled" -> false))))
     assert(!disabled.request.params.prompt.contains("<lora:"))
+    assertEquals(disabled.request.manualLoras, None)
     assertEquals(disabled.request.params.loras.head.weight, 1.3)
     val textDisabled = services.generator.prepare(GenerationParams(prompt = prompt, seed = 7,
       hooks = Map("composable_lora" -> ujson.Obj("enabled" -> "false"))))
@@ -217,6 +225,176 @@ class GeneratorSuite extends munit.FunSuite:
     assert(i.isInterrupted)
     val o = intercept[EngineError](services.generator.generate(base.copy(extra = Map("force_error" -> "oom"))))
     assertEquals(o.code, Protocol.ErrorCodes.Oom)
+  }
+
+  test("hires prompt composition reaches prepared request and avoids replaying append") {
+    val p = GenerationParams(prompt = "cat", negativePrompt = "blur", seed = 1,
+      hires = sdfx.core.model.HiresParams(enabled = true, prompt = "detail"),
+      hooks = Map("hires_fix_tweaks" -> ujson.Obj("prompt_mode" -> "Append", "separator" -> ", ")))
+    val prepared = services.generator.prepare(p)
+    assertEquals(prepared.request.params.hires.prompt, "cat, detail")
+    assertEquals(prepared.request.params.hires.negativePrompt, "blur")
+    assertEquals(services.generator.prepare(prepared.recorded).request.params.hires.prompt, "cat, detail")
+  }
+
+  test("hires network removal separates pass adapters while preserving manual references") {
+    val p = GenerationParams(prompt = "cat <lora:detail:0.5>", seed = 1,
+      hires = sdfx.core.model.HiresParams(enabled = true),
+      hooks = Map("hires_fix_tweaks" -> ujson.Obj("remove_networks" -> true)))
+    val prepared = services.generator.prepare(p).request
+    assertEquals(prepared.params.loras.map(_.name), Seq("detail"))
+    assertEquals(prepared.hiresLoras, Some(Nil))
+    assert(prepared.loraPaths.contains("detail"))
+    val manual = services.generator.prepare(p.copy(prompt = "cat", loras = Seq(sdfx.core.model.LoraRef("detail")))).request
+    assertEquals(manual.hiresLoras.map(_.map(_.name)), Some(Seq("detail")))
+    assertEquals(services.generator.prepare(p.copy(hooks = Map.empty)).request.hiresLoras, None)
+  }
+
+  test("hires-only block weights carry custom presets with the separate pass adapters") {
+    val file = home.configDir.resolve("lbwpresets.txt")
+    val original = Option.when(Files.exists(file))(Files.readString(file))
+    try
+      Files.writeString(file, "HIRES_CUSTOM:1,0,1\n")
+      val p = GenerationParams(prompt = "cat", seed = 1,
+        hires = sdfx.core.model.HiresParams(enabled = true, prompt = "cat <lora:detail:1:lbw=HIRES_CUSTOM>"),
+        hooks = Map("hires_fix_tweaks" -> ujson.Obj()))
+      val request = services.generator.prepare(p).request
+      assertEquals(request.params.loras, Nil)
+      assertEquals(request.hiresLoras.get.head.lbw, Some("HIRES_CUSTOM"))
+      assertEquals(request.lbwPresets.get("HIRES_CUSTOM"), Some("1,0,1"))
+    finally original match
+      case Some(text) => Files.writeString(file, text)
+      case None => Files.deleteIfExists(file)
+  }
+
+  test("manual and same-name tagged adapters retain separate pass behavior across PNG restore") {
+    val original = services.settings
+    val manual = sdfx.core.model.LoraRef("detail", .6, Some(.4), Some("ALL"), Some(.1), Some(.9))
+    val p = GenerationParams(prompt = "cat <lora:detail:0.2>", seed = 7, steps = 1, width = 64, height = 64,
+      loras = Seq(manual), hires = sdfx.core.model.HiresParams(enabled = true),
+      hooks = Map("hires_fix_tweaks" -> ujson.Obj("remove_networks" -> true)))
+    try
+      for save <- Seq(true, false) do
+        services.updateSettings(_ => original.copy(hiresFixTweaks = original.hiresFixTweaks.copy(saveTemplate = save)))
+        val before = services.generator.prepare(p).request
+        val image = services.generator.generate(p).head
+        val parsed = Infotext.parse(PngMetadata.readParameters(image.path).get)
+        val restored = sdfx.core.infotext.HiresTemplateRestore.restore(Infotext.toParams(parsed), parsed.fields, Nil)
+        val after = services.generator.prepare(restored).request
+        assertEquals(restored.loras, Seq(manual))
+        assertEquals(after.params.loras, before.params.loras)
+        assertEquals(after.hiresLoras, before.hiresLoras)
+        assertEquals(after.hiresLoras.get, Seq(manual))
+    finally services.updateSettings(_ => original)
+  }
+
+  test("hires final directory preserves engine temp paths, global precedence and collision safety") {
+    val p = GenerationParams(seed = 55, steps = 1, width = 64, height = 64,
+      hires = sdfx.core.model.HiresParams(enabled = true),
+      hooks = Map("hires_fix_tweaks" -> ujson.Obj("output_dir" -> "hires-results")))
+    val prepared = services.generator.prepare(p)
+    assertEquals(prepared.request.outputDir, home.tmpDir(services.settings).toAbsolutePath.toString)
+    val a = services.generator.generate(p).head
+    val b = services.generator.generate(p).head
+    assert(a.path.startsWith(home.resolve("hires-results")))
+    assert(b.path.startsWith(home.resolve("hires-results")))
+    assert(a.path != b.path)
+    assert(Files.isRegularFile(a.path) && Files.isRegularFile(b.path))
+    assertEquals(services.settings.outputDir, "outputs")
+    val old = services.settings
+    try
+      services.updateSettings(_.copy(outputDir = "global-results"))
+      val global = services.generator.generate(p).head
+      assert(global.path.startsWith(home.resolve("global-results")))
+    finally services.updateSettings(_ => old)
+    try
+      val movingSettings = new GenerationListener:
+        override def onProgress(p: EngineEvent.Progress): Unit =
+          services.updateSettings(_.copy(outputDir = "changed-during-job"))
+      val stable = services.generator.generateWith(p, movingSettings).head
+      assert(stable.path.startsWith(home.resolve("hires-results")))
+    finally services.updateSettings(_ => old)
+    val ordinary = services.generator.generate(p.copy(hires = p.hires.copy(enabled = false))).head
+    assert(ordinary.path.startsWith(home.outputs(services.settings)))
+  }
+
+  test("persistent hires output preference survives settings reload and gallery rebuild") {
+    val original = services.settings
+    try
+      val configured = original.copy(hiresFixTweaks = sdfx.core.config.HiresFixTweaksPreferences("persisted-hires"))
+      val file = home.configDir.resolve("hires-settings-test.json")
+      Settings.save(file, configured)
+      services.updateSettings(_ => Settings.load(file))
+      val p = GenerationParams(seed = 71, steps = 1, width = 64, height = 64,
+        hires = sdfx.core.model.HiresParams(enabled = true))
+      val image = services.generator.generate(p).head
+      assert(image.path.startsWith(home.resolve("persisted-hires")))
+      assert(services.gallery.scan().exists(_.path == image.path))
+      assert(services.resetGallery().scan().exists(_.path == image.path))
+      services.updateSettings(_.copy(outputDir = "global-with-old-hires"))
+      assert(services.resetGallery().scan().exists(_.path == image.path))
+    finally
+      services.updateSettings(_ => original)
+      services.resetGallery()
+  }
+
+  test("partial interrupted results save gallery images before propagating cancellation") {
+    for transient <- Seq(false, true) do
+      val saved = scala.collection.mutable.ArrayBuffer.empty[sdfx.core.plugins.api.OutputImage]
+      var cancelled = false
+      val listener = new GenerationListener:
+        override def onImageSaved(image: sdfx.core.plugins.api.OutputImage, grid: Boolean): Unit = saved += image
+        override def onEngineInterrupted(): Unit = cancelled = true
+      val p = GenerationParams(seed = 23, steps = 1, width = 64, height = 64,
+        extra = Map("partial_interrupted" -> "true"))
+      val error = intercept[EngineError] {
+        if transient then services.generator.generateTransientWith(p, listener)
+        else services.generator.generateWith(p, listener)
+      }
+      assert(error.isInterrupted)
+      assert(cancelled)
+      assertEquals(saved.size, 1)
+      assert(Files.isRegularFile(saved.head.path))
+      assert(PngMetadata.readParameters(saved.head.path).nonEmpty)
+  }
+
+  test("dedicated hires seed facts survive typed transport and PNG saving") {
+    val image = services.generator.generate(GenerationParams(seed = 23, steps = 1, width = 64, height = 64,
+      extra = Map("hires_metadata" -> "true"))).head
+    val text = PngMetadata.readParameters(image.path).get
+    assertEquals(image.seed, 23L)
+    assert(text.contains("Hires seed:"))
+    assert(text.contains("'Seed':100"))
+    assert(text.contains("'Subseed':200"))
+    assert(text.contains("'Strength':0.4"))
+    assert(text.contains("'Resize':[512,768]"))
+    val large = services.generator.generate(GenerationParams(seed = 23, steps = 1, width = 64, height = 64,
+      extra = Map("hires_metadata_large" -> "true"))).head
+    val restored = Infotext.toParams(Infotext.parse(PngMetadata.readParameters(large.path).get))
+    assertEquals(restored.hooks("hires_fix_tweaks")("seed"), ujson.Str("9007199254740993"))
+    assertEquals(restored.hooks("hires_fix_tweaks")("subseed"), ujson.Str(Long.MaxValue.toString))
+  }
+
+  test("PNG stores raw templates separately and save preference suppresses stale metadata") {
+    val original = services.settings
+    val p = GenerationParams(prompt = "cat", negativePrompt = "bad", seed = 23, steps = 1, width = 64, height = 64,
+      hires = sdfx.core.model.HiresParams(enabled = true, prompt = "detail"),
+      hooks = Map("hires_fix_tweaks" -> ujson.Obj("prompt_mode" -> "Append", "append_separator" -> " + ")))
+    try {
+      services.updateSettings(_ => original.copy(hiresFixTweaks = original.hiresFixTweaks.copy(saveTemplate = true)))
+      val image = services.generator.generate(p).head
+      val fields = Infotext.parse(PngMetadata.readParameters(image.path).get).fields
+      assertEquals(fields("Hires prompt"), "cat + detail")
+      val template = ujson.read(fields("NUI Hires template"))
+      assertEquals(template("hires_prompt").str, "detail")
+      assertEquals(template("prompt").str, "cat")
+      assertEquals(sdfx.core.infotext.HiresPromptMetadata.parse(fields("Hires prompt mode")).get.positive.get.prompt, "detail")
+      services.updateSettings(_ => original.copy(hiresFixTweaks = original.hiresFixTweaks.copy(saveTemplate = false)))
+      val replay = services.generator.generate(p.copy(extra = fields)).head
+      val omitted = Infotext.parse(PngMetadata.readParameters(replay.path).get).fields
+      assert(!omitted.contains("NUI Hires template"))
+      assert(!omitted.contains("Hires prompt mode"))
+    } finally services.updateSettings(_ => original)
   }
 
   test("upscale, memory, choices") {

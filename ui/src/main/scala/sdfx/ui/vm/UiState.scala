@@ -30,7 +30,9 @@ case class UiState(
     galleryQuery: String = "",
     lastSeed: Long = -1L,
     extrasUpscaler: String = "",
-    extrasScale: Double = 2.0
+    extrasScale: Double = 2.0,
+    lastHiresSeed: Option[Long] = None,
+    lastHiresSubseed: Option[Long] = None
 ) derives RW
 
 object UiState:

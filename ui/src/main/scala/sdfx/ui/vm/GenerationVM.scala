@@ -57,6 +57,8 @@ object GenerationVM:
 final class GenerationVM(val mode: Mode, val shared: ModelVM = new ModelVM):
   val prompt = new SimpleStringProperty("")
   val negativePrompt = new SimpleStringProperty("")
+  val promptStyles: ObservableList[String] = FXCollections.observableArrayList[String]()
+  val manualLoras: ObservableList[LoraRef] = FXCollections.observableArrayList[LoraRef]()
   val sampler = new SimpleStringProperty("DPM++ 2M")
   val scheduler = new SimpleStringProperty("Automatic")
   val steps = new SimpleIntegerProperty(20)
@@ -143,6 +145,8 @@ final class GenerationVM(val mode: Mode, val shared: ModelVM = new ModelVM):
     GenerationParams(
       prompt = prompt.get,
       negativePrompt = negativePrompt.get,
+      styles = promptStyles.toArray(Array.empty[String]).toSeq,
+      loras = manualLoras.toArray(Array.empty[LoraRef]).toSeq,
       seed = seed.get,
       subseed = subseed.get,
       subseedStrength = if variationEnabled.get then subseedStrength.get else 0.0,
@@ -168,17 +172,15 @@ final class GenerationVM(val mode: Mode, val shared: ModelVM = new ModelVM):
     toParams.copy(subseed = subseed.get, subseedStrength = subseedStrength.get,
       controlnet = controlNet.map(_.toUnit), checkpoint = None, vae = None)
 
-  /** Loads params into the form. LoRAs given as structured refs are written back into the prompt as tags.
+  /** Loads params into the form, keeping manual adapters separate from prompt tags.
     * With `keepImages` the current init image / mask stay (restore parameters onto the img2img inputs).
     */
   def load(p: GenerationParams, keepImages: Boolean = false, includeModel: Boolean = false,
       variationEnabledState: Boolean = true): Unit =
-    val missingTags = p.loras.filterNot(l => p.prompt.contains(s"<lora:${l.name}:") || p.prompt.contains(s"<lora:${l.name}>"))
-    val promptText =
-      if missingTags.isEmpty then p.prompt
-      else (p.prompt +: missingTags.map(l => LoraSyntax.tag(l.name, l.weight))).filter(_.nonEmpty).mkString(", ")
-    prompt.set(promptText)
+    prompt.set(p.prompt)
+    manualLoras.setAll(p.loras*)
     negativePrompt.set(p.negativePrompt)
+    promptStyles.setAll(p.styles*)
     seed.set(p.seed)
     subseed.set(p.subseed)
     subseedStrength.set(p.subseedStrength)
@@ -224,10 +226,13 @@ final class GenerationVM(val mode: Mode, val shared: ModelVM = new ModelVM):
     controlNet.zipWithIndex.foreach((u, idx) => u.load(p.controlnet.lift(idx)))
 
   /** Restores the fields of an A1111 infotext on top of the current form (img2img inputs and ControlNet are kept). */
-  def restoreInfotext(text: String): GenerationParams =
+  def restoreInfotext(text: String, availableStyles: Seq[PromptStyle] = Nil,
+                      restoreHiresTemplate: Boolean = true): GenerationParams =
     val base = snapshot
     val parsed = Infotext.parse(text)
-    val restored = Infotext.toParams(parsed, base).copy(extra = Map.empty, controlnet = base.controlnet)
+    val ordinary = Infotext.toParams(parsed, base).copy(extra = Map.empty, styles = Nil, controlnet = base.controlnet)
+    val restored = sdfx.core.infotext.HiresTemplateRestore.restore(ordinary, parsed.fields,
+      availableStyles, restoreHiresTemplate)
     val hasVariation = parsed.fields.contains("Variation seed") || parsed.fields.contains("Variation seed strength")
     load(restored, keepImages = true, variationEnabledState = hasVariation)
     restored

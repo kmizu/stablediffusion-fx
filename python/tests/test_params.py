@@ -14,6 +14,14 @@ def test_defaults_match_scala():
     assert p.validate() == []
 
 
+def test_manual_lora_provenance_is_optional_and_typed():
+    from sdfx.params import LoraRef
+    assert parse_generation_request({'params': {}}).manual_loras is None
+    assert parse_generation_request({'params': {}, 'manual_loras': []}).manual_loras == []
+    assert parse_generation_request({'params': {}, 'manual_loras': [
+        {'name': 'A', 'weight': .6, 'unet': .3}]}).manual_loras == [LoraRef('A', weight=.6, unet=.3)]
+
+
 def test_parse_full_snake_case():
     data = {
         "params": {

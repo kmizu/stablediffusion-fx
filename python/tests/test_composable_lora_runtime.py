@@ -3,7 +3,7 @@ import pytest
 torch = pytest.importorskip('torch')
 
 
-def fixture_job(tmp_path, prompt=None, hires=None, **config):
+def fixture_job(tmp_path, prompt=None, hires=None, manual_loras=None, **config):
     from safetensors.torch import save_file
     from sdfx.clora.runtime import Job
     from sdfx.params import GenerationParams, GenerationRequest, LoraRef, HiresParams
@@ -17,8 +17,66 @@ def fixture_job(tmp_path, prompt=None, hires=None, **config):
     gp = GenerationParams(prompt=prompt or '<lora:A:1> red AND blue', loras=[LoraRef('A')],
                           hooks={'composable_lora': config}, hires=hires or HiresParams())
     req = GenerationRequest(params=gp, lora_paths={'A': str(path)})
+    # Also exercises legacy requests that omit the optional provenance field.
+    if manual_loras is not None:
+        req.manual_loras = manual_loras
     ctx = SimpleNamespace(check_interrupt=lambda: None, warn=lambda _: None)
     return pipe, Job(pipe, gp, req, ctx)
+
+
+@pytest.mark.parametrize('with_step', [False, True])
+@pytest.mark.parametrize('tag', ['<lora:A:0.2:0.8>', '<lora:A:.2:unet=.8>',
+    '<lora:A:te=.2:unet=.8>', '<lyco:A:.9:.1:TE=.2:UNET=.8>'])
+def test_manual_and_tag_weights_are_independent_across_components_and_hires(tmp_path, with_step, tag):
+    from sdfx.params import LoraRef, HiresParams
+    pipe, job = fixture_job(tmp_path, prompt=tag + ' cat AND sky',
+        hires=HiresParams(enabled=True, prompt='cat AND sky'),
+        manual_loras=[LoraRef('A', weight=.6, unet=.3)], with_step=with_step)
+    try:
+        for phase, model, base, hires in [('unet', pipe.unet, 2.1, 1.3), ('text_encoder', pipe.text_encoder, 1.8, 1.6)]:
+            with job.using(tag + ' cat', [False, True], 1, 10, phase=phase):
+                torch.testing.assert_close(model(torch.ones(2, 2)), torch.tensor([[1., 1.], [base, base]]))
+            with job.using('sky', [False, True], 1, 10, phase=phase, pass_name='hires'):
+                torch.testing.assert_close(model(torch.ones(2, 2)), torch.tensor([[1., 1.], [hires, hires]]))
+    finally:
+        job.remove()
+    torch.testing.assert_close(pipe.unet(torch.ones(1, 2)), torch.ones(1, 2), rtol=0, atol=0)
+
+
+def test_explicit_empty_manual_provenance_never_infers_manual_from_discovery(tmp_path):
+    pipe, job = fixture_job(tmp_path, prompt='cat', manual_loras=[])
+    try:
+        with job.using('cat', [True], 1, 10):
+            torch.testing.assert_close(pipe.unet(torch.ones(1, 2)), torch.ones(1, 2))
+    finally:
+        job.remove()
+
+
+@pytest.mark.parametrize('with_step', [False, True])
+def test_zero_te_tag_keeps_independent_unet_and_sums_repeated_manual_refs(tmp_path, with_step):
+    from sdfx.params import LoraRef
+    pipe, job = fixture_job(tmp_path, prompt='<lora:A:0:.8> cat AND sky',
+        manual_loras=[LoraRef('A', weight=.2, unet=.1), LoraRef('A', weight=.4, unet=.2)],
+        with_step=with_step, uc_diffusion_model=True)
+    try:
+        with job.using('<lora:A:0:.8> cat', [False, True], 1, 10):
+            torch.testing.assert_close(pipe.unet(torch.ones(2, 2)), torch.full((2, 2), 2.1))
+        with job.using('<lora:A:0:.8> cat', [False, True], 1, 10, phase='text_encoder'):
+            torch.testing.assert_close(pipe.text_encoder(torch.ones(2, 2)), torch.tensor([[1., 1.], [1.6, 1.6]]))
+    finally:
+        job.remove()
+
+
+def test_step_controller_scales_tag_without_scaling_manual(tmp_path):
+    from sdfx.params import LoraRef
+    source = '[<lora:A:.2:.8> #cmd\\(0.5\\):5] cat AND sky'
+    pipe, job = fixture_job(tmp_path, prompt=source, manual_loras=[LoraRef('A', weight=.6, unet=.3)], with_step=True)
+    try:
+        for step, expected in [(1, 1.3), (8, 1.7)]:
+            with job.using(source.split(' AND ')[0], [True], step, 10):
+                torch.testing.assert_close(pipe.unet(torch.ones(1, 2)), torch.full((1, 2), expected))
+    finally:
+        job.remove()
 
 
 def test_real_module_hooks_isolate_cfg_rows_and_restore_exact_weights(tmp_path):

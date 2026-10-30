@@ -13,15 +13,16 @@ Objective: resolve twenty issues, then publish and verify a release containing t
 | #122 stylepile | 3e579dd565e8c89a9bbd50abaec4cda324079f4b | docs/stylepile-verification.md; closed 2026-10-30T01:21:11Z |
 | #136 vram_estimator | b9d113e426941424c0483530a9f8402c83f80307 | docs/vram-estimator-verification.md; closed 2026-10-30T02:27:15Z |
 | #137 waifu2x | a44214756f32add81105b356f819ba4665fa6bc0 | docs/waifu2x-verification.md; closed 2026-10-30T03:58:45Z |
-| #129 token_downsampling | this wave commit | docs/token-downsampling-verification.md |
+| #129 token_downsampling | 8df4858fa2cfc722a86b68f9f8bcc6fd5328d262 | docs/token-downsampling-verification.md; closed 2026-10-30T04:25:06Z |
+| #56 hires_fix_tweaks | Hires Fix Tweaks wave; exact commit in issue closure | docs/hires-fix-tweaks-verification.md; complete regressions and both extracted-package native checks |
 
-Accepted count: **8 / 20**. Earlier closed #1, #7 and #141 predate this active goal and are not counted. No new release has been published for this goal.
+Accepted count: **9 / 20** after the #56 wave push/closure. Earlier closed #1, #7 and #141 predate this active goal and are not counted. No new release has been published for this goal.
 
 
 
 ## Next
 
-Select and investigate the ninth distinct issue. The #54 AMD providers have fixture/schema checks, not AMD hardware validation; this limitation remains explicit in its acceptance record.
+#67 inpaint_difference is the next candidate; pinned MIT source is retained under outputs/inpaint-difference-source, with no implementation yet. The #54 AMD providers have fixture/schema checks, not AMD hardware validation; this limitation remains explicit in its acceptance record.
 
 ## Final release gates
 

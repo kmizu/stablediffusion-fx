@@ -91,6 +91,56 @@ def test_successful_generation_rgb_unchanged_and_recovery_not_sticky(engine, tmp
     assert not second.get('vae_recovery')
 
 
+@pytest.mark.parametrize('upscaler', ['Latent', 'Lanczos'])
+def test_hires_repeats_use_real_diffusion_and_disabled_recovery(engine, tmp_path, upscaler):
+    request = {'params': {'steps': 2, 'width': 64, 'height': 64, 'seed': 3, 'subseed': 4,
+        'cfg_scale': 1, 'sampler_name': 'Euler',
+        'hires': {'enabled': True, 'scale': 1.5, 'upscaler': upscaler, 'second_pass_steps': 2}},
+        'output_dir': str(tmp_path), 'preview_method': 'none'}
+    before = engine.txt2img(request, ctx())
+    request['params']['hooks'] = {'hires_fix_tweaks': {'batch_count': 2, 'seed_enabled': True,
+        'seed': 30, 'extras': True, 'subseed': 50, 'strength': .5,
+        'resize_width': 64, 'resize_height': 64}}
+    repeated = engine.txt2img(request, ctx())
+    assert [x['hires_seed'] for x in repeated['images']] == [30, 30]
+    assert [x['hires_subseed'] for x in repeated['images']] == [50, 51]
+    assert all((x['width'], x['height']) == (96, 96) for x in repeated['images'])
+    pixels = [Image.open(x['path']).tobytes() for x in repeated['images']]
+    assert pixels[0] != pixels[1]
+    del request['params']['hooks']
+    after = engine.txt2img(request, ctx())
+    assert Image.open(before['images'][0]['path']).tobytes() == Image.open(after['images'][0]['path']).tobytes()
+
+
+def test_actual_adapter_can_be_disabled_for_hires_and_following_job_recovers(engine, tmp_path, monkeypatch):
+    from safetensors.torch import save_file
+    layer = 'lora_unet_down_blocks_0_attentions_0_transformer_blocks_0_attn1_to_q'
+    path = tmp_path / 'small.safetensors'
+    save_file({layer + '.lora_down.weight': torch.ones(2, 8) * .05,
+               layer + '.lora_up.weight': torch.ones(8, 2) * .05}, str(path))
+    request = dict(output_dir=str(tmp_path), preview_method='none', params=dict(seed=3, steps=2,
+        width=64, height=64, cfg_scale=1, sampler_name='Euler',
+        hires=dict(enabled=True, scale=1.5, upscaler='Latent', second_pass_steps=2)))
+    before = engine.txt2img(request, ctx())
+    request['params']['loras'] = [dict(name='small')]
+    request['lora_paths'] = {'small': str(path)}
+    request['hires_loras'] = []
+    passes = []
+    original = engine._run
+    def run(*a, **kw):
+        passes.append((kw['pass_'], len(engine._lora_state[0])))
+        return original(*a, **kw)
+    monkeypatch.setattr(engine, '_run', run)
+    result = engine.txt2img(request, ctx())
+    assert 'small' in result['lora_hashes']
+    assert passes == [('base', 1), ('hires', 0)]
+    assert len(engine._lora_state[0]) == 1
+    request['params']['loras'] = []
+    request.pop('hires_loras')
+    after = engine.txt2img(request, ctx())
+    assert Image.open(before['images'][0]['path']).tobytes() == Image.open(after['images'][0]['path']).tobytes()
+
+
 def test_real_generation_error_paths_persist_and_next_run_recovers(engine, tmp_path, monkeypatch):
     request = {'params': {'steps': 1, 'width': 64, 'height': 64, 'seed': 3, 'cfg_scale': 1, 'sampler_name': 'Euler'},
                'output_dir': str(tmp_path / 'temporary'), 'vae_recovery_dir': str(tmp_path / 'persistent'), 'preview_method': 'none'}

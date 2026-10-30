@@ -106,7 +106,9 @@ final class AppServices(
 
   val registry: PluginRegistry = new PluginRegistry(builtins, home, () => _settings)
   def gallery: GalleryIndex = galleryIndex
-  @volatile private var galleryIndex = new GalleryIndex(home.outputs(_settings))
+  private def newGalleryIndex(): GalleryIndex = new GalleryIndex(home.outputs(_settings), () =>
+    Option(_settings.hiresFixTweaks.outputDir).filter(_.trim.nonEmpty).toSeq.map(p => home.resolve(p.trim)))
+  @volatile private var galleryIndex = newGalleryIndex()
 
   // Ensures the Python child does not outlive the JVM when shutdown() is never reached.
   private val shutdownHook: Option[Thread] =
@@ -172,7 +174,7 @@ final class AppServices(
 
   /** Re-creates the gallery index after the output directory changed. */
   def resetGallery(): GalleryIndex =
-    galleryIndex = new GalleryIndex(home.outputs(_settings))
+    galleryIndex = newGalleryIndex()
     galleryIndex
 
   def shutdown(): Unit =

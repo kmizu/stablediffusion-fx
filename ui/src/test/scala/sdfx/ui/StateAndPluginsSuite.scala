@@ -8,6 +8,89 @@ import sdfx.ui.vm.*
 import java.nio.file.{Files, Paths}
 
 class StateAndPluginsSuite extends munit.FunSuite:
+  test("restored base style order survives native form and persisted snapshot") {
+    val styles = Seq(PromptStyle("A", "A({prompt})", "a({prompt})"), PromptStyle("B", "B({prompt})", "b({prompt})"))
+    val raw = GenerationParams(prompt = "cat", negativePrompt = "bad", styles = Seq("B", "A"),
+      hires = HiresParams(enabled = true, prompt = "detail"),
+      hooks = Map("hires_fix_tweaks" -> ujson.Obj("prompt_mode" -> "Append")))
+    val effective = HiresPreparation.compose(raw, styles)
+    val text = sdfx.core.infotext.Infotext.write(effective, sdfx.core.infotext.ImageFacts(seed = 1,
+      extra = scala.collection.immutable.ListMap("NUI Hires template" -> effective.hooks("hires_fix_tweaks")("prompt_template").render())))
+    val vm = new GenerationVM(Mode.Txt2Img)
+    val restored = vm.restoreInfotext(text, styles)
+    assertEquals(vm.toParams.styles, Seq("B", "A"))
+    val reloaded = new GenerationVM(Mode.Txt2Img)
+    reloaded.load(UiState.fromJson(UiState.toJson(UiState(params = Map("txt2img" -> vm.snapshot)))).params("txt2img"))
+    assertEquals(reloaded.toParams.styles, Seq("B", "A"))
+    val replay = HiresPreparation.compose(reloaded.toParams.copy(hooks = restored.hooks), styles)
+    assertEquals(replay.prompt, effective.prompt)
+    assertEquals(replay.hires.prompt, effective.hires.prompt)
+    vm.restoreInfotext("other\nSteps: 1, Seed: 1, CFG scale: 7")
+    assertEquals(vm.toParams.styles, Nil)
+  }
+
+  test("template restore updates generation fields and real plugin form together") {
+    val raw = GenerationParams(prompt = "cat", hires = HiresParams(enabled = true, prompt = "detail"),
+      hooks = Map("hires_fix_tweaks" -> ujson.Obj("prompt_mode" -> "Append", "append_separator" -> " + ")))
+    val effective = HiresPreparation.compose(raw, Nil)
+    val text = sdfx.core.infotext.Infotext.write(effective, sdfx.core.infotext.ImageFacts(seed = 1,
+      extra = scala.collection.immutable.ListMap("NUI Hires template" -> effective.hooks("hires_fix_tweaks")("prompt_template").render())))
+    val generation = new GenerationVM(Mode.Txt2Img)
+    val plugins = new PluginsVM(Mode.Txt2Img, Nil, Seq(new sdfx.plugins.HiresFixTweaksPlugin), _ => Values.empty)
+    val restored = generation.restoreInfotext(text, Nil, restoreHiresTemplate = true)
+    plugins.restoreHiresParams(restored)
+    assertEquals(generation.toParams.hires.prompt, "detail")
+    val form = plugins.form("hires_fix_tweaks").get
+    assertEquals(form.values.str("prompt_mode"), "Append")
+    assertEquals(form.values.str("append_separator"), " + ")
+    val fallback = generation.restoreInfotext(text, Nil, restoreHiresTemplate = false)
+    plugins.restoreHiresParams(fallback)
+    assertEquals(generation.toParams.hires.prompt, "cat + detail")
+    assertEquals(form.values.str("prompt_mode"), "Default")
+    assertEquals(form.values.str("styles"), "[]")
+    val emptyText = "cat\nNegative prompt: bad\nSteps: 1, Seed: 1, Hires upscale: 2, Hires empty prompt: True, Hires empty negative prompt: True"
+    val empty = generation.restoreInfotext(emptyText, Nil, restoreHiresTemplate = false)
+    plugins.restoreHiresParams(empty)
+    assertEquals(form.values.str("empty_prompt"), "true")
+    assertEquals(form.values.str("empty_negative_prompt"), "true")
+    val hook = new sdfx.plugins.HiresFixTweaksPlugin().hookFields(form.values)
+    val replay = HiresPreparation.compose(generation.toParams.copy(hooks = Map("hires_fix_tweaks" -> hook)), Nil)
+    assertEquals(replay.hires.prompt, "")
+    assertEquals(replay.hires.negativePrompt, "")
+    assert(replay.hooks("hires_fix_tweaks")("prompts_resolved").bool)
+  }
+
+  test("settings dialog merge retains Hires preferences and preserves current model") {
+    val current = sdfx.core.config.Settings(lastModel = Some("current"))
+    val edited = sdfx.core.config.Settings(hiresFixTweaks = sdfx.core.config.HiresFixTweaksPreferences(outputDir = "hires",
+      showCfg = false, showBatchSeed = false, showPromptModes = false, showRemoveNetworks = false,
+      showStyles = false, promptModeRadio = false, saveTemplate = false, restoreTemplate = false))
+    val merged = SettingsMerge(current, edited)
+    assertEquals(merged.hiresFixTweaks.outputDir, "hires")
+    assertEquals(merged.lastModel, Some("current"))
+    assertEquals(merged.hiresFixTweaks, edited.hiresFixTweaks)
+    val roundtrip = sdfx.core.json.SnakePickle.read[sdfx.core.config.Settings](sdfx.core.json.SnakePickle.write(merged))
+    assertEquals(roundtrip.hiresFixTweaks, edited.hiresFixTweaks)
+  }
+
+  test("hires seed restore updates owned form values and ignores malformed metadata") {
+    val fixture = new Plugin:
+      def id = "hires_fix_tweaks"
+      def name = "Hires seed fixture"
+      def kind = PluginKind.AlwaysOn
+      override def controls: Seq[Control] = Seq("enabled", "seed_enabled", "extras", "seed", "subseed",
+        "strength", "resize_width", "resize_height", "batch_count").map(k => Control.Text(k, k))
+    val vm = new PluginsVM(Mode.Txt2Img, Nil, Seq(fixture), _ => Values.empty)
+    vm.restoreInfotext("cat\nSteps: 2, Sampler: Euler, Seed: 9, Hires seed: \"{'Seed':100,'Strength':0.4}\"")
+    val form = vm.form("hires_fix_tweaks").get
+    assertEquals(form.values.map("seed"), "100")
+    assertEquals(form.values.map("strength"), "0.4")
+    assertEquals(form.values.map("seed_enabled"), "true")
+    assertEquals(form.values.map("batch_count"), "1")
+    val before = form.values
+    vm.restoreInfotext("cat\nSteps: 2, Sampler: Euler, Seed: 9, Hires seed: \"{'Strength':2}\"")
+    assertEquals(form.values, before)
+  }
 
   test("legacy_state_without_gate_defaults_true") {
     val old = UiState(params = Mode.values.map(m => m.key -> GenerationParams(subseed = 99L, subseedStrength = 0.4)).toMap)

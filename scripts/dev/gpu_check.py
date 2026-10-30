@@ -140,7 +140,115 @@ def mask_png(size):
 
 t0 = time.time()
 r = None
-if CASE in ('todo_sd15', 'todo_sdxl'):
+if CASE in ('hires_tweaks_sd15', 'hires_tweaks_sdxl'):
+    import copy
+    from pathlib import Path
+    import hashlib
+    import numpy as np
+    from PIL import Image
+    load(SDXL if CASE.endswith('sdxl') else SD15)
+    report = {}
+    base = gp(prompt='blue ceramic teapot, red flowers, wooden table, window sunlight, detailed illustration',
+              width=512, height=512, steps=10, cfg_scale=6, seed=7, subseed=19)
+    base['hires'].update(enabled=True, scale=1.5, second_pass_steps=8, denoising_strength=.55)
+    def run(name, params):
+        start = time.perf_counter()
+        before = len(lines)
+        result = call('txt2img', req(params))
+        assert result['type'] == 'result', result
+        records, pixels = [], []
+        for index, record in enumerate(result['result']['images']):
+            dest = Path(OUT, f'{name}-{index}.png')
+            os.replace(record['path'], dest)
+            rgb = np.asarray(Image.open(dest).convert('RGB'))
+            assert rgb.shape == (768, 768, 3), rgb.shape
+            pixels.append(rgb)
+            records.append(dict(record, path=str(dest), rgb_sha256=hashlib.sha256(rgb.tobytes()).hexdigest()))
+        progress = [e for e in lines[before:] if e.get('event') == 'progress']
+        report[name] = dict(images=records, seconds=time.perf_counter()-start,
+                            progress=progress, interrupted=result['result'].get('interrupted', False))
+        Path(OUT, CASE+'.json').write_text(json.dumps(report, indent=2), encoding='utf-8')
+        print('HIRES CHECK', name, len(records), flush=True)
+        return pixels
+    baseline = run('baseline', base)[0]
+    disabled = copy.deepcopy(base)
+    disabled['hooks'] = dict(hires_fix_tweaks=dict(enabled=False, seed_enabled=True, seed=100, batch_count=3))
+    assert np.array_equal(run('disabled', disabled)[0], baseline)
+    repeat = copy.deepcopy(base)
+    repeat['hooks'] = dict(hires_fix_tweaks=dict(batch_count=3, seed_enabled=True, seed=100))
+    repeated = run('latent-repeat', repeat)
+    assert [x['hires_seed'] for x in report['latent-repeat']['images']] == [100, 101, 102]
+    assert [x['seed'] for x in report['latent-repeat']['images']] == [7, 7, 7]
+    progress = report['latent-repeat']['progress']
+    assert sum(e['pass'] == 'base' and e['step'] == 1 for e in progress) == 1, 'first pass repeated'
+    for i in range(3):
+        single = copy.deepcopy(repeat)
+        single['hooks']['hires_fix_tweaks'].update(batch_count=1, seed=100+i)
+        assert np.array_equal(run(f'latent-single-{i}', single)[0], repeated[i]), 'cached repeat differs from single'
+    varied = copy.deepcopy(repeat)
+    varied['hires']['upscaler'] = 'Lanczos'
+    varied['hooks']['hires_fix_tweaks'].update(batch_count=2, extras=True, subseed=200,
+        strength=.35, resize_width=512, resize_height=512)
+    varied_pixels = run('pixel-variation-resize', varied)
+    assert [x['hires_seed'] for x in report['pixel-variation-resize']['images']] == [100, 100]
+    assert [x['hires_subseed'] for x in report['pixel-variation-resize']['images']] == [200, 201]
+    assert not np.array_equal(*varied_pixels)
+    batches = copy.deepcopy(base)
+    batches.update(batch_size=2, n_iter=2)
+    batches['hooks'] = dict(hires_fix_tweaks=dict(batch_count=2, seed_enabled=False))
+    batch_pixels = run('inherited-multibatch', batches)
+    records = report['inherited-multibatch']['images']
+    assert [x['seed'] for x in records] == [7, 8, 7, 8, 9, 10, 9, 10]
+    assert [x['hires_seed'] for x in records] == [7, 8, 8, 9, 9, 10, 10, 11]
+    assert sum(e['pass'] == 'base' and e['step'] == 1 for e in report['inherited-multibatch']['progress']) == 2
+    for index in range(2):
+        part = copy.deepcopy(batches)
+        part.update(n_iter=1, seed=7+2*index, subseed=19+2*index)
+        actual = run(f'inherited-batch-{index}', part)
+        assert all(np.array_equal(a, b) for a, b in zip(actual, batch_pixels[4*index:4*index+4]))
+    randoms = copy.deepcopy(base)
+    randoms['batch_size'] = 2
+    randoms['hooks'] = dict(hires_fix_tweaks=dict(batch_count=2, seed_enabled=True, seed=-1,
+        extras=True, subseed=-1, strength=.35))
+    random_pixels = run('random-primary-and-variation', randoms)
+    random_records = report['random-primary-and-variation']['images']
+    primary, variation = random_records[0]['hires_seed'], random_records[0]['hires_subseed']
+    assert [x['hires_seed'] for x in random_records] == [primary] * 4
+    assert [x['hires_subseed'] for x in random_records] == [variation, variation+1, variation+1, variation+2]
+    assert primary > 0 and variation > 0, 'effective zero seed requires separate replay handling'
+    randoms['hooks']['hires_fix_tweaks'].update(seed=primary, subseed=variation)
+    replay = run('random-effective-replay', randoms)
+    assert all(np.array_equal(a, b) for a, b in zip(replay, random_pixels))
+    empty = copy.deepcopy(repeat)
+    empty['hooks']['hires_fix_tweaks'].update(batch_count=1, prompts_resolved=True)
+    empty['hires'].update(prompt='', negative_prompt='')
+    run('resolved-empty', empty)
+    interrupted = copy.deepcopy(repeat)
+    interrupted['hires']['second_pass_steps'] = 24
+    before = len(lines)
+    failures = []
+    def cancel_job():
+        try:
+            run('partial-cancel', interrupted)
+        except BaseException as error:
+            failures.append(error)
+    worker = threading.Thread(target=cancel_job)
+    worker.start()
+    deadline = time.monotonic() + 180
+    with cv:
+        while not any(e.get('event') == 'progress' and e.get('pass') == 'hires' and
+                      e.get('image', 0) >= 1 and e.get('step', 0) >= 1 for e in lines[before:]):
+            assert worker.is_alive() and time.monotonic() < deadline, 'second hires pass never started'
+            cv.wait(.1)
+    decision = call('interrupt', {}, timeout=10)
+    assert decision['type'] == 'result', decision
+    worker.join(120)
+    assert not worker.is_alive() and not failures, failures
+    assert report['partial-cancel']['interrupted'] is True
+    assert 1 <= len(report['partial-cancel']['images']) < 3
+    assert np.array_equal(run('recovery', base)[0], baseline), 'hires state leaked'
+    r = dict(type='result', result=dict(result='disabled/recovery exact; cached repeats match individual seeds; variation/resize; empty prompts'))
+elif CASE in ('todo_sd15', 'todo_sdxl'):
     import copy
     from pathlib import Path
     import numpy as np

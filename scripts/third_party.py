@@ -21,6 +21,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # (repo, how it is used, what)
 BASE = [
+    ("w-e-w/sd-webui-hires-fix-tweaks", "reimplemented", "AGPL3 behavior reference 28902f742a795afc31d86641ad85466afdd280e6; native Hires prompt modes, repeats/seeds, styles and workflow settings; original pure prompt functions used only for reference test fixtures"),
     ("feffy380/sd-webui-token-downsampling", "reimplemented", "MIT behavior reference f1f1cbae82b75d5658b08abbc3cb8ddc0b876cc5; native two-depth K/V nearest-exact downsampling, evaluation cutoff and XYZ controls"),
     ("ethansmith2000/comfy-todo", "reference", "MIT Token Downsampling lineage ddd75a3e62e0a67f0b9be839a9916b553041494f; no runtime dependency"),
     ("light-and-ray/sd-webui-waifu2x-upscaler", "reimplemented", "Native Waifu2x controls and nine upscaler choices; no unlicensed wrapper code copied/imported; pinned behavior feede81c2b15ebcd5ff881b3f5ad4c3dbf017368"),

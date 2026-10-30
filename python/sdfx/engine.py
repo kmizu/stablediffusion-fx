@@ -190,7 +190,7 @@ class Engine(BaseEngine):
 
     def features(self) -> list[str]:
         # Temperature guard uses step callbacks and does not alter model weights.
-        f = ["token_downsampling", "vram_estimator", "steps_animation", "pnginfo_injection", "gpu_temperature_guard", "freeu", "dynamic_thresholding", "hypertile", "system_info", "vae_tools", "prevent_interrupt"]
+        f = ["hires_fix_tweaks", "token_downsampling", "vram_estimator", "steps_animation", "pnginfo_injection", "gpu_temperature_guard", "freeu", "dynamic_thresholding", "hypertile", "system_info", "vae_tools", "prevent_interrupt"]
         f += self._batch_features()
         if hasattr(diffusers, "StableDiffusionXLPAGPipeline"):
             f.append("pag")
@@ -492,6 +492,7 @@ class Engine(BaseEngine):
         want = []
         self._lora_windows = []
         self._lora_key = None
+        self._lora_state = ([], [])
         for lr in gp.loras:
             path = req.lora_paths[lr.name]
             if not os.path.isfile(path):
@@ -565,11 +566,13 @@ class Engine(BaseEngine):
             except (ValueError, KeyError, TypeError) as e:
                 raise EngineError(INVALID_PARAMS, f"LoRA block weights could not be applied: {e}")
             self._lora_state = (names, weights)
-        elif self.loaded_loras:
-            try:
-                pipe.disable_lora()
-            except Exception:
-                pass
+        else:
+            self._lora_state = ([], [])
+            if self.loaded_loras:
+                try:
+                    pipe.disable_lora()
+                except Exception:
+                    pass
         return hashes
 
     def _load_embeddings(self, req: GenerationRequest, texts: list[str], ctx: JobContext):
@@ -955,7 +958,7 @@ class Engine(BaseEngine):
              schedule: Optional[str], cfg_scale: float, embeds: dict, steps: int, w: int, h: int, seeds: list[int],
              pass_: str, image_idx: int, images_total: int, latents=None, image=None, mask=None, strength: float = 1.0,
              expected_steps: int = 0, cn: Optional[tuple] = None, output_type: str = "pil", pag: Optional[dict] = None,
-             hook_seed: int = 0, latent_source=None):
+             hook_seed: int = 0, latent_source=None, hires_noise=None):
         cn_models, cn_images, cn_kw = cn if cn else ([], [], {})
         neutral_plan = embeds.get("_neutral")
         if neutral_plan:
@@ -1174,7 +1177,23 @@ class Engine(BaseEngine):
             recovery = nullcontext()
             if output_type == 'pil' and getattr(pipe, 'vae', None) is not None and req is not None and not getattr(self, '_benchmark_no_save', False):
                 recovery = catch_decode(self, pipe.vae, req.vae_recovery_dir or req.output_dir, ctx)
-            with torch.inference_mode(), recovery:
+            from .hires_tweaks import prepare_noise, resized_noise
+            noise_factory = None
+            if hires_noise is not None:
+                subseeds, variation, resize_width, resize_height = hires_noise
+                if task == 'txt2img' or len(subseeds) != len(seeds):
+                    raise EngineError(INVALID_PARAMS, 'Hires noise requires an image pass and matching seed lists')
+                rng_device = self._rng_device(gp)
+                def draw_noise(seed, shape):
+                    generator = torch.Generator(rng_device).manual_seed(int(seed) & 0xFFFFFFFFFFFFFFFF)
+                    return torch.randn(shape, generator=generator, device=rng_device, dtype=torch.float32)
+                def noise_factory(shape, generator=None, device=None, dtype=None, **unused):
+                    if len(shape) != 4 or shape[0] != len(seeds):
+                        raise EngineError(UNSUPPORTED, 'Hires noise batch shape does not match seed plan')
+                    noise = [resized_noise(tuple(shape[1:]), seed, sub, variation,
+                        resize_width, resize_height, draw_noise, slerp) for seed, sub in zip(seeds, subseeds)]
+                    return torch.stack(noise).to(device=device, dtype=dtype)
+            with torch.inference_mode(), recovery, prepare_noise(pipe, noise_factory):
                 out = pipe(**kw)
         finally:
             if todo is not None and todo.enabled:
@@ -1220,6 +1239,19 @@ class Engine(BaseEngine):
         hardware_started = time.perf_counter()
         req = self.parse_generation(params, mode, ctx)
         gp = req.params
+        hp = gp.hires
+        hires = mode == "txt2img" and hp.enabled
+        from .hires_tweaks import seed_plan, wire_seed
+        tweaks = hooks_mod.hook_config(gp.hooks, "hires_fix_tweaks", {}) if hires else None
+        seed = resolve_seed(gp.seed)
+        subseed = resolve_seed(gp.subseed)
+        bs, n_iter = gp.batch_size, gp.n_iter
+        hr_plan = seed_plan(tweaks, [seed + i for i in range(bs * n_iter)],
+            [subseed + i for i in range(bs * n_iter)], gp.subseed_strength) if tweaks is not None else None
+        repeats = hr_plan.count if hr_plan is not None else 1
+        total = bs * n_iter * repeats
+        if total > 1600:
+            raise EngineError(INVALID_PARAMS, "Hires repeats exceed the 1600-image generation limit")
         hardware_timer = None
         hardware_profile = None
         if req.hardware_info.enabled:
@@ -1247,16 +1279,12 @@ class Engine(BaseEngine):
         self.ensure_model(gp, ctx)
         if self._intermediate_recorder is not None:
             self._intermediate_recorder.metadata.update(model=self.model, vae=self.vae_info)
-        seed = resolve_seed(gp.seed)
-        subseed = resolve_seed(gp.subseed)
-        bs, n_iter = gp.batch_size, gp.n_iter
-        total = bs * n_iter
         w, h = gp.width, gp.height
         is_inpaint_model = self.kind.endswith("inpaint")
 
+        separate_loras = hires and req.hires_loras is not None and hooks_mod.hook_config(gp.hooks, "composable_lora", {}) is None
+        hr_gp = replace(gp, loras=req.hires_loras) if separate_loras else gp
         lora_hashes = self._apply_loras(gp, req, ctx)
-        hp = gp.hires
-        hires = mode == "txt2img" and hp.enabled
         texts = [gp.prompt, gp.negative_prompt] + ([hp.prompt, hp.negative_prompt] if hires else [])
         gradient_enabled = hooks_mod.hook_config(gp.hooks, "weight_gradient", {}) is not None
         if (gradient_enabled and hooks_mod.hook_config(gp.hooks, "photomaker", {}) is not None
@@ -1293,9 +1321,25 @@ class Engine(BaseEngine):
         gradient_steps = ((gp.steps if latent_config is not None else img2img_steps(gp.steps, gp.img2img.denoising_strength)[2])
                           if mode == "img2img" and not alternative else gp.steps)
         embeds = self._encode_scheduled(gp.prompt, gp.negative_prompt, gp, bs, gp.steps, gradient_total=gradient_steps)
-        hr_pos, hr_neg = (hp.prompt or gp.prompt, hp.negative_prompt or gp.negative_prompt) if hires else ("", "")
+        resolved_prompts = tweaks is not None and tweaks.get('prompts_resolved') is True
+        hr_pos, hr_neg = ((hp.prompt, hp.negative_prompt) if resolved_prompts else
+            (hp.prompt or gp.prompt, hp.negative_prompt or gp.negative_prompt)) if hires else ("", "")
         gradient_hr = gradient_enabled and (weight_gradient.has_gradient(hr_pos) or weight_gradient.has_gradient(hr_neg))
-        if hires and (hp.prompt or hp.negative_prompt or prompt_schedule.has_schedule(hr_pos)
+        if separate_loras:
+            embeds = self._adjust_embeds(gp, embeds, ctx)
+            hr_gp = replace(hr_gp, prompt=hr_pos, negative_prompt=hr_neg)
+            try:
+                hr_hashes = self._apply_loras(hr_gp, req, ctx)
+                lora_hashes.update(hr_hashes)
+                if ctx.resource_hashes is not None:
+                    ctx.resource_hashes.update({f'lora:{name}': value for name, value in hr_hashes.items()})
+                hr_actual = hires_steps(hp.second_pass_steps or gp.steps, hp.denoising_strength)[2]
+                hr_embeds = self._encode_scheduled(hr_pos, hr_neg, hr_gp, bs, gp.steps,
+                    hp.second_pass_steps or gp.steps, gradient_total=hr_actual)
+                hr_embeds = self._adjust_embeds(hr_gp, hr_embeds, ctx)
+            finally:
+                self._apply_loras(gp, req, ctx)
+        elif hires and (resolved_prompts or hp.prompt or hp.negative_prompt or prompt_schedule.has_schedule(hr_pos)
                       or prompt_schedule.has_schedule(hr_neg) or gradient_hr
                       or (hooks_mod.hook_config(gp.hooks, "prompt_fusion", {}) is not None
                           and (prompt_fusion.active(hr_pos) or prompt_fusion.active(hr_neg)))
@@ -1305,9 +1349,10 @@ class Engine(BaseEngine):
                                                gradient_total=hr_actual)
         else:
             hr_embeds = embeds
-        same_hr = hr_embeds is embeds
-        embeds = self._adjust_embeds(gp, embeds, ctx)
-        hr_embeds = embeds if same_hr else self._adjust_embeds(gp, hr_embeds, ctx)
+        if not separate_loras:
+            same_hr = hr_embeds is embeds
+            embeds = self._adjust_embeds(gp, embeds, ctx)
+            hr_embeds = embeds if same_hr else self._adjust_embeds(gp, hr_embeds, ctx)
 
         init_img = None
         job = None
@@ -1323,113 +1368,27 @@ class Engine(BaseEngine):
 
         out_images = []
         plan = None
-        for it in range(n_iter):
-            idx0 = it * bs
-            seeds = [seed + idx0 + j for j in range(bs)]
-            subs = [subseed + idx0 + j for j in range(bs)]
-            ctx.check_interrupt()
-            if mode == "txt2img":
-                latent_hr = hires and hires_mod.is_latent(hp.upscaler)
-                otype = "latent" if latent_hr else "pil"
-                if is_inpaint_model:
-                    gray = Image.new("RGB", (w, h), (127, 127, 127))
-                    white = Image.new("L", (w, h), 255)
-                    imgs, plan = self._run("inpaint", gp, req, ctx, sampler=gp.sampler_name, schedule=gp.scheduler,
-                                           cfg_scale=gp.cfg_scale, embeds=embeds, steps=gp.steps, w=w, h=h, seeds=seeds,
-                                           pass_="base", image_idx=idx0, images_total=total, image=[gray] * bs,
-                                           mask=[white] * bs, strength=1.0, cn=cn, output_type=otype, pag=pag,
-                                           hook_seed=seeds[0])
-                else:
-                    lat = self._noise(seeds, subs, gp.subseed_strength, w, h, gp)
-                    imgs, plan = self._run("txt2img", gp, req, ctx, sampler=gp.sampler_name, schedule=gp.scheduler,
-                                           cfg_scale=gp.cfg_scale, embeds=embeds, steps=gp.steps, w=w, h=h, seeds=seeds,
-                                           pass_="base", image_idx=idx0, images_total=total, latents=lat, cn=cn,
-                                           output_type=otype, pag=pag, hook_seed=seeds[0])
-                if hires:
-                    tw, th = hp.target_size(w, h)
-                    uw, uh = hp.upscale_size(w, h)
-                    if latent_hr:
-                        src = hires_mod.upscale_latents(imgs, uw, uh, hp.upscaler)
-                        if (uw, uh) != (tw, th):
-                            l, t, r, b = center_crop_box(uw // 8, uh // 8, tw // 8, th // 8)
-                            src = src[:, :, t:b, l:r]
-                    else:
-                        src = []
-                        for im in imgs:
-                            ctx.check_interrupt()
-                            try:
-                                up = upscalers.upscale_to(im, uw, uh, hp.upscaler, req.upscaler_paths.get(hp.upscaler),
-                                                          self.device, self.dtype, ctx.check_interrupt)
-                            except EngineError:
-                                raise
-                            except ImportError as e:
-                                raise EngineError(UNSUPPORTED, f"hires upscaler '{hp.upscaler}' needs spandrel: {e}")
-                            except Exception as e:
-                                raise EngineError(MODEL_LOAD_FAILED, f"hires upscaler '{hp.upscaler}' failed: {e}",
-                                                  traceback.format_exc())
-                            if up.size != (tw, th):
-                                up = up.crop(center_crop_box(up.width, up.height, tw, th, 8))
-                            src.append(up)
-                    n, strength, actual = hires_steps(hp.second_pass_steps or gp.steps, hp.denoising_strength)
-                    task2 = "inpaint" if is_inpaint_model else "img2img"
-                    if task2 == "inpaint" and latent_hr:
-                        ctx.warn("latent hires upscale is not supported for inpainting models; decoding first")
-                        src = self._decode(src, ctx, req.vae_recovery_dir or req.output_dir)
-                    hr_cn = (cn[0], cn[1], cn[2]) if cn[0] else None
-                    imgs, _ = self._run(task2, gp, req, ctx, sampler=hp.sampler_name or gp.sampler_name,
-                                        schedule=hp.scheduler or gp.scheduler,
-                                        cfg_scale=hp.cfg_scale if hp.cfg_scale is not None else gp.cfg_scale,
-                                        embeds=hr_embeds, steps=n, w=tw, h=th, seeds=seeds, pass_="hires", image_idx=idx0,
-                                        images_total=total, image=src, mask=[Image.new("L", (tw, th), 255)] * bs,
-                                        strength=strength, expected_steps=actual, cn=hr_cn, pag=pag, hook_seed=seeds[0] + 1)
-            else:
-                ip = gp.img2img
-                n, strength, actual = (latent_upscale.full_steps(gp.steps, ip.denoising_strength) if latent_config is not None
-                                       else img2img_steps(gp.steps, ip.denoising_strength))
-                latent_source = None
-                if ip.mask is not None:
-                    source_mask = load_mask(ip.mask)
-                    job = inpaint.prepare(init_img, source_mask, w, h, 0 if latent_config is not None else ip.resize_mode, ip.mask_blur, ip.inpainting_fill,
-                                          ip.inpaint_full_res, ip.inpaint_full_res_padding, ip.inpainting_mask_invert, seeds[0])
-                    image, mask, task = job.image, job.mask, "inpaint"
-                    if latent_config is not None:
-                        if ip.inpaint_full_res:
-                            # Upstream full-res inpainting crops/resizes pixels before latent interpolation too.
-                            latent_source = (job.image, job.mask)
-                        else:
-                            source_job = inpaint.prepare(init_img, source_mask, init_img.width, init_img.height, 0,
-                                ip.mask_blur, ip.inpainting_fill, False, ip.inpaint_full_res_padding,
-                                ip.inpainting_mask_invert, seeds[0])
-                            latent_source = (source_job.image, source_job.mask)
-                else:
-                    image = resize_image(0 if latent_config is not None else ip.resize_mode, init_img, w, h)
-                    mask = Image.new("L", (w, h), 255)
-                    task = "inpaint" if is_inpaint_model else "img2img"
-                    if latent_config is not None:
-                        latent_source = (init_img, Image.new("L", init_img.size, 255) if is_inpaint_model else None)
-                alt = hooks_mod.hook_config(gp.hooks, "img2imgalt", extras.IMG2IMGALT_DEFAULTS)
-                if alt and (ip.mask is not None or is_inpaint_model):
-                    ctx.warn("img2img alternative test needs plain img2img with a normal model; ignored")
-                    alt = None
-                if alt:
-                    imgs, plan = self._img2imgalt(gp, req, ctx, alt, image, embeds, seeds, idx0, total, w, h, cn, pag)
-                else:
-                    imgs, plan = self._run(task, gp, req, ctx, sampler=gp.sampler_name, schedule=gp.scheduler,
-                                           cfg_scale=gp.cfg_scale, embeds=embeds, steps=n, w=w, h=h, seeds=seeds,
-                                           pass_="base", image_idx=idx0, images_total=total, image=[image] * bs,
-                                           mask=[mask] * bs, strength=strength, expected_steps=actual, cn=cn, pag=pag,
-                                           hook_seed=seeds[0], latent_source=latent_source)
-                if job is not None:
-                    imgs = [job.finalize(im) for im in imgs]
+        def finish_batch(imgs, base_seeds, base_subs, seeds, idx0, it, repeat=0, hr_seeds=None, hr_subs=None, pass_gp=None):
+            effective_gp = pass_gp if pass_gp is not None else gp
             ad = hooks_mod.hook_config(gp.hooks, "adetailer", {})
-            if ad:
-                imgs = self._adetailer(gp, req, ctx, ad, imgs, seeds, idx0, total, pag)
-            imgs = ext_mod.post_images(self, gp, None, imgs, ctx=ctx, faces=True)
+            if hr_plan is None:
+                if ad:
+                    imgs = self._adetailer(effective_gp, req, ctx, ad, imgs, seeds, idx0, total, pag)
+                imgs = ext_mod.post_images(self, gp, None, imgs, ctx=ctx, faces=True)
             for j, im in enumerate(imgs):
-                k = idx0 + j
-                path = next_output_path(req.output_dir, str(seed + k))
-                image_result = {"path": path, "seed": seed + k, "subseed": subseed + k,
+                if hr_plan is not None:
+                    # Publish each finished item before another item's detector/inpaint can interrupt.
+                    item = self._adetailer(effective_gp, req, ctx, ad, [im], [seeds[j]],
+                                           idx0 + j, total, pag) if ad else [im]
+                    im = ext_mod.post_images(self, gp, None, item, ctx=ctx, faces=True)[0]
+                path = next_output_path(req.output_dir, str(base_seeds[j]))
+                image_result = {"path": path, "seed": base_seeds[j], "subseed": base_subs[j],
                                 "width": im.width, "height": im.height}
+                if hr_plan is not None and hr_seeds is not None:
+                    image_result.update(hires_seed=wire_seed(hr_seeds[j]), hires_subseed=wire_seed(hr_subs[j]),
+                        hires_subseed_strength=hr_plan.strength, hires_repeat=repeat,
+                        hires_seed_resize_from_w=hr_plan.resize_width,
+                        hires_seed_resize_from_h=hr_plan.resize_height)
                 if hardware_timer is not None:
                     from .hardware_info import record
                     image_result['hardware_info'] = record(hardware_profile, hardware_timer.next_image(), req.hardware_info.remark)
@@ -1442,12 +1401,133 @@ class Engine(BaseEngine):
                     save_png(im, path)
                 out_images.append(image_result)
                 if self._intermediate_recorder is not None:
-                    self._intermediate_recorder.final(im, seed + k, it, j)
+                    self._intermediate_recorder.final(im, base_seeds[j], it * repeats + repeat, j)
+
+        interrupted = False
+        try:
+            for it in range(n_iter):
+                idx0 = it * bs
+                seeds = [seed + idx0 + j for j in range(bs)]
+                subs = [subseed + idx0 + j for j in range(bs)]
+                ctx.check_interrupt()
+                if mode == "txt2img":
+                    latent_hr = hires and hires_mod.is_latent(hp.upscaler)
+                    otype = "latent" if latent_hr else "pil"
+                    if is_inpaint_model:
+                        gray = Image.new("RGB", (w, h), (127, 127, 127))
+                        white = Image.new("L", (w, h), 255)
+                        imgs, plan = self._run("inpaint", gp, req, ctx, sampler=gp.sampler_name, schedule=gp.scheduler,
+                                               cfg_scale=gp.cfg_scale, embeds=embeds, steps=gp.steps, w=w, h=h, seeds=seeds,
+                                               pass_="base", image_idx=idx0 * repeats, images_total=total, image=[gray] * bs,
+                                               mask=[white] * bs, strength=1.0, cn=cn, output_type=otype, pag=pag,
+                                               hook_seed=seeds[0])
+                    else:
+                        lat = self._noise(seeds, subs, gp.subseed_strength, w, h, gp)
+                        imgs, plan = self._run("txt2img", gp, req, ctx, sampler=gp.sampler_name, schedule=gp.scheduler,
+                                               cfg_scale=gp.cfg_scale, embeds=embeds, steps=gp.steps, w=w, h=h, seeds=seeds,
+                                               pass_="base", image_idx=idx0 * repeats, images_total=total, latents=lat, cn=cn,
+                                               output_type=otype, pag=pag, hook_seed=seeds[0])
+                    if hires:
+                        tw, th = hp.target_size(w, h)
+                        uw, uh = hp.upscale_size(w, h)
+                        if latent_hr:
+                            src = hires_mod.upscale_latents(imgs, uw, uh, hp.upscaler)
+                            if (uw, uh) != (tw, th):
+                                l, t, r, b = center_crop_box(uw // 8, uh // 8, tw // 8, th // 8)
+                                src = src[:, :, t:b, l:r]
+                        else:
+                            src = []
+                            for im in imgs:
+                                ctx.check_interrupt()
+                                try:
+                                    up = upscalers.upscale_to(im, uw, uh, hp.upscaler, req.upscaler_paths.get(hp.upscaler),
+                                                              self.device, self.dtype, ctx.check_interrupt)
+                                except EngineError:
+                                    raise
+                                except ImportError as e:
+                                    raise EngineError(UNSUPPORTED, f"hires upscaler '{hp.upscaler}' needs spandrel: {e}")
+                                except Exception as e:
+                                    raise EngineError(MODEL_LOAD_FAILED, f"hires upscaler '{hp.upscaler}' failed: {e}",
+                                                      traceback.format_exc())
+                                if up.size != (tw, th):
+                                    up = up.crop(center_crop_box(up.width, up.height, tw, th, 8))
+                                src.append(up)
+                        n, strength, actual = hires_steps(hp.second_pass_steps or gp.steps, hp.denoising_strength)
+                        task2 = "inpaint" if is_inpaint_model else "img2img"
+                        if task2 == "inpaint" and latent_hr:
+                            ctx.warn("latent hires upscale is not supported for inpainting models; decoding first")
+                            src = self._decode(src, ctx, req.vae_recovery_dir or req.output_dir)
+                        hr_cn = (cn[0], cn[1], cn[2]) if cn[0] else None
+                        for repeat in range(repeats):
+                            ctx.check_interrupt()
+                            hr_seeds, hr_subs = hr_plan.batch(idx0, bs, repeat) if hr_plan is not None else (seeds, subs)
+                            noise = ((hr_subs, hr_plan.strength, hr_plan.resize_width, hr_plan.resize_height)
+                                if hr_plan is not None and (hr_plan.strength > 0 or hr_plan.resize_width > 0) else None)
+                            output_idx = (it * repeats + repeat) * bs
+                            try:
+                                if separate_loras:
+                                    self._apply_loras(hr_gp, req, ctx)
+                                imgs, _ = self._run(task2, hr_gp, req, ctx, sampler=hp.sampler_name or gp.sampler_name,
+                                                    schedule=hp.scheduler or gp.scheduler,
+                                                    cfg_scale=hp.cfg_scale if hp.cfg_scale is not None else gp.cfg_scale,
+                                                    embeds=hr_embeds, steps=n, w=tw, h=th, seeds=hr_seeds, pass_="hires", image_idx=output_idx,
+                                                    images_total=total, image=src, mask=[Image.new("L", (tw, th), 255)] * bs,
+                                                    strength=strength, expected_steps=actual, cn=hr_cn, pag=pag, hook_seed=hr_seeds[0] + 1, hires_noise=noise)
+                                finish_batch(imgs, seeds, subs, hr_seeds, output_idx, it, repeat, hr_seeds, hr_subs, hr_gp)
+                            finally:
+                                if separate_loras:
+                                    self._apply_loras(gp, req, ctx)
+                        continue
+                else:
+                    ip = gp.img2img
+                    n, strength, actual = (latent_upscale.full_steps(gp.steps, ip.denoising_strength) if latent_config is not None
+                                           else img2img_steps(gp.steps, ip.denoising_strength))
+                    latent_source = None
+                    if ip.mask is not None:
+                        source_mask = load_mask(ip.mask)
+                        job = inpaint.prepare(init_img, source_mask, w, h, 0 if latent_config is not None else ip.resize_mode, ip.mask_blur, ip.inpainting_fill,
+                                              ip.inpaint_full_res, ip.inpaint_full_res_padding, ip.inpainting_mask_invert, seeds[0])
+                        image, mask, task = job.image, job.mask, "inpaint"
+                        if latent_config is not None:
+                            if ip.inpaint_full_res:
+                                # Upstream full-res inpainting crops/resizes pixels before latent interpolation too.
+                                latent_source = (job.image, job.mask)
+                            else:
+                                source_job = inpaint.prepare(init_img, source_mask, init_img.width, init_img.height, 0,
+                                    ip.mask_blur, ip.inpainting_fill, False, ip.inpaint_full_res_padding,
+                                    ip.inpainting_mask_invert, seeds[0])
+                                latent_source = (source_job.image, source_job.mask)
+                    else:
+                        image = resize_image(0 if latent_config is not None else ip.resize_mode, init_img, w, h)
+                        mask = Image.new("L", (w, h), 255)
+                        task = "inpaint" if is_inpaint_model else "img2img"
+                        if latent_config is not None:
+                            latent_source = (init_img, Image.new("L", init_img.size, 255) if is_inpaint_model else None)
+                    alt = hooks_mod.hook_config(gp.hooks, "img2imgalt", extras.IMG2IMGALT_DEFAULTS)
+                    if alt and (ip.mask is not None or is_inpaint_model):
+                        ctx.warn("img2img alternative test needs plain img2img with a normal model; ignored")
+                        alt = None
+                    if alt:
+                        imgs, plan = self._img2imgalt(gp, req, ctx, alt, image, embeds, seeds, idx0, total, w, h, cn, pag)
+                    else:
+                        imgs, plan = self._run(task, gp, req, ctx, sampler=gp.sampler_name, schedule=gp.scheduler,
+                                               cfg_scale=gp.cfg_scale, embeds=embeds, steps=n, w=w, h=h, seeds=seeds,
+                                               pass_="base", image_idx=idx0, images_total=total, image=[image] * bs,
+                                               mask=[mask] * bs, strength=strength, expected_steps=actual, cn=cn, pag=pag,
+                                               hook_seed=seeds[0], latent_source=latent_source)
+                    if job is not None:
+                        imgs = [job.finalize(im) for im in imgs]
+                finish_batch(imgs, seeds, subs, seeds, idx0 * repeats, it)
+        except EngineError as error:
+            if error.code != "interrupted" or hr_plan is None or not out_images:
+                raise
+            interrupted = True
 
         m = self.model
         intermediate_artifacts = self._intermediate_recorder.finish() if self._intermediate_recorder else []
         return {
             "images": out_images,
+            "interrupted": interrupted,
             "timing_s": round(time.monotonic() - t0, 3),
             "model_name": m["name"], "model_hash": m["hash"],
             "vae_name": self.vae_info["vae_name"] if self.vae_info else None,

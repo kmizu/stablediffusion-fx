@@ -87,6 +87,15 @@ final class PluginsVM(val mode: Mode, scripts: Seq[Plugin], alwaysOnPlugins: Seq
     */
   def restoreInfotext(text: String): Unit =
     val fields = Infotext.parse(text).fields
+    fields.get("Hires seed").flatMap(sdfx.core.infotext.HiresSeedMetadata.parse).foreach { h =>
+      val values = Values(h.value.toMap.map { (key, value) => key -> (value match
+        case ujson.Bool(b) => b.toString
+        case ujson.Num(n) if n == math.floor(n) => n.toLong.toString
+        case ujson.Num(n) => n.toString
+        case other => other.str)
+      })
+      form("hires_fix_tweaks").foreach(_.load(values))
+    }
     sdfx.plugins.TokenDownsamplingPlugin.replay(fields).foreach(values => form("token_downsampling").foreach(_.load(values)))
     def flag(key: String): Option[Boolean] = fields.get(key).flatMap { v =>
       v.trim.toLowerCase(java.util.Locale.ROOT) match
@@ -100,6 +109,21 @@ final class PluginsVM(val mode: Mode, scripts: Seq[Plugin], alwaysOnPlugins: Seq
       form("grid_numbers").foreach(_.load(Values(Map(
         "enabled" -> "true", "image_numbers" -> numbers.getOrElse(true).toString,
         "xyz_info" -> xyz.getOrElse(false).toString))))
+
+  /** Apply the validated prompt/seed restore result to the owned native Hires form. */
+  def restoreHiresParams(params: sdfx.core.model.GenerationParams): Unit =
+    form("hires_fix_tweaks").foreach { f =>
+      f.reset()
+      params.hooks.get("hires_fix_tweaks").collect { case o: ujson.Obj => o }.foreach { h =>
+        val values = h.value.toSeq.collect {
+          case (k, ujson.Str(s)) => k -> s
+          case (k, v: ujson.Bool) => k -> v.bool.toString
+          case (k, ujson.Num(n)) => k -> (if n == math.floor(n) then n.toLong.toString else n.toString)
+          case ("styles", v: ujson.Arr) => "styles" -> v.render()
+        }
+        f.load(Values(values.toMap))
+      }
+    }
 
   /** plugin id -> values, for persistence. */
   def snapshot: Map[String, Map[String, String]] = (scriptForms ++ alwaysOnForms).map(f => f.plugin.id -> f.values.map).toMap

@@ -105,7 +105,7 @@ final class GenerationPanel(
     sections(s"${mode.key}.$key") = p
     p
 
-  val prompts = new PromptEditor(ctx, vm.prompt, vm.negativePrompt, mode.key)
+  val prompts = new PromptEditor(ctx, vm.prompt, vm.negativePrompt, mode.key, vm.promptStyles, vm.manualLoras)
   val wdBatchEnabled = new SimpleBooleanProperty(false)
   val wdBatchInput = new SimpleStringProperty("")
   val wdBatchOutputName = new SimpleStringProperty("")
@@ -302,10 +302,10 @@ final class GenerationPanel(
     v.getChildren.add(states)
     v.getChildren.add(track("presets", presetsSection))
     v.getChildren.add(track("apiPayload", payloadSection))
-    if mode == Mode.Txt2Img then v.getChildren.add(track("hires", ExtraSections.hires(ctx, vm, isExpanded("hires", false))))
+    if mode == Mode.Txt2Img then v.getChildren.add(track("hires", ExtraSections.hires(ctx, vm, isExpanded("hires", false), plugins.form("hires_fix_tweaks"))))
     v.getChildren.add(track("controlnet", ExtraSections.controlNet(ctx, vm, isExpanded("controlnet", false))))
     v.getChildren.add(W.card("Script", PluginForm.scriptSection(ctx, plugins)))
-    plugins.alwaysOnForms.foreach { f =>
+    plugins.alwaysOnForms.filterNot(_.plugin.id == "hires_fix_tweaks").foreach { f =>
       val key = s"plugin.${f.plugin.id}"
       v.getChildren.add(track(key, PluginForm.alwaysOnSection(ctx, f, isExpanded(key, false))))
     }

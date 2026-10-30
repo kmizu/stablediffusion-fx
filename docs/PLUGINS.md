@@ -1,5 +1,15 @@
 # Plugin coverage vs. reForge built-ins
 
+**Hires Fix Tweaks** lives in the native Hires panel. Enable tweaks to refine one
+first-pass result 1–16 times, with separate primary/variation seeds, resize noise,
+prompt composition and ordered Hires styles. Hires CFG0 inherits the first pass.
+Seed0 inherits; -1 chooses a random seed once per job. Network-tag removal retains
+structured manual LoRAs. PNG Restore preserves effective settings and, when enabled
+and still valid, raw prompt/style templates. Completed outputs survive interruption.
+Settings controls section visibility, checkpoint labels, template saving/restoration
+and the dedicated Hires destination; a nondefault global output directory takes
+precedence. See [behavior, package checks and limits](hires-fix-tweaks-verification.md).
+
 **Token Downsampling** is an opt-in AlwaysOn control with independent shallow/deep
 factors, an evaluation cutoff, three XYZ axes and PNG setting restoration. It
 reduces self-attention keys/values while preserving queries. Detail/composition

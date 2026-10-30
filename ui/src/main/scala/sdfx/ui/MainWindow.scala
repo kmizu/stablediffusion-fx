@@ -1,5 +1,7 @@
 package sdfx.ui
 
+import scala.jdk.CollectionConverters.*
+
 import javafx.animation.{KeyFrame, Timeline}
 import javafx.geometry.Orientation
 import javafx.scene.Scene
@@ -30,7 +32,9 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   // A window may be opened after the services have already scanned/loaded a model.
   catalogVM.update(services.catalog.snapshot, services.catalog.choices)
   val ctx = new UiContext(services, catalogVM, stage)
+  ctx.hiresSeedHistory = new sdfx.ui.vm.HiresSeedHistory(initial.lastHiresSeed, initial.lastHiresSubseed)
   val model = new ModelVM
+  ctx.checkpointName.bind(model.checkpoint)
   val progress = new ProgressVM
   val galleryVM = new GalleryVM
   @volatile var lastSeed: Long = initial.lastSeed
@@ -454,6 +458,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
     val img = e.image
     lastSeed = img.seed
     if !e.grid then
+      ctx.hiresSeedHistory.record(img.infotext)
       val mode = if !img.params.isImg2Img then Mode.Txt2Img else if img.params.isInpaint then Mode.Inpaint else Mode.Img2Img
       comparisonHistory.recordResult(e.jobId, img.path, mode)
     galleryVM.addResult(e.jobId, GalleryItem(img.path, System.currentTimeMillis(), size, Some(img.infotext)), e.grid)
@@ -588,7 +593,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
     val vm = vms(mode)
     vm.initImage.set(path.toString)
     infotext.foreach { t =>
-      restorePlugins(mode, t, vm.restoreInfotext(t))
+      restorePlugins(mode, t, vm.restoreInfotext(t, ctx.styles.asScala.toSeq, services.settings.hiresFixTweaks.restoreTemplate))
       noticeHardware(t)
     }
     select(mode)
@@ -598,7 +603,8 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
     val parsed = sdfx.core.infotext.Infotext.parse(infotext)
     noticeHardware(infotext)
     val mode = if activeMode == Mode.Txt2Img && sdfx.plugins.LatentUpscalePlugin.replay(parsed.fields).nonEmpty then Mode.Img2Img else activeMode
-    restorePlugins(mode, infotext, vms(mode).restoreInfotext(infotext))
+    restorePlugins(mode, infotext, vms(mode).restoreInfotext(infotext, ctx.styles.asScala.toSeq,
+      services.settings.hiresFixTweaks.restoreTemplate))
     select(mode)
     val vaeNotice = parsed.get("VAE").filter(_.nonEmpty).map { requested =>
       val available = if requested == "Automatic" || requested == "None" then Some(requested)
@@ -629,6 +635,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
 
   private def restorePlugins(mode: Mode, infotext: String, params: sdfx.core.model.GenerationParams): Unit =
     plugins(mode).restoreInfotext(infotext)
+    plugins(mode).restoreHiresParams(params)
     if mode != Mode.Txt2Img then
       plugins(mode).restoreLatentUpscale(sdfx.core.infotext.Infotext.parse(infotext).fields)
     restoreComposable(mode, params)
@@ -756,10 +763,11 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
       services.updateSettingsChecked(cur => SettingsMerge(cur, edited)) match
         case Left(reason) => ctx.error(reason)
         case Right(s) =>
+          ctx.hiresPreferences.set(s.hiresFixTweaks)
           if s.mcpHttpEnabled != before.mcpHttpEnabled || s.mcpHttpPort != before.mcpHttpPort || s.mcpToken != before.mcpToken then applyMcp(s)
           if s.theme != before.theme then Theme.apply(scene, s.theme)
           if s.modelDirs != before.modelDirs then refreshCatalog()
-          if s.outputDir != before.outputDir then
+          if s.outputDir != before.outputDir || s.hiresFixTweaks.outputDir != before.hiresFixTweaks.outputDir then
             services.resetGallery()
             reloadGallery()
           val engineChanged = s.pythonExe != before.pythonExe || s.dtype != before.dtype || s.vramMode != before.vramMode ||
@@ -892,6 +900,8 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
       logVisible = statusBar.logToggle.isSelected,
       galleryQuery = galleryVM.query.get,
       lastSeed = lastSeed,
+      lastHiresSeed = ctx.hiresSeedHistory.seed,
+      lastHiresSubseed = ctx.hiresSeedHistory.subseed,
       extrasUpscaler = Option(extras.upscaler.get).getOrElse(""),
       extrasScale = extras.scale.get
     )

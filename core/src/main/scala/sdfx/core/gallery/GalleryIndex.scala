@@ -13,7 +13,7 @@ case class GalleryItem(path: Path, modified: Long, size: Long, parameters: Optio
 /** Scans the outputs directory for PNG files and caches their embedded parameters.
   * Metadata is read lazily and cached by (path, mtime, size).
   */
-final class GalleryIndex(root: Path):
+final class GalleryIndex(root: Path, additionalRoots: () => Seq[Path] = () => Nil):
   private case class Key(path: Path, modified: Long, size: Long)
   private val cache = new ConcurrentHashMap[Path, GalleryItem]()
 
@@ -21,17 +21,19 @@ final class GalleryIndex(root: Path):
 
   /** Newest first. Skips engine temp files and the reserved root intermediate-artifact directory. */
   def scan(limit: Int = Int.MaxValue): Vector[GalleryItem] =
-    if !Files.isDirectory(root) then Vector.empty
-    else
-      val files = Using.resource(Files.walk(root)) { s =>
+    val roots = (Seq(root) ++ additionalRoots()).map(_.toAbsolutePath.normalize()).distinct
+    val files = roots.flatMap { scanRoot =>
+      if !Files.isDirectory(scanRoot) then Vector.empty
+      else Using.resource(Files.walk(scanRoot)) { s =>
         s.iterator().asScala
           .filter(p => Files.isRegularFile(p) && p.getFileName.toString.toLowerCase.endsWith(".png"))
-          .filterNot(p => root.relativize(p).iterator().asScala.exists(_.toString.startsWith(".")))
-          .filterNot(p => Set("intermediates", "vae-tools", "vae-recovery")(root.relativize(p).getName(0).toString))
+          .filterNot(p => scanRoot.relativize(p).iterator().asScala.exists(_.toString.startsWith(".")))
+          .filterNot(p => Set("intermediates", "vae-tools", "vae-recovery")(scanRoot.relativize(p).getName(0).toString))
           .toVector
       }
-      val items = files.flatMap(item)
-      items.sortBy(i => (-i.modified, i.path.toString)).take(limit)
+    }
+    val items = files.distinct.flatMap(item)
+    items.sortBy(i => (-i.modified, i.path.toString)).take(limit).toVector
 
   def item(p: Path): Option[GalleryItem] =
     try

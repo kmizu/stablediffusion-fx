@@ -58,7 +58,7 @@ object PluginForm:
     flush()
     out.toSeq
 
-  private def renderControls(ctx: UiContext, form: PluginValuesVM, controls: Seq[Control]): Node =
+  private[view] def renderControls(ctx: UiContext, form: PluginValuesVM, controls: Seq[Control]): Node =
     val f = W.form()
     controls.foreach { c =>
       val widget = PluginValuesVM.widgetFor(c)
@@ -97,7 +97,15 @@ object PluginForm:
     case (ch: Control.Choice, _) =>
       W.combo(FXCollections.observableArrayList(ch.options*), p)
     case (dc: Control.DynamicChoice, _) =>
-      W.combo(dynamicItems(ctx, dc), p)
+      val combo = W.combo(dynamicItems(ctx, dc), p)
+      if dc.source == ChoiceSource.Checkpoints then
+        def refreshLabels(): Unit = combo.setConverter(new javafx.util.StringConverter[String]:
+          def toString(value: String): String = if value == null then "" else ctx.checkpointLabel(value)
+          def fromString(value: String): String = value)
+        refreshLabels()
+        ctx.hiresPreferences.addListener((_, _, _) => refreshLabels())
+        ctx.catalog.snapshot.addListener((_, _, _) => refreshLabels())
+      combo
     case (t: Control.Text, Widget.TextArea) =>
       val a = new TextArea()
       a.textProperty.bindBidirectional(p)

@@ -80,7 +80,8 @@ final case class JobLimits(
 final case class JobLimitExceeded(message: String) extends IllegalArgumentException(message)
 
 /** What [[Generator.prepare]] produces: the params recorded in infotext and the request sent to the engine. */
-final case class PreparedGeneration(recorded: GenerationParams, request: GenerationRequest, mode: String, warnings: Seq[String])
+final case class PreparedGeneration(recorded: GenerationParams, request: GenerationRequest, mode: String, warnings: Seq[String],
+    finalOutputDir: Option[Path] = None)
 
 /** The single-generation pipeline (seed resolution, styles, LoRA syntax, model switching, engine call, PNG saving).
   * The Generator itself is a [[PluginContext]] without job scope; [[forJob]] gives a job-scoped context whose
@@ -217,11 +218,12 @@ final class Generator(
     if problems.nonEmpty then throw EngineError(Protocol.ErrorCodes.InvalidParams, problems.mkString("; "))
     val seed = if p0.seed < 0 then randomSeed() else p0.seed
     val subseed = if p0.subseed < 0 then randomSeed() else p0.subseed
-    val (prompt, negative) =
-      if p0.styles.isEmpty then (p0.prompt, p0.negativePrompt)
-      else Styles.apply(styleSource(), p0.styles, p0.prompt, p0.negativePrompt)
-    val recorded = p0.copy(prompt = prompt, negativePrompt = negative, styles = Nil, seed = seed, subseed = subseed,
-      extra = p0.extra.filterNot((key, _) => HardwareInfo.fieldNames(key)))
+    val composed = HiresPreparation.compose(p0, styleSource(), settings().hiresFixTweaks.saveTemplate)
+    val prompt = composed.prompt
+    val negative = composed.negativePrompt
+    val recorded = composed.copy(seed = seed, subseed = subseed,
+      extra = p0.extra.filterNot((key, _) => HardwareInfo.fieldNames(key) ||
+        Set("Hires prompt mode", "NUI Hires template", "NUI Manual LoRAs")(key)))
 
     val ex = LoraSyntax.extract(prompt)
     val hrEx = LoraSyntax.extract(recorded.hires.prompt)
@@ -245,6 +247,7 @@ final class Generator(
         (recorded.loras ++ tags).foldLeft(Vector.empty[LoraRef])((found, lr) =>
           if found.exists(_.name == lr.name) then found else found :+ lr)
       else recorded.loras ++ ex.loras ++ hrEx.loras.filterNot(l => ex.loras.exists(_.name == l.name))
+    val separateHiresLoras = HiresPreparation.active(recorded).isDefined && !composable
     val warnings = Seq.newBuilder[String]
     val loraPaths = allLoras.map(_.name).distinct.flatMap { n =>
       catalog.findLora(n).map(e => n -> e.path).orElse {
@@ -275,13 +278,15 @@ final class Generator(
     val sent = recorded.copy(
       prompt = if composable then prompt else ex.prompt,
       hires = recorded.hires.copy(prompt = if composable then recorded.hires.prompt else hrEx.prompt),
-      loras = allLoras.filter(l => loraPaths.contains(l.name)),
+      loras = (if separateHiresLoras then recorded.loras ++ ex.loras else allLoras).filter(l => loraPaths.contains(l.name)),
       hooks = resolvedHooks
     )
     val req = GenerationRequest(
       params = sent,
       outputDir = home.tmpDir(s).toAbsolutePath.toString,
       loraPaths = loraPaths,
+      manualLoras = Option.when(composable)(recorded.loras.filter(l => loraPaths.contains(l.name))),
+      hiresLoras = Option.when(separateHiresLoras)((recorded.loras ++ hrEx.loras).filter(l => loraPaths.contains(l.name))),
       embeddingPaths = catalog.embeddings.map(_.path),
       controlnetPaths = cnPaths,
       upscalerPaths = upPaths,
@@ -290,9 +295,20 @@ final class Generator(
       systemInfoFields = s.systemInfoMetadataFields,
       hardwareInfo = HardwareInfo.Options(s.hardwareInfoEnabled, s.hardwareInfoRemark),
       vaeRecoveryDir = home.outputs(s).toAbsolutePath.toString,
-      lbwPresets = if sent.loras.exists(_.lbw.nonEmpty) then Generator.lbwPresets(home.configDir) else Map.empty
+      lbwPresets = if (sent.loras ++ Option.when(separateHiresLoras)(recorded.loras ++ hrEx.loras).getOrElse(Nil))
+        .exists(_.lbw.nonEmpty) then Generator.lbwPresets(home.configDir) else Map.empty
     )
-    PreparedGeneration(recorded, req, if recorded.isImg2Img then GenerationMode.Img2Img else GenerationMode.Txt2Img, warnings.result())
+    val globalOutputs = home.outputs(s).toAbsolutePath.normalize()
+    val defaultOutputs = home.outputs(Settings()).toAbsolutePath.normalize()
+    val hiresDestination = HiresPreparation.active(recorded).flatMap(_.value.get("output_dir"))
+      .collect { case ujson.Str(path) if path.trim.nonEmpty => path.trim }
+      .orElse(Option.when(recorded.hires.enabled && !recorded.isImg2Img)(s.hiresFixTweaks.outputDir.trim).filter(_.nonEmpty))
+    // Native outputDir always has a default; a non-default global location takes
+    // precedence, matching upstream's explicit outdir_samples override.
+    val finalOutputs = if globalOutputs != defaultOutputs then globalOutputs else
+      hiresDestination.map(path => home.resolve(path).toAbsolutePath.normalize()).getOrElse(globalOutputs)
+    PreparedGeneration(recorded, req, if recorded.isImg2Img then GenerationMode.Img2Img else GenerationMode.Txt2Img,
+      warnings.result(), Some(finalOutputs))
 
   private def await[T](f: Future[T], timeout: FiniteDuration, what: String): T =
     try Await.result(f, timeout)
@@ -413,7 +429,11 @@ final class Generator(
 
   def generateWith(p: GenerationParams, listener: GenerationListener): Seq[OutputImage] =
     val (prep, result) = runEngine(p, listener)
-    saveResult(prep, result, listener)
+    val saved = saveResult(prep, result, listener)
+    if result.interrupted then
+      listener.onEngineInterrupted()
+      throw interruptedError
+    saved
 
   /** Same pipeline as [[generateWith]] (events forwarded, model ensured) but the PNGs stay in outputs/.tmp:
     * no output naming, no `onImageSaved`. The returned paths are engine temp files the caller must delete.
@@ -421,6 +441,12 @@ final class Generator(
     */
   def generateTransientWith(p: GenerationParams, listener: GenerationListener): Seq[OutputImage] =
     val (prep, result) = runEngine(p, listener)
+    if result.interrupted then
+      // A caller cannot receive transient paths through an exception. Preserve
+      // completed images through the normal gallery path before reporting cancellation.
+      saveResult(prep, result, listener)
+      listener.onEngineInterrupted()
+      throw interruptedError
     val loaded = client.supervisor.loadedModel
     result.images.map { img =>
       val (params, text) = describe(prep, result, img, loaded)
@@ -431,6 +457,21 @@ final class Generator(
 
   private def describe(prep: PreparedGeneration, result: GenerationResult, img: GeneratedImage, loaded: Option[LoadedModel]): (GenerationParams, String) =
     val params = prep.recorded.copy(seed = img.seed, subseed = if img.subseed >= 0 then img.subseed else prep.recorded.subseed)
+    val hiresFields = img.hiresSeed.toSeq.map { seed =>
+      val info = ujson.Obj("Seed" -> sdfx.core.infotext.HiresSeedMetadata.encode(seed))
+      img.hiresSubseed.foreach(s => info("Subseed") = sdfx.core.infotext.HiresSeedMetadata.encode(s))
+      img.hiresSubseedStrength.foreach(s => info("Strength") = ujson.Num(s))
+      for
+        w <- img.hiresSeedResizeFromW.filter(_ > 0)
+        h <- img.hiresSeedResizeFromH.filter(_ > 0)
+      do info("Resize") = ujson.Arr(w, h)
+      // Upstream swaps single/double quotes so its JSON survives infotext CSV parsing.
+      "Hires seed" -> info.render().map { case '"' => '\''; case '\'' => '"'; case c => c }
+    }
+    val templateFields = HiresPreparation.active(params).toSeq.flatMap(_.value.get("prompt_template")).flatMap { t =>
+      Seq("NUI Hires template" -> t.render()) ++
+        t.obj.get("mode").map(_.str).filter(_.nonEmpty).map("Hires prompt mode" -> _)
+    }
     val resourceFields = Option.when(params.hooks.get("pnginfo_injection").exists(o =>
       !o.obj.get("enabled").contains(ujson.Bool(false)))) {
       "Hashes" -> sdfx.core.infotext.ResourceHashes.merge(params.extra.get("Hashes"), result.resourceHashes.toSeq)
@@ -445,7 +486,7 @@ final class Generator(
       loraHashes = result.loraHashes.toSeq.sortBy(_._1),
       scheduler = result.scheduler,
       extra = scala.collection.immutable.ListMap.from(result.systemInfo.toSeq.map(v => "System Info" -> v.render()) ++
-        Option.when(result.vaeRecovery.nonEmpty)("VAE recovery" -> ujson.Arr.from(result.vaeRecovery).render()) ++ resourceFields) ++ HardwareInfo.fields(img.hardwareInfo)
+        Option.when(result.vaeRecovery.nonEmpty)("VAE recovery" -> ujson.Arr.from(result.vaeRecovery).render()) ++ resourceFields ++ hiresFields ++ templateFields) ++ HardwareInfo.fields(img.hardwareInfo)
     )
     (params, Infotext.write(params, facts))
 
@@ -482,7 +523,8 @@ final class Generator(
         val options = listener.payloadCaptureOptions.getOrElse(defaultCaptureOptions)
         var warnings = Vector.empty[String]
         val context = try
-          PayloadCaptureContext.captured(submitted, p, body.capturedAtMillis, model, jsonLimits) match
+          PayloadCaptureContext.captured(submitted, p, body.capturedAtMillis, model, jsonLimits,
+            prep.finalOutputDir.map(_.toString)) match
             case Right(json) => Some(json)
             case Left(reason) =>
               warnings :+= s"Submitted context unavailable: $reason"
@@ -516,7 +558,7 @@ final class Generator(
         case Left(reason) =>
           captureKey.foreach(key => diagnostic(payloads.warn(key, s"Completion context unavailable: $reason")))
           None
-      lifecycle(PayloadState.Succeeded, completion)
+      lifecycle(if completed.interrupted then PayloadState.Cancelled else PayloadState.Succeeded, completion)
       completed
     catch
       case error: InterruptedException => lifecycle(PayloadState.Cancelled); throw error
@@ -534,7 +576,7 @@ final class Generator(
   private def saveResult(prep: PreparedGeneration, result: GenerationResult, listener: GenerationListener): Seq[OutputImage] =
     val loaded = client.supervisor.loadedModel
     val kind = if prep.mode == GenerationMode.Img2Img then "img2img" else "txt2img"
-    val outputs = outputsDir
+    val outputs = prep.finalOutputDir.getOrElse(outputsDir)
     try saveAll(prep, result, listener, loaded, kind, outputs)
     finally
       // Engine temp files are never needed after this point, whether saving succeeded or not.
