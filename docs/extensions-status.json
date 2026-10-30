@@ -273,7 +273,7 @@
 "index": 45,
 "name": "conditioning-highres-fix",
 "url": "https://github.com/klimaleksus/stable-diffusion-webui-conditioning-highres-fix.git",
-"status": "todo:conditioning_highres_fix"
+"status": "done:conditioning_highres_fix"
 },
 {
 "index": 46,

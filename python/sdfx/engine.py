@@ -192,7 +192,7 @@ class Engine(BaseEngine):
 
     def features(self) -> list[str]:
         # Temperature guard uses step callbacks and does not alter model weights.
-        f = ["embedding_merge", "metadata_utils", "img2img_hires_fix", "hires_fix_tweaks", "token_downsampling", "vram_estimator", "steps_animation", "pnginfo_injection", "gpu_temperature_guard", "freeu", "dynamic_thresholding", "hypertile", "system_info", "vae_tools", "prevent_interrupt"]
+        f = ["conditioning_highres_fix", "embedding_merge", "metadata_utils", "img2img_hires_fix", "hires_fix_tweaks", "token_downsampling", "vram_estimator", "steps_animation", "pnginfo_injection", "gpu_temperature_guard", "freeu", "dynamic_thresholding", "hypertile", "system_info", "vae_tools", "prevent_interrupt"]
         f += self._batch_features()
         if cn_mod._has("cv2"):
             f.append("inpaint_difference")
@@ -1047,7 +1047,7 @@ class Engine(BaseEngine):
              schedule: Optional[str], cfg_scale: float, embeds: dict, steps: int, w: int, h: int, seeds: list[int],
              pass_: str, image_idx: int, images_total: int, latents=None, image=None, mask=None, strength: float = 1.0,
              expected_steps: int = 0, cn: Optional[tuple] = None, output_type: str = "pil", pag: Optional[dict] = None,
-             hook_seed: int = 0, latent_source=None, hires_noise=None, _photomaker_scope=None):
+             hook_seed: int = 0, latent_source=None, hires_noise=None, _photomaker_scope=None, conditioning_denoise=None):
         cn_models, cn_images, cn_kw = cn if cn else ([], [], {})
         neutral_plan = embeds.get("_neutral")
         xplan = ext_mod.pre_run(self, task, gp, mask_present=mask is not None, controlnet=bool(cn_models), pag=bool(pag))
@@ -1240,6 +1240,19 @@ class Engine(BaseEngine):
                     int(expected_steps or steps), gp.steps if pass_ == "hires" else 0,
                     image_idx // max(1, gp.batch_size)))
             ctx.check_interrupt()
+            from .conditioning_highres_fix import conditioning_scope, resolve_weight, source_denoising
+            config = hooks_mod.hook_config(gp.hooks, 'conditioning_highres_fix', {'mode': 'disabled'})
+            conditioning_weight = None
+            if config is not None:
+                requested = source_denoising(pass_, gp, strength, conditioning_denoise)
+                try:
+                    conditioning_weight = resolve_weight(config.get('mode', 'disabled'), requested)
+                except ValueError as exc:
+                    raise EngineError(INVALID_PARAMS, f'Conditioning Highres Fix: {exc}') from exc
+            channels = getattr(getattr(getattr(pipe, 'unet', None), 'config', None), 'in_channels', None)
+            if conditioning_weight is not None and (task != 'inpaint' or channels != 9):
+                ctx.warn('Conditioning Highres Fix has no effect without a 9-channel inpainting model')
+                conditioning_weight = None
             if latent_source is not None:
                 source_image, source_mask = latent_source
                 config = latent_upscale.normalize(hooks_mod.hook_config(gp.hooks, "latent_upscale", {}))
@@ -1251,7 +1264,8 @@ class Engine(BaseEngine):
                     # A latent image cannot be multiplied by a pixel mask inside the pipeline.
                     # Encode source-sized masked pixels separately, then resize that conditioning in latent space.
                     kw["masked_image_latents"] = latent_upscale.encode(pipe, source_image, w, h, config["method"],
-                        kw["generator"], self.device, self.dtype, mask=source_mask)
+                        kw["generator"], self.device, self.dtype, mask=source_mask,
+                        conditioning_weight=conditioning_weight)
             filtered = _filter_kwargs(pipe.__call__, kw)
             for k in ("eta", "pag_scale", "pag_adaptive_scale", "controlnet_conditioning_scale", "guidance_rescale",
                       "sag_scale", "ip_adapter_image", "input_id_images"):
@@ -1281,7 +1295,7 @@ class Engine(BaseEngine):
                     noise = [resized_noise(tuple(shape[1:]), seed, sub, variation,
                         resize_width, resize_height, draw_noise, slerp) for seed, sub in zip(seeds, subseeds)]
                     return torch.stack(noise).to(device=device, dtype=dtype)
-            with torch.inference_mode(), recovery, prepare_noise(pipe, noise_factory):
+            with torch.inference_mode(), recovery, prepare_noise(pipe, noise_factory), conditioning_scope(pipe, None if latent_source is not None else conditioning_weight):
                 if xplan.photomaker:
                     from .embedding_merge_pipeline import run_pipeline
                     from .photomaker_adapters import id_encoder_scope
@@ -1716,7 +1730,7 @@ class Engine(BaseEngine):
                                        cfg_scale=cfg_scale, embeds=emb, steps=n, w=w, h=h, seeds=[seed],
                                        pass_="adetailer", image_idx=idx0 + j, images_total=total, image=[job.image],
                                        mask=[job.mask], strength=strength, expected_steps=actual, pag=pag,
-                                       hook_seed=seed)
+                                       hook_seed=seed, conditioning_denoise=float(u['denoising_strength']))
                     redrawn = res[0]
                     if u["color_correction"]:
                         redrawn = adm.match_colors(redrawn, job.image)

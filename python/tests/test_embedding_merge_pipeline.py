@@ -115,7 +115,9 @@ def test_actual_pipeline_call_routes_photomaker_both_prompts_without_mutating_ra
         def __call__(self, **kwargs):
             assert parameter.device == 'cuda', 'actual call must align the dedicated ID encoder'
             return kwargs
+    from sdfx.conditioning_highres_fix import conditioning_scope
     scope = {'__package__': 'sdfx', 'torch': SimpleNamespace(inference_mode=nullcontext),
+             'conditioning_scope': conditioning_scope, 'conditioning_weight': None, 'latent_source': None,
              'recovery': nullcontext(), 'prepare_noise': lambda *args: nullcontext(),
              'pipe': Pipeline(), 'noise_factory': None, 'kw': raw,
              'self': SimpleNamespace(pipe=object(), device='cuda'), 'xplan': SimpleNamespace(photomaker={'enabled': True}),

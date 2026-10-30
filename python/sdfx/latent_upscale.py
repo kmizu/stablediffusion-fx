@@ -59,7 +59,7 @@ def resize(latents, width, height, method):
     return F.interpolate(latents.float(), size=(height // 8, width // 8), mode=mode, **kw).to(latents.dtype)
 
 
-def encode(pipe, source, width, height, method, generators, device, dtype, mask=None):
+def encode(pipe, source, width, height, method, generators, device, dtype, mask=None, conditioning_weight=None):
     """Seeded VAE posterior samples at source size; optional mask creates conditioning latents.
 
     VAE precision is restored even on failure. The same per-image generators continue into diffusion noise.
@@ -78,7 +78,11 @@ def encode(pipe, source, width, height, method, generators, device, dtype, mask=
             from PIL import Image
             m = mask.convert('L').resize((image.shape[-1], image.shape[-2]), Image.Resampling.NEAREST)
             mask_tensor = torch.from_numpy(np.asarray(m).copy()).to(device=device, dtype=image.dtype)[None, None] / 255
-            image = image * (mask_tensor < .5)
+            if conditioning_weight is None or conditioning_weight == 1.:
+                image = image * (mask_tensor < .5)
+            else:
+                from .conditioning_highres_fix import condition_pixels
+                image = condition_pixels(image, mask_tensor, conditioning_weight)
         with torch.no_grad():
             posterior = vae.encode(image).latent_dist
             samples = torch.cat([posterior.sample(generator=g) for g in generators])

@@ -101,7 +101,8 @@ def refine(engine, params, req, ctx, config, image, seed, index, total, pag=None
             cfg_scale=sub.cfg_scale, embeds=embeds, steps=steps, w=width, h=height, seeds=[seed],
             pass_='img2img_hires', image_idx=index, images_total=total, image=[source],
             mask=[Image.new('L', (width, height), 255)] if task == 'inpaint' else None,
-            strength=strength, expected_steps=actual, cn=controlnet, pag=pag, hook_seed=seed)
+            strength=strength, expected_steps=actual, cn=controlnet, pag=pag, hook_seed=seed,
+            conditioning_denoise=config.denoise)
         return images[0]
     finally:
         if switch:

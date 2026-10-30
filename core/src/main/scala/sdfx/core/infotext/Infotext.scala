@@ -98,7 +98,20 @@ object Infotext:
       ManualLoraMetadata.key -> Option.when(p.loras.nonEmpty)(ManualLoraMetadata.encode(p.loras))
     )
     val base = ListMap.from(entries.collect { case (k, Some(v)) => k -> v })
-    val extras = p.extra ++ f.extra
+    val combinedExtras = p.extra ++ f.extra
+    // Direct callers may reuse parsed extras without re-enabling the hook. Record
+    // this setting from the effective hook, rather than preserving a stale value.
+    val conditioningMode = p.hooks.get("conditioning_highres_fix").collect { case o: ujson.Obj => o }.flatMap { o =>
+      val enabled = o.value.get("enabled") match
+        case Some(ujson.Bool(v)) => v
+        case Some(ujson.Num(v)) => v != 0
+        case Some(ujson.Str(v)) if Set("disable", "disabled", "false", "off", "no", "0", "").contains(v.trim.toLowerCase) => false
+        case _ => true
+      if enabled then o.value.get("mode").collect {
+        case ujson.Str(v) if Set("empty", "lowest", "low", "medium", "high", "highest", "full").contains(v) => v
+      } else None
+    }
+    val extras = (combinedExtras - "Conditioning Highres Fix") ++ conditioningMode.map("Conditioning Highres Fix" -> _)
     (base ++ extras) + ("Version" -> Version.label)
 
   /** `inpainting_fill` values A1111 records as "Masked content" (1 = original is the default and omitted). */

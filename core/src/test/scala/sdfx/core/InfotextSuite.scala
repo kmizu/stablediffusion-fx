@@ -8,6 +8,17 @@ import scala.collection.immutable.ListMap
 class InfotextSuite extends munit.FunSuite:
   import Infotext.*
 
+  test("conditioning metadata follows actual hook rather than stale direct API extras") {
+    val stale = GenerationParams(extra = Map("Conditioning Highres Fix" -> "full", "Other" -> "keep"))
+    def fields(p: GenerationParams) = parse(write(p, ImageFacts(seed = 1))).fields
+    assert(!fields(stale).contains("Conditioning Highres Fix"))
+    assertEquals(fields(stale)("Other"), "keep")
+    val active = stale.copy(hooks = Map("conditioning_highres_fix" -> ujson.Obj("mode" -> "high")))
+    assertEquals(fields(active)("Conditioning Highres Fix"), "high")
+    val disabled = stale.copy(hooks = Map("conditioning_highres_fix" -> ujson.Obj("enabled" -> false, "mode" -> "high")))
+    assert(!fields(disabled).contains("Conditioning Highres Fix"))
+  }
+
   val V: String = Version.label
 
   test("upstream Hires CFG scale spelling restores and is consumed") {

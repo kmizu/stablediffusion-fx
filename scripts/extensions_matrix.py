@@ -34,7 +34,7 @@ S = {
     32: "todo:outpaint_canvas", 33: "na:webui-css", 34: "done:core:size-presets", 35: "na:webui-css", 36: "na:webui-css",
     37: "todo:core:localization", 38: "todo:dynamic_prompts", 39: "todo:unprompted", 40: "todo:stylepile",
     41: "todo:core:tag-autocomplete", 42: "todo:novelai_prompt", 43: "todo:tokenizer", 44: "todo:randomize",
-    45: "todo:conditioning_highres_fix", 46: "todo:model_keyword", 47: "todo:prompt_generator", 48: "todo:prompt_generator",
+    45: "done:conditioning_highres_fix", 46: "todo:model_keyword", 47: "todo:prompt_generator", 48: "todo:prompt_generator",
     49: "todo:text2prompt", 50: "na:account", 51: "todo:deforum", 52: "todo:gif2gif", 53: "todo:video_loopback",
     54: "todo:seed_travel", 55: "todo:shift_attention", 56: "todo:prompt_travel", 57: "todo:steps_animation",
     58: "na:external-app", 59: "todo:batch_face_swap", 60: "todo:depth_maps", 61: "todo:multi_subject_render",
@@ -144,6 +144,7 @@ IMPLEMENTED = {
 
 
 SCOPE_NOTES = {
+    "conditioning_highres_fix": "Pinned seven-mode inpainting conditioning formulas, native controls and PNG replay; 9-channel SD1.5/SDXL source and MainWindow, protected input/output, cancellation/recovery verified. Actual 4-channel SD1.5/SDXL masked and Hires output is unchanged. Disabled retains native baseline; SDXL is a native adaptation. Extracted Windows package, full Torch CPU and Scala suites verified. ControlNet/ADetailer composition is not real-model verified; see conditioning-highres-verification.md.",
     "core:embedding-inspector": "Native inspector, tokenizer, vector mixer, arbitrary-code-gated eval, atomic save and active-model refresh with SD1.5/SDXL support; loaded/catalog ownership is explicit. Eval can write readable files; SD2 actual checkpoints and A1111 training interoperability remain unverified. See embedding-inspector-verification.md.",
     "core:embedding-merge": "Native raw CLIP/TI inspection with six groupings, bounded source-compatible expression algebra, scoped prompt expressions and PNG replay, PT/safetensors export and SD1/SDXL conversion. No-overwrite publication and fail-closed model restoration; SD2 checkpoint and A1111 training interoperability are unverified. Real SD1.5/SDXL, PhotoMaker/offload/cancellation and package evidence plus limits are in embedding-merge-verification.md.",
     "core:metadata-utils": "Native checkpoint/LoRA JSON metadata editing and non-overwriting copies preserving tensor bytes; cancellable source fingerprints bind edits to the loaded file and reject stale sources. Bounded safetensors/JSON input; atomic publication requires hard-link support. Real SD1.5/SDXL native and extracted-package read-back, cancellation/recovery and harmless-edit RGB equality verified. See metadata-utils-verification.md for evidence and retained timeout diagnostics.",
