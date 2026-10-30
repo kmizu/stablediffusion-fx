@@ -33,6 +33,8 @@ def hf(repo, file):
 
 
 env = dict(os.environ, PYTHONUNBUFFERED="1")
+if CASE.startswith('waifu_'):
+    env['SDFX_WAIFU2X_CACHE'] = os.path.abspath('outputs/waifu2x-models')
 if CASE == "custom_code":
     env["SDFX_ALLOW_CODE"] = "1"
 engine_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "python"))
@@ -138,7 +140,61 @@ def mask_png(size):
 
 t0 = time.time()
 r = None
-if CASE in ("vram_sd15", "vram_sdxl", "vram_holdout_sd15", "vram_holdout_sdxl"):
+if CASE in ('waifu_sd15', 'waifu_sdxl'):
+    from pathlib import Path
+    import numpy as np
+    from PIL import Image
+    from sdfx.waifu2x import NAMES
+    load(SDXL if CASE.endswith('sdxl') else SD15)
+    source_size = 768 if CASE.endswith('sdxl') else 256
+    generated = call('txt2img', req(gp(width=source_size, height=source_size, steps=12 if CASE.endswith('sdxl') else 8,
+                                     cfg_scale=4 if CASE.endswith('sdxl') else 6, prompt='a ceramic teapot with blue flowers on a wooden table, daylight')))
+    assert generated['type'] == 'result', generated
+    source = keep(generated, 'source')
+    report = []
+    for index, name in enumerate(NAMES):
+        result = call('upscale', dict(image_path=source, output_dir=OUT, scale=2, upscaler=name, upscaler_paths={}))
+        assert result['type'] == 'result', result
+        path = keep(result, f'upscale-{index}')
+        with Image.open(path) as image:
+            assert image.size == (source_size*2, source_size*2)
+            pixels = np.asarray(image.convert('RGB')).copy()
+        style = 'Anime' if index < 4 else 'Photo' if index < 8 else 'CarnV2'
+        tool = call('image_tool', dict(tool='waifu2x', image_path=source, output_dir=OUT, style=style, noise=index % 4, scale=2))
+        assert tool['type'] == 'result', tool
+        other = keep(tool, f'extras-{index}')
+        with Image.open(other) as image:
+            difference = np.abs(pixels.astype(int) - np.asarray(image.convert('RGB')).astype(int))
+        repeated = call('upscale', dict(image_path=source, output_dir=OUT, scale=2, upscaler=name, upscaler_paths={}))
+        assert repeated['type'] == 'result', repeated
+        repeated_path = keep(repeated, f'upscale-repeat-{index}')
+        with Image.open(repeated_path) as image:
+            repeat_difference = np.abs(pixels.astype(int) - np.asarray(image.convert('RGB')).astype(int))
+        # CUDA convolution can move a value across a uint8 truncation boundary.
+        # Record actual same-route variance, never call this bit-exact parity.
+        assert difference.max() <= 1 and np.count_nonzero(difference) < pixels.size * .001, name
+        report.append(dict(name=name, upscale=path, extras=other, exact_rgb=not difference.any(),
+                           max_channel_error=int(difference.max()), changed_channels=int(np.count_nonzero(difference)),
+                           same_route_repeat_max=int(repeat_difference.max()), same_route_repeat_changed=int(np.count_nonzero(repeat_difference))))
+    tiny = str(Path(OUT) / 'tiny-input.png')
+    with Image.open(source) as image:
+        image.crop((0, 0, 24, 20)).save(tiny)
+    for scale in (4, 8, 16):
+        result = call('image_tool', dict(tool='waifu2x', image_path=tiny, output_dir=OUT, style='CarnV2', noise=2, scale=scale))
+        assert result['type'] == 'result', result
+        path = keep(result, f'carn-{scale}x')
+        with Image.open(path) as image:
+            assert image.size == (24*scale, 20*scale)
+    hires = gp(width=256, height=256, steps=2)
+    hires['hires'].update(enabled=True, scale=2, upscaler=NAMES[1], second_pass_steps=2)
+    result = call('txt2img', req(hires))
+    assert result['type'] == 'result', result
+    hires_path = keep(result, 'pixel-hires')
+    with Image.open(hires_path) as image:
+        assert image.size == (512, 512)
+    Path(OUT, CASE + '.json').write_text(json.dumps(dict(models=report, hires=hires_path), indent=2), encoding='utf-8')
+    r = dict(type='result', result=dict(result='nine direct/Extras RGB comparisons with recorded CUDA repeat variance; 4x/8x/16x CARN; pixel hires'))
+elif CASE in ("vram_sd15", "vram_sdxl", "vram_holdout_sd15", "vram_holdout_sdxl"):
     import math
     from pathlib import Path
     load(SDXL if CASE.endswith('sdxl') else SD15)

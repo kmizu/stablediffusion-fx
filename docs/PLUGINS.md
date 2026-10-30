@@ -1,5 +1,11 @@
 # Plugin coverage vs. reForge built-ins
 
+**Waifu2x upscale** is available in the Script dropdown with Anime/Photo/CARN V2,
+four denoise levels and 2x/4x/8x/16x scaling. The nine models are also ordinary
+upscaler choices for Extras, Upscale and pixel Hires. Verified weights download on
+first use; output is RGB and cancellation discards partial images. See
+[provenance, checks and limits](waifu2x-verification.md).
+
 The native **VRAM Estimator** tab calibrates four vanilla CUDA workloads, displays
 per-batch memory charts and imports/exports bounded local profile history. Visible
 generation forms show estimates only for a matching model/runtime calibration.

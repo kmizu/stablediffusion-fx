@@ -1,0 +1,84 @@
+[
+  {
+    "id": "anime-0",
+    "filename": "anime-noise0.json",
+    "url": "https://raw.githubusercontent.com/nagadomi/waifu2x/cc385f97a9debfe611316aabfd5d8bb30ba2dbeb/models/upconv_7/art/noise0_scale2.0x_model.json",
+    "bytes": 10554843,
+    "sha256": "f162822427316af890a4ed87c32d593d7b7802f86a43e48074db136b9e150143",
+    "git_blob": "3cd0f559d04891fa8a4bd385a145c483e37097c7",
+    "license": "MIT"
+  },
+  {
+    "id": "anime-1",
+    "filename": "anime-noise1.json",
+    "url": "https://raw.githubusercontent.com/nagadomi/waifu2x/cc385f97a9debfe611316aabfd5d8bb30ba2dbeb/models/upconv_7/art/noise1_scale2.0x_model.json",
+    "bytes": 10551050,
+    "sha256": "6c0688159ab0023619d1b0e472fead370619df1d36251f14f299edc43b30d1e3",
+    "git_blob": "54875748f3e338edc3ede327b84e4f9e78c32084",
+    "license": "MIT"
+  },
+  {
+    "id": "anime-2",
+    "filename": "anime-noise2.json",
+    "url": "https://raw.githubusercontent.com/nagadomi/waifu2x/cc385f97a9debfe611316aabfd5d8bb30ba2dbeb/models/upconv_7/art/noise2_scale2.0x_model.json",
+    "bytes": 10548439,
+    "sha256": "52f6c17d7f5c2d5cb0010ee3c24a45deab16837b674f5d39c0358b73362b6f07",
+    "git_blob": "7e20377acc674bd08a052454d8524994d664cd08",
+    "license": "MIT"
+  },
+  {
+    "id": "anime-3",
+    "filename": "anime-noise3.json",
+    "url": "https://raw.githubusercontent.com/nagadomi/waifu2x/cc385f97a9debfe611316aabfd5d8bb30ba2dbeb/models/upconv_7/art/noise3_scale2.0x_model.json",
+    "bytes": 10540364,
+    "sha256": "bf3d813527a5d5974b99452a89b8b8a896744bb7a89cffbd0e2eead4eb0d797a",
+    "git_blob": "5d918fe0d531e725ae28ebf4f2a5ff8ff89e2e3e",
+    "license": "MIT"
+  },
+  {
+    "id": "photo-0",
+    "filename": "photo-noise0.json",
+    "url": "https://raw.githubusercontent.com/nagadomi/waifu2x/cc385f97a9debfe611316aabfd5d8bb30ba2dbeb/models/upconv_7/photo/noise0_scale2.0x_model.json",
+    "bytes": 10569177,
+    "sha256": "cf5e291d6888ef6156d180f92744a0245d93426e1f4565e66ec46c981f379acd",
+    "git_blob": "35b0fdb44037f6415b8583b65c7614e831f4fe03",
+    "license": "MIT"
+  },
+  {
+    "id": "photo-1",
+    "filename": "photo-noise1.json",
+    "url": "https://raw.githubusercontent.com/nagadomi/waifu2x/cc385f97a9debfe611316aabfd5d8bb30ba2dbeb/models/upconv_7/photo/noise1_scale2.0x_model.json",
+    "bytes": 10566264,
+    "sha256": "adbce4a532d42bc96f17fea8a5aec9245c509ff44058263938ea232244dff0bc",
+    "git_blob": "d172b73c1df17e6dd3646986cab7264ea79f6603",
+    "license": "MIT"
+  },
+  {
+    "id": "photo-2",
+    "filename": "photo-noise2.json",
+    "url": "https://raw.githubusercontent.com/nagadomi/waifu2x/cc385f97a9debfe611316aabfd5d8bb30ba2dbeb/models/upconv_7/photo/noise2_scale2.0x_model.json",
+    "bytes": 10562394,
+    "sha256": "5e305bf662bca8841453aba2e91d21b8c7a677e71a482157551f50dd668f7c5c",
+    "git_blob": "8405b2b693ec082e2d3e88cd91b5e42fa2023706",
+    "license": "MIT"
+  },
+  {
+    "id": "photo-3",
+    "filename": "photo-noise3.json",
+    "url": "https://raw.githubusercontent.com/nagadomi/waifu2x/cc385f97a9debfe611316aabfd5d8bb30ba2dbeb/models/upconv_7/photo/noise3_scale2.0x_model.json",
+    "bytes": 10555812,
+    "sha256": "ed7b2042ab36ecb2da1f269588cf8d9b09ed3ec66a1803ba1e9ea0edf0332099",
+    "git_blob": "577f712b4da34bfff41c604ba0f062499de757b4",
+    "license": "MIT"
+  },
+  {
+    "id": "carn-v2",
+    "filename": "carn-v2.pt",
+    "url": "https://raw.githubusercontent.com/light-and-ray/sd-webui-waifu2x-upscaler/feede81c2b15ebcd5ff881b3f5ad4c3dbf017368/waifu2x/yu45020/model_check_points/CARN_V2/CARN_model_checkpoint.pt",
+    "bytes": 4329165,
+    "sha256": "3a0ef4fdea5b0b2a91b05b7a39fe63df3e27e1d18df477065e7f268a7feaaad2",
+    "license": "GPL-3.0",
+    "provenance": "Byte-identical to CARN_model_checkpoint.pt inside pinned GPL yu45020/Waifu2x archive",
+    "original_archive": "https://raw.githubusercontent.com/yu45020/Waifu2x/1e6c456e9769bb8f418024c0782ef965d8dfd026/model_check_points/CRAN_V2/CRAN_V2_02_28_2019.zip"
+  }
+]

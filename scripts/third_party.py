@@ -21,6 +21,10 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # (repo, how it is used, what)
 BASE = [
+    ("light-and-ray/sd-webui-waifu2x-upscaler", "reimplemented", "Native Waifu2x controls and nine upscaler choices; no unlicensed wrapper code copied/imported; pinned behavior feede81c2b15ebcd5ff881b3f5ad4c3dbf017368"),
+    ("nagadomi/waifu2x", "model dependency", "MIT UpConv7 Anime/Photo noise 0..3 weights downloaded on first use from pinned cc385f97a9debfe611316aabfd5d8bb30ba2dbeb; mirror/original Git blobs verified identical; exact SHA256/size manifest in python/sdfx/waifu2x_assets.json"),
+    ("yu45020/Waifu2x", "model dependency", "GPL-3.0 CARN V2 weights, byte-identical to original archive at 1e6c456e9769bb8f418024c0782ef965d8dfd026; optional first-use download, restricted weights-only loading; independently expressed inference graph, licensed original used only as numerical reference"),
+    ("nmhkahn/CARN-pytorch", "upstream model reference", "Original CARN architecture referenced by yu45020/Waifu2x; no code imported or copied"),
     ("w-e-w/stable-diffusion-webui-GPU-temperature-protection", "reimplemented", "Temperature pause/wake hysteresis and controls; behavior reference f388d7081945576ca2361c365d16f5edb3250412; independent native/engine implementation"),
     ("openhardwaremonitor/openhardwaremonitor", "dependency", "Optional external running Windows GPU temperature monitor through WMI; not installed or bundled; schema reference 09c16898a4a84c36644e7c07baebf1efd299691e"),
     ("ROCm/rocm_smi_lib", "dependency", "Optional external rocm-smi temperature query on Linux; not installed or bundled"),

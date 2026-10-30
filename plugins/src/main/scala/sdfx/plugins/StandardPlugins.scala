@@ -68,7 +68,7 @@ object StandardPlugins:
     new FocalCropPlugin,
     // image tools (extension index)
     new RemoveBackgroundPlugin, new PersonMaskPlugin, new PixelArtPlugin, new ColorEnhancePlugin, new FsrUpscalePlugin,
-    new ColorCorrectionPlugin
+    new ColorCorrectionPlugin, new Waifu2xPlugin
   )
 
   /** `extraAxes` lets the host contribute axes of all loaded plugins (including these AlwaysOn ones). */

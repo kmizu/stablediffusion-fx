@@ -47,7 +47,7 @@ S = {
     89: "todo:hypernetworks", 90: "todo:core:system-info", 91: "todo:openpose_editor", 92: "na:account", 93: "na:account",
     94: "todo:minecraft_schematic", 95: "todo:aesthetic_score", 96: "todo:aesthetic_score", 97: "todo:aesthetic_score",
     98: "todo:clip_interrogator", 99: "todo:cross_attention_viz", 100: "todo:dump_unet", 101: "todo:openpose_editor",
-    102: "todo:llul", 103: "todo:cfg_schedule", 104: "todo:ebsynth_utility", 105: "todo:vram_estimator",
+    102: "todo:llul", 103: "todo:cfg_schedule", 104: "todo:ebsynth_utility", 105: "todo:core:vram-estimator",
     106: "todo:tiled_diffusion", 107: "todo:openpose_editor", 108: "todo:corridor_crawler", 109: "todo:core:panorama-viewer",
     110: "na:account", 111: "todo:remove_background", 112: "na:server-ops", 113: "todo:openpose_editor", 114: "na:webui-css",
     115: "done:core:ui-state", 116: "todo:text2video", 117: "done:core:size-presets", 118: "done:core:mask-canvas",
@@ -116,7 +116,8 @@ S = {
 
 # plugin ids / core features that are implemented: their `todo:` entries are reported as `done:`
 IMPLEMENTED = {
-    "vram_estimator",
+    "waifu2x",
+    "core:vram-estimator",
     "stylepile",
     "steps_animation",
     "pnginfo_injection",
@@ -142,7 +143,8 @@ IMPLEMENTED = {
 
 
 SCOPE_NOTES = {
-    "vram_estimator": "Native four-mode CUDA calibration/charts, bounded profile history/import/export and compatible live estimates. Vanilla square calibration excludes extensions; bounded real OOM/recovery and SD1.5/SDXL packaged checks recorded in vram-estimator-verification.md.",
+    "waifu2x": "Nine pinned neural upscalers and native Script Anime/Photo/CARN controls, 2x-16x. RGB output, 64MP bound, first-use weight downloads; exact CPU reference parity and SD1.5/SDXL extracted-package cancellation/recovery verified. See waifu2x-verification.md.",
+    "core:vram-estimator": "Native four-mode CUDA calibration/charts, bounded profile history/import/export and compatible live estimates. Vanilla square calibration excludes extensions; bounded real OOM/recovery and SD1.5/SDXL packaged checks recorded in vram-estimator-verification.md.",
     "core:tag-autocomplete": "v0.03: local CSV tag/alias completion and native keyboard/IME guards; upstream extras remain under #24. See tag-autocomplete.md.",
     "core:state-manager": "v0.03: per-mode named generation settings save/list/restore/delete; upstream history and other extras remain under #23. See generation-states.md.",
 }

@@ -10,10 +10,11 @@ from . import ENGINE_VERSION, PROTOCOL_VERSION, models, schedulers
 from .params import (GenerationRequest, LoadModelRequest, ParamError, PreprocessRequest, UpscaleRequest, from_dict,
                      parse_generation_request)
 from .protocol import (INVALID_PARAMS, MODEL_LOAD_FAILED, NO_MODEL, UNSUPPORTED, EngineError, JobContext)
+from .waifu2x import NAMES as WAIFU2X_UPSCALERS
 
 LATENT_UPSCALERS = ["Latent", "Latent (antialiased)", "Latent (bicubic)", "Latent (bicubic antialiased)",
                     "Latent (nearest)", "Latent (nearest-exact)"]
-PIXEL_UPSCALERS = ["None", "Lanczos", "Nearest", "LDSR"]
+PIXEL_UPSCALERS = ["None", "Lanczos", "Nearest", "LDSR", *WAIFU2X_UPSCALERS]
 
 
 def ram_used_mb() -> float:
@@ -192,7 +193,15 @@ class BaseEngine:
             img = oriented.convert("RGBA" if oriented.mode in ("RGBA", "LA", "P") else "RGB")
         dev = "cuda" if getattr(self, "cuda", False) else "cpu"
         try:
-            out, extra = image_tools.run(tool, img if tool != "remove_background" else img.convert("RGB"), params, dev)
+            if tool == "waifu2x":
+                if self.dry_run:
+                    raise EngineError(UNSUPPORTED, "Waifu2x requires the real engine; dry-run does not execute neural upscaling")
+                ctx.check_interrupt()
+                out, extra = image_tools.run(tool, img, params, dev, check_interrupt=ctx.check_interrupt,
+                                            progress=lambda done, total: ctx.progress(done, total, 'waifu2x'))
+                ctx.check_interrupt()
+            else:
+                out, extra = image_tools.run(tool, img if tool != "remove_background" else img.convert("RGB"), params, dev)
         except ImportError as e:
             raise EngineError(UNSUPPORTED, f"{tool} needs an optional package: {e}")
         except (ValueError, FileNotFoundError) as e:

@@ -11,15 +11,16 @@ Objective: resolve twenty issues, then publish and verify a release containing t
 | #98 pnginfo_injection | 1f701d74e532309ad745b7baf4391ab992da28bd | docs/pnginfo-injection-verification.md; closed 2026-10-30T00:15:30Z |
 | #120 steps_animation | 92bb873d64a0cfed7af7e86e0351050eef4614c2 | docs/steps-animation-verification.md; closed 2026-10-30T00:37:31Z |
 | #122 stylepile | 3e579dd565e8c89a9bbd50abaec4cda324079f4b | docs/stylepile-verification.md; closed 2026-10-30T01:21:11Z |
-| #136 vram_estimator | this wave (see git log) | docs/vram-estimator-verification.md |
+| #136 vram_estimator | b9d113e426941424c0483530a9f8402c83f80307 | docs/vram-estimator-verification.md; closed 2026-10-30T02:27:15Z |
+| #137 waifu2x | this wave commit | docs/waifu2x-verification.md |
 
-Accepted count: **6 / 20**. Earlier closed #1, #7 and #141 predate this active goal and are not counted. No new release has been published for this goal.
+Accepted count: **7 / 20**. Earlier closed #1, #7 and #141 predate this active goal and are not counted. No new release has been published for this goal.
 
 
 
-## In progress
+## Next
 
-The seventh distinct issue is next to be selected. The #54 AMD providers have fixture/schema checks, not AMD hardware validation; this limitation remains explicit in its acceptance record.
+The seventh wave is #137 waifu2x (this wave commit; docs/waifu2x-verification.md). Select and investigate the eighth distinct issue. The #54 AMD providers have fixture/schema checks, not AMD hardware validation; this limitation remains explicit in its acceptance record.
 
 ## Final release gates
 

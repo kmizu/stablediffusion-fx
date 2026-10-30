@@ -252,6 +252,7 @@ final class JobQueue(generator: Generator, interruptEngine: Option[String] => Fu
     @volatile var total = 0
     val payloadSequence = new java.util.concurrent.atomic.AtomicInteger(0)
     val listener = new GenerationListener:
+      override private[engine] def onEngineInterrupted(): Unit = flag.set(true)
       override def interruptionOwner: Option[String] = Some(e.interruptionOwner)
       override private[engine] def wdBatchControl: Option[ExtrasBatchControl] = e.wdControl
       override private[engine] def payloadJobId: Option[String] = Some(id)

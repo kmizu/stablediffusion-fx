@@ -54,7 +54,7 @@ foreach ($required in @('SDNUI.exe', 'app/stablediffusion-nui.jar', 'runtime/leg
 # credentials, caches, settings, or output files from the developer's checkout.
 $tracked = @(git -C $repo ls-files -- python/sdfx models licenses)
 if ($LASTEXITCODE -ne 0) { throw 'git ls-files failed; a Git checkout is required.' }
-$payload = @($tracked | Where-Object { $_ -match '^python/sdfx/.+\.py$|^python/sdfx/.+/LICENSE$|^models/.+/README\.txt$|^licenses/[A-Za-z0-9_.-]+\.txt$' })
+$payload = @($tracked | Where-Object { $_ -match '^python/sdfx/.+\.py$|^python/sdfx/waifu2x_assets\.json$|^python/sdfx/.+/LICENSE$|^models/.+/README\.txt$|^licenses/[A-Za-z0-9_.-]+\.txt$' })
 if (-not ($payload -contains 'python/sdfx/__main__.py')) { throw 'Python source files missing from Git index.' }
 foreach ($relative in $payload) {
     $source = Join-Path $repo $relative

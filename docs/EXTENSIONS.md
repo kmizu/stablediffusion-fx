@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 111, todo 191, na 51.
+Totals: done 112, todo 190, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-nui | Scope / notes |
 |---|---|---|---|---|---|
@@ -111,7 +111,7 @@ Totals: done 111, todo 191, na 51.
 | 102 | [LLuL](https://github.com/hnmr293/sd-webui-llul.git) | 794 | todo | `llul` |  |
 | 103 | [CFG-Schedule-for-Automatic1111-SD](https://github.com/guzuligo/CFG-Schedule-for-Automatic1111-SD.git) | 41 | done | `cfg_schedule` |  |
 | 104 | [ebsynth_utility](https://github.com/s9roll7/ebsynth_utility.git) | 1273 | todo | `ebsynth_utility` |  |
-| 105 | [VRAM Estimator](https://github.com/space-nuko/a1111-stable-diffusion-webui-vram-estimator.git) | 113 | done | `vram_estimator` | Native four-mode CUDA calibration/charts, bounded profile history/import/export and compatible live estimates. Vanilla square calibration excludes extensions; bounded real OOM/recovery and SD1.5/SDXL packaged checks recorded in vram-estimator-verification.md. |
+| 105 | [VRAM Estimator](https://github.com/space-nuko/a1111-stable-diffusion-webui-vram-estimator.git) | 113 | done | `core:vram-estimator` | Native four-mode CUDA calibration/charts, bounded profile history/import/export and compatible live estimates. Vanilla square calibration excludes extensions; bounded real OOM/recovery and SD1.5/SDXL packaged checks recorded in vram-estimator-verification.md. |
 | 106 | [TiledDiffusion with Tiled VAE](https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111.git) | 4991 | todo | `tiled_diffusion` |  |
 | 107 | [3D Model&Pose Loader](https://github.com/jtydhr88/sd-3dmodel-loader.git) | 247 | todo | `openpose_editor` |  |
 | 108 | [Corridor Crawler Outpainting](https://github.com/brick2face/corridor-crawler-outpainting.git) | 35 | todo | `corridor_crawler` |  |
@@ -327,7 +327,7 @@ Totals: done 111, todo 191, na 51.
 | 318 | [ScramblePrompts [m9]](https://github.com/MarcusNyne/sd-scramble-prompts-m9.git) | 9 | done | `scramble_prompts` |  |
 | 319 | [TweakWeights [m9]](https://github.com/MarcusNyne/sd-tweak-weights-m9.git) | 2 | done | `tweak_weights` |  |
 | 320 | [Prevent interruption](https://github.com/light-and-ray/sd-webui-prevent-interruption.git) | 1 | done | `core:prevent-interrupt` |  |
-| 321 | [Waifu2x Upscaler](https://github.com/light-and-ray/sd-webui-waifu2x-upscaler.git) | 6 | todo | `waifu2x` |  |
+| 321 | [Waifu2x Upscaler](https://github.com/light-and-ray/sd-webui-waifu2x-upscaler.git) | 6 | done | `waifu2x` | Nine pinned neural upscalers and native Script Anime/Photo/CARN controls, 2x-16x. RGB output, 64MP bound, first-use weight downloads; exact CPU reference parity and SD1.5/SDXL extracted-package cancellation/recovery verified. See waifu2x-verification.md. |
 | 322 | [sd-webui-udav2](https://github.com/MackinationsAi/sd-webui-udav2.git) | 45 | todo | `depth_anything` |  |
 | 323 | [Topaz Photo AI integration](https://github.com/light-and-ray/sd-webui-topaz-photo-ai-integration.git) | 12 | na | `external-app` | bridge to a specific external application (Photoshop, Krita, ComfyUI, ...) |
 | 324 | [Detail Daemon](https://github.com/muerrilla/sd-webui-detail-daemon.git) | 190 | done | `detail_daemon` |  |

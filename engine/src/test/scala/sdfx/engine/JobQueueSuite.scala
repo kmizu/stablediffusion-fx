@@ -254,6 +254,26 @@ class JobQueueSuite extends munit.FunSuite:
     assertEquals(e.partial.grids.size, 1)
   }
 
+  test("script swallowing backend interruption remains cancelled before admission reply") {
+    val script = new Plugin:
+      def id = "swallow-interruption"
+      def name = id
+      def kind = PluginKind.Script
+      override def run(p: GenerationParams, v: Values, ctx: PluginContext): JobOutput =
+        val saved = ctx.generate(p)
+        try ctx.generate(p.copy(extra = Map("force_error" -> "interrupted")))
+        catch case e: sdfx.core.protocol.EngineError if e.isInterrupted => ()
+        JobOutput(saved)
+    val (events, remove) = recording()
+    try
+      val job = Job(Job.newId(), base, Some(script -> Values.empty))
+      val error = intercept[JobCancelledException](await(queue.submit(job)))
+      assertEquals(error.partial.images.size, 1)
+      assert(!events.asScala.exists { case JobEvent.JobFinished(id, _) => id == job.id; case _ => false })
+      assertEquals(await(queue.submit(Job(base))).images.size, 1)
+    finally remove()
+  }
+
   test("cancel of the running plain job ends as cancelled") {
     val f = queue.submit(Job(Job.newId(), slow("0.1")))
     assert(eventually()(queue.current.isDefined))

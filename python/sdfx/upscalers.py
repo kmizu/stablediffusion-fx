@@ -96,6 +96,10 @@ def upscale_to(img, width: int, height: int, name: str, model_path: Optional[str
                check_interrupt=None):
     """Upscale a PIL image to exactly width x height with upscaler `name` (A1111 semantics)."""
     require_pil()
+    from . import waifu2x
+    if name in waifu2x.NAMES:
+        return waifu2x.upscale(img, width, height, waifu2x.parse_name(name), device=device or "cpu",
+                              check_interrupt=check_interrupt or (lambda: None))
     if name in PIL_UPSCALERS:
         resample = Image.NEAREST if name == "Nearest" else Image.LANCZOS
         return img.resize((width, height), resample)
@@ -131,6 +135,8 @@ def upscale_by(img, scale: float, name: str, model_path: Optional[str] = None, d
 
 def unload_models():
     _models.clear()
+    from . import waifu2x
+    waifu2x.unload()
 
 
 __all__ = ["upscale_to", "upscale_by", "has_spandrel", "PIL_UPSCALERS", "math"]

@@ -18,7 +18,7 @@ from typing import Optional
 
 import numpy as np
 
-TOOLS = ("pixel_art", "color_enhance", "cas_upscale", "person_mask", "remove_background", "depth_mask", "color_correction")
+TOOLS = ("pixel_art", "color_enhance", "cas_upscale", "person_mask", "remove_background", "depth_mask", "color_correction", "waifu2x")
 REMBG_MODELS = ("u2net", "u2netp", "u2net_human_seg", "isnet-general-use", "isnet-anime", "silueta")
 
 
@@ -177,8 +177,16 @@ def depth_mask(img, near: float = 0.5, far: float = 1.0, invert: bool = False, b
     return mask.convert("RGB"), {"mask": mask, "depth": Image.fromarray((d * 255).astype(np.uint8), "L")}
 
 
-def run(tool: str, img, params: dict, device: str = "cuda"):
+def run(tool: str, img, params: dict, device: str = "cuda", check_interrupt=None, progress=None):
     p = dict(params or {})
+    if tool == "waifu2x":
+        from . import waifu2x
+        config = waifu2x.options(p.get('style', 'Anime'), p.get('noise', 2), p.get('scale', 2), p.get('tile', 64))
+        width, height = max(1, round(img.width * config['scale'])), max(1, round(img.height * config['scale']))
+        result = waifu2x.upscale(img, width, height, config['model_id'], device=device, tile=config['tile'],
+                                cache_dir=p.get('cache_dir'), allow_download=p.get('allow_download', True),
+                                check_interrupt=check_interrupt or (lambda: None), progress=progress)
+        return result, dict(model=config['model_id'], scale=config['scale'])
     if tool == "color_correction":
         from PIL import Image
         from .color_correction import adain, wavelet, a1111

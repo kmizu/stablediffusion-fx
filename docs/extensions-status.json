@@ -633,7 +633,7 @@
 "index": 105,
 "name": "VRAM Estimator",
 "url": "https://github.com/space-nuko/a1111-stable-diffusion-webui-vram-estimator.git",
-"status": "done:vram_estimator"
+"status": "done:core:vram-estimator"
 },
 {
 "index": 106,
@@ -1929,7 +1929,7 @@
 "index": 321,
 "name": "Waifu2x Upscaler",
 "url": "https://github.com/light-and-ray/sd-webui-waifu2x-upscaler.git",
-"status": "todo:waifu2x"
+"status": "done:waifu2x"
 },
 {
 "index": 322,

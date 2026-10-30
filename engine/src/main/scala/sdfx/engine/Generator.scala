@@ -18,6 +18,8 @@ import scala.util.control.NonFatal
 
 /** Receives everything a single job produces. All callbacks run on the job thread or the engine reader thread. */
 trait GenerationListener:
+  /** Backend interruption is authoritative even before its admission reply arrives. */
+  private[engine] def onEngineInterrupted(): Unit = ()
   /** Private transport identity for queued work; never part of GenerationParams or image metadata. */
   def interruptionOwner: Option[String] = None
   private[engine] def wdBatchControl: Option[ExtrasBatchControl] = None
@@ -129,6 +131,7 @@ final class Generator(
       catch
         case e: EngineError if e.isInterrupted =>
           engineInterrupted.set(true)
+          listener.onEngineInterrupted()
           throw e
     val scopedListener: GenerationListener = new GenerationListener:
       override def interruptionOwner: Option[String] = listener.interruptionOwner
