@@ -1773,7 +1773,7 @@
 "index": 295,
 "name": "Token Downsampling",
 "url": "https://github.com/feffy380/sd-webui-token-downsampling.git",
-"status": "todo:token_downsampling"
+"status": "done:token_downsampling"
 },
 {
 "index": 296,

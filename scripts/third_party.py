@@ -21,6 +21,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # (repo, how it is used, what)
 BASE = [
+    ("feffy380/sd-webui-token-downsampling", "reimplemented", "MIT behavior reference f1f1cbae82b75d5658b08abbc3cb8ddc0b876cc5; native two-depth K/V nearest-exact downsampling, evaluation cutoff and XYZ controls"),
+    ("ethansmith2000/comfy-todo", "reference", "MIT Token Downsampling lineage ddd75a3e62e0a67f0b9be839a9916b553041494f; no runtime dependency"),
     ("light-and-ray/sd-webui-waifu2x-upscaler", "reimplemented", "Native Waifu2x controls and nine upscaler choices; no unlicensed wrapper code copied/imported; pinned behavior feede81c2b15ebcd5ff881b3f5ad4c3dbf017368"),
     ("nagadomi/waifu2x", "model dependency", "MIT UpConv7 Anime/Photo noise 0..3 weights downloaded on first use from pinned cc385f97a9debfe611316aabfd5d8bb30ba2dbeb; mirror/original Git blobs verified identical; exact SHA256/size manifest in python/sdfx/waifu2x_assets.json"),
     ("yu45020/Waifu2x", "model dependency", "GPL-3.0 CARN V2 weights, byte-identical to original archive at 1e6c456e9769bb8f418024c0782ef965d8dfd026; optional first-use download, restricted weights-only loading; independently expressed inference graph, licensed original used only as numerical reference"),

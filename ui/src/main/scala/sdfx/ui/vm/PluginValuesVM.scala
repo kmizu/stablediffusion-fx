@@ -87,6 +87,7 @@ final class PluginsVM(val mode: Mode, scripts: Seq[Plugin], alwaysOnPlugins: Seq
     */
   def restoreInfotext(text: String): Unit =
     val fields = Infotext.parse(text).fields
+    sdfx.plugins.TokenDownsamplingPlugin.replay(fields).foreach(values => form("token_downsampling").foreach(_.load(values)))
     def flag(key: String): Option[Boolean] = fields.get(key).flatMap { v =>
       v.trim.toLowerCase(java.util.Locale.ROOT) match
         case "true" => Some(true)

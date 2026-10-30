@@ -1,5 +1,11 @@
 # Plugin coverage vs. reForge built-ins
 
+**Token Downsampling** is an opt-in AlwaysOn control with independent shallow/deep
+factors, an evaluation cutoff, three XYZ axes and PNG setting restoration. It
+reduces self-attention keys/values while preserving queries. Detail/composition
+can change; PAG and HyperTile combinations are explicitly rejected. See
+[verification, timings and limits](token-downsampling-verification.md).
+
 **Waifu2x upscale** is available in the Script dropdown with Anime/Photo/CARN V2,
 four denoise levels and 2x/4x/8x/16x scaling. The nine models are also ordinary
 upscaler choices for Extras, Upscale and pixel Hires. Verified weights download on

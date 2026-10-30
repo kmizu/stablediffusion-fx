@@ -190,7 +190,7 @@ class Engine(BaseEngine):
 
     def features(self) -> list[str]:
         # Temperature guard uses step callbacks and does not alter model weights.
-        f = ["vram_estimator", "steps_animation", "pnginfo_injection", "gpu_temperature_guard", "freeu", "dynamic_thresholding", "hypertile", "system_info", "vae_tools", "prevent_interrupt"]
+        f = ["token_downsampling", "vram_estimator", "steps_animation", "pnginfo_injection", "gpu_temperature_guard", "freeu", "dynamic_thresholding", "hypertile", "system_info", "vae_tools", "prevent_interrupt"]
         f += self._batch_features()
         if hasattr(diffusers, "StableDiffusionXLPAGPipeline"):
             f.append("pag")
@@ -1062,6 +1062,13 @@ class Engine(BaseEngine):
                     want.append(k)
             kw["callback_on_step_end_tensor_inputs"] = [k for k in want if k in avail]
 
+        from .token_downsampling import TokenDownsampling, DEFAULTS as TODO_DEFAULTS, step_budget
+        todo_config = hooks_mod.hook_config(gp.hooks, 'token_downsampling', TODO_DEFAULTS)
+        todo = TokenDownsampling(pipe.unet, todo_config, self.sdxl,
+            step_budget(gp.steps, gp.hires.second_pass_steps, pass_), branch_mode=bool(neutral_plan)) if todo_config else None
+        if todo is not None and todo.enabled:
+            if pag or hooks_mod.hook_config(gp.hooks, 'hypertile', hooks_mod.HYPERTILE_DEFAULTS):
+                raise EngineError(UNSUPPORTED, 'Token Downsampling cannot combine with PAG or HyperTile: their self-attention layouts differ')
         cleanups = []
         unet = pipe.unet
         self._activate(pipe)
@@ -1089,7 +1096,12 @@ class Engine(BaseEngine):
         try:
             if ht:
                 hk2.install()
+            if todo is not None:
+                cleanups.append(todo.remove)
+                todo.install()
             branch_hooks = [] if neutral_plan else None
+            if branch_hooks is not None and todo is not None:
+                branch_hooks.append(todo)
             ext_mod.install(self, pipe, task, gp, req, kw, ctx, cleanups, plan=xplan, w=w, h=h, sched=sched,
                             cfg_scale=cfg_scale, image=image, mask=mask, steps=steps, seed=hook_seed,
                             branch_hooks=branch_hooks)
@@ -1165,6 +1177,8 @@ class Engine(BaseEngine):
             with torch.inference_mode(), recovery:
                 out = pipe(**kw)
         finally:
+            if todo is not None and todo.enabled:
+                log.info('Token Downsampling: %s', dict(evaluations=todo.evaluations, active_evaluations=min(todo.limit, todo.evaluations), token_shapes=todo.stats))
             for c in reversed(cleanups):
                 try:
                     c()

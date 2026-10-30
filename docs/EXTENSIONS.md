@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 112, todo 190, na 51.
+Totals: done 113, todo 189, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-nui | Scope / notes |
 |---|---|---|---|---|---|
@@ -301,7 +301,7 @@ Totals: done 112, todo 190, na 51.
 | 292 | [Old Photo Restoration](https://github.com/Haoming02/sd-webui-old-photo-restoration.git) | 151 | todo | `old_photo_restoration` |  |
 | 293 | [Mobile friendly UI tweaks](https://github.com/Haoming02/sd-webui-mobile-friendly.git) | 16 | na | `webui-ux` | Gradio page behaviour (tabs, buttons, dialogs); the desktop UI provides the equivalent natively |
 | 294 | [Easy Tag Insert](https://github.com/Haoming02/sd-webui-easy-tag-insert.git) | 54 | todo | `core:prompt-tools` |  |
-| 295 | [Token Downsampling](https://github.com/feffy380/sd-webui-token-downsampling.git) | 25 | todo | `token_downsampling` |  |
+| 295 | [Token Downsampling](https://github.com/feffy380/sd-webui-token-downsampling.git) | 25 | done | `token_downsampling` | Native two-depth K/V resampling, requested-step evaluation cutoff, XYZ axes and PNG replay. Actual SD1.5/SDXL extracted-package interruption/recovery verified; explicit PAG/HyperTile conflict and per-pass hires clock adaptation. See token-downsampling-verification.md. |
 | 296 | [Aspect Ratio Resolutions selector-xhox](https://github.com/xhoxye/sd-webui-ar_xhox.git) | 40 | done | `core:size-presets` |  |
 | 297 | [Hires Fix Tweaks](https://github.com/w-e-w/sd-webui-hires-fix-tweaks.git) | 43 | todo | `hires_fix_tweaks` |  |
 | 298 | [Simple Manga Maker](https://github.com/new-sankaku/stable-diffusion-webui-simple-manga-maker.git) | 393 | todo | `manga_maker` |  |

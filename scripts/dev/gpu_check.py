@@ -140,7 +140,64 @@ def mask_png(size):
 
 t0 = time.time()
 r = None
-if CASE in ('waifu_sd15', 'waifu_sdxl'):
+if CASE in ('todo_sd15', 'todo_sdxl'):
+    import copy
+    from pathlib import Path
+    import numpy as np
+    from PIL import Image
+    load(SDXL if CASE.endswith('sdxl') else SD15)
+    size = 768 if CASE.endswith('sdxl') else 512
+    base = gp(prompt='blue and white ceramic teapot, flowers, wooden table, window sunlight, detailed illustration',
+              width=size, height=size, steps=12, cfg_scale=6)
+    report = {}
+    def run(name, params, kind='txt2img'):
+        start = time.perf_counter()
+        result = call(kind, req(params))
+        assert result['type'] == 'result', result
+        path = keep(result, name)
+        pixels = np.asarray(Image.open(path).convert('RGB'))
+        report[name] = dict(path=path, seconds=time.perf_counter()-start, shape=list(pixels.shape))
+        return path, pixels
+    source, baseline = run('baseline', base)
+    for name, config in [('noop', dict(factor=1, factor2=1)), ('cutoff-zero', dict(factor=3, disable_after=0))]:
+        params = copy.deepcopy(base)
+        params['hooks'] = {'token_downsampling': config}
+        _, pixels = run(name, params)
+        assert np.array_equal(pixels, baseline), name
+    for name, config in [('shallow', dict(factor=2, factor2=1, disable_after=.7)),
+                         ('deep', dict(factor=1, factor2=2, disable_after=.7)),
+                         ('both', dict(factor=2, factor2=2, disable_after=1))]:
+        params = copy.deepcopy(base)
+        params['hooks'] = {'token_downsampling': config}
+        _, pixels = run(name, params)
+        assert not np.array_equal(pixels, baseline), name
+        report[name]['mean_absolute_delta'] = float(np.abs(pixels.astype(float)-baseline).mean())
+    params = copy.deepcopy(base)
+    params['hooks'] = {'token_downsampling': dict(factor=2, factor2=2, disable_after=.7)}
+    params['img2img'] = i2i(source)
+    run('img2img', params, 'img2img')
+    params['img2img'] = None
+    params['width'] = params['height'] = 256
+    params['steps'] = 4
+    params['hires'].update(enabled=True, scale=2, second_pass_steps=4)
+    run('hires', params)
+    branch = copy.deepcopy(base)
+    branch['prompt'] += ' AND_TOPK red flowers :0.7'
+    branch['hooks'] = {'neutral_prompt': {}}
+    _, branch_baseline = run('branch-baseline', branch)
+    branch['hooks']['token_downsampling'] = dict(factor=2, factor2=2, disable_after=.5)
+    _, branch_active = run('branch-active', branch)
+    assert not np.array_equal(branch_active, branch_baseline)
+    for incompatible in ('hypertile', 'pag'):
+        params = copy.deepcopy(base)
+        params['hooks'] = {'token_downsampling': dict(factor=2), incompatible: {}}
+        error = call('txt2img', req(params))
+        assert error['type'] == 'error' and 'Token Downsampling cannot combine' in error.get('message', ''), error
+    _, recovered = run('recovery', base)
+    assert np.array_equal(recovered, baseline), 'hook leaked into subsequent generation'
+    Path(OUT, CASE+'.json').write_text(json.dumps(report, indent=2), encoding='utf-8')
+    r = dict(type='result', result=dict(result='two no-op exact comparisons; both factors; img2img/hires; exact baseline recovery'))
+elif CASE in ('waifu_sd15', 'waifu_sdxl'):
     from pathlib import Path
     import numpy as np
     from PIL import Image
