@@ -64,7 +64,7 @@ foreach ($relative in $payload) {
     [IO.Directory]::CreateDirectory((Split-Path -Parent $destination)) | Out-Null
     Copy-Item -LiteralPath $source -Destination $destination
 }
-foreach ($relative in @('python/requirements.txt', 'python/requirements-torch.txt', 'python/requirements-dev.txt', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'DISTRIBUTION_NOTICES.md')) {
+foreach ($relative in @('python/requirements.txt', 'python/requirements-torch.txt', 'python/requirements-dev.txt', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'DISTRIBUTION_NOTICES.md', '.mcp.json.example', 'mcp/README.md', 'docs/mcp-generation-metadata.md', 'docs/mcp-agent-verification.md')) {
     $source = Join-Path $repo $relative
     $destination = Join-Path $image $relative
     [IO.Directory]::CreateDirectory((Split-Path -Parent $destination)) | Out-Null

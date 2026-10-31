@@ -88,6 +88,20 @@ class McpToolsSuite extends munit.FunSuite:
     assertEquals(i2i("inputSchema")("required").arr.map(_.str).toSet, Set("prompt", "init_image"))
   }
 
+  test("documented nested AlwaysOn payload validates against the advertised JSON schema") {
+    val ts = server.handle(request("tools/list"), _ => ()).get("result")("tools").arr
+    val schema = ts.find(_("name").str == "txt2img").get("inputSchema")
+    val documented = ujson.Obj("prompt" -> "a ceramic teapot on a wooden table", "seed" -> 173, "steps" -> 20,
+      "always_on" -> ujson.Obj("freeu" -> ujson.Obj("enabled" -> true, "b1" -> 1.15, "b2" -> 1.2)))
+    assertEquals(validate(documented, schema), Nil)
+    val pluginSchema = schema("properties")("always_on")("additionalProperties")
+    assertEquals(pluginSchema("type").str, "object")
+    assertEquals(pluginSchema("additionalProperties")("type").arr.map(_.str).toSet, Set("string", "number", "boolean"))
+    val scalarInsteadOfObject = ujson.read(documented.render()).obj
+    scalarInsteadOfObject("always_on")("freeu") = true
+    assert(validate(scalarInsteadOfObject, schema).nonEmpty)
+  }
+
   test("model keyword lookup exposes checkpoint and LoRA provenance without arbitrary file access") {
     ok("set_model", ujson.Obj("name" -> "foo"))
     val checkpoint = ok("model_keyword_lookup", ujson.Obj())("structuredContent")
@@ -118,6 +132,37 @@ class McpToolsSuite extends munit.FunSuite:
     ok("txt2img", ujson.Obj("prompt" -> "cat", "steps" -> 1, "width" -> 64, "height" -> 64,
       "return_images" -> false, "model_keyword" -> true))
     assert(lastHooks.contains("model_keyword"))
+  }
+
+  test("extended generation fields reach the queued worker and temporary ControlNet input is cleaned") {
+    val file = home.root.resolve("models/controlnet/test-control.safetensors")
+    Files.createDirectories(file.getParent); Files.write(file, Array[Byte](1, 2, 3))
+    services.catalog.refresh()
+    val req = ujson.Obj("prompt" -> "base", "steps" -> 1, "width" -> 64, "height" -> 64, "return_images" -> false,
+      "subseed" -> 4321, "subseed_strength" -> 0.4, "eta" -> 0.3,
+      "manual_loras" -> ujson.Arr(ujson.Obj("name" -> "My Lora", "weight" -> 0.8, "unet" -> 0.5, "dyn" -> 2)),
+      "controlnet" -> ujson.Arr(ujson.Obj("model" -> "test-control", "image" -> pngBase64(64, 64), "preprocessor" -> "canny",
+        "preprocessor_args" -> ujson.Obj("low_threshold" -> 80), "guidance_start" -> 0.1, "guidance_end" -> 0.8)),
+      "hires" -> ujson.Obj("enabled" -> true, "scale" -> 1, "prompt" -> "refined", "negative_prompt" -> "haze", "cfg_scale" -> 4.0,
+        "sampler_name" -> "Euler a", "scheduler" -> "Karras"))
+    ok("txt2img", req)
+    val p = Await.result(services.client.raw("get_state"), 10.seconds)("last_generation")("request")("params")
+    assertEquals(p("subseed").num, 4321.0); assertEquals(p("subseed_strength").num, 0.4)
+    assertEquals(p("eta").num, 0.3); assertEquals(p("loras")(0)("dyn").num, 2.0)
+    assertEquals(p("hires")("prompt").str, "refined"); assertEquals(p("hires")("cfg_scale").num, 4.0)
+    assertEquals(p("controlnet")(0)("preprocessor_args")("low_threshold").num, 80.0)
+    assert(!Files.exists(Paths.get(p("controlnet")(0)("image").str)))
+    val tmp = home.tmpDir(services.settings)
+    def files(): Set[String] =
+      val stream = Files.list(tmp)
+      try { import scala.jdk.CollectionConverters.*; stream.iterator().asScala.map(_.toString).toSet }
+      finally stream.close()
+    val before = files()
+    val denied = call("txt2img", ujson.Obj("prompt" -> "base", "controlnet" -> ujson.Arr(
+      ujson.Obj("model" -> "test-control", "image" -> pngBase64(64, 64)),
+      ujson.Obj("model" -> "not-in-catalog"))))
+    assert(denied("isError").bool)
+    assertEquals(files(), before)
   }
 
   test("txt2img returns image + text + structuredContent and saves a PNG with parameters") {

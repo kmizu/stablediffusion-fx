@@ -77,10 +77,15 @@ object TestEnv:
     def apply(v: ujson.Value): Unit = items.add(v)
     def all: Seq[ujson.Value] = items.asScala.toSeq
 
-  /** Minimal JSON Schema check (type, required, properties, items, additionalProperties=false); returns problems. */
+  /** Minimal JSON Schema check (type, required, properties, items, additionalProperties); returns problems. */
   def validate(v: ujson.Value, schema: ujson.Value, path: String = "$"): List[String] =
     val s = schema.obj
-    val typeOk = s.get("type").map(_.str).forall {
+    val types = s.get("type").toSeq.flatMap {
+      case ujson.Str(t) => Seq(t)
+      case ujson.Arr(ts) => ts.toSeq.map(_.str)
+      case _ => Nil
+    }
+    def matches(t: String): Boolean = t match
       case "object"  => v.isInstanceOf[ujson.Obj]
       case "array"   => v.isInstanceOf[ujson.Arr]
       case "string"  => v.isInstanceOf[ujson.Str]
@@ -88,8 +93,7 @@ object TestEnv:
       case "number"  => v.isInstanceOf[ujson.Num]
       case "integer" => v match { case ujson.Num(n) => n.isWhole; case _ => false }
       case _         => true
-    }
-    if !typeOk then List(s"$path: expected ${s("type").str}, got $v")
+    if types.nonEmpty && !types.exists(matches) then List(s"$path: expected ${s("type").render}, got $v")
     else
       v match
         case o: ujson.Obj =>
@@ -98,7 +102,11 @@ object TestEnv:
           val extra =
             if s.get("additionalProperties").contains(ujson.False) then o.value.keys.filterNot(props.contains).map(k => s"$path: unexpected $k").toList
             else Nil
-          missing ++ extra ++ o.value.toList.flatMap((k, x) => props.get(k).toList.flatMap(ps => validate(x, ps, s"$path.$k")))
+          val additional = s.get("additionalProperties").toList.flatMap {
+            case ps: ujson.Obj => o.value.toList.filterNot((k, _) => props.contains(k)).flatMap((k, x) => validate(x, ps, s"$path.$k"))
+            case _ => Nil
+          }
+          missing ++ extra ++ additional ++ o.value.toList.flatMap((k, x) => props.get(k).toList.flatMap(ps => validate(x, ps, s"$path.$k")))
         case ujson.Arr(items) => s.get("items").toList.flatMap(is => items.toList.zipWithIndex.flatMap((x, i) => validate(x, is, s"$path[$i]")))
         case _                => Nil
 

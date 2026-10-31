@@ -138,7 +138,7 @@ final class McpTools(
       val hires = a.objOpt("hires").map { o =>
         val h = Args(o, HiresKeys)
         val up = h.str("upscaler").map(u => matchName("hires upscaler", u, catalog.choices(ChoiceSource.HiresUpscalers))).getOrElse("Latent")
-        HiresParams(
+        ExtendedGeneration.withHires(h, HiresParams(
           enabled = h.bool("enabled").getOrElse(true),
           scale = h.num("scale", 1.0, 4.0).getOrElse(2.0),
           upscaler = up,
@@ -146,10 +146,18 @@ final class McpTools(
           denoisingStrength = h.num("denoising_strength", 0, 1).getOrElse(0.55),
           resizeX = h.int("resize_x", 0, MaxSide).getOrElse(0),
           resizeY = h.int("resize_y", 0, MaxSide).getOrElse(0)
-        )
+        ), s => matchName("hires sampler", s, samplerNames), s =>
+          if s.equalsIgnoreCase("Automatic") then "Automatic" else matchName("hires scheduler", s, schedulers))
       }.getOrElse(HiresParams())
 
       val base = outputsDir.toAbsolutePath.normalize()
+      val extended = ExtendedGeneration.parse(a,
+        n => catalog.findLora(n).map(_.name).getOrElse(throw ToolError(s"LoRA not found: $n")),
+        n => catalog.findControlNet(n).map(_.name).getOrElse(throw ToolError(s"ControlNet not found: $n")),
+        n => if n.equalsIgnoreCase("none") then "none" else catalog.choices(ChoiceSource.Preprocessors).find(_.equalsIgnoreCase(n))
+          .getOrElse(throw ToolError(s"unknown preprocessor: $n")),
+        (spec, field) => { val (path, tmp) = Images.materialize(spec, field, pathPolicy, base, tempFile); tmp.foreach(temps += _); path },
+        allowInitImageFallback = img2img)
       val i2i = Option.when(img2img) {
         val (init, t1) = Images.materialize(a.reqStr("init_image"), "init_image", pathPolicy, base, tempFile)
         t1.foreach(temps += _)
@@ -184,6 +192,7 @@ final class McpTools(
         prompt = fullPrompt,
         negativePrompt = a.str("negative_prompt").getOrElse(""),
         seed = a.long("seed", -1L, 4294967295L).getOrElse(-1L),
+        subseed = extended.subseed, subseedStrength = extended.subseedStrength, eta = extended.eta,
         samplerName = sampler,
         scheduler = scheduler,
         steps = a.int("steps", 1, 150).getOrElse(20),
@@ -195,6 +204,7 @@ final class McpTools(
         clipSkip = a.int("clip_skip", 1, 12).getOrElse(1),
         hires = hires,
         img2img = i2i,
+        loras = extended.loras, controlnet = extended.controlnet,
         styles = a.strList("styles").getOrElse(Nil),
         checkpoint = checkpoint,
         vae = vae,
@@ -206,27 +216,25 @@ final class McpTools(
       // Model Keyword is the only default AlwaysOn plugin exposed here. Respect
       // the registry setting, and allow callers to override it per request;
       // do not silently activate unrelated desktop plugins.
-      val keyword = services.registry.get("model_keyword").filter(_ => services.registry.isEnabled("model_keyword")).toSeq.map { plugin =>
+      val explicit = a.objOpt("always_on").getOrElse(ujson.Obj())
+      if explicit.value.contains("model_keyword") && a.has("model_keyword") then
+        throw ToolError("Use either always_on.model_keyword or model_keyword, not both")
+      val keyword = services.registry.get("model_keyword").filter(_ => services.registry.isEnabled("model_keyword"))
+        .filterNot(_ => explicit.value.contains("model_keyword")).toSeq.map { plugin =>
         val initial = services.registry.values(plugin)
         val values = a.bool("model_keyword").fold(initial)(enabled => initial.updated("enabled", enabled.toString))
         plugin -> values
       }.filter((plugin, values) => plugin.isActive(values))
-      GenRequest(p, a.bool("return_images").getOrElse(true), a.int("max_image_side", 0, MaxSide).getOrElse(1024), temps.result(), keyword)
+      val pluginInputs = pluginInput(path => { temps += path; () }, activeControlNet = p.controlnet.exists(_.enabled))
+      val configured = pluginInputs.parse(explicit, if img2img then Tab.Img2Img else Tab.Txt2Img)
+      val active = (keyword ++ configured).sortBy((pl, _) => services.registry.all.indexWhere(_.id == pl.id))
+      try services.generator.applyAlwaysOn(p, active)
+      catch case NonFatal(e) => throw ToolError(s"invalid always_on values: ${msg(e)}")
+      GenRequest(p, a.bool("return_images").getOrElse(true), a.int("max_image_side", 0, MaxSide).getOrElse(1024), temps.result(), active)
     catch
       case e: Throwable =>
         temps.result().foreach(Images.deleteQuietly)
         throw e
-
-  /** Bounds the work of one job: per-batch pixels, hires target size and total output pixels. */
-  private def checkWork(p: GenerationParams): Unit =
-    val batchPx = p.width.toLong * p.height * p.batchSize
-    if batchPx > MaxBatchPixels then
-      throw ToolError(s"width * height * batch_size is too large ($batchPx px, max $MaxBatchPixels); lower the size or batch_size")
-    val (tw, th) = if p.hires.enabled && !p.isImg2Img then p.hires.targetSize(p.width, p.height) else (p.width, p.height)
-    if tw > MaxSide || th > MaxSide then throw ToolError(s"hires target ${tw}x$th exceeds ${MaxSide}x$MaxSide; lower hires.scale or resize_x/resize_y")
-    val total = tw.toLong * th * p.batchSize * p.nIter
-    if total > MaxJobPixels then
-      throw ToolError(s"this job would produce $total px in total (max $MaxJobPixels); lower the size, hires scale or image count")
 
   private def mcpPending: Int =
     services.queue.pending.count(_.origin == Origin) + asyncJobs.values().asScala.count(_.status == "waiting_for_engine")
@@ -523,6 +531,18 @@ final class McpTools(
           case s        => f"job $id: $s, ${aj.progress}%.0f%%${if aj.message.nonEmpty then s" (${aj.message})" else ""}${if pos > 0 then s", queue position $pos" else ""}"
         ToolResult(Seq(Content.text(text), Content.text(ujson.write(base))), Some(base), isError = aj.status == "failed")
 
+  private def pluginInput(addTemp: Path => Unit, activeControlNet: Boolean = false): AlwaysOnInputs =
+    new AlwaysOnInputs(() => services.registry.enabled, src => catalog.choices(src),
+      (spec, field) => {
+        val (path, temporary) = Images.materialize(spec, field, pathPolicy, outputsDir.toAbsolutePath, tempFile)
+        temporary.foreach(addTemp)
+        path.toString
+      },
+      (spec, field) => (if field.endsWith(".image_encoder") then
+        pathPolicy.resolveDirectory(spec, field, outputsDir.toAbsolutePath)
+      else pathPolicy.resolve(spec, field, outputsDir.toAbsolutePath)).toString,
+      Some((spec, field) => pathPolicy.resolveDirectory(spec, field, outputsDir.toAbsolutePath).toString), activeControlNet)
+
   // ---- scripts ---------------------------------------------------------------------------------------------
 
   private def scriptPlugins: Seq[Plugin] =
@@ -575,24 +595,13 @@ final class McpTools(
     val plugin = scriptPlugins.find(_.id == id).orElse(scriptPlugins.find(_.name.equalsIgnoreCase(id))).getOrElse(
       throw ToolError(s"unknown script: $id. Available: ${scriptPlugins.map(_.id).mkString(", ")}")
     )
-    val values = a.stringMap("values").getOrElse(Map.empty)
+    val values = a.objOpt("values").getOrElse(ujson.Obj())
     val known = plugin.controls.map(_.key).toSet
-    val unknown = values.keySet.filterNot(known.contains)
+    val unknown = values.value.keySet.filterNot(known.contains)
     if unknown.nonEmpty then throw ToolError(s"unknown control(s) for ${plugin.id}: ${unknown.mkString(", ")}. Controls: ${known.toSeq.sorted.mkString(", ")}")
     if plugin.id == "custom_code" then throw ToolError("custom_code cannot be run over MCP")
     // writing multi-GB checkpoints into the model folders is left to the person at the GUI
     if McpTools.GuiOnlyScripts(plugin.id) then throw ToolError(s"${plugin.id} writes model files and cannot be run over MCP")
-    // image controls are file paths read by the engine: same allowed-directory policy as init_image / get_image
-    val imageKeys = plugin.controls.collect { case c: Control.ImageFile => c.key }.toSet
-    val checkedValues = values.map { (k, v) =>
-      if !imageKeys.contains(k) then k -> v
-      else k -> v.split("[\\r\\n]+").map(_.trim).filter(_.nonEmpty)
-        .map { spec =>
-          val path = pathPolicy.resolve(spec, s"values.$k", outputsDir)
-          Images.rejectProtectedPng(path, s"values.$k")
-          path.toString
-        }.mkString("\n")
-    }
     val pObj = a.objOpt("params").getOrElse(ujson.Obj())
     val img2img = pObj.value.get("init_image").exists(_ != ujson.Null)
     if img2img && !plugin.tabs.contains(Tab.Img2Img) then throw ToolError(s"${plugin.id} does not support img2img")
@@ -600,9 +609,16 @@ final class McpTools(
     val returnImages = a.bool("return_images").getOrElse(true)
     val maxSide = a.int("max_image_side", 0, MaxSide).getOrElse(1024)
     if !async then ready(ctx)
-    val req = parseGen(Args(pObj, scriptParamKeys(img2img)), img2img, requirePrompt = false).copy(returnImages = returnImages, maxSide = maxSide)
+    val original = parseGen(Args(pObj, scriptParamKeys(img2img)), img2img, requirePrompt = false).copy(returnImages = returnImages, maxSide = maxSide)
+    val scriptTemps = scala.collection.mutable.ArrayBuffer.empty[Path]
+    val checkedValues = try pluginInput(path => { scriptTemps += path; () }).validate(plugin, values, "values")
+      catch
+        case e: Throwable =>
+          (original.temps ++ scriptTemps).foreach(Images.deleteQuietly)
+          throw e
+    val req = original.copy(temps = original.temps ++ scriptTemps)
     val job =
-      try Job(Job.newId(), req.params, script = Some(plugin -> Values(services.registry.values(plugin).map ++ checkedValues)), alwaysOn = req.alwaysOn, origin = Origin, limits = limits)
+      try Job(Job.newId(), req.params, script = Some(plugin -> checkedValues), alwaysOn = req.alwaysOn, origin = Origin, limits = limits)
       catch
         case e: Throwable =>
           req.temps.foreach(Images.deleteQuietly)
@@ -653,7 +669,10 @@ final class McpTools(
           "steps" -> Schema.int("Second pass steps; 0 = same as steps.", Some(0), Some(150), Some(0)),
           "denoising_strength" -> Schema.num("Second pass denoising strength.", Some(0.0), Some(1.0), Some(0.55)),
           "resize_x" -> Schema.int("Explicit target width (0 = use scale).", Some(0), Some(4096), Some(0)),
-          "resize_y" -> Schema.int("Explicit target height (0 = use scale).", Some(0), Some(4096), Some(0))
+          "resize_y" -> Schema.int("Explicit target height (0 = use scale).", Some(0), Some(4096), Some(0)),
+          "prompt" -> Schema.str("Independent Hires positive prompt"), "negative_prompt" -> Schema.str("Independent Hires negative prompt"),
+          "cfg_scale" -> Schema.num("Independent Hires CFG", Some(0), Some(30)), "sampler_name" -> Schema.str("Independent Hires sampler"),
+          "scheduler" -> Schema.str("Independent Hires scheduler")
         )
       ).tap(_("description") = "Hires fix (txt2img only)."),
       "loras" -> Schema.arr(
@@ -662,6 +681,8 @@ final class McpTools(
       ),
       "styles" -> Schema.arr(Schema.str(), "Saved prompt style names (see list_samplers styles)."),
       "model_keyword" -> Schema.bool("Enable Model Keyword for this request; omitted uses its saved setting and upstream-enabled default."),
+      "always_on" -> ujson.Obj("type" -> "object", "additionalProperties" -> Schema.scalarMap("Plugin control values"),
+        "description" -> "Per-job AlwaysOn extensions, keyed by plugin id. Discover typed controls with list_always_on. Uses declared defaults plus supplied values; does not change GUI settings."),
       "return_images" -> Schema.bool("Return base64 previews inline. Files are always saved.", Some(true)),
       "max_image_side" -> Schema.int("Downscale returned previews so the longest side is at most this (0 = full size). The saved file stays full size.", Some(0), Some(MaxSide.toLong), Some(1024)),
       "extra" -> Schema.scalarMap("Advanced: extra key/value parameters recorded in the infotext and passed to the engine.")
@@ -689,7 +710,7 @@ final class McpTools(
           "mask_blur" -> Schema.int("Mask blur radius.", Some(0), Some(64), Some(4))
         )
     val props = if img2img then (common.filterNot(_._1 == "hires") ++ i2i) else common
-    Schema.obj(props, if img2img then Seq("prompt", "init_image") else Seq("prompt"))
+    Schema.obj(props ++ ExtendedGeneration.schema, if img2img then Seq("prompt", "init_image") else Seq("prompt"))
 
   private val imagesOutputSchema: ujson.Obj = Schema.obj(
     Seq(
@@ -740,7 +761,24 @@ final class McpTools(
     o
 
   val all: Seq[McpTool] = Seq(
+    new InspectGenerationMetadataTool(pathPolicy, outputsDir),
     new ModelPresetsTool(services),
+    tool("list_always_on", "List AlwaysOn extensions",
+      "Discover enabled AlwaysOn extensions, control defaults, dynamic choices, and typed values_schema for generation always_on. Layout-only controls are omitted from values_schema.",
+      Schema.obj(Seq("tab" -> Schema.str("Generation mode", Seq("txt2img", "img2img"), Some("txt2img")))), ro = true)((a, ctx) => {
+        val args = Args(a, Seq("tab"))
+        val tab = args.str("tab").getOrElse("txt2img") match
+          case "txt2img" => Tab.Txt2Img
+          case "img2img" => Tab.Img2Img
+          case _ => throw ToolError("tab must be txt2img or img2img")
+        ready(ctx)
+        val input = new AlwaysOnInputs(() => services.registry.enabled, src => catalog.choices(src),
+          (_, _) => throw ToolError("discovery cannot read images"), (_, _) => throw ToolError("discovery cannot read files"))
+        ToolResult.json(ujson.Obj("plugins" -> ujson.Arr.from(input.available(tab).map { p =>
+          val json = scriptJson(p).obj
+          ujson.Obj.from(json.toSeq :+ ("values_schema" -> input.schema(p)))
+        })))
+      }),
     tool("vae_tools", "VAE encode / decode",
       "Use the loaded checkpoint/VAE to encode, decode or round-trip original local files. L/RGBA PNG, CMYK TIFF/JPEG and tensor.safetensors retain their bytes and channels. Returns saved paths and quantization/provenance report. Optional weights download requires allow_download=true.",
       Schema.obj(Seq(
@@ -1017,14 +1055,25 @@ object McpTools:
   val StrictLimits: JobLimits = JobLimits(maxSide = 4096, maxImagesPerGeneration = 16, maxGenerations = 64, maxPixelsPerGeneration = 4096L * 4096)
   val ResizeModes: Seq[String] = Seq("just resize", "crop and resize", "resize and fill")
   val FillModes: Seq[String] = Seq("fill", "original", "latent noise", "latent nothing")
-  val HiresKeys: Seq[String] = Seq("enabled", "scale", "upscaler", "steps", "denoising_strength", "resize_x", "resize_y")
+  val HiresKeys: Seq[String] = ExtendedGeneration.hiresKeys
+
+  /** Bounds one generation and its metadata replay candidates with the same MCP work limits. */
+  def checkWork(p: GenerationParams): Unit =
+    val batchPx = p.width.toLong * p.height * p.batchSize
+    if batchPx > MaxBatchPixels then
+      throw ToolError(s"width * height * batch_size is too large ($batchPx px, max $MaxBatchPixels); lower the size or batch_size")
+    val (tw, th) = if p.hires.enabled && !p.isImg2Img then p.hires.targetSize(p.width, p.height) else (p.width, p.height)
+    if tw > MaxSide || th > MaxSide then throw ToolError(s"hires target ${tw}x$th exceeds ${MaxSide}x$MaxSide; lower hires.scale or resize_x/resize_y")
+    val total = tw.toLong * th * p.batchSize * p.nIter
+    if total > MaxJobPixels then
+      throw ToolError(s"this job would produce $total px in total (max $MaxJobPixels); lower the size, hires scale or image count")
 
   private val CommonKeys = Seq("prompt", "negative_prompt", "width", "height", "steps", "cfg_scale", "sampler_name", "scheduler", "seed",
-    "batch_size", "n_iter", "clip_skip", "checkpoint", "vae", "loras", "styles", "return_images", "max_image_side", "extra", "model_keyword")
+    "batch_size", "n_iter", "clip_skip", "checkpoint", "vae", "loras", "styles", "return_images", "max_image_side", "extra", "model_keyword", "always_on")
   private val Img2ImgKeys = Seq("init_image", "mask", "denoising_strength", "resize_mode", "inpainting_fill", "inpaint_full_res",
     "inpaint_full_res_padding", "inpainting_mask_invert", "mask_blur")
 
-  def genKeys(img2img: Boolean): Seq[String] = if img2img then CommonKeys ++ Img2ImgKeys else CommonKeys :+ "hires"
+  def genKeys(img2img: Boolean): Seq[String] = (if img2img then CommonKeys ++ Img2ImgKeys else CommonKeys :+ "hires") ++ ExtendedGeneration.keys
   def scriptParamKeys(img2img: Boolean): Seq[String] = genKeys(img2img).filterNot(k => k == "return_images" || k == "max_image_side")
 
   def msg(e: Throwable): String = e match

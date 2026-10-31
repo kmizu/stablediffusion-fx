@@ -1,6 +1,6 @@
-# sdfx MCP server
+# Stable Diffusion NUI MCP server
 
-Lets AI agents (Claude Code, other MCP clients) generate images with Stable Diffusion FX.
+Lets AI agents (Claude Code, other MCP clients) generate images with Stable Diffusion NUI.
 
 Two transports:
 
@@ -36,17 +36,23 @@ Two transports:
   launcher script silent (`@echo off`, no banner, no `pause`).
 - On stdin EOF, in-flight calls get `--drain-seconds` (default 2) to finish before the process exits.
 
-## Claude Code setup
+## Client setup
+
+The Windows package supports stdio directly with `C:/apps/SDNUI/SDNUI.exe --mcp --home C:/apps/SDNUI`, using its bundled Java runtime. Configure the Python environment and model folders in that home first. `.mcp.json.example` shows this packaged connection; replace the installation path. Use one server configuration for a GPU to avoid starting duplicate model engines.
+
+The commands below show source-checkout and GUI HTTP alternatives. For another MCP host, use the same executable/arguments or HTTP endpoint in its MCP configuration.
+
+### Claude Code examples
 
 ```sh
 # headless (stdio), via the launcher script
-claude mcp add stablediffusion-fx -- D:/stable-diffusion-webui-reForge/stablediffusion-fx/run.bat --mcp
+claude mcp add stablediffusion-nui -- C:/path/to/stablediffusion-nui/run.bat --mcp
 # headless (stdio), using the jar directly
-claude mcp add stablediffusion-fx -- java -cp D:/stable-diffusion-webui-reForge/stablediffusion-fx/target/stablediffusion-fx.jar sdfx.mcp.McpMain --home D:/stable-diffusion-webui-reForge/stablediffusion-fx
+claude mcp add stablediffusion-nui -- java -cp C:/path/to/stablediffusion-nui/target/stablediffusion-nui.jar sdfx.mcp.McpMain --home C:/path/to/stablediffusion-nui
 # the running GUI (HTTP)
-claude mcp add --transport http stablediffusion-fx-gui http://127.0.0.1:7861/mcp
+claude mcp add --transport http stablediffusion-nui-gui http://127.0.0.1:7861/mcp
 # ... with a token
-claude mcp add --transport http stablediffusion-fx-gui http://127.0.0.1:7861/mcp --header "Authorization: Bearer <token>"
+claude mcp add --transport http stablediffusion-nui-gui http://127.0.0.1:7861/mcp --header "Authorization: Bearer <token>"
 ```
 
 Or copy `../.mcp.json.example` to `.mcp.json` in your project and adjust the paths.
@@ -67,9 +73,39 @@ Development: `sbt "mcp/runMain sdfx.mcp.McpMain --dry-run"` (no GPU needed).
 | `list_recent` / `get_image` | Browse the outputs folder (only files inside it can be read). |
 | `get_status` | Engine state, device, loaded model, current job, queue length. |
 | `interrupt` | Stop the running job (`clear_queue` drops pending ones). |
+| `list_always_on` | Discover AlwaysOn extensions and typed values for the generation `always_on` object; applies to sync, async and script sub-generations. |
+| `inspect_generation_metadata` | Inspect a PNG without resaving it; returns generation arguments, AlwaysOn replay candidates, and unapplied metadata. Nothing executes automatically. |
+| `model_keyword_lookup` / `model_presets` | Look up checkpoint/LoRA keywords and manage model-bound preset libraries. |
 | `list_scripts` / `run_script` | Script plugins (X/Y/Z plot, prompt matrix, loopback, SD upscale...) with their controls; `async: true` returns a job_id. |
 
 Generation results: `content` = one `image` block per image (downscaled to `max_image_side`, default 1024;
 `return_images: false` to skip) + a `text` block with each saved path and its infotext; `structuredContent` =
 `{job_id, images: [{path, seed, infotext, grid}]}`. At most 16 images per call. Progress is reported with
 `notifications/progress` when the call carries `_meta.progressToken`; `notifications/cancelled` interrupts the job.
+
+## Agent workflow
+
+1. Call `list_models`, `list_samplers`, `list_always_on` and `list_scripts` to discover this installation.
+2. Call `set_model` with `{ "name": "<catalog checkpoint>" }`.
+3. Submit `txt2img_async` or `img2img_async`, poll `get_job` using `job_id`, and retrieve saved images with `get_image` (`max_side`, not `max_image_side`). Terminal statuses are `done`, `failed`, and `cancelled`. A cancelled job result carries `isError=true` and a structured `status="cancelled"`.
+4. Use `cancel_job` for that MCP-owned job. `interrupt` is a broader queue operation.
+5. To replay a PNG, inspect it with `inspect_generation_metadata`, review `unapplied_fields` and warnings, resolve catalog model/LoRA choices, and submit the returned arguments and supported `always_on` values. img2img/inpaint additionally need an explicit source image and mask.
+
+Example per-job extension configuration (no desktop settings are changed):
+
+```json
+{
+  "prompt": "a ceramic teapot on a wooden table",
+  "seed": 173,
+  "steps": 20,
+  "always_on": {
+    "freeu": { "enabled": true, "b1": 1.15, "b2": 1.2 }
+  }
+}
+```
+
+AlwaysOn control values use declared defaults plus the supplied fields; saved desktop image paths are not inherited. The existing `model_keyword` boolean keeps its upstream-enabled default and saved setting for compatibility. Use either that boolean or `always_on.model_keyword`, not both.
+
+Typed generation options include variation (`subseed`, `subseed_strength`), separate Hires prompts/CFG/sampler/scheduler, `manual_loras`, and `controlnet`; consult `tools/list` for the authoritative schema. Existing `loras` remains the prompt-tag convenience API.
+
+GUI coverage and replay limits are tracked in [mcp-generation-metadata.md](../docs/mcp-generation-metadata.md). External SDK verification is tracked in [mcp-agent-verification.md](../docs/mcp-agent-verification.md).

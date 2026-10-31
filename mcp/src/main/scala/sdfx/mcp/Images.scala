@@ -24,6 +24,12 @@ final class PathPolicy(roots: () => Seq[Path]):
     * message is the same whether the file is missing or outside the roots (no existence oracle).
     */
   def resolve(spec: String, field: String, base: Path): Path =
+    resolveKind(spec, field, base, directory = false)
+
+  def resolveDirectory(spec: String, field: String, base: Path): Path =
+    resolveKind(spec, field, base, directory = true)
+
+  private def resolveKind(spec: String, field: String, base: Path, directory: Boolean): Path =
     val s = spec.trim
     if PathPolicy.isNetworkPath(s) then throw ToolError(s"$field: network (UNC) paths are not allowed")
     val p =
@@ -39,7 +45,8 @@ final class PathPolicy(roots: () => Seq[Path]):
       try Some(r.toRealPath())
       catch case NonFatal(_) => None
     )
-    if !realRoots.exists(r => real.startsWith(r) && real != r) || !Files.isRegularFile(real) then throw denied(field)
+    if !realRoots.exists(r => real.startsWith(r) && (directory || real != r)) ||
+        !(if directory then Files.isDirectory(real) else Files.isRegularFile(real)) then throw denied(field)
     real
 
 object PathPolicy:
@@ -117,7 +124,8 @@ object Images:
       if w <= 0 || h <= 0 || w > MaxInputSide || h > MaxInputSide then
         throw ToolError(s"$field: ${w}x$h is too large (max ${MaxInputSide}x$MaxInputSide)")
 
-  private def writeDecoded(bytes: Array[Byte], field: String, tempFile: String => Path): (Path, Option[Path]) =
+  private[mcp] def writeDecoded(bytes: Array[Byte], field: String, tempFile: String => Path,
+      writer: (BufferedImage, Path) => Boolean = (img, path) => ImageIO.write(img, "png", path.toFile)): (Path, Option[Path]) =
     checkDims(dimensions(bytes), field)
     rejectProtected(ImageIO.createImageInputStream(new ByteArrayInputStream(bytes)), field)
     val img =
@@ -125,8 +133,14 @@ object Images:
       catch case NonFatal(_) => null
     if img == null then throw ToolError(s"$field: decoded data is not a PNG/JPEG/BMP/GIF image")
     val f = tempFile(".png")
-    ImageIO.write(toRgbOrArgb(img), "png", f.toFile)
-    (f.toAbsolutePath, Some(f))
+    try
+      if !writer(toRgbOrArgb(img), f) then throw ToolError(s"$field: PNG writer unavailable")
+      (f.toAbsolutePath, Some(f))
+    catch
+      case error: Throwable =>
+        try Files.deleteIfExists(f)
+        catch case cleanup: Throwable => error.addSuppressed(cleanup)
+        throw error
 
   /** Width/height from the image header without decoding the pixels. */
   def dimensions(p: Path): Option[(Int, Int)] =

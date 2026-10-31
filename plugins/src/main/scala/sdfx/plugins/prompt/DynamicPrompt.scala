@@ -26,12 +26,28 @@ object DynamicPrompt:
     def sourceHashes: Map[String, String] = consumed
     def clearTrace(): Unit = consumed = Map.empty
 
+    private def checkName(name: String): String =
+      val n = name.replace('\\', '/')
+      require(n.nonEmpty && !n.startsWith("/") && !n.contains(':') && !n.split("/", -1).contains(".."),
+        "wildcard name must stay inside its declared directory")
+      n
+
+    private def actualFile(dir: Path, name: String): Option[Path] =
+      val root = try dir.toRealPath() catch case _: java.io.IOException => return None
+      val candidate = root.resolve(checkName(name) + ".txt")
+      if !Files.exists(candidate) then None
+      else
+        val real = candidate.toRealPath()
+        require(real.startsWith(root) && real != root, "wildcard file escapes its declared directory")
+        Option.when(Files.isRegularFile(real))(real)
+
     /** All wildcard names (relative paths without .txt) for UI listing. */
     def names: Vector[String] =
       dirs.filter(Files.isDirectory(_)).flatMap { d =>
         Using.resource(Files.walk(d)) { s =>
           s.iterator().asScala.filter(p => p.getFileName.toString.endsWith(".txt"))
-            .map(p => d.relativize(p).toString.replace('\\', '/').stripSuffix(".txt")).toVector
+            .map(p => d.relativize(p).toString.replace('\\', '/').stripSuffix(".txt"))
+            .filter(n => scala.util.Try(actualFile(d, n).nonEmpty).getOrElse(false)).toVector
         }
       }.distinct.sorted.toVector
 
@@ -41,19 +57,20 @@ object DynamicPrompt:
       result
 
     private def load(name: String): Vector[String] =
-      val pattern = name.replace('\\', '/')
+      val pattern = checkName(name)
       val matched =
         if pattern.contains("*") then
           val re = ("^" + java.util.regex.Pattern.quote(pattern).replace("*", "\\E.*\\Q") + "$").r
           names.filter(n => re.matches(n))
         else Vector(pattern)
       matched.flatMap { n =>
-        dirs.map(_.resolve(n + ".txt")).find(Files.isRegularFile(_)).toVector.flatMap { f =>
-          val lines = if !trackSources then Files.readAllLines(f).asScala.toVector else
-            val bytes = Files.readAllBytes(f)
+        dirs.iterator.flatMap(d => actualFile(d, n)).take(1).toVector.flatMap { f =>
+          val channel = Files.newByteChannel(f, java.nio.file.StandardOpenOption.READ, java.nio.file.LinkOption.NOFOLLOW_LINKS)
+          val bytes = Using.resource(java.nio.channels.Channels.newInputStream(channel))(_.readAllBytes())
+          if trackSources then
             val hash = java.security.MessageDigest.getInstance("SHA-256").digest(bytes).map(b => f"${b & 0xff}%02x").mkString.take(10)
             cachedSources(name) = cachedSources.getOrElse(name, Map.empty) + (s"wildcards_file:$n" -> hash)
-            java.nio.charset.StandardCharsets.UTF_8.newDecoder().decode(java.nio.ByteBuffer.wrap(bytes)).toString.linesIterator.toVector
+          val lines = java.nio.charset.StandardCharsets.UTF_8.newDecoder().decode(java.nio.ByteBuffer.wrap(bytes)).toString.linesIterator.toVector
           lines.map(_.trim).filter(l => l.nonEmpty && !l.startsWith("#"))
         }
       }

@@ -314,6 +314,8 @@ class IPAdapterState:
         try:
             if getattr(pipe, "image_encoder", None) is None:
                 repo, sub = (encoder, "") if encoder else IP_ENCODERS[sdxl]
+                from .mcp_model_refs import encoder_source
+                repo = encoder_source(repo)
                 enc = (CLIPVisionModelWithProjection.from_pretrained(repo, subfolder=sub or None, torch_dtype=pipe.unet.dtype)
                        if not os.path.isdir(repo) else CLIPVisionModelWithProjection.from_pretrained(repo, torch_dtype=pipe.unet.dtype))
                 modules = {"image_encoder": enc.to(pipe.unet.device)}
