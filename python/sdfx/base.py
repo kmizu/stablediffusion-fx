@@ -365,6 +365,17 @@ class BaseEngine:
                     raise EngineError(NO_MODEL,
                         f"Embedding operation could not restore model offload; the checkpoint was unloaded; reload the checkpoint: {exc}") from exc
 
+    def embedding_editor(self, params: dict, ctx: JobContext) -> dict:
+        if self.dry_run:
+            raise EngineError(UNSUPPORTED, 'Embedding Editor requires a real loaded model')
+        if self.model is None or getattr(self, 'pipe', None) is None:
+            raise EngineError(NO_MODEL, 'load a checkpoint before editing embeddings')
+        from .embedding_editor_service import run_editor_service
+        try:
+            return run_editor_service(self, params, ctx)
+        except (ValueError, TypeError, OSError, PermissionError) as exc:
+            raise EngineError(INVALID_PARAMS, f'Embedding Editor: {exc}') from exc
+
     def embedding_inspector(self, params: dict, ctx: JobContext) -> dict:
         if self.dry_run:
             raise EngineError(UNSUPPORTED, "Embedding Inspector requires a real loaded model")

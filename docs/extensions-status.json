@@ -99,7 +99,7 @@
 "index": 16,
 "name": "Embeddings editor",
 "url": "https://github.com/CodeExplode/stable-diffusion-webui-embedding-editor.git",
-"status": "todo:embedding_editor"
+"status": "done:core:embedding-editor"
 },
 {
 "index": 17,

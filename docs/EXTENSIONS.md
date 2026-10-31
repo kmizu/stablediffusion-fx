@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 123, todo 179, na 51.
+Totals: done 124, todo 178, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-nui | Scope / notes |
 |---|---|---|---|---|---|
@@ -22,7 +22,7 @@ Totals: done 123, todo 179, na 51.
 | 13 | [Hypernetwork-Monkeypatch-Extension](https://github.com/aria1th/Hypernetwork-MonkeyPatch-Extension.git) | 113 | todo | `hypernetwork_training` |  |
 | 14 | [Custom Diffusion](https://github.com/guaneec/custom-diffusion-webui.git) | 67 | todo | `custom_diffusion` |  |
 | 15 | [Smart Process](https://github.com/d8ahazard/sd_smartprocess.git) | 198 | todo | `smart_process` |  |
-| 16 | [Embeddings editor](https://github.com/CodeExplode/stable-diffusion-webui-embedding-editor.git) | 72 | todo | `embedding_editor` |  |
+| 16 | [Embeddings editor](https://github.com/CodeExplode/stable-diffusion-webui-embedding-editor.git) | 72 | done | `core:embedding-editor` | Native owned-vector editing with full coordinate pages, real-tokenizer guidance, independent SDXL encoders, unsaved previews and source-bound overwrite with verified original backups/live refresh. Independent implementation from unlicensed pinned behavior; actual PT preservation, SD1.5/SDXL protected native/package save-collision-recovery and genuine PhotoMaker/EM cancellation verified. SD2 checkpoints, native multi-image preview and A1111 training interoperability are unverified; existing PhotoMaker composition guards remain. Dedicated MCP editor API is not included. See embedding-editor-verification.md. |
 | 17 | [Merge Board](https://github.com/bbc-mc/sdweb-merge-board.git) | 76 | done | `model_merge` |  |
 | 18 | [Model Converter](https://github.com/Akegarasu/sd-webui-model-converter.git) | 336 | done | `model_converter` |  |
 | 19 | [Kohya-ss Additional Networks](https://github.com/kohya-ss/sd-webui-additional-networks.git) | 1814 | done | `core:lora` |  |

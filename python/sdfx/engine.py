@@ -825,8 +825,9 @@ class Engine(BaseEngine):
 
     def _encode_scheduled(self, pos: str, neg: str, gp: GenerationParams, bs: int, steps: int,
                           hires_total: Optional[int] = None, gradient_total: Optional[int] = None) -> dict:
-        return self._merge_encoding(pos, neg, lambda texts: self._encode_scheduled_unmerged(
-            texts[0], texts[1], gp, bs, steps, hires_total, gradient_total))
+        from .embedding_editor_generation import preview_encoding
+        return preview_encoding(self, lambda: self._merge_encoding(pos, neg, lambda texts:
+            self._encode_scheduled_unmerged(texts[0], texts[1], gp, bs, steps, hires_total, gradient_total)))
 
     def _encode_scheduled_unmerged(self, pos: str, neg: str, gp: GenerationParams, bs: int, steps: int,
                                    hires_total: Optional[int] = None, gradient_total: Optional[int] = None) -> dict:
@@ -1437,7 +1438,7 @@ class Engine(BaseEngine):
                     return torch.stack(noise).to(device=device, dtype=dtype)
             with torch.inference_mode(), recovery, prepare_noise(pipe, noise_factory), conditioning_scope(pipe, None if latent_source is not None else conditioning_weight):
                 if xplan.photomaker:
-                    from .embedding_merge_pipeline import run_pipeline
+                    from .embedding_editor_generation import invoke_pipeline
                     from .photomaker_adapters import id_encoder_scope
                     from .photomaker_batch import heterogeneous_prompts
                     positive_list = isinstance(kw['prompt'], list)
@@ -1479,7 +1480,7 @@ class Engine(BaseEngine):
                             if photo_capture is not None:
                                 for spec, (prompts, negatives) in zip(photo_capture.specs, spec_texts):
                                     spec['prompts'], spec['negatives'] = prompts, negatives
-                    out = run_pipeline(self, pipe, all_text, invoke, check=ctx.check_interrupt, runtime_hook=nh,
+                    out = invoke_pipeline(self, pipe, all_text, invoke, check=ctx.check_interrupt, runtime_hook=nh,
                                        extra_runtime_hooks=(negative_runtime,) if negative_runtime is not None else (),
                                        pre_runtime_hooks=forward_wrappers)
                 else:
@@ -1498,6 +1499,7 @@ class Engine(BaseEngine):
         return imgs, plan
 
     def _generate(self, params: dict, ctx: JobContext, mode: str) -> dict:
+        self._editor_preview = None
         self._embedding_merge_ctx = ctx
         self._intermediate_recorder = None
         self._composable_job = None
@@ -1532,6 +1534,7 @@ class Engine(BaseEngine):
                         log.warning("could not close intermediate manifest: %s", e)
             finally:
                 self._intermediate_recorder = None
+                self._editor_preview = None
                 self._embedding_merge_ctx = None
 
     def _generate_recorded(self, params: dict, ctx: JobContext, mode: str) -> dict:
@@ -1625,6 +1628,17 @@ class Engine(BaseEngine):
                 and any(negpip.extract(text)[1] for text in texts)):
             raise EngineError(UNSUPPORTED, "NegPiP negative weights are not available with PhotoMaker's text-only encoder")
         self._load_embeddings(req, texts, ctx)
+        if 'embedding_editor_preview' in params:
+            from .embedding_editor_adapter import EngineEditorAdapter
+            from .embedding_editor_generation import validate_preview
+            from .embedding_editor_tensor import read_editor_vectors
+            try:
+                # Fail before sampling if the shared encoding transaction is unavailable.
+                from .embedding_merge_backend import run_encoding_transaction
+                adapter = EngineEditorAdapter(self, read_vectors=read_editor_vectors)
+                self._editor_preview = validate_preview(adapter, params['embedding_editor_preview'], ctx)
+            except (ValueError, ImportError) as failure:
+                raise EngineError(INVALID_PARAMS, f'Embedding editor preview: {failure}') from failure
         ctx.resource_hashes = None
         if hooks_mod.hook_config(gp.hooks, "pnginfo_injection", {}) is not None:
             from .resource_hashes import record_file
@@ -2005,6 +2019,7 @@ class Engine(BaseEngine):
 
     def _img2imgalt(self, gp, req, ctx, alt, image, embeds, seeds, idx0, total, w, h, cn, pag, inverse_embeds=None):
         """img2imgalt.py: invert the init image to noise with DDIM, then sample from that noise."""
+        from .embedding_editor_generation import preview_encoding
         c = adapters.normalize(alt, extras.IMG2IMGALT_DEFAULTS)
         steps = int(c["inversion_steps"]) or gp.steps
         enc = embeds if inverse_embeds is None else inverse_embeds
@@ -2021,9 +2036,11 @@ class Engine(BaseEngine):
                     enc = self._adjust_embeds(gp, candidate, ctx)
                 else:
                     # Keep the legacy override route byte-for-byte when enabling Neutral does no composition.
-                    enc = self._encode(c["override_prompt"] or gp.prompt, c["override_negative"] or gp.negative_prompt, gp, 1)
+                    enc = preview_encoding(self, lambda: self._encode(
+                        c["override_prompt"] or gp.prompt, c["override_negative"] or gp.negative_prompt, gp, 1))
             else:
-                enc = self._encode(c["override_prompt"] or gp.prompt, c["override_negative"] or gp.negative_prompt, gp, 1)
+                enc = preview_encoding(self, lambda: self._encode(
+                        c["override_prompt"] or gp.prompt, c["override_negative"] or gp.negative_prompt, gp, 1))
         elif "_neutral" in enc:
             enc = self._adjust_embeds(gp, self._encode_scheduled(gp.prompt, gp.negative_prompt, gp, 1, steps,
                                                                gradient_total=steps), ctx)

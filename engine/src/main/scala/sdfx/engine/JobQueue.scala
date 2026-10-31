@@ -29,8 +29,13 @@ final case class Job(
     submittedContext: Option[SubmittedPayloadContext] = None,
     captureOptions: Option[CaptureOptions] = None,
     wdBatch: Option[WdBatchSpec] = None,
-    imageSecret: Option[sdfx.core.png.ImageScrambleSecret] = None
+    imageSecret: Option[sdfx.core.png.ImageScrambleSecret] = None,
+    editorPreview: Option[EditorPreviewPayload] = None
 )
+
+/** Kept only in the in-memory queue and private worker request. */
+final case class EditorPreviewPayload(json: String):
+  override def toString: String = "EditorPreviewPayload(<redacted>)"
 
 /** Explicit partial WD operation: folder and a new destination directory. */
 final case class WdBatchSpec(imagesRoot: String, outputParent: String, outputName: String)
@@ -70,6 +75,8 @@ object JobRunner:
     * Script jobs: the script receives the raw params and every `ctx.generate` it makes gets AlwaysOn processing.
     */
   def run(job: Job, generator: Generator, listener: GenerationListener): JobOutput =
+    if job.editorPreview.nonEmpty && (job.script.nonEmpty || job.wdBatch.nonEmpty) then
+      throw EngineError(Protocol.ErrorCodes.Unsupported, "Embedding editor preview cannot run with a script or WD batch")
     if job.wdBatch.nonEmpty then
       if job.script.nonEmpty || job.alwaysOn.nonEmpty then
         throw EngineError(Protocol.ErrorCodes.Unsupported, "WD batch does not support scripts or active extensions")
@@ -258,6 +265,7 @@ final class JobQueue(generator: Generator, interruptEngine: Option[String] => Fu
       override private[engine] def onEngineInterrupted(): Unit = flag.set(true)
       override def interruptionOwner: Option[String] = Some(e.interruptionOwner)
       override private[engine] def imageSecret: Option[sdfx.core.png.ImageScrambleSecret] = e.job.imageSecret
+      override private[engine] def editorPreview: Option[EditorPreviewPayload] = e.job.editorPreview
       override private[engine] def wdBatchControl: Option[ExtrasBatchControl] = e.wdControl
       override private[engine] def payloadJobId: Option[String] = Some(id)
       override private[engine] def submittedPayloadContext: Option[SubmittedPayloadContext] = e.job.submittedContext

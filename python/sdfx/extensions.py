@@ -294,10 +294,14 @@ def encode_image(engine, pipe, img):
         upcast = vae.dtype == torch.float16 and getattr(vae.config, "force_upcast", False)
         if upcast:
             vae.to(torch.float32)
-        x = pipe.image_processor.preprocess(img).to(vae.device, vae.dtype)
-        lat = vae.encode(x).latent_dist.mean * vae.config.scaling_factor
-        if upcast:
-            vae.to(torch.float16)
+        try:
+            # encode's method hook moves an offloaded VAE to the execution
+            # device, but does not move its positional pixel argument.
+            x = pipe.image_processor.preprocess(img).to(engine.device, vae.dtype)
+            lat = vae.encode(x).latent_dist.mean * vae.config.scaling_factor
+        finally:
+            if upcast:
+                vae.to(torch.float16)
     return lat.to(engine.device, engine.dtype)
 
 

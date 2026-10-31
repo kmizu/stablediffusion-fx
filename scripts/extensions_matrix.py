@@ -27,7 +27,7 @@ S = {
     4: "todo:kandinsky", 5: "todo:shap_e", 6: "todo:openpose_editor", 7: "todo:segment_anything",
     8: "todo:aesthetic_gradients", 9: "todo:train_dreambooth", 10: "todo:training_picker", 11: "todo:dataset_tag_editor",
     12: "todo:dreamartist", 13: "todo:hypernetwork_training", 14: "todo:custom_diffusion", 15: "todo:smart_process",
-    16: "todo:embedding_editor", 17: "todo:model_merge", 18: "todo:model_converter", 19: "done:core:lora",
+    16: "done:core:embedding-editor", 17: "todo:model_merge", 18: "todo:model_converter", 19: "done:core:lora",
     20: "todo:model_merge", 21: "done:core:embedding-merge", 22: "todo:model_merge", 23: "todo:lora_block_weight",
     24: "done:core:gallery", 25: "done:core:gallery", 26: "todo:inspiration", 27: "todo:inspiration",
     28: "todo:prompt_gallery", 29: "todo:infinity_grid", 30: "todo:core:config-presets", 31: "todo:core:preset-utilities",
@@ -144,6 +144,7 @@ IMPLEMENTED = {
 
 
 SCOPE_NOTES = {
+    "core:embedding-editor": "Native owned-vector editing with full coordinate pages, real-tokenizer guidance, independent SDXL encoders, unsaved previews and source-bound overwrite with verified original backups/live refresh. Independent implementation from unlicensed pinned behavior; actual PT preservation, SD1.5/SDXL protected native/package save-collision-recovery and genuine PhotoMaker/EM cancellation verified. SD2 checkpoints, native multi-image preview and A1111 training interoperability are unverified; existing PhotoMaker composition guards remain. Dedicated MCP editor API is not included. See embedding-editor-verification.md.",
     "conditioning_highres_fix": "Pinned seven-mode inpainting conditioning formulas, native controls and PNG replay; 9-channel SD1.5/SDXL source and MainWindow, protected input/output, cancellation/recovery verified. Actual 4-channel SD1.5/SDXL masked and Hires output is unchanged. Disabled retains native baseline; SDXL is a native adaptation. Extracted Windows package, full Torch CPU and Scala suites verified. ControlNet/ADetailer composition is not real-model verified; see conditioning-highres-verification.md.",
     "core:embedding-inspector": "Native inspector, tokenizer, vector mixer, arbitrary-code-gated eval, atomic save and active-model refresh with SD1.5/SDXL support; loaded/catalog ownership is explicit. Eval can write readable files; SD2 actual checkpoints and A1111 training interoperability remain unverified. See embedding-inspector-verification.md.",
     "core:embedding-merge": "Native raw CLIP/TI inspection with six groupings, bounded source-compatible expression algebra, scoped prompt expressions and PNG replay, PT/safetensors export and SD1/SDXL conversion. No-overwrite publication and fail-closed model restoration; SD2 checkpoint and A1111 training interoperability are unverified. Real SD1.5/SDXL, PhotoMaker/offload/cancellation and package evidence plus limits are in embedding-merge-verification.md.",

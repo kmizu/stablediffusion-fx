@@ -40,7 +40,7 @@ class FrozenJobEvidenceSuite extends FunSuite:
   private def fields(p: Product): Set[String] = p.productElementNames.toSet
   test("schema guards detect added or removed product fields") {
     val j = fixture; val p = j.params
-    assertEquals(fields(j), Set("id", "params", "script", "alwaysOn", "origin", "limits", "submittedContext", "captureOptions", "wdBatch", "imageSecret"))
+    assertEquals(fields(j), Set("id", "params", "script", "alwaysOn", "origin", "limits", "submittedContext", "captureOptions", "wdBatch", "imageSecret", "editorPreview"))
     assertEquals(fields(p), Set("prompt", "negativePrompt", "seed", "subseed", "subseedStrength", "samplerName", "scheduler", "steps", "cfgScale", "width", "height", "batchSize", "nIter", "clipSkip", "eta", "hires", "img2img", "loras", "controlnet", "hooks", "styles", "checkpoint", "vae", "extra"))
     assertEquals(fields(p.hires), Set("enabled", "scale", "upscaler", "secondPassSteps", "resizeX", "resizeY", "denoisingStrength", "samplerName", "scheduler", "prompt", "negativePrompt", "cfgScale"))
     assertEquals(fields(p.img2img.get), Set("initImage", "mask", "denoisingStrength", "resizeMode", "maskBlur", "inpaintingFill", "inpaintFullRes", "inpaintFullResPadding", "inpaintingMaskInvert"))
@@ -50,6 +50,15 @@ class FrozenJobEvidenceSuite extends FunSuite:
     assertEquals(fields(j.submittedContext.get), Set("origin", "sourceMode", "configurationJson", "uiVariationEnabled"))
     assertEquals(fields(j.captureOptions.get), Set("includeImageContents"))
     assertEquals(fields(j.script.get._2), Set("map"))
+  }
+
+  test("unsaved editor vectors are excluded from frozen evidence") {
+    val secret = "private-editor-vector-canary-0.123456789"
+    val evidence = FrozenJobEvidence.freeze(fixture.copy(
+      editorPreview = Some(sdfx.engine.EditorPreviewPayload(secret))))
+    assert(!evidence.snapshotJson.contains(secret))
+    assert(!evidence.snapshotJson.contains("editorPreview"))
+    assert(!evidence.snapshotJson.contains("embedding_editor_preview"))
   }
 
   test("session password is excluded from frozen evidence") {

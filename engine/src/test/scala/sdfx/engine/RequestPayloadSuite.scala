@@ -44,6 +44,25 @@ class RequestPayloadSuite extends munit.FunSuite:
     }
   }
 
+  test("editor preview uses protected generation transport without capturing its draft") {
+    withServices { s =>
+      val req = GenerationRequest(GenerationParams(seed = 7, steps = 1, width = 64, height = 64),
+        s.home.tmpDir(s.settings).toString)
+      val session = new sdfx.core.png.ImageScrambleSession
+      session.unlock("editor-secret")
+      var observed = false
+      val draft = ujson.Obj("name" -> "cat", "vectors" -> ujson.Obj("clip_l" -> ujson.Arr(ujson.Arr(3.0))))
+      await(s.client.generateOwned(req, GenerationMode.Txt2Img, _ => (), None,
+        _ => observed = true, imageSecret = session.snapshot, editorPreview = Some(EditorPreviewPayload(draft.render()))).result)
+      val state = await(s.client.raw("get_state"))
+      assert(!observed)
+      assertEquals(state("password_received").bool, true)
+      assertEquals(state("last_generation")("request")("embedding_editor_preview"), draft)
+      assert(!state.render().contains("editor-secret"))
+      assert(!Job(GenerationParams()).copy(editorPreview = Some(EditorPreviewPayload(draft.render()))).toString.contains("clip_l"))
+    }
+  }
+
   test("observed body equals actual fake-process input and mutable hooks cannot change either") {
     withServices { s =>
       var draws = 0

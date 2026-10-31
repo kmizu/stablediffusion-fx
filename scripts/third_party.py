@@ -21,6 +21,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # (repo, how it is used, what)
 BASE = [
+    ("CodeExplode/stable-diffusion-webui-embedding-editor", "reimplemented", "Unlicensed behavior reference c8f290230f9360729abc3a3a57fe1befc2d43b23; independent native coordinate editing, vocabulary guidance, safe save and temporary preview for SD1.5/SDXL; no upstream code or assets copied"),
     ("klimaleksus/stable-diffusion-webui-embedding-merge", "reimplemented", "Pinned SDXL-branch behavior 40d439de3cda5965fc1f9cb4412ef329885d1d6d; independent native vector algebra, scoped prompt expressions, inspection and export; original parser used only in isolated numerical reference fixtures"),
     ("Tzigo/metadata_utils", "reimplemented", "GPL-3.0 behavior reference a4cda9fe899f95de769496946497d20daedb516b; independent native checkpoint/LoRA metadata editor with raw tensor preservation and no-overwrite copy publication"),
     ("rifeWithKaiju/model_preset_manager", "reimplemented", "Unlicensed behavior reference 4e25eebd4b24fb903d2815ac30b787f37a98923c; independent native checkpoint preset library, sharing, Civitai information and thumbnail workflows; no upstream code copied, imported or evaluated"),
@@ -227,6 +228,8 @@ PINNED_LICENSES = {
 # Audited source has no license file. Do not fetch another branch or invent a license text.
 # (commit, notice label)
 PINNED_UNLICENSED = {
+    "CodeExplode/stable-diffusion-webui-embedding-editor": (
+        "c8f290230f9360729abc3a3a57fe1befc2d43b23", "no license file published at pinned source"),
     "rifeWithKaiju/model_preset_manager": (
         "4e25eebd4b24fb903d2815ac30b787f37a98923c", "no license file published at pinned source"),
     "Gerschel/sd_web_ui_preset_utils": (

@@ -15,7 +15,7 @@ import sdfx.core.model.ExtendedStyle
 import sdfx.core.modelcards.{CardId, LocalPreviewFiles}
 import sdfx.core.infotext.HardwareInfo
 import sdfx.core.plugins.api.Plugin
-import sdfx.engine.{AppServices, EngineState, JobEvent, WdBatchSpec}
+import sdfx.engine.{AppServices, EditorPreviewPayload, EngineState, JobEvent, WdBatchSpec}
 import sdfx.core.presets.{LoadedPresets, PresetError}
 import sdfx.ui.presets.{NativePresetFields, NativePresetFileDialogs, NativePresetsController, NativePresetsSession}
 import sdfx.ui.view.*
@@ -172,6 +172,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   val comparison = new ImageComparisonTab(ctx, comparisonSource, () => preview.currentPath)
   val tokenizer = new TokenizerTab(ctx, () => vms(activeMode).prompt.get)
   val embeddingInspector = new EmbeddingInspectorTab(ctx)
+  val embeddingEditor = new EmbeddingEditorTab(ctx, draft => generate(false, Some(draft.render())))
   val temporalLab = new TemporalLabTab(ctx)
   val systemInfo = new SystemInfoTab(ctx)
   val vramEstimator = new VramEstimatorTab(ctx)
@@ -214,6 +215,8 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   temporalLabTab.setId("temporal-lab-tab")
   private val embeddingInspectorTab = new Tab("Embedding Inspector", embeddingInspector.node)
   embeddingInspectorTab.setId("embedding-inspector-tab")
+  private val embeddingEditorTab = new Tab("Embedding Editor", embeddingEditor.node)
+  embeddingEditorTab.setId("embedding-editor-tab")
   private val tokenizerTab = new Tab("Tokenizer", tokenizer.node)
   tokenizerTab.setId("tokenizer-tab")
   private val systemInfoTab = new Tab("System Info", systemInfo.node)
@@ -255,7 +258,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   scramblePages.setId("scramble-pages")
   private val scrambleTab = new Tab("Image Scrambling", scramblePages)
   scrambleTab.setId("image-scrambling-tab")
-  tabs.getTabs.addAll(pngTab, extrasTab, tokenizerTab, embeddingInspectorTab, temporalLabTab, systemInfoTab, stylesTab, keywordTab, comparisonTab, vaeToolsTab, metadataUtilsTab, embeddingMergeTab, modelPresetsTab, scrambleTab)
+  tabs.getTabs.addAll(pngTab, extrasTab, tokenizerTab, embeddingInspectorTab, embeddingEditorTab, temporalLabTab, systemInfoTab, stylesTab, keywordTab, comparisonTab, vaeToolsTab, metadataUtilsTab, embeddingMergeTab, modelPresetsTab, scrambleTab)
   tabs.getTabs.add(new Tab("VRAM Estimator", vramEstimator.node))
   private var comparisonDivider = initial.dividers.get("main").flatMap(_.headOption).getOrElse(.42)
   Mode.values.foreach { mode =>
@@ -552,7 +555,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
     else msg
 
   // ---- actions -----------------------------------------------------------------------------------------
-  def generate(queueOnly: Boolean): Unit =
+  def generate(queueOnly: Boolean, editorPreview: Option[String] = None): Unit =
     val mode = activeMode
     if !queueOnly && progress.get.running then
       ctx.info("A job is running — use Queue (Ctrl+Shift+Enter) to add another")
@@ -571,6 +574,9 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
         ctx.error(message)
         return
       case Right(value) => value
+    if editorPreview.nonEmpty && (plugins(mode).scriptJob.nonEmpty || wdChoice.nonEmpty) then
+      ctx.error("Embedding editor preview cannot run with a script or WD batch.")
+      return
     // never reuse a mask exported for an earlier job: it is re-exported from the canvas below
     vm.maskImage.set("")
     val difference = panel.difference.filter(_.enabled)
@@ -590,7 +596,15 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
       ctx.error("No checkpoint available.\nPut .safetensors in models/checkpoints or add folders in Settings.")
       return
     def submit(tempFiles: Seq[Path]): Unit =
-      val ordinary = JobBuilder.build(vm, plugins(mode), sdfx.engine.CaptureOptions(services.settings.apiPayloadIncludeImageContents), imageSecret)
+      val built = JobBuilder.build(vm, plugins(mode), sdfx.engine.CaptureOptions(services.settings.apiPayloadIncludeImageContents), imageSecret)
+      val ordinary = built.copy(editorPreview = editorPreview.map(EditorPreviewPayload(_)))
+      if editorPreview.nonEmpty && (ordinary.script.nonEmpty || wdChoice.nonEmpty) then
+        // A script can change while an asynchronous mask export is in flight.
+        ctx.temps.registerJob(ordinary.id, tempFiles)
+        ctx.temps.releaseJob(ordinary.id)
+        if tempFiles.exists(_.toString == vm.maskImage.get) then vm.maskImage.set("")
+        ctx.error("Embedding editor preview cannot run with a script or WD batch.")
+        return
       val job = wdChoice match
         case None => ordinary
         case Some((input, name)) =>

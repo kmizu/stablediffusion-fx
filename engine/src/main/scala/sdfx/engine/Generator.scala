@@ -23,6 +23,7 @@ trait GenerationListener:
   /** Private transport identity for queued work; never part of GenerationParams or image metadata. */
   def interruptionOwner: Option[String] = None
   private[engine] def imageSecret: Option[sdfx.core.png.ImageScrambleSecret] = None
+  private[engine] def editorPreview: Option[EditorPreviewPayload] = None
   private[engine] def wdBatchControl: Option[ExtrasBatchControl] = None
   private[engine] def payloadJobId: Option[String] = None
   private[engine] def submittedPayloadContext: Option[SubmittedPayloadContext] = None
@@ -43,6 +44,12 @@ trait GenerationListener:
 
 object GenerationListener:
   val none: GenerationListener = new GenerationListener {}
+
+private[engine] object EditorPreviewMetadata:
+  private val key = "Embedding editor preview"
+  def forJob(params: GenerationParams, active: Boolean): GenerationParams =
+    val clean = params.extra - key
+    params.copy(extra = if active then clean.updated(key, "Unsaved embedding edits") else clean)
 
 /** Finite upper bounds for blocking engine calls. A generation fails (and the engine is restarted) when no
   * progress/preview/log event arrives for `generationInactivity`.
@@ -152,6 +159,7 @@ final class Generator(
     val scopedListener: GenerationListener = new GenerationListener:
       override def interruptionOwner: Option[String] = listener.interruptionOwner
       override private[engine] def imageSecret: Option[sdfx.core.png.ImageScrambleSecret] = listener.imageSecret
+      override private[engine] def editorPreview: Option[EditorPreviewPayload] = listener.editorPreview
       override private[engine] def payloadJobId: Option[String] = listener.payloadJobId
       override private[engine] def submittedPayloadContext: Option[SubmittedPayloadContext] = listener.submittedPayloadContext
       override private[engine] def payloadCaptureOptions: Option[CaptureOptions] = listener.payloadCaptureOptions
@@ -577,7 +585,7 @@ final class Generator(
 
   private def runEngine(p: GenerationParams, listener: GenerationListener): (PreparedGeneration, GenerationResult) =
     if listener.isInterrupted then throw interruptedError
-    val original = prepare(p)
+    val original = prepare(EditorPreviewMetadata.forJob(p, listener.editorPreview.nonEmpty))
     ScrambledInput.withParams(original.request.params, home.tmpDir(settings()), listener.imageSecret, listener.onLog) { params =>
       runEnginePrepared(p, listener, original.copy(request = original.request.copy(params = params)))
     }
@@ -599,6 +607,8 @@ final class Generator(
       diagnostic(listener.onPayloadLifecycle(key, state, completion))
     }
     val result = try
+      if listener.editorPreview.nonEmpty then
+        listener.onLog("Embedding editor preview uses unsaved vectors; exact request capture is disabled for this job.")
       val handle = client.generateOwned(prep.request, prep.mode, { ev =>
         activity.set(System.nanoTime())
         ev match
@@ -640,7 +650,7 @@ final class Generator(
           context, assets, PayloadState.Prepared, warnings, submitted.sourceMode)
         payloads.put(snapshot)
         payloads.snapshots.find(_.key == key).foreach(s => diagnostic(listener.onPreparedRequest(s)))
-      }, () => if listener.isInterrupted then throw interruptedError, listener.imageSecret)
+      }, () => if listener.isInterrupted then throw interruptedError, listener.imageSecret, listener.editorPreview)
       lifecycle(PayloadState.Submitted)
       val completed = awaitActive(handle.result, activity)
       val completion = PayloadCaptureContext.completion(completed, jsonLimits) match

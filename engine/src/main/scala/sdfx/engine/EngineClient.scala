@@ -77,7 +77,8 @@ final class EngineClient(val supervisor: EngineSupervisor):
   private[engine] def generateOwned(req: GenerationRequest, mode: String, listener: EngineEvent => Unit,
                                     owner: Option[String], observer: GenerationBody => Unit = _ => (),
                                     beforeDispatch: () => Unit = () => (),
-                                    imageSecret: Option[sdfx.core.png.ImageScrambleSecret] = None): GenerationHandle =
+                                    imageSecret: Option[sdfx.core.png.ImageScrambleSecret] = None,
+                                    editorPreview: Option[EditorPreviewPayload] = None): GenerationHandle =
     require(mode == GenerationMode.Txt2Img || mode == GenerationMode.Img2Img, s"bad mode $mode")
     val requestOwner = owner.orElse(Some(java.util.UUID.randomUUID().toString))
     // Serialize the actual typed request exactly once. Both freezing and private transport parsing are
@@ -85,7 +86,8 @@ final class EngineClient(val supervisor: EngineSupervisor):
     val bodyJson = RequestPayload.freeze(Json.toJs(req))
     val transportBody = ujson.read(bodyJson)
     val body = GenerationBody(mode, bodyJson, System.currentTimeMillis())
-    try observer(body)
+    editorPreview.foreach(value => transportBody("embedding_editor_preview") = ujson.read(value.json))
+    try if editorPreview.isEmpty then observer(body)
     catch
       // This is optional diagnostic work, not the job's owner/listener cancellation signal.
       case error: InterruptedException =>
