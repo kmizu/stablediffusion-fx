@@ -256,10 +256,12 @@ final class Generator(
         Set("Hires prompt mode", "NUI Hires template", "NUI Manual LoRAs", Img2ImgHiresMetadata.key)(key)) ++
         refinement.map(h => Img2ImgHiresMetadata.key -> Img2ImgHiresMetadata.encode(h)))
 
-    val ex = LoraSyntax.extract(prompt)
+    val keywordReplay = p0.extra.contains("Model keyword settings") ||
+      p0.extra.get("Model keyword replay").exists(_.equalsIgnoreCase("true"))
+    val ex = LoraSyntax.extract(prompt, preserveSpacing = keywordReplay)
     val hrEx = LoraSyntax.extract(recorded.hires.prompt)
     val refinePrompt = refinement.map(_("prompt").str).filter(_.nonEmpty).getOrElse(prompt)
-    val refineEx = LoraSyntax.extract(refinePrompt)
+    val refineEx = LoraSyntax.extract(refinePrompt, preserveSpacing = keywordReplay)
     val composable = recorded.hooks.get("composable_lora").exists {
       case o: ujson.Obj => o.value.get("enabled").forall {
         case ujson.Bool(value) => value
@@ -275,15 +277,33 @@ final class Generator(
       if composable then
         // Placement and repeated tag weights belong to the composable engine. Resolve
         // each file once; retain its first native TE/UNet settings instead of summing tags.
-        val tags = """<(?:lora|lyco):[^>]+>""".r.findAllIn(prompt + " " + recorded.hires.prompt +
+        val inversion = recorded.hooks.get("img2imgalt").collect { case o: ujson.Obj =>
+          Seq("override_prompt", "override_negative").flatMap(key => o.value.get(key).collect { case ujson.Str(v) => v }).mkString(" ")
+        }.getOrElse("")
+        val tags = """<(?:lora|lyco):[^>]+>""".r.findAllIn(prompt + " " + recorded.hires.prompt + " " + inversion +
           refinement.fold("")(h => " " + h("prompt").str + " " + h("negative_prompt").str))
           .flatMap(t => LoraSyntax.extract(t).loras).toSeq
         (recorded.loras ++ tags).foldLeft(Vector.empty[LoraRef])((found, lr) =>
-          if found.exists(_.name == lr.name) then found else found :+ lr)
-      else recorded.loras ++ ex.loras ++ hrEx.loras.filterNot(l => ex.loras.exists(_.name == l.name))
+          if found.exists(existing => existing.name == lr.name && existing.dyn == lr.dyn) then found else found :+ lr)
+      else recorded.loras ++ ex.loras ++ hrEx.loras.filterNot(l => ex.loras.exists(x => x.name == l.name && x.dyn == l.dyn))
     val separateHiresLoras = HiresPreparation.active(recorded).isDefined && !composable
     val warnings = Seq.newBuilder[String]
     val refinementLoras = refinement.map(_ => recorded.loras ++ refineEx.loras)
+    val keywordActive = recorded.hooks.get("model_keyword").exists(_.isInstanceOf[ujson.Obj])
+    val keywordSelected = recorded.hooks.get("model_keyword").collect { case o: ujson.Obj => o }
+      .flatMap(_.value.get("lora")).collect { case ujson.Str(n) if n.nonEmpty && n != "None" => n }
+    val selectedLora = keywordSelected.map { name =>
+      name -> catalog.findLora(name).getOrElse(throw EngineError(Protocol.ErrorCodes.InvalidParams, s"LoRA not found: $name"))
+    }
+    val keywordPaths = if keywordActive then
+      val entries = catalog.loras
+      val exact = entries.iterator.map(e => e.name -> e.path).toMap
+      val aliases = entries.foldLeft(exact) { (paths, entry) =>
+        val name = entry.name.replace('\\', '/').split('/').last
+        if paths.contains(name) then paths else paths.updated(name, entry.path)
+      }
+      selectedLora.fold(aliases) { (name, entry) => aliases.updated(name.replace('\\', '/').split('/').last, entry.path) }
+    else Map.empty[String, String]
     val loraPaths = (allLoras ++ refinementLoras.getOrElse(Nil)).map(_.name).distinct.flatMap { n =>
       catalog.findLora(n).map(e => n -> e.path).orElse {
         val f = home.resolve(n)
@@ -292,7 +312,7 @@ final class Generator(
           warnings += s"LoRA not found: $n"
           None
       }
-    }.toMap
+    }.toMap ++ keywordPaths
     val cnPaths = recorded.controlnet.filter(u => u.enabled && u.model.nonEmpty && u.model != "None").flatMap { u =>
       catalog.findControlNet(u.model).map(e => u.model -> e.path).orElse {
         warnings += s"ControlNet model not found: ${u.model}"
@@ -308,6 +328,17 @@ final class Generator(
         val config = ujson.Obj.from(refinement.get.value.toSeq)
         if !composable && config("prompt").str.nonEmpty then config("prompt") = refineEx.prompt
         "img2img_hires_fix" -> config
+      case ("model_keyword", o: ujson.Obj) =>
+        val config = ujson.Obj.from(o.value.toSeq)
+        config("_base_prompt") = prompt
+        config("_mapping_dir") = home.configDir.resolve("model-keyword").toString
+        selectedLora.foreach { (name, entry) =>
+          val file = java.nio.file.Path.of(entry.path).getFileName.toString
+          val dot = file.lastIndexOf('.')
+          config("_lora_path") = entry.path
+          config("lora_name") = name.replace('\\', '/') + (if dot >= 0 then file.substring(dot) else "")
+        }
+        "model_keyword" -> config
       case (id @ ("save_intermediate" | "composable_lora"), o: ujson.Obj) =>
         val persistent = ujson.Obj.from(o.value.toSeq)
         persistent("output_dir") = home.outputs(s).toAbsolutePath.toString
@@ -324,7 +355,7 @@ final class Generator(
       params = sent,
       outputDir = home.tmpDir(s).toAbsolutePath.toString,
       loraPaths = loraPaths,
-      manualLoras = Option.when(composable)(recorded.loras.filter(l => loraPaths.contains(l.name))),
+      manualLoras = Option.when(composable || keywordActive)(recorded.loras.filter(l => loraPaths.contains(l.name))),
       hiresLoras = Option.when(separateHiresLoras)((recorded.loras ++ hrEx.loras).filter(l => loraPaths.contains(l.name))),
       img2imgHiresLoras = refinementLoras.map(_.filter(l => loraPaths.contains(l.name))),
       embeddingPaths = catalog.embeddings.map(_.path),
@@ -496,7 +527,20 @@ final class Generator(
   override def generateTransient(p: GenerationParams): Seq[OutputImage] = generateTransientWith(p, GenerationListener.none)
 
   private def describe(prep: PreparedGeneration, result: GenerationResult, img: GeneratedImage, loaded: Option[LoadedModel]): (GenerationParams, String) =
-    val params = prep.recorded.copy(seed = img.seed, subseed = if img.subseed >= 0 then img.subseed else prep.recorded.subseed)
+    val originalHires = prep.recorded.hires
+    val preserveHiresFallback = img.effectivePrompt.isDefined && originalHires.enabled && originalHires.prompt.isEmpty &&
+      !HiresPreparation.active(prep.recorded).exists(_.value.get("prompts_resolved").contains(ujson.Bool(true)))
+    val refinementExtra = for
+      prompt <- img.modelKeywordRefinementPrompt
+      config <- Img2ImgHiresMetadata.active(prep.recorded.hooks)
+    yield
+      val copy = ujson.Obj.from(config.value.toSeq)
+      copy("prompt") = prompt
+      Img2ImgHiresMetadata.key -> Img2ImgHiresMetadata.encode(copy)
+    val params = prep.recorded.copy(seed = img.seed, subseed = if img.subseed >= 0 then img.subseed else prep.recorded.subseed,
+      prompt = img.effectivePrompt.getOrElse(prep.recorded.prompt),
+      hires = if preserveHiresFallback then originalHires.copy(prompt = prep.recorded.prompt) else originalHires,
+      extra = prep.recorded.extra ++ refinementExtra)
     val hiresFields = img.hiresSeed.toSeq.map { seed =>
       val info = ujson.Obj("Seed" -> sdfx.core.infotext.HiresSeedMetadata.encode(seed))
       img.hiresSubseed.foreach(s => info("Subseed") = sdfx.core.infotext.HiresSeedMetadata.encode(s))
@@ -526,7 +570,8 @@ final class Generator(
       loraHashes = result.loraHashes.toSeq.sortBy(_._1),
       scheduler = result.scheduler,
       extra = scala.collection.immutable.ListMap.from(result.systemInfo.toSeq.map(v => "System Info" -> v.render()) ++
-        Option.when(result.vaeRecovery.nonEmpty)("VAE recovery" -> ujson.Arr.from(result.vaeRecovery).render()) ++ resourceFields ++ hiresFields ++ templateFields) ++ HardwareInfo.fields(img.hardwareInfo)
+        Option.when(result.vaeRecovery.nonEmpty)("VAE recovery" -> ujson.Arr.from(result.vaeRecovery).render()) ++
+        img.modelKeywordSourcePrompt.map("Model keyword source prompt" -> _) ++ resourceFields ++ hiresFields ++ templateFields) ++ HardwareInfo.fields(img.hardwareInfo)
     )
     (params, Infotext.write(params, facts))
 

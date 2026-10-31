@@ -27,7 +27,7 @@ class FrozenJobEvidenceSuite extends FunSuite:
       width = 640, height = 768, batchSize = 2, nIter = 3, clipSkip = 2, eta = Some(0.2),
       hires = HiresParams(true, 1.5, "up", 8, 960, 1152, 0.4, Some("hs"), Some("hc"), "hp", "hn", Some(4.5)),
       img2img = Some(Img2ImgParams("C:\\image.png", Some("mask"), 0.6, 2, 7, 3, true, 40, true)),
-      loras = Seq(LoraRef("one", 0.8, Some(0.7), Some("lbw"), Some(0.1), Some(0.9)), LoraRef("two")),
+      loras = Seq(LoraRef("one", 0.8, Some(0.7), Some("lbw"), Some(0.1), Some(0.9), Some(4)), LoraRef("two")),
       controlnet = Seq(ControlNetUnit(true, "model", Some("image"), "prep", 0.6, 0.2, 0.8, ListMap("z" -> 2.0, "a" -> 1.0)), ControlNetUnit(model = "second")),
       hooks = ListMap("freeu" -> ujson.Obj("enabled" -> false, "nested" -> ujson.Arr(ujson.Obj("x" -> 1), ujson.Null)), "other" -> ujson.Str("raw")),
       styles = Seq("first", "second"), checkpoint = Some("model"), vae = Some("vae"), extra = ListMap("z" -> "last", "a" -> "first")),
@@ -44,7 +44,7 @@ class FrozenJobEvidenceSuite extends FunSuite:
     assertEquals(fields(p), Set("prompt", "negativePrompt", "seed", "subseed", "subseedStrength", "samplerName", "scheduler", "steps", "cfgScale", "width", "height", "batchSize", "nIter", "clipSkip", "eta", "hires", "img2img", "loras", "controlnet", "hooks", "styles", "checkpoint", "vae", "extra"))
     assertEquals(fields(p.hires), Set("enabled", "scale", "upscaler", "secondPassSteps", "resizeX", "resizeY", "denoisingStrength", "samplerName", "scheduler", "prompt", "negativePrompt", "cfgScale"))
     assertEquals(fields(p.img2img.get), Set("initImage", "mask", "denoisingStrength", "resizeMode", "maskBlur", "inpaintingFill", "inpaintFullRes", "inpaintFullResPadding", "inpaintingMaskInvert"))
-    assertEquals(fields(p.loras.head), Set("name", "weight", "unet", "lbw", "start", "stop"))
+    assertEquals(fields(p.loras.head), Set("name", "weight", "unet", "lbw", "start", "stop", "dyn"))
     assertEquals(fields(p.controlnet.head), Set("enabled", "model", "image", "preprocessor", "weight", "guidanceStart", "guidanceEnd", "preprocessorArgs"))
     assertEquals(fields(j.limits), Set("maxSide", "maxImagesPerGeneration", "maxGenerations", "maxPixelsPerGeneration"))
     assertEquals(fields(j.submittedContext.get), Set("origin", "sourceMode", "configurationJson", "uiVariationEnabled"))
@@ -110,6 +110,7 @@ class FrozenJobEvidenceSuite extends FunSuite:
       "lora name" -> p.copy(loras = Seq(l.copy(name = "other"), p.loras(1))), "lora weight" -> p.copy(loras = Seq(l.copy(weight = 0.9), p.loras(1))),
       "lora unet" -> p.copy(loras = Seq(l.copy(unet = None), p.loras(1))), "lora lbw" -> p.copy(loras = Seq(l.copy(lbw = None), p.loras(1))),
       "lora start" -> p.copy(loras = Seq(l.copy(start = None), p.loras(1))), "lora stop" -> p.copy(loras = Seq(l.copy(stop = None), p.loras(1))),
+      "lora dyn" -> p.copy(loras = Seq(l.copy(dyn = Some(8)), p.loras(1))),
       "lora order" -> p.copy(loras = p.loras.reverse), "control enabled" -> p.copy(controlnet = Seq(c.copy(enabled = false), p.controlnet(1))),
       "control model" -> p.copy(controlnet = Seq(c.copy(model = "other"), p.controlnet(1))), "control image" -> p.copy(controlnet = Seq(c.copy(image = None), p.controlnet(1))),
       "control preprocessor" -> p.copy(controlnet = Seq(c.copy(preprocessor = "other"), p.controlnet(1))), "control weight" -> p.copy(controlnet = Seq(c.copy(weight = 0.7), p.controlnet(1))),

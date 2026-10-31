@@ -5,6 +5,36 @@ import pytest
 from sdfx.embedding_merge_backend import ModelBackend, run_encoded
 
 
+def test_temporary_merge_names_are_restored_only_in_composable_metadata_and_schedules():
+    from sdfx.embedding_merge_backend import restore_composable_provenance
+    class Scheduled(dict): pass
+    first = {'_clora_branch': '__nui_em_1__ <lora:x:1>', '_clora_prompt': '__nui_em_1__',
+             '_clora_negative': '__nui_em_2__', 'payload': '__nui_em_1__'}
+    second = dict(first, _clora_branch=['__nui_em_1__', 'plain'])
+    branch = Scheduled(first); branch.schedule = [(1, first), (2, second)]
+    plan = SimpleNamespace(branches=[branch])
+    result = {'_neutral': plan, '_clora_prompt': '__nui_em_1__', 'payload': '__nui_em_1__'}
+    restore_composable_provenance(result, {'__nui_em_1__': "<'cat'>", '__nui_em_2__': "<'bad'>"})
+    assert first['_photo_raw_branch'] == "<'cat'> <lora:x:1>"
+    assert second['_photo_raw_branch'] == ["<'cat'>", 'plain']
+    assert branch['_photo_raw_negative'] == "<'bad'>"
+    assert first['_clora_branch'] == '__nui_em_1__ <lora:x:1>'
+    assert result['payload'] == first['payload'] == '__nui_em_1__'
+
+
+def test_run_encoded_restores_raw_branch_metadata_after_temporary_rows_are_removed():
+    engine = Engine()
+    def encode(texts):
+        branch = {'_clora_branch': texts[0], '_clora_prompt': texts[0], '_clora_negative': texts[1]}
+        return {'_neutral': SimpleNamespace(branches=[branch])}
+    result = run_encoded(engine, ("<'a'> person img", "<'a'*0.5>"), encode, tensor_factory=lambda a: a)
+    branch = result['_neutral'].branches[0]
+    assert branch['_photo_raw_branch'] == "<'a'> person img"
+    assert branch['_photo_raw_negative'] == "<'a'*0.5>"
+    assert '__nui_em_' in branch['_clora_branch']
+    assert engine.pipe.tokenizer.get_vocab() == {'a': 0}
+
+
 class Tokenizer:
     byte_decoder = {chr(i): i for i in range(256)}
     def __init__(self):

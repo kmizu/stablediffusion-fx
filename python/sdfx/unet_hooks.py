@@ -203,6 +203,8 @@ class MultiDiffusionWrapper:
         self.unet = unet
         self.cfg = cfg
         self.orig = None
+        self._missing = object()
+        self._previous = self._missing
 
     def _call(self, sample, timestep, encoder_hidden_states, *args, **kwargs):
         import torch
@@ -239,17 +241,21 @@ class MultiDiffusionWrapper:
         return UNet2DConditionOutput(sample=res)
 
     def install(self):
+        if self.orig is not None:
+            raise RuntimeError('MultiDiffusion wrapper already installed')
+        self._previous = self.unet.__dict__.get('forward', self._missing)
         self.orig = self.unet.forward
         self.unet.forward = self._call
         return self
 
     def remove(self):
         if self.orig is not None:
-            try:
+            if self._previous is self._missing:
                 del self.unet.forward
-            except AttributeError:
-                self.unet.forward = self.orig
+            else:
+                self.unet.forward = self._previous
             self.orig = None
+            self._previous = self._missing
 
 
 def _slice_feat(r, latent_h: int, y0: int, y1: int, x0: int, x1: int):

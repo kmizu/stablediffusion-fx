@@ -16,14 +16,16 @@ class Plan:
     tree: neutral_prompt.Node
     branches: list[dict]
     phi: float = 0
+    image_trees: list[neutral_prompt.Node] | None = None
 
 
-def validate(hooks, *, controlnet=False, pag=False):
+def validate(hooks, *, controlnet=False, pag=False, allow_photomaker=False):
     """Temporary explicit compatibility boundary while branch-dependent integrations are unfinished."""
     from .hooks import hook_config
     blocked = ("photomaker", "sag",
                "apg", "mahiro", "latent_modifier", "dynamic_thresholding", "detail_daemon")
-    conflicts = [name for name in blocked if hook_config(hooks, name, {}) is not None]
+    conflicts = [name for name in blocked if not (name == 'photomaker' and allow_photomaker)
+                 and hook_config(hooks, name, {}) is not None]
     if conflicts:
         raise EngineError(UNSUPPORTED, "Neutral Prompt integration pending for: " + ", ".join(conflicts))
 
@@ -123,7 +125,7 @@ class RuntimeHook:
     lifecycle. Attention/module hooks still run.
     """
     def __init__(self, unet, scheduler, plan: Plan, cfg: float, phi: float, *, guided=None, pag=False, controlnet=None, image_embeds=None,
-                 check_interrupt=lambda: None, branch_hooks=(), sampling=None):
+                 check_interrupt=lambda: None, branch_hooks=(), sampling=None, branch_transform=None):
         self.unet, self.scheduler, self.plan = unet, scheduler, plan
         self.cfg, self.phi = cfg, phi
         self.guided = cfg > 1 if guided is None else guided
@@ -133,6 +135,8 @@ class RuntimeHook:
         self.branch_hooks = sorted(branch_hooks, key=lambda h: h.priority)
         self.sampling = sampling
         self.step = 1
+        self.raw_step = 1
+        self.branch_transform = branch_transform
         self.check_interrupt = check_interrupt
         self._missing = object()
         self._installed = False
@@ -140,12 +144,16 @@ class RuntimeHook:
     def callback(self, pipe, i, t, tensors):
         order = max(1, int(getattr(self.scheduler, "order", 1)))
         self.step = (int(i) + 1) // order + 1
+        self.raw_step = int(i) + 2
         return tensors
 
     def forward(self, sample, timestep, *args, **kwargs):
         import torch
         self.check_interrupt()
         branches = [at(branch, self.step) for branch in self.plan.branches]
+        if self.branch_transform is not None:
+            branches = [self.branch_transform(index, branch, self.raw_step)
+                        for index, branch in enumerate(branches)]
         if self.sampling is not None:
             branches = self.sampling.branches(branches, timestep)
         batch = branches[0]["prompt_embeds"].shape[0]
@@ -215,10 +223,17 @@ class RuntimeHook:
 
         def compose_predictions(values, cfg, phi):
             differences = [v.float() - unconditional.float() for v in values]
+            def combine(inputs, zero_noise_limit=False):
+                if self.plan.image_trees is None:
+                    return neutral_prompt.combine_deltas(self.plan.tree, inputs, zero_noise_limit=zero_noise_limit)
+                from .model_keyword import compose_per_item
+                return compose_per_item(self.plan.image_trees, inputs, lambda tree: len(neutral_prompt.leaves(tree)),
+                    lambda tree, branches: neutral_prompt.combine_deltas(tree, branches, zero_noise_limit=zero_noise_limit),
+                    lambda parts: torch.cat(parts, dim=0))
             if ab[1] == 0:
-                delta = neutral_prompt.combine_deltas(self.plan.tree, differences, zero_noise_limit=True)
+                delta = combine(differences, zero_noise_limit=True)
                 return unconditional.float() + delta, zero_noise_guidance(z, unconditional, delta, cfg, phi)
-            delta = neutral_prompt.combine_deltas(self.plan.tree, [ab[1] * v for v in differences])
+            delta = combine([ab[1] * v for v in differences])
             # Keep the common x0 baseline out of subtraction when rescale is off; late low-noise steps otherwise
             # amplify float32 cancellation when converting composed x0 back into model predictions.
             conditional = unconditional.float() + delta / ab[1]

@@ -131,6 +131,37 @@ def test_native_engine_encoding_retains_branch_scopes_and_each_negative_encoder(
     job.remove()
 
 
+def test_composable_signed_negative_preserves_signs_padding_and_branch_scopes(tmp_path):
+    from dataclasses import replace
+    from sdfx.engine import Engine
+    from sdfx import negpip
+    pipe, job = fixture_job(tmp_path)
+    engine = Engine.__new__(Engine); engine._composable_job = job; engine.dtype = torch.float32
+    gp = replace(job.gp, hooks={**job.gp.hooks, 'negpip': {}})
+    def encode(pos, neg, _gp, bs):
+        value = pipe.text_encoder(torch.ones(bs, 2)).unsqueeze(1)
+        if neg:
+            marked = negpip._mark(value)
+            signed = negpip._mark(value, -1)
+            return {'prompt_embeds': marked, 'negative_prompt_embeds': torch.cat([marked, signed], dim=1), '_negpip': True}
+        return {'prompt_embeds': value, 'negative_prompt_embeds': value}
+    engine._encode = encode
+    try:
+        result = engine._encode_scheduled(gp.prompt, '(bad:-1)', gp, 1, 10)
+        branches = result['_neutral'].branches
+        assert len(branches) == 2
+        for branch in branches:
+            assert branch['_negpip'] is True
+            assert branch['prompt_embeds'].shape == branch['negative_prompt_embeds'].shape == (1, 2, 3)
+            assert branch['prompt_embeds'][0, :, -1].tolist() == [1., 0.]
+            assert branch['negative_prompt_embeds'][0, :, -1].tolist() == [1., -1.]
+        assert branches[0]['prompt_embeds'][0, 0, :2].tolist() == [2., 2.]
+        assert branches[1]['prompt_embeds'][0, 0, :2].tolist() == [1., 1.]
+    finally:
+        job.remove()
+    assert not pipe.text_encoder[0]._forward_hooks and not pipe.unet[0]._forward_hooks
+
+
 def test_prediction_composition_uses_real_adapter_scope_for_each_branch(tmp_path):
     from sdfx.neutral_runtime import RuntimeHook, Plan
     from sdfx.neutral_prompt import parse
@@ -151,6 +182,27 @@ def test_prediction_composition_uses_real_adapter_scope_for_each_branch(tmp_path
     finally:
         hook.remove()
         job.remove()
+
+
+def test_img2imgalt_inversion_routes_real_adapter_per_branch_and_cleans_up(tmp_path):
+    from dataclasses import replace
+    from sdfx.clora.runtime import Job, inversion_branch_hook
+    pipe, original = fixture_job(tmp_path)
+    gp = replace(original.gp, hooks={**original.gp.hooks, 'img2imgalt': {}})
+    req, ctx = original.req, original.ctx
+    original.remove()
+    job = Job(pipe, gp, req, ctx)
+    plan = SimpleNamespace(branches=[{'_clora_branch': '<lora:A:1> red'}])
+    hook = inversion_branch_hook(job, plan, object(), gp, 10)
+    try:
+        hook.set_branch(0, plan.branches[0], 1)
+        hook.before_branch(pipe.unet, None, None, {}, [False, True])
+        torch.testing.assert_close(pipe.unet(torch.ones(2, 2)), torch.tensor([[1., 1.], [2., 2.]]))
+        hook.after_branch()
+        torch.testing.assert_close(pipe.unet(torch.ones(1, 2)), torch.ones(1, 2))
+    finally:
+        hook.after_branch(); job.remove()
+    assert not pipe.unet[0]._forward_hooks
 
 
 def test_plot_contains_actual_zero_and_active_weights_and_visible_image(tmp_path):

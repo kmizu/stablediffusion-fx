@@ -81,7 +81,7 @@ object FrozenJobEvidence:
 
   private def lora(l: LoraRef, path: String): Node = obj(
     "name" -> string(l.name), "weight" -> double(l.weight, s"$path.weight"), "unet" -> option(l.unet)(v => double(v, s"$path.unet")),
-    "lbw" -> option(l.lbw)(string), "start" -> option(l.start)(v => double(v, s"$path.start")), "stop" -> option(l.stop)(v => double(v, s"$path.stop")))
+    "lbw" -> option(l.lbw)(string), "start" -> option(l.start)(v => double(v, s"$path.start")), "stop" -> option(l.stop)(v => double(v, s"$path.stop")), "dyn" -> option(l.dyn)(int))
 
   private def control(c: ControlNetUnit, path: String): Node = obj(
     "enabled" -> bool(c.enabled), "model" -> string(c.model), "image" -> option(c.image)(string),

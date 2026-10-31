@@ -133,6 +133,10 @@ def generate(rid, kind, req):
         with open(path, "wb") as f:
             f.write(png_bytes(w, h, ((seed + i) % 256, 80, 160)))
         image_result = {"path": path, "seed": seed + i, "subseed": sub + i if sub >= 0 else -1, "width": w, "height": h}
+        if extra.get("effective_prompt_fixture") == "true":
+            image_result["effective_prompt"] = f"effective {i}"
+        if extra.get("keyword_refinement_fixture") == "true":
+            image_result["model_keyword_refinement_prompt"] = "preview red cat"
         if extra.get("hires_metadata") == "true":
             image_result.update(hires_seed=100 + i, hires_subseed=200 + i, hires_subseed_strength=0.4,
                 hires_repeat=1, hires_seed_resize_from_w=512, hires_seed_resize_from_h=768)

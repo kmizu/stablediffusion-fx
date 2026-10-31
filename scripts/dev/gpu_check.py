@@ -70,6 +70,10 @@ threading.Thread(target=reader, daemon=True).start()
 def call(typ, params, timeout=5400):
     n[0] += 1
     rid = f"r{n[0]}"
+    trace = os.path.join(OUT, 'request-response.jsonl') if CASE == 'model_keyword_photomaker_composable' else None
+    if trace:
+        with open(trace, 'a', encoding='utf-8') as stream:
+            stream.write(json.dumps({'id': rid, 'direction': 'request', 'type': typ, 'params': params}, ensure_ascii=False) + '\n')
     proc.stdin.write(json.dumps({"id": rid, "type": typ, "params": params}) + "\n")
     proc.stdin.flush()
     t0 = time.time()
@@ -78,6 +82,9 @@ def call(typ, params, timeout=5400):
             for m in lines:
                 if m.get("id") == rid and m["type"] in ("result", "error"):
                     lines.remove(m)
+                    if trace:
+                        with open(trace, 'a', encoding='utf-8') as stream:
+                            stream.write(json.dumps({'direction': 'response', **m}, ensure_ascii=False) + '\n')
                     return m
             cv.wait(1)
             if time.time() - t0 > timeout:
@@ -125,7 +132,8 @@ with cv:
 
 
 def load(path):
-    r = call("load_model", {"path": path, "dtype": "fp16", "vram_mode": "gpu"})
+    mode = os.environ.get('SDFX_PHOTOMAKER_VRAM_MODE', 'gpu') if CASE == 'model_keyword_photomaker_composable' else 'gpu'
+    r = call("load_model", {"path": path, "dtype": "fp16", "vram_mode": mode})
     assert r["type"] == "result", r
 
 
@@ -1379,6 +1387,214 @@ elif CASE == "fooocus_inpaint":
     r = call("img2img", req(gp(prompt="1girl, upper body, red scarf", width=832, height=1216, steps=20,
                                img2img=i2i(src, mask_png((832, 1216)), 1.0),
                                hooks={"fooocus_inpaint": {"model": patch, "head": head}})))
+elif CASE in ('model_keyword_composable_negpip', 'model_keyword_composable_img2imgalt'):
+    checkpoint = os.environ.get('SDFX_KEYWORD_CHECKPOINT', SD15)
+    adapter = os.environ.get('SDFX_KEYWORD_LORA', r'D:\stable-diffusion-webui-reForge\models\Lora\20_yui.safetensors')
+    size = int(os.environ.get('SDFX_KEYWORD_SIZE', '512'))
+    load(checkpoint)
+    mapping = os.path.join(OUT, 'keyword-composable-mappings')
+    saved = call('model_keyword', {'action': 'save', 'kind': 'checkpoint', 'model_path': checkpoint,
+                                  'mapping_dir': mapping, 'keywords': 'red|blue'})
+    assert saved.get('type') == 'result', saved
+    hooks = {'model_keyword': {'_mapping_dir': mapping, 'model_choice': 'iterate'}, 'composable_lora': {}}
+    params = gp(prompt='<lora:base:0.8> a ceramic teapot', width=size, height=size, steps=6,
+                seed=173, batch_size=2, n_iter=1, loras=[{'name': 'base', 'weight': .8}], hooks=hooks)
+    request = req(params); request['lora_paths'] = {'base': adapter}; request['manual_loras'] = []
+    operation = 'txt2img'
+    if CASE.endswith('negpip'):
+        params['negative_prompt'] = '(blurry:-1)'
+        hooks['negpip'] = {}
+    else:
+        baseline = call('txt2img', req(gp(prompt='a ceramic teapot', width=size, height=size, steps=6)))
+        src = keep(baseline, 'keyword_composable_alt_reference')
+        assert src and os.path.isfile(src), baseline
+        operation = 'img2img'
+        params['img2img'] = i2i(src)
+        hooks['img2imgalt'] = {'override_prompt': '<lora:inverse:0.6> a ceramic teapot', 'inversion_steps': 4}
+        params['loras'].append({'name': 'inverse', 'weight': .6})
+        request['lora_paths']['inverse'] = adapter
+    r = call(operation, request)
+    assert r.get('type') == 'result', r
+    images = r['result'].get('images', [])
+    assert len(images) == 2 and all(os.path.isfile(item['path']) for item in images), r
+    assert 'red' in images[0].get('effective_prompt', '') and 'blue' in images[1].get('effective_prompt', ''), r
+    print('PASS composable keyword integration:', [item['path'] for item in images], flush=True)
+elif CASE == "model_keyword_photomaker":
+    load(SDXL)
+    import hashlib
+    from huggingface_hub import hf_hub_download
+    pm = hf_hub_download('TencentARC/PhotoMaker', 'photomaker-v1.bin',
+                         revision='f68f8e6309bf213d28d68230abff0ccc92de9f30',
+                         local_dir=os.path.join(MODELS, 'TencentARC__PhotoMaker'))
+    model_digest = hashlib.sha256()
+    with open(pm, 'rb') as model_file:
+        for chunk in iter(lambda: model_file.read(1024 * 1024), b''):
+            model_digest.update(chunk)
+    assert model_digest.hexdigest() == '529d503fa378bfb3a74e3384ab2064d7269d59f0638324555d22067c31e275bc', 'PhotoMaker weight hash mismatch'
+    face = call("txt2img", req(gp(prompt="portrait photo of a woman, neutral background", width=768, height=768, steps=8)))
+    src = keep(face, "keyword_photomaker_reference")
+    assert src and os.path.isfile(src), face
+    mapping = os.path.join(OUT, 'keyword-photomaker-mappings')
+    saved = call('model_keyword', {'action': 'save', 'kind': 'checkpoint', 'model_path': SDXL,
+                                  'mapping_dir': mapping, 'keywords': 'red|blue'})
+    assert saved.get('type') == 'result', saved
+    r = call('txt2img', req(gp(prompt='a woman img, portrait, upper body', width=768, height=768,
+                               steps=8, batch_size=2, n_iter=1, seed=173,
+                               hooks={'model_keyword': {'_mapping_dir': mapping, 'model_choice': 'iterate'},
+                                      'photomaker': {'model': pm, 'images': [src], 'trigger_word': 'img',
+                                                     'start_merge_step': 3}})))
+    assert r.get('type') == 'result', r
+    images = r['result'].get('images', [])
+    assert len(images) == 2 and [item.get('effective_prompt') for item in images] == [
+        'red a woman img, portrait, upper body', 'blue a woman img, portrait, upper body'], r
+    print('PASS PhotoMaker heterogeneous keyword batch:', [item['path'] for item in images], flush=True)
+elif CASE == "model_keyword_photomaker_composable":
+    import hashlib
+    pm = os.environ['SDFX_PHOTOMAKER_MODEL']
+    adapter = os.environ['SDFX_KEYWORD_LORA']
+    cfg = float(os.environ.get('SDFX_PHOTOMAKER_CFG', '0.5'))
+    photo_size = int(os.environ.get('SDFX_PHOTOMAKER_SIZE', '768'))
+    photo_steps = int(os.environ.get('SDFX_PHOTOMAKER_STEPS', '8'))
+    signed = os.environ.get('SDFX_PHOTOMAKER_NEGPIP') == '1'
+    tiled = os.environ.get('SDFX_PHOTOMAKER_MULTIDIFFUSION') == '1'
+    photo_tile = int(os.environ.get('SDFX_PHOTOMAKER_TILE', '256'))
+    photo_overlap = int(os.environ.get('SDFX_PHOTOMAKER_TILE_OVERLAP', '64'))
+    digest = hashlib.sha256()
+    with open(pm, 'rb') as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+            digest.update(chunk)
+    assert digest.hexdigest() == '529d503fa378bfb3a74e3384ab2064d7269d59f0638324555d22067c31e275bc'
+    load(SDXL)
+    face = call('txt2img', req(gp(prompt='portrait photo of a woman, neutral background', width=photo_size, height=photo_size, steps=photo_steps, subseed=31337)))
+    src = keep(face, 'keyword_composable_photomaker_reference')
+    assert src and os.path.isfile(src), face
+    mapping = os.path.join(OUT, 'keyword-composable-photomaker-mappings')
+    saved = call('model_keyword', {'action': 'save', 'kind': 'checkpoint', 'model_path': SDXL,
+                                  'mapping_dir': mapping, 'keywords': 'red|blue'})
+    assert saved.get('type') == 'result', saved
+    params = gp(prompt='[portrait:photo:0.5] of a woman img <lora:base:0.8> AND a woman img, upper body' + (', (black hair:-1)' if signed else ''),
+                negative_prompt='lowres', width=photo_size, height=photo_size, steps=photo_steps, cfg_scale=cfg,
+                seed=173, subseed=31337, batch_size=2, n_iter=1, loras=[{'name': 'base', 'weight': .8}],
+                hooks={'model_keyword': {'_mapping_dir': mapping, 'model_choice': 'iterate'},
+                       'composable_lora': {}, **({'negpip': {}} if signed else {}),
+                       **({'multidiffusion': {'tile_width': photo_tile, 'tile_height': photo_tile, 'tile_overlap': photo_overlap}} if tiled else {}),
+                       'photomaker': {'model': pm, 'images': [src],
+                       'trigger_word': 'img', 'start_merge_step': min(3, photo_steps - 1)}})
+    request = req(params); request['lora_paths'] = {'base': adapter}; request['manual_loras'] = []
+    if os.environ.get('SDFX_PHOTOMAKER_CONTROLS') == '1':
+        import copy
+        controls = {}
+        for label, removed in (('photomaker_only', 'multidiffusion'), ('multidiffusion_only', 'photomaker')):
+            variant = copy.deepcopy(request)
+            variant['params']['hooks'].pop(removed, None)
+            result = call('txt2img', variant)
+            assert result.get('type') == 'result', (label, result)
+            items = result['result'].get('images', [])
+            assert len(items) == 2 and all(os.path.isfile(item['path']) for item in items), result
+            controls[label] = [item['path'] for item in items]
+        single = req(gp(prompt='portrait photo of a woman, neutral background', width=photo_size,
+                        height=photo_size, steps=photo_steps, subseed=31337,
+                        hooks={'multidiffusion': {'tile_width': photo_tile, 'tile_height': photo_tile,
+                                                  'tile_overlap': photo_overlap}}))
+        single_result = call('txt2img', single)
+        assert single_result.get('type') == 'result', single_result
+        single_items = single_result['result'].get('images', [])
+        assert len(single_items) == 1 and os.path.isfile(single_items[0]['path']), single_result
+        controls['ordinary_plain'] = [src]
+        controls['multidiffusion_plain'] = [single_items[0]['path']]
+        with open(os.path.join(OUT, 'controls.json'), 'x', encoding='utf8') as stream:
+            json.dump({'controls': controls, 'note': 'same prompt and seeds; img is a literal token when PhotoMaker is off'}, stream, indent=2)
+        print('PASS visual controls', controls, flush=True)
+        call('shutdown', {}, timeout=60)
+        proc.wait(120)
+        sys.exit(0)
+    r = call('txt2img', request)
+    assert r.get('type') == 'result', r
+    images = r['result'].get('images', [])
+    assert len(images) == 2 and all(os.path.isfile(item['path']) for item in images), r
+    assert 'red' in images[0].get('effective_prompt', '') and 'blue' in images[1].get('effective_prompt', ''), r
+    print('PASS PhotoMaker Composable keyword batch:', cfg, [item['path'] for item in images], flush=True)
+    from PIL import Image, ImageChops, ImageStat
+    checks = []
+    def compare(label, left_items, right_items):
+        assert len(left_items) == len(right_items)
+        for index, (left_item, right_item) in enumerate(zip(left_items, right_items)):
+            with Image.open(left_item['path']) as left, Image.open(right_item['path']) as right:
+                difference = ImageChops.difference(left.convert('RGB'), right.convert('RGB'))
+                checks.append({'name': label, 'index': index, 'left': left_item['path'], 'right': right_item['path'],
+                               'left_seed': left_item.get('seed'), 'right_seed': right_item.get('seed'),
+                               'left_prompt': left_item.get('effective_prompt'), 'right_prompt': right_item.get('effective_prompt'),
+                               'exact': difference.getbbox() is None, 'mean_absolute_rgb': sum(ImageStat.Stat(difference).mean) / 3})
+    if signed and os.environ.get('SDFX_PHOTOMAKER_NEGPIP_COMPARE') == '1':
+        import copy
+        unsigned = copy.deepcopy(request)
+        unsigned['params']['prompt'] = unsigned['params']['prompt'].replace(', (black hair:-1)', '')
+        unsigned['params']['hooks'].pop('negpip')
+        baseline = call('txt2img', unsigned)
+        assert baseline.get('type') == 'result', baseline
+        compare('signed-effect', images, baseline['result']['images'])
+        assert any(not item['exact'] for item in checks), 'signed term had no observable effect'
+        with open(os.path.join(OUT, 'signed-effect.json'), 'x', encoding='utf8') as stream:
+            json.dump(checks, stream, ensure_ascii=False, indent=2)
+        checks.clear()
+    if os.environ.get('SDFX_PHOTOMAKER_MERGE_EQ') == '1':
+        import copy
+        merged = copy.deepcopy(request)
+        merged['params']['prompt'] = params['prompt'].replace('woman', "<'woman'>")
+        merged['params']['negative_prompt'] = "<'lowres'>"
+        result = call('txt2img', merged)
+        assert result.get('type') == 'result', result
+        merged_images = result['result'].get('images', [])
+        assert len(merged_images) == len(images), result
+        for expression in merged_images:
+            assert os.path.isfile(expression['path']), expression
+            assert "<'woman'>" in expression.get('effective_prompt', ''), expression
+        compare('plain-vs-merge', images, merged_images)
+        if os.environ.get('SDFX_PHOTOMAKER_DIAGNOSTIC') == '1':
+            plain_repeat = call('txt2img', copy.deepcopy(request))
+            assert plain_repeat.get('type') == 'result', plain_repeat
+            merge_repeat = call('txt2img', copy.deepcopy(merged))
+            assert merge_repeat.get('type') == 'result', merge_repeat
+            compare('plain-repeat', images, plain_repeat['result']['images'])
+            compare('merge-repeat', merged_images, merge_repeat['result']['images'])
+    if os.environ.get('SDFX_PHOTOMAKER_INTERRUPT') == '1':
+        import copy
+        interrupted = copy.deepcopy(merged)
+        interrupted['params']['steps'] = 40
+        completed = []
+        before = len(lines)
+        worker = threading.Thread(target=lambda: completed.append(call('txt2img', interrupted)))
+        worker.start()
+        deadline = time.monotonic() + 300
+        with cv:
+            while not any(e.get('event') == 'progress' and e.get('step', 0) >= 1 for e in lines[before:]):
+                assert worker.is_alive() and time.monotonic() < deadline, 'PhotoMaker interruption never reached sampling'
+                cv.wait(.1)
+        decision = call('interrupt', {}, timeout=10)
+        assert decision['type'] == 'result', decision
+        worker.join(180)
+        assert not worker.is_alive() and completed and completed[0].get('code') == 'interrupted', completed
+        after_cancel = call('txt2img', copy.deepcopy(merged))
+        assert after_cancel.get('type') == 'result', after_cancel
+        compare('merge-after-interrupt', merged_images, after_cancel['result']['images'])
+    recovery = call('txt2img', req(gp(prompt='portrait photo of a woman, neutral background', width=photo_size, height=photo_size, steps=photo_steps, subseed=31337)))
+    assert recovery.get('type') == 'result', recovery
+    recovered_path = recovery['result']['images'][0]['path']
+    compare('disabled-recovery', [{'path': src}], [{'path': recovered_path}])
+    with open(os.path.join(OUT, 'comparison.json'), 'x', encoding='utf-8') as stream:
+        json.dump({'cfg': cfg, 'checks': checks}, stream, ensure_ascii=False, indent=2)
+    assert all(check['exact'] for check in checks), checks
+    if tiled:
+        trace_path = os.environ.get('SDFX_PHOTO_TRACE')
+        assert trace_path, 'tiled case requires an explicit trace path'
+        with open(trace_path, encoding='utf8') as stream:
+            tile_counts = [entry['data']['tile_count'] for entry in map(json.loads, stream)
+                           if entry['event'] == 'multi_tiles']
+        assert tile_counts and all(count > 1 for count in tile_counts), tile_counts
+        print('PASS actual MultiDiffusion tile counts:', len(tile_counts), min(tile_counts), max(tile_counts), flush=True)
+    if os.environ.get('SDFX_PHOTOMAKER_MERGE_EQ') == '1':
+        print('PASS PhotoMaker Composable Embedding Merge exact RGB:', cfg, [item['path'] for item in merged_images], flush=True)
+    print('PASS PhotoMaker Composable disabled recovery:', recovered_path, flush=True)
 elif CASE == "photomaker":
     load(SDXL)
     pm = hf("TencentARC/PhotoMaker", "photomaker-v1.bin")
@@ -1479,7 +1695,7 @@ else:
 ok = r is not None and r.get("type") == "result"
 detail = (r.get("result", {}).get("caption") or r.get("result", {}).get("warnings") or r.get("result", {}).get("result") or "") \
     if ok else (r or {}).get("message")
-saved = keep(r, CASE) if ok and CASE not in ("wd14", "blip") and not CASE.startswith(("sched", "ext_", "ad_", "image_")) else None
+saved = keep(r, CASE) if ok and CASE not in ("wd14", "blip", "model_keyword_photomaker", "model_keyword_photomaker_composable", "model_keyword_composable_negpip", "model_keyword_composable_img2imgalt") and not CASE.startswith(("sched", "ext_", "ad_", "image_")) else None
 print(f"{CASE:18s} {'OK ' if ok else 'ERR'} {time.time() - t0:7.1f}s {str(detail)[:400]} {saved or ''}", flush=True)
 with open(os.path.join(OUT, "results.tsv"), "a", encoding="utf-8") as fh:
     row = [time.strftime("%H:%M:%S"), CASE, "OK" if ok else "ERR", f"{time.time() - t0:.1f}s",

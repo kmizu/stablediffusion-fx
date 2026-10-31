@@ -35,6 +35,8 @@ class Patch:
             self.kind, rank = 'ia3', 0
         else:
             raise ValueError(f'Unsupported Composable LoRA tensor family: {sorted(tensors)}')
+        if 'dora_scale' in tensors and self.kind != 'lora':
+            raise ValueError('Composable DoRA currently requires conventional LoRA tensors')
         # Full LoKr factors have no low-rank normalization; upstream deliberately
         # ignores alpha when neither Kronecker factor is decomposed.
         self.alpha = (1. if self.kind == 'lokr' and not rank
@@ -57,7 +59,8 @@ class Patch:
     def delta(self, x):
         import torch
         t = self._on(x)
-        if self.kind == 'lora' and 'bias_indices' not in t:
+        dora = t.get('dora_scale')
+        if self.kind == 'lora' and 'bias_indices' not in t and dora is None:
             down, up = t['lora_down.weight'], t['lora_up.weight']
             middle = t.get('lora_mid.weight')
             hidden = self._op(x, down, spatial=middle is None)
@@ -103,6 +106,14 @@ class Patch:
                     t['bias_values'], size, device=x.device).to_dense()
                 w = w.reshape(size) + residual
             t['_delta'] = w.reshape(self.module.weight.shape)
+        if dora is not None:
+            base = self.module.weight.to(device=x.device, dtype=x.dtype)
+            merged = base + t['_delta'] * self.alpha
+            dims = tuple(range(1, merged.ndim))
+            norm = torch.linalg.vector_norm(merged, dim=dims, keepdim=True)
+            shape = (-1,) + (1,) * (merged.ndim - 1)
+            change = merged * (dora.reshape(shape) / norm) - base
+            return self._op(x, change, spatial=True)
         return self._op(x, t['_delta'], spatial=True, bias=t.get('diff_b')) * self.alpha
 
 
@@ -130,6 +141,7 @@ def layer_mapping(pipe):
 
 
 SUFFIXES = ('lora_down.weight', 'lora_up.weight', 'lora_mid.weight', 'lora_A.weight', 'lora_B.weight',
+            'dora_scale', 'lora_magnitude_vector.weight',
             'hada_w1_a', 'hada_w1_b', 'hada_w2_a', 'hada_w2_b', 'hada_t1', 'hada_t2',
             'lokr_w1', 'lokr_w1_a', 'lokr_w1_b', 'lokr_w2', 'lokr_w2_a', 'lokr_w2_b', 'lokr_t2',
             'diff', 'diff_b', 'weight', 'ia3_w', 'on_input', 'alpha', 'bias_indices', 'bias_values', 'bias_size')
@@ -154,7 +166,7 @@ def resolve_layer_name(base, pipe):
     return mapped
 
 
-def load(path, pipe):
+def load(path, pipe, dyn=None):
     if str(path).lower().endswith('.safetensors'):
         from safetensors.torch import load_file
         state = load_file(str(path), device='cpu')
@@ -163,13 +175,17 @@ def load(path, pipe):
         state = safe_torch_load(str(path), 'Composable LoRA')
     if 'state_dict' in state:
         state = state['state_dict']
+    if dyn is not None:
+        from ..dynamic_lora import truncate_state_dict
+        state = truncate_state_dict(state, dyn, allow_peft_dora=True, allow_kohya_dora=True)
     mapping, groups = layer_mapping(pipe), {}
     for key, tensor in state.items():
         suffix = next((s for s in SUFFIXES if key.endswith('.' + s)), None)
         if suffix is None:
             raise ValueError(f'Unrecognized Composable LoRA tensor: {key}')
         base = key[:-(len(suffix) + 1)]
-        groups.setdefault(base, {})[{'lora_A.weight': 'lora_down.weight', 'lora_B.weight': 'lora_up.weight'}.get(suffix, suffix)] = tensor
+        groups.setdefault(base, {})[{'lora_A.weight': 'lora_down.weight', 'lora_B.weight': 'lora_up.weight',
+                                     'lora_magnitude_vector.weight': 'dora_scale'}.get(suffix, suffix)] = tensor
     patches = []
     for base, tensors in groups.items():
         mapped = resolve_layer_name(base, pipe)

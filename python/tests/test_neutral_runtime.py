@@ -80,6 +80,32 @@ def test_runtime_composes_branches_and_restores_forward_on_error():
     assert "forward" not in u.__dict__
 
 
+def test_photo_branch_transform_uses_raw_pipeline_iteration_not_scheduler_order():
+    from sdfx.photomaker_batch import photo_branch_transform
+    seen = []
+    class UNet(torch.nn.Module):
+        def forward(self, sample, timestep, encoder_hidden_states=None, **kwargs):
+            seen.append(encoder_hidden_states.clone())
+            return (encoder_hidden_states[:, :4, :].reshape_as(sample),)
+    scheduler = diffusers.DDIMScheduler(clip_sample=False)
+    scheduler.set_timesteps(4)
+    scheduler.order = 2
+    plain = {'prompt_embeds': torch.ones(1, 4, 1), 'negative_prompt_embeds': torch.zeros(1, 4, 1)}
+    fused = {'prompt_embeds': torch.full((1, 4, 1), 2.), 'negative_prompt_embeds': torch.zeros(1, 4, 1)}
+    branch = dict(plain, _photomaker_id=fused)
+    unet = UNet()
+    hook = RuntimeHook(unet, scheduler, Plan(parse('one'), [branch]), 3, 0,
+                       branch_transform=photo_branch_transform(1)).install()
+    try:
+        for raw in range(3):
+            unet(torch.zeros(2, 4, 1, 1), scheduler.timesteps[0])
+            hook.callback(None, raw, None, {})
+        assert [float(value[-1, 0, 0]) for value in seen] == [1., 1., 2.]
+        assert hook.step == 2  # logical clock differs from the next raw iteration
+    finally:
+        hook.remove()
+
+
 @pytest.mark.parametrize("phase", ["before", "between"])
 def test_protocol_interrupt_cleans_reference_bank_and_restores_forward(phase):
     from diffusers.models.attention_processor import Attention
@@ -199,6 +225,9 @@ def test_pending_branch_dependent_combinations_fail_explicitly():
     validate({}, controlnet=True)
     validate({}, pag=True)
     validate({"cads": {}, "cfg_schedule": {}})
+    validate({'photomaker': {}}, allow_photomaker=True)
+    with pytest.raises(EngineError, match='apg'):
+        validate({'photomaker': {}, 'apg': {}}, allow_photomaker=True)
 
 
 @pytest.mark.parametrize("name", ["photomaker", "sag", "apg", "mahiro", "latent_modifier", "dynamic_thresholding", "detail_daemon"])

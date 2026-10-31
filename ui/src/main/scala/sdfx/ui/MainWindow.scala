@@ -227,6 +227,20 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   private val metadataUtilsTab = new Tab("Metadata Utils", metadataUtils.node)
   metadataUtilsTab.setId("metadata-utils-tab")
   private val stylesTab = new Tab("Styles", stylesEditor.view)
+  private var lastMode: Mode = Mode.Txt2Img
+  private val keywordMappings = new ModelKeywordMappingsPane(ctx, (kind, choices) => {
+    val target = if kind == "lora" then ctx.loraKeywordChoices else ctx.modelKeywordChoices
+    target.setAll(choices*)
+    val field = if kind == "lora" then "lora_choice" else "model_choice"
+    val placeholders = Set("None", "< iterate >", "< random >", "keyword1, keyword2", "random", "iterate", "keyword1", "keyword2")
+    Mode.values.foreach { mode =>
+      plugins(mode).form("model_keyword").flatMap(_.prop(field)).foreach { value =>
+        if choices.exists(c => !placeholders(c)) && !choices.contains(value.get) then choices.headOption.foreach(value.set)
+      }
+    }
+  }, name => plugins(lastMode).form("model_keyword").flatMap(_.prop("lora")).foreach(_.set(name)))
+  private val keywordTab = new Tab("Model Keywords", keywordMappings.node)
+  keywordTab.setId("model-keyword-tab")
   stylesTab.setId("styles-editor-tab")
   private val comparisonTab = new Tab("Comparison", comparison.node)
   comparisonTab.setId("comparison-tab")
@@ -241,12 +255,19 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   scramblePages.setId("scramble-pages")
   private val scrambleTab = new Tab("Image Scrambling", scramblePages)
   scrambleTab.setId("image-scrambling-tab")
-  tabs.getTabs.addAll(pngTab, extrasTab, tokenizerTab, embeddingInspectorTab, temporalLabTab, systemInfoTab, stylesTab, comparisonTab, vaeToolsTab, metadataUtilsTab, embeddingMergeTab, modelPresetsTab, scrambleTab)
+  tabs.getTabs.addAll(pngTab, extrasTab, tokenizerTab, embeddingInspectorTab, temporalLabTab, systemInfoTab, stylesTab, keywordTab, comparisonTab, vaeToolsTab, metadataUtilsTab, embeddingMergeTab, modelPresetsTab, scrambleTab)
   tabs.getTabs.add(new Tab("VRAM Estimator", vramEstimator.node))
   private var comparisonDivider = initial.dividers.get("main").flatMap(_.headOption).getOrElse(.42)
-  private var lastMode: Mode = Mode.Txt2Img
+  Mode.values.foreach { mode =>
+    plugins(mode).form("model_keyword").flatMap(_.prop("lora")).foreach { value =>
+      value.addListener((_, _, name) => if lastMode == mode then keywordMappings.selectLora(name))
+    }
+  }
   tabs.getSelectionModel.selectedItemProperty.addListener((_, previous, t) =>
-    modeOf(t).foreach(lastMode = _)
+    modeOf(t).foreach { mode =>
+      lastMode = mode
+      plugins(mode).form("model_keyword").flatMap(_.prop("lora")).foreach(p => keywordMappings.selectLora(p.get))
+    }
     vramEstimates.foreach((mode, estimate) => estimate.setActive(modeOf(t).contains(mode)))
     systemInfo.setActive(t eq systemInfoTab)
     if (previous eq stylesTab) && (t ne stylesTab) then stylesEditor.leave()

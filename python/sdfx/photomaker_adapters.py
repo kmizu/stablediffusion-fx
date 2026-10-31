@@ -19,8 +19,12 @@ def load_owned_adapter(engine, pipe, weights, **options):
     if present and getattr(engine, '_photomaker_adapter_owner', None) != identity:
         raise EngineError(UNSUPPORTED, 'PhotoMaker adapter name is already owned by another loader; reload the checkpoint')
     try:
-        if present:
+        # The official loader moves its new ID encoder to pipe.device. With
+        # sequential offload that can be meta, which destroys loaded weights.
+        # Detach hooks first; the pipeline is reactivated by the normal caller.
+        if present or getattr(engine, '_offload', False):
             engine._drop_hooks()
+        if present:
             base.delete_adapters('photomaker')
         for key in list(engine.derived):
             if isinstance(key, tuple) and key and key[0] == 'photomaker':
@@ -126,7 +130,18 @@ def id_encoder_scope(engine, pipe):
         raise ValueError('PhotoMaker ID encoder requires one materialized device')
     original = next(iter(devices))
     if str(original) == 'meta':
-        raise ValueError('PhotoMaker ID encoder is not materialized')
+        # Sequential Accelerate offload intentionally keeps parameters on
+        # meta; its per-module hooks supply the backing weights at forward.
+        # Bare meta tensors without such hooks cannot safely be executed.
+        for module in encoder.modules():
+            if not any(parameter.is_meta for parameter in module.parameters(recurse=False)):
+                continue
+            hook = getattr(module, '_hf_hook', None)
+            if not (getattr(hook, 'offload', False) and getattr(hook, 'weights_map', None) is not None
+                    and getattr(hook, 'execution_device', None) is not None):
+                raise ValueError('PhotoMaker ID encoder is not materialized')
+        yield
+        return
     base = engine.pipe
     try:
         encoder.to(engine.device)

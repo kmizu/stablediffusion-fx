@@ -56,9 +56,160 @@ def ram_used_mb() -> float:
 class BaseEngine:
     dry_run = False
 
+    def _model_keyword_index(self, kind, directory):
+        from pathlib import Path
+        from .model_keyword import MappingIndex
+        if kind not in ('checkpoint', 'lora') or not isinstance(directory, str) or not directory:
+            raise ValueError('model keyword kind and mapping directory are required')
+        names = ('model-keyword.txt', 'custom-mappings.txt') if kind == 'checkpoint' else ('lora-keyword.txt', 'lora-keyword-user.txt')
+        data = Path(__file__).parent / 'data' / 'model_keyword'
+        cache = getattr(self, '_model_keyword_indices', None)
+        if cache is None:
+            cache = self._model_keyword_indices = {}
+        user = (Path(directory) / names[1]).absolute()
+        local_default = Path(directory) / names[0]
+        default = local_default if kind == 'lora' and local_default.is_file() else data / names[0]
+        key = (kind, str(user), str(default.absolute()))
+        if key not in cache:
+            cache[key] = MappingIndex(default, user, allow_missing_default=(kind == 'lora'))
+        return cache[key]
+
+    def model_keyword(self, params, ctx):
+        from pathlib import Path
+        from .model_keyword import keyword_choices, mapping_action
+        if params.get('action') == 'install_upstream_lora_catalog':
+            from .model_keyword import install_upstream_lora_catalog
+            directory = params.get('mapping_dir')
+            if not isinstance(directory, str) or not directory:
+                raise EngineError(INVALID_PARAMS, 'mapping directory is required')
+            try:
+                return {'path': install_upstream_lora_catalog(directory, confirmed=params.get('confirmed'))}
+            except (ValueError, OSError) as exc:
+                raise EngineError(INVALID_PARAMS, f'Model keyword catalog: {exc}') from exc
+        kind = params.get('kind')
+        if kind not in ('checkpoint', 'lora'):
+            raise EngineError(INVALID_PARAMS, 'model keyword kind must be checkpoint or lora')
+        path, directory = params.get('model_path'), params.get('mapping_dir')
+        if not isinstance(path, str) or not path or not isinstance(directory, str) or not directory:
+            raise EngineError(INVALID_PARAMS, 'model path and mapping directory are required')
+        try:
+            index = self._model_keyword_index(kind, directory)
+            name = params.get('match_name')
+            if name is not None and (not isinstance(name, str) or not name):
+                raise ValueError('match name must be a nonempty string')
+            result = mapping_action(params.get('action', 'check'), path, index, params.get('keywords'), name)
+            result['default_catalog_available'] = index.paths[0].is_file()
+            if kind == 'lora' and result['source'] == 'default' and index.paths[0].parent == Path(directory):
+                result['source'] = 'user catalog'
+            result['choices'] = keyword_choices(kind, result['keywords'])
+            return result
+        except (ValueError, OSError) as exc:
+            raise EngineError(INVALID_PARAMS, f'Model keyword: {exc}') from exc
+
+    def model_keyword_plan(self, params, ctx):
+        with self._model_keyword_iteration.transaction():
+            return self._model_keyword_plan(params, ctx)
+
+    def generation_keyword_plan(self, gp, req, seed, ctx):
+        from .hooks import hook_config
+        from .model_keyword import (generation_batch_loras, generation_composable_loras, replay_prompts_for_batch,
+                                    batch_extra_networks, parse_lora_activation)
+        config = hook_config(gp.hooks, 'model_keyword', {})
+        if config is None:
+            return None, None
+        refine = hook_config(gp.hooks, 'img2img_hires_fix', {})
+        base = config.get('_base_prompt', gp.prompt)
+        try:
+            with self._model_keyword_iteration.transaction():
+                plan = self.model_keyword_plan(dict(checkpoint=(self.model or {}).get('path'),
+                    mapping_dir=config.get('_mapping_dir'), lora=config.get('_lora_path'),
+                    preview=base, prompts=[base] * gp.images_per_job, batch_size=gp.batch_size,
+                    choice_seed=seed, options=config), ctx)
+                manual = gp.loras if req.manual_loras is None else req.manual_loras
+                loras = [generation_batch_loras(batch, manual, req.lora_paths)
+                         for batch in plan['batches']]
+                if hook_config(gp.hooks, 'composable_lora', {}) is not None:
+                    extra = [gp.hires.prompt] + ([str(refine.get('prompt', ''))] if refine else [])
+                    alternate = hook_config(gp.hooks, 'img2imgalt', {}) or {}
+                    extra += [str(alternate.get('override_prompt', '')), str(alternate.get('override_negative', ''))]
+                    generation_composable_loras(plan['prompts'] + extra, manual, req.lora_paths)
+                if refine is not None and not str(refine.get('prompt', '')).strip():
+                    clean, networks = batch_extra_networks([plan['preview']])
+                    unsupported = set(networks) - {'lora', 'lyco'}
+                    if unsupported:
+                        raise ValueError('unsupported extra network types: ' + ', '.join(sorted(unsupported)))
+                    adapters = [dict(kind=kind, **parse_lora_activation(args)) for kind, entries in networks.items()
+                                for args in entries]
+                    plan['refinement_loras'] = generation_batch_loras({'adapters': adapters}, manual, req.lora_paths)
+                    plan['refinement_prompt'] = plan['preview']
+                    plan['refinement_clean_prompt'] = clean[0]
+                    if hook_config(gp.hooks, 'composable_lora', {}) is not None:
+                        generation_composable_loras(plan['prompts'] + [gp.hires.prompt, plan['preview']], manual, req.lora_paths)
+                plan['replay_prompts'] = (list(plan['prompts']) if hook_config(gp.hooks, 'composable_lora', {}) is not None else
+                    [prompt for start in range(0, len(plan['prompts']), gp.batch_size)
+                     for prompt in replay_prompts_for_batch(plan['prompts'][start:start + gp.batch_size])])
+                if config.get('_lora_path') and not plan['lora_catalog_available'] and ctx is not None:
+                    ctx.warn('Model Keyword LoRA catalog is not installed; only custom mappings were searched')
+                return plan, loras
+        except ValueError as exc:
+            raise EngineError(INVALID_PARAMS, f'Model keyword: {exc}') from exc
+
+    def _model_keyword_plan(self, params, ctx):
+        from pathlib import Path
+        """Plan keywords for already styled base prompts; Hires/negative prompts are not rewritten."""
+        import random
+        from .model_keyword import IterationState, KeywordPlanner, batch_extra_networks, parse_lora_activation, validate_batch_plan
+        try:
+            if ctx is not None:
+                ctx.check_interrupt()
+            directory, checkpoint = params.get('mapping_dir'), params.get('checkpoint')
+            if not isinstance(checkpoint, str) or not checkpoint:
+                raise ValueError('checkpoint is required')
+            options = params.get('options', {})
+            if not isinstance(options, dict):
+                raise ValueError('options must be an object')
+            prompts = params.get('prompts', [])
+            batch_size = params.get('batch_size', 1)
+            if (not isinstance(prompts, (list, tuple)) or not prompts or isinstance(batch_size, bool) or
+                    not isinstance(batch_size, int) or not 1 <= batch_size <= 16 or len(prompts) % batch_size):
+                raise ValueError('batch size must divide the number of prompts and be 1..16')
+            seed = params.get('choice_seed')
+            if seed is not None and (isinstance(seed, bool) or not isinstance(seed, int)):
+                raise ValueError('choice_seed must be an integer')
+            lora = params.get('lora') or None
+            if lora is not None and not isinstance(lora, str):
+                raise ValueError('LoRA path must be a string')
+            checkpoint_index = self._model_keyword_index('checkpoint', directory)
+            lora_index = self._model_keyword_index('lora', directory)
+            iteration = getattr(self, '_model_keyword_iteration', None)
+            if iteration is None:
+                iteration = self._model_keyword_iteration = IterationState()
+            planner = KeywordPlanner(checkpoint_index, lora_index, iteration)
+            result = planner.plan(params.get('preview', ''), prompts, checkpoint,
+                                  lora, options, random.Random(seed))
+            if (result['lora'] and result['lora']['mapping_source'] == 'user catalog'
+                    and lora_index.paths[0].parent != Path(directory)):
+                result['lora']['mapping_source'] = 'default'
+            if ctx is not None:
+                ctx.check_interrupt()
+            batches = []
+            for start in range(0, len(result['prompts']), batch_size):
+                clean, networks = batch_extra_networks(result['prompts'][start:start + batch_size])
+                adapters = [dict(kind=kind, **parse_lora_activation(args))
+                            for kind, entries in networks.items() if kind in ('lora', 'lyco') for args in entries]
+                batches.append(dict(clean_prompts=clean, networks=networks, adapters=adapters))
+            result['batches'] = batches
+            validate_batch_plan(result, batch_size, len(prompts) // batch_size)
+            result['lora_catalog_available'] = lora_index.paths[0].is_file()
+            return result
+        except (ValueError, OSError) as exc:
+            raise EngineError(INVALID_PARAMS, f'Model keyword: {exc}') from exc
+
     def __init__(self):
         import time
+        from .model_keyword import IterationState
         self.system_started_at = time.time()
+        self._model_keyword_iteration = IterationState()
         self.model: Optional[dict] = None   # LoadedModel-shaped dict
         self.load_opts = LoadModelRequest()
 

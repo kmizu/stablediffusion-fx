@@ -13,7 +13,61 @@ import scala.jdk.CollectionConverters.*
 class GeneratorSuite extends munit.FunSuite:
   import FakeEngine.*
 
+  test("per-image effective prompts become each output's infotext") {
+    val isolatedHome = tempHome()
+    val isolated = new AppServices(isolatedHome, Settings(lastModel = Some("foo")), dryRun = true, builtins = Nil,
+      launchOverride = Some(() => launch()), persistSettings = false, installShutdownHook = false)
+    try
+      isolated.start()
+      val outputs = isolated.generator.generate(GenerationParams(prompt = "source", seed = 31,
+        width = 64, height = 64, steps = 1, batchSize = 2, extra = Map("effective_prompt_fixture" -> "true")))
+      assertEquals(outputs.map(_.params.prompt), Seq("effective 0", "effective 1"))
+      assertEquals(outputs.map(image => Infotext.parse(PngMetadata.readParameters(image.path).get).prompt),
+        Seq("effective 0", "effective 1"))
+      val hires = isolated.generator.generate(GenerationParams(prompt = "source", seed = 41,
+        width = 64, height = 64, steps = 1, hires = HiresParams(enabled = true),
+        extra = Map("effective_prompt_fixture" -> "true", "Model keyword settings" -> "{}")))
+      val info = Infotext.parse(PngMetadata.readParameters(hires.head.path).get)
+      assertEquals(info.prompt, "effective 0")
+      assertEquals(info.fields("Hires prompt"), "source")
+      val refined = isolated.generator.generate(GenerationParams(prompt = "source", seed = 51,
+        width = 64, height = 64, steps = 1,
+        hooks = Map("img2img_hires_fix" -> ujson.Obj("upscaler" -> "Lanczos")),
+        extra = Map("effective_prompt_fixture" -> "true", "keyword_refinement_fixture" -> "true",
+          "Model keyword settings" -> "{}")))
+      val refinedInfo = Infotext.parse(PngMetadata.readParameters(refined.head.path).get)
+      val restored = Infotext.toParams(refinedInfo)
+      assertEquals(restored.hooks("img2img_hires_fix")("prompt").str, "preview red cat")
+    finally
+      isolated.shutdown()
+      deleteTree(isolatedHome.root)
+  }
+
   override val munitTimeout: Duration = 120.seconds
+
+  test("Composable LoRA preserves different dynamic ranks for one named adapter") {
+    val isolatedHome = tempHome()
+    val file = Files.createTempFile(isolatedHome.root, "rank-adapter-", ".safetensors")
+    val name = file.getFileName.toString.stripSuffix(".safetensors")
+    try
+      val p = GenerationParams(prompt = s"<lora:$name:1:1:1> cat AND <lora:$name:1:1:2> dog",
+        hooks = Map("composable_lora" -> ujson.Obj()))
+      val local = new AppServices(isolatedHome, Settings(modelDirs = sdfx.core.config.ModelDirs(lora = Seq(isolatedHome.root.toString))),
+        dryRun = true, builtins = Nil, launchOverride = Some(() => launch()), persistSettings = false, installShutdownHook = false)
+      try
+        local.start()
+        local.catalog.set(local.catalog.snapshot.copy(loras = Seq(FileEntry(name, file.toString))))
+        assertEquals(local.generator.prepare(p).request.params.loras.map(_.dyn), Seq(Some(1), Some(2)))
+        val alt = GenerationParams(prompt = "cat", hooks = Map("composable_lora" -> ujson.Obj(),
+          "img2imgalt" -> ujson.Obj("override_prompt" -> s"<lora:$name:1:1:3> dog")))
+        val altPrepared = local.generator.prepare(alt).request
+        assertEquals(altPrepared.params.loras.map(_.dyn), Seq(Some(3)))
+        assertEquals(altPrepared.manualLoras, Some(Seq.empty))
+        val replay = GenerationParams(prompt = s"<lora:$name:1>red  , cat", extra = Map("Model keyword replay" -> "True"))
+        assertEquals(local.generator.prepare(replay).request.params.prompt, "red  , cat")
+      finally local.shutdown()
+    finally deleteTree(isolatedHome.root)
+  }
 
   test("img2img refinement target obeys job limits including preceding native Hires") {
     val params = GenerationParams(width = 512, height = 512,

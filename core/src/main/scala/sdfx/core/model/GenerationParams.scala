@@ -12,7 +12,8 @@ case class LoraRef(
     unet: Option[Double] = None,
     lbw: Option[String] = None,
     start: Option[Double] = None,
-    stop: Option[Double] = None
+    stop: Option[Double] = None,
+    dyn: Option[Int] = None
 ) derives RW
 
 /** Hires fix (second pass) settings. Field meaning follows A1111's hr_* parameters. */

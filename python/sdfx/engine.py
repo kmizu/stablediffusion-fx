@@ -162,6 +162,9 @@ class Engine(BaseEngine):
         self.derived: "OrderedDict[tuple, Any]" = OrderedDict()   # LRU of from_pipe pipelines
         self.loaded_loras: "OrderedDict[str, str]" = OrderedDict()  # adapter -> path, LRU
         self._photomaker_adapter_owner = None
+        self.dynamic_dora_adapters: set[str] = set()
+        self._dora_weight_handles = []
+        self._dora_step_weights = {}
         self.hook_owner = None
         self._pre: Optional[list] = None
         self._sampler_ok: Optional[dict] = None  # pipeline whose accelerate offload hooks are installed (offload modes)
@@ -192,7 +195,7 @@ class Engine(BaseEngine):
 
     def features(self) -> list[str]:
         # Temperature guard uses step callbacks and does not alter model weights.
-        f = ["conditioning_highres_fix", "embedding_merge", "metadata_utils", "img2img_hires_fix", "hires_fix_tweaks", "token_downsampling", "vram_estimator", "steps_animation", "pnginfo_injection", "gpu_temperature_guard", "freeu", "dynamic_thresholding", "hypertile", "system_info", "vae_tools", "prevent_interrupt"]
+        f = ["conditioning_highres_fix", "model_keyword", "embedding_merge", "metadata_utils", "img2img_hires_fix", "hires_fix_tweaks", "token_downsampling", "vram_estimator", "steps_animation", "pnginfo_injection", "gpu_temperature_guard", "freeu", "dynamic_thresholding", "hypertile", "system_info", "vae_tools", "prevent_interrupt"]
         f += self._batch_features()
         if cn_mod._has("cv2"):
             f.append("inpaint_difference")
@@ -268,6 +271,11 @@ class Engine(BaseEngine):
         self.cn_cache.clear()
         self.loaded_loras.clear()
         self._photomaker_adapter_owner = None
+        for handle in self._dora_weight_handles:
+            handle.remove()
+        self._dora_weight_handles.clear()
+        self._dora_step_weights.clear()
+        self.dynamic_dora_adapters.clear()
         self.loaded_embeddings.clear()
         self.loaded_embedding_files.clear()
         getattr(self, "embedding_token_owners", {}).clear()
@@ -293,7 +301,11 @@ class Engine(BaseEngine):
     def _drop_hooks(self):
         if self.hook_owner is not None:
             try:
-                self.hook_owner.remove_all_hooks()
+                # Accelerate may rematerialize PEFT parameters created during
+                # inference. Their requires_grad flag cannot be restored outside
+                # inference mode even though the model is never trained here.
+                with torch.inference_mode():
+                    self.hook_owner.remove_all_hooks()
             except Exception:
                 pass
             self.hook_owner = None
@@ -306,11 +318,13 @@ class Engine(BaseEngine):
             pipe.to("cpu")
         elif mode == "model_offload":
             self._drop_hooks()
-            pipe.enable_model_cpu_offload()
+            with torch.inference_mode():
+                pipe.enable_model_cpu_offload()
             self.hook_owner = pipe
         elif mode == "sequential_offload":
             self._drop_hooks()
-            pipe.enable_sequential_cpu_offload()
+            with torch.inference_mode():
+                pipe.enable_sequential_cpu_offload()
             self.hook_owner = pipe
         else:
             pipe.to(self.device)
@@ -500,10 +514,13 @@ class Engine(BaseEngine):
         with torch.inference_mode() if self._offload else nullcontext():
             (pipe.enable_lora if enabled else pipe.disable_lora)()
 
-
     def _apply_loras(self, gp: GenerationParams, req: GenerationRequest, ctx: JobContext) -> dict:
         hashes: dict = {}
         pipe = self.pipe
+        for handle in self._dora_weight_handles:
+            handle.remove()
+        self._dora_weight_handles.clear()
+        self._dora_step_weights.clear()
         if hooks_mod.hook_config(gp.hooks, "composable_lora", {}) is not None:
             self._lora_windows, self._lora_state = [], ([], [])
             if self.loaded_loras:
@@ -512,7 +529,7 @@ class Engine(BaseEngine):
                 self._composable_job = composable_lora.Job(pipe, gp, req, ctx)
             except (ValueError, KeyError, OverflowError, RecursionError) as exc:
                 raise EngineError(INVALID_PARAMS, f"Composable LoRA: {exc}") from exc
-            return {name: models.short_hash(adapter.path) for name, adapter in self._composable_job.adapters.items()}
+            return {adapter.name: models.short_hash(adapter.path) for adapter in self._composable_job.adapters.values()}
         want = []
         self._lora_windows = []
         self._lora_key = None
@@ -534,7 +551,7 @@ class Engine(BaseEngine):
                 scale = lora_blocks.plain_scales(self.sdxl, unet, te)
             else:
                 scale = te
-            want.append((lr.name, path, scale, lr.start, lr.stop))
+            want.append((lr.name, path, scale, lr.start, lr.stop, lr.dyn, bool(lr.lbw), te, unet))
             hashes[lr.name] = models.short_hash(path)
         if not want:
             if self.loaded_loras:
@@ -543,21 +560,71 @@ class Engine(BaseEngine):
                 except Exception:
                     pass
             return hashes
-        names, weights = [], []
-        for name, path, w, start, stop in want:
-            adapter = "l" + hashlib.sha1(os.path.abspath(path).encode()).hexdigest()[:12]
+        names, weights, dora_weights, dora_blocks = [], [], {}, {}
+        for name, path, w, start, stop, dyn, has_blocks, te, unet in want:
+            identity = os.path.abspath(path) + (f'\0dynamic-rank={dyn}' if dyn is not None else '')
+            adapter = "l" + hashlib.sha1(identity.encode()).hexdigest()[:12]
             if adapter in self.loaded_loras:
                 self.loaded_loras.move_to_end(adapter)
             else:
+                dora_keys = False
+                inspected_state = None
                 try:
                     from .resource_hashes import FileSnapshot
                     snapshot = FileSnapshot.capture(path)
-                    pipe.load_lora_weights(path, adapter_name=adapter)
+                    if dyn is None and str(path).lower().endswith('.safetensors'):
+                        from safetensors import safe_open
+                        with safe_open(path, framework='pt', device='cpu') as source:
+                            dora_keys = any('lora_magnitude_vector' in key or 'dora_scale' in key for key in source.keys())
+                    elif dyn is None and str(path).lower().endswith(('.pt', '.pth', '.bin', '.ckpt')):
+                        inspected_state = safe_torch_load(path, 'LoRA')
+                        if isinstance(inspected_state, dict) and 'state_dict' in inspected_state:
+                            inspected_state = inspected_state['state_dict']
+                        if not isinstance(inspected_state, dict):
+                            raise EngineError(INVALID_PARAMS, 'LoRA does not contain a state dictionary')
+                        dora_keys = any('lora_magnitude_vector' in key or 'dora_scale' in key for key in inspected_state)
+                    if dyn is None and not dora_keys:
+                        pipe.load_lora_weights(path, adapter_name=adapter)
+                    else:
+                        from .dynamic_lora import truncate_state_dict, load_kohya_dora
+                        if str(path).lower().endswith('.safetensors'):
+                            from safetensors.torch import load_file
+                            state = load_file(path, device='cpu')
+                        elif inspected_state is not None:
+                            state = inspected_state
+                        else:
+                            state = safe_torch_load(path, 'LoRA')
+                            if isinstance(state, dict) and 'state_dict' in state:
+                                state = state['state_dict']
+                        if not isinstance(state, dict):
+                            raise EngineError(INVALID_PARAMS, 'dynamic-rank LoRA does not contain a state dictionary')
+                        dora = any('lora_magnitude_vector' in key or 'dora_scale' in key for key in state)
+                        if FileSnapshot.identity_of(path) != snapshot.identity:
+                            raise EngineError(INVALID_PARAMS, 'LoRA changed while loading dynamic rank')
+                        transformed = truncate_state_dict(state, dyn if dyn is not None else 2 ** 31 - 1,
+                                                          allow_peft_dora=True, allow_kohya_dora=True)
+                        if any('dora_scale' in key for key in state):
+                            try:
+                                load_kohya_dora(pipe, transformed, adapter)
+                            except BaseException:
+                                try:
+                                    pipe.delete_adapters([adapter])
+                                except Exception:
+                                    pass
+                                raise
+                        else:
+                            pipe.load_lora_weights(transformed, adapter_name=adapter)
+                        if dora:
+                            self.dynamic_dora_adapters.add(adapter)
                     if not hasattr(self, "lora_snapshots"):
                         self.lora_snapshots = {}
                     self.lora_snapshots[adapter] = snapshot
                     self.loaded_loras[adapter] = path
+                except EngineError:
+                    raise
                 except Exception as e:
+                    if dyn is not None or dora_keys:
+                        raise EngineError(UNSUPPORTED, f"LoRA '{name}' dynamic rank/DoRA could not be applied: {e}") from e
                     ctx.warn(f"LoRA '{name}' could not be loaded: {str(e).splitlines()[0] if str(e) else type(e).__name__}")
                     hashes.pop(name, None)
                     continue
@@ -568,7 +635,15 @@ class Engine(BaseEngine):
                     hashes.pop(name, None)
                     ctx.warn(f"Resource hash unavailable for LoRA {name}: {error}")
             names.append(adapter)
-            weights.append(w)
+            if adapter in self.dynamic_dora_adapters:
+                weights.append(1.0)
+                dora_weights[adapter] = {'unet': unet, 'text_encoder': te, 'text_encoder_2': te}
+                if has_blocks:
+                    dora_blocks[adapter] = (len(names) - 1, w)
+                else:
+                    self._dora_step_weights[len(names) - 1] = [(dora_weights[adapter], unet)]
+            else:
+                weights.append(w)
             if start is not None or stop is not None:
                 self._lora_windows.append((len(names) - 1, start, stop))
         stale = [a for a in self.loaded_loras if a not in names]
@@ -579,6 +654,7 @@ class Engine(BaseEngine):
             except Exception as e:
                 log.debug("delete_adapters(%s) failed: %s", a, e)
             self.loaded_loras.pop(a, None)
+            self.dynamic_dora_adapters.discard(a)
             getattr(self, "lora_snapshots", {}).pop(a, None)
         if names:
             try:
@@ -586,7 +662,26 @@ class Engine(BaseEngine):
             except Exception:
                 pass
             try:
+                components = [(component, getattr(pipe, component, None)) for component in
+                              ('unet', 'text_encoder', 'text_encoder_2')]
+                if dora_blocks:
+                    from .dynamic_lora import capture_dora_block_weights
+                    probe = list(weights)
+                    for index, scale in dora_blocks.values():
+                        probe[index] = scale
+                    try:
+                        self._set_inference_adapters(pipe, names, probe)
+                        captured = capture_dora_block_weights(components, dora_blocks)
+                    finally:
+                        self._set_inference_adapters(pipe, names, weights)
+                    for adapter, (index, _) in dora_blocks.items():
+                        dora_weights[adapter] = captured[adapter]
+                        self._dora_step_weights[index] = [(values, values['unet'])
+                            for (component, _), values in captured[adapter].items() if component == 'unet']
                 self._set_inference_adapters(pipe, names, weights)
+                if dora_weights:
+                    from .dynamic_lora import install_dora_weight_hooks
+                    self._dora_weight_handles = install_dora_weight_hooks(components, dora_weights)
             except (ValueError, KeyError, TypeError) as e:
                 raise EngineError(INVALID_PARAMS, f"LoRA block weights could not be applied: {e}")
             self._lora_state = (names, weights)
@@ -804,7 +899,7 @@ class Engine(BaseEngine):
             plan = embeds["_neutral"]
             branches = [self._adjust_embeds(gp, branch, ctx) for branch in plan.branches]
             out = dict(branches[0])
-            out["_neutral"] = neutral_runtime.Plan(plan.tree, branches, plan.phi)
+            out["_neutral"] = neutral_runtime.Plan(plan.tree, branches, plan.phi, plan.image_trees)
             return out
         sch = getattr(embeds, "schedule", None)
         def apply(d):
@@ -826,7 +921,11 @@ class Engine(BaseEngine):
         names, weights = self._lora_state
         cur = list(weights)
         for idx, start, stop in self._lora_windows:
-            if not lora_blocks.active(step, total, start, stop):
+            active = lora_blocks.active(step, total, start, stop)
+            if idx in self._dora_step_weights:
+                for values, unet in self._dora_step_weights[idx]:
+                    values['unet'] = unet if active else 0.0
+            elif not active:
                 cur[idx] = lora_blocks.zero_unet(weights[idx], self.sdxl)
         key = tuple(i for i, w in enumerate(cur) if w is not weights[i])
         if key != getattr(self, "_lora_key", None):
@@ -1047,7 +1146,7 @@ class Engine(BaseEngine):
              schedule: Optional[str], cfg_scale: float, embeds: dict, steps: int, w: int, h: int, seeds: list[int],
              pass_: str, image_idx: int, images_total: int, latents=None, image=None, mask=None, strength: float = 1.0,
              expected_steps: int = 0, cn: Optional[tuple] = None, output_type: str = "pil", pag: Optional[dict] = None,
-             hook_seed: int = 0, latent_source=None, hires_noise=None, _photomaker_scope=None, conditioning_denoise=None):
+             hook_seed: int = 0, latent_source=None, hires_noise=None, photomaker_prompts=None, _photomaker_scope=None, conditioning_denoise=None):
         cn_models, cn_images, cn_kw = cn if cn else ([], [], {})
         neutral_plan = embeds.get("_neutral")
         xplan = ext_mod.pre_run(self, task, gp, mask_present=mask is not None, controlnet=bool(cn_models), pag=bool(pag))
@@ -1077,6 +1176,8 @@ class Engine(BaseEngine):
         kw.pop("_clora_branch", None)
         kw.pop("_clora_prompt", None)
         kw.pop("_clora_negative", None)
+        for key in ('_photo_raw_branch', '_photo_raw_prompt', '_photo_raw_negative'):
+            kw.pop(key, None)
         kw.update(num_inference_steps=steps, guidance_scale=cfg_scale, generator=self._generators(seeds, gp),
                   output_type=output_type, callback_on_step_end=self._callback(ctx, req, pass_, image_idx, images_total,
                                                                                expected_steps or steps))
@@ -1099,6 +1200,7 @@ class Engine(BaseEngine):
         if pag:
             kw["pag_scale"] = pag["scale"]
             kw["pag_adaptive_scale"] = pag["adaptive_scale"]
+        photo_capture = None
         if xplan.photomaker:
             pm = (gp.hooks or {}).get("photomaker") or {}
             kw["input_id_images"] = [load_rgb(p) for p in (pm.get("images") or [])]
@@ -1111,11 +1213,35 @@ class Engine(BaseEngine):
             kw["prompt"] = prompt.strip_extra_networks(gp.prompt)
             kw["negative_prompt"] = prompt.strip_extra_networks(gp.negative_prompt)
             kw["num_images_per_prompt"] = len(seeds)
+            if photomaker_prompts and len(set(photomaker_prompts)) > 1:
+                if len(photomaker_prompts) != len(seeds):
+                    raise EngineError(INVALID_PARAMS, 'PhotoMaker prompt and seed counts differ')
+                from .photomaker_batch import validate_pipeline
+                try:
+                    validate_pipeline(pipe)
+                except ValueError as exc:
+                    raise EngineError(UNSUPPORTED, str(exc)) from exc
+                kw['prompt'] = photomaker_prompts
+                kw['negative_prompt'] = [prompt.strip_extra_networks(gp.negative_prompt)] * len(seeds)
+                kw['num_images_per_prompt'] = 1
             if getattr(embeds, "schedule", None):
                 ctx.warn("prompt editing is not available with PhotoMaker; the first prompt is used")
-            if not re.search(r"\b" + re.escape(pm.get("trigger_word", "img")) + r"\b", kw["prompt"]):
+            prompt_values = kw['prompt'] if isinstance(kw['prompt'], list) else [kw['prompt']]
+            if any(not re.search(r"\b" + re.escape(pm.get("trigger_word", "img")) + r"\b", value) for value in prompt_values):
                 raise EngineError(INVALID_PARAMS, f"PhotoMaker: put the trigger word '{pm.get('trigger_word', 'img')}' after "
                                                   "the class word in the prompt, e.g. 'a man img'")
+            composable = getattr(self, '_composable_job', None)
+            if neutral_plan is not None and composable is not None:
+                from .photomaker_batch import configure_composable_photo, validate_pipeline, reject_unverified_merge_composable
+                try:
+                    raw_texts = [gp.prompt, gp.negative_prompt] + list(photomaker_prompts or ())
+                    reject_unverified_merge_composable(raw_texts)
+                    validate_pipeline(pipe)
+                    photo_capture = configure_composable_photo(neutral_plan, composable, kw, count=len(seeds),
+                        total=composable_lora.clock_total(gp, composable.config, int(expected_steps or steps)),
+                        cfg=cfg_scale, trigger=pm.get('trigger_word', 'img'), pass_name=pass_, schedule_steps=gp.steps)
+                except ValueError as exc:
+                    raise EngineError(UNSUPPORTED, str(exc)) from exc
 
         if getattr(self, "_lora_windows", None):
             ext_mod._chain_callback(kw, self._lora_window_callback())
@@ -1162,6 +1288,11 @@ class Engine(BaseEngine):
                 raise EngineError(UNSUPPORTED, 'Token Downsampling cannot combine with PAG or HyperTile: their self-attention layouts differ')
         cleanups = []
         unet = pipe.unet
+        if xplan.photomaker and self._offload:
+            from .embedding_merge_pipeline import validate_keyword_offload_multidiffusion
+            raw_photo_prompts = [gp.prompt, gp.negative_prompt] + list(photomaker_prompts or ())
+            validate_keyword_offload_multidiffusion(gp.hooks, True, True,
+                hooks_mod.hook_config(gp.hooks, 'multidiffusion', {}) is not None, raw_photo_prompts)
         self._activate(pipe)
         fu = hooks_mod.hook_config(gp.hooks, "freeu", hooks_mod.FREEU_DEFAULTS[self.sdxl])
         if fu:
@@ -1193,14 +1324,16 @@ class Engine(BaseEngine):
             branch_hooks = [] if neutral_plan else None
             if branch_hooks is not None and todo is not None:
                 branch_hooks.append(todo)
+            forward_wrappers = []
             ext_mod.install(self, pipe, task, gp, req, kw, ctx, cleanups, plan=xplan, w=w, h=h, sched=sched,
                             cfg_scale=cfg_scale, image=image, mask=mask, steps=steps, seed=hook_seed,
-                            branch_hooks=branch_hooks)
+                            branch_hooks=branch_hooks, forward_wrappers=forward_wrappers)
             if pag:
                 # Capture after IP load/unload: restoring pre-install processors would discard IP weights while
                 # IPAdapterState still considers them loaded. Also restore native PAG changes on failure.
                 saved_procs = dict(unet.attn_processors)
                 cleanups.append(lambda: unet.set_attn_processor(saved_procs))
+            nh = None
             if neutral_plan:
                 from .neutral_sampling import Controller
                 composable = getattr(self, "_composable_job", None)
@@ -1220,19 +1353,26 @@ class Engine(BaseEngine):
                     from .neutral_controlnet import ControlNetFrame
                     neutral_cn = ControlNetFrame(pipe.controlnet).install()
                     cleanups.append(neutral_cn.remove)
-                nh = neutral_runtime.RuntimeHook(unet, sched, neutral_plan, cfg_scale,
+                photo_transform = None
+                if photo_capture is not None:
+                    from .photomaker_batch import photo_branch_transform
+                    photo_transform = photo_branch_transform(int(xplan.photomaker['start_merge_step']))
+                neutral_cfg = 1.0 if photo_capture is not None and not guided else cfg_scale
+                nh = neutral_runtime.RuntimeHook(unet, sched, neutral_plan, neutral_cfg,
                         float((hooks_mod.hook_config(gp.hooks, "neutral_prompt", {"cfg_rescale": 0}) or {"cfg_rescale": 0})["cfg_rescale"]),
                         guided=guided,
                         pag=bool(pag),
                         controlnet=neutral_cn,
                         image_embeds=ip_embeds,
                         branch_hooks=branch_hooks,
-                        sampling=Controller(sched, gp.hooks, hook_seed),
+                        sampling=Controller(sched, gp.hooks, hook_seed), branch_transform=photo_transform,
                         check_interrupt=ctx.check_interrupt).install()
                 cleanups.append(nh.remove)
                 ext_mod._chain_callback(kw, nh.callback)
+            negative_runtime = None
             if embeds.get("_negpip") or (neutral_plan and any(v.get("_negpip") for v in neutral_plan.branches)):
-                cleanups.append(negpip.install(pipe))
+                negative_runtime = negpip.Rebindable(pipe).install()
+                cleanups.append(negative_runtime.remove)
             recorder = getattr(self, "_intermediate_recorder", None)
             if recorder is not None and (hooks_mod.hook_config(gp.hooks, "save_intermediate", {}) is not None
                                          or hooks_mod.hook_config(gp.hooks, "steps_animation", {}) is not None):
@@ -1299,11 +1439,49 @@ class Engine(BaseEngine):
                 if xplan.photomaker:
                     from .embedding_merge_pipeline import run_pipeline
                     from .photomaker_adapters import id_encoder_scope
+                    from .photomaker_batch import heterogeneous_prompts
+                    positive_list = isinstance(kw['prompt'], list)
+                    negative_list = isinstance(kw['negative_prompt'], list)
+                    positive = list(kw['prompt']) if positive_list else [kw['prompt']]
+                    negative = list(kw['negative_prompt']) if negative_list else [kw['negative_prompt']]
+                    spec_texts = [] if photo_capture is None else [
+                        (list(spec['prompts']), list(spec.get('negatives', []))) for spec in photo_capture.specs]
+                    all_text = positive + negative + [text for prompts, negatives in spec_texts for text in prompts + negatives]
                     def invoke(texts):
-                        with id_encoder_scope(self, pipe):
-                            return pipe(**dict(kw, prompt=texts[0], negative_prompt=texts[1]))
-                    out = run_pipeline(self, pipe, (kw['prompt'], kw['negative_prompt']),
-                                       invoke, check=ctx.check_interrupt)
+                        index = len(positive) + len(negative)
+                        current_positive = list(texts[:len(positive)])
+                        current_negative = list(texts[len(positive):index])
+                        try:
+                            if photo_capture is not None:
+                                for spec, (prompts, negatives) in zip(photo_capture.specs, spec_texts):
+                                    spec['prompts'] = list(texts[index:index + len(prompts)]); index += len(prompts)
+                                    spec['negatives'] = list(texts[index:index + len(negatives)]); index += len(negatives)
+                            def encode_signed_target(text, weight):
+                                ctx.check_interrupt()
+                                return negpip.encode_photo_target(pipe, text, weight, clip_skip=gp.clip_skip, dtype=self.dtype)
+                            signed_scope = (photo_capture.signed_terms(encode_signed_target)
+                                if photo_capture is not None and hooks_mod.hook_config(gp.hooks, 'negpip', {}) is not None
+                                else nullcontext())
+                            with signed_scope:
+                                if photo_capture is not None:
+                                    spec = photo_capture.specs[0]
+                                    current_positive, current_negative = list(spec['prompts']), list(spec['negatives'])
+                                    photo_batch = heterogeneous_prompts(pipe, spec['prompts'], route=spec['route'], capture=photo_capture)
+                                elif positive_list:
+                                    photo_batch = heterogeneous_prompts(pipe, current_positive)
+                                else:
+                                    photo_batch = nullcontext()
+                                arguments = dict(kw, prompt=current_positive if positive_list else current_positive[0],
+                                                 negative_prompt=current_negative if negative_list else current_negative[0])
+                                with id_encoder_scope(self, pipe), photo_batch:
+                                    return pipe(**arguments)
+                        finally:
+                            if photo_capture is not None:
+                                for spec, (prompts, negatives) in zip(photo_capture.specs, spec_texts):
+                                    spec['prompts'], spec['negatives'] = prompts, negatives
+                    out = run_pipeline(self, pipe, all_text, invoke, check=ctx.check_interrupt, runtime_hook=nh,
+                                       extra_runtime_hooks=(negative_runtime,) if negative_runtime is not None else (),
+                                       pre_runtime_hooks=forward_wrappers)
                 else:
                     out = pipe(**kw)
         finally:
@@ -1407,6 +1585,22 @@ class Engine(BaseEngine):
         self._extra = dict(gp.extra or {})
         self._ms_overrides = ext_mod.model_sampling_overrides(gp)
         self.ensure_model(gp, ctx)
+        keyword_plan, keyword_loras = self.generation_keyword_plan(gp, req, seed, ctx)
+        keyword_composable = keyword_plan is not None and hooks_mod.hook_config(gp.hooks, 'composable_lora', {}) is not None
+        if keyword_composable:
+            from .model_keyword import generation_composable_loras
+            try:
+                prompts = keyword_plan['prompts'] + [gp.hires.prompt]
+                alternate = hooks_mod.hook_config(gp.hooks, 'img2imgalt', {}) or {}
+                prompts += [str(alternate.get('override_prompt', '')), str(alternate.get('override_negative', ''))]
+                if refine_config is not None:
+                    prompts += [keyword_plan.get('refinement_prompt', refine_config.prompt)]
+                manual = gp.loras if req.manual_loras is None else req.manual_loras
+                gp = replace(gp, loras=generation_composable_loras(prompts, manual, req.lora_paths))
+                if req.manual_loras is None:
+                    req = replace(req, manual_loras=manual)
+            except ValueError as exc:
+                raise EngineError(INVALID_PARAMS, f'Model keyword: {exc}') from exc
         if self._intermediate_recorder is not None:
             self._intermediate_recorder.metadata.update(model=self.model, vae=self.vae_info)
         w, h = gp.width, gp.height
@@ -1418,6 +1612,10 @@ class Engine(BaseEngine):
         texts = [gp.prompt, gp.negative_prompt] + ([hp.prompt, hp.negative_prompt] if hires else [])
         if refine_config is not None:
             texts += [refine_config.prompt, refine_config.negative_prompt]
+        if keyword_plan is not None:
+            texts += keyword_plan['prompts']
+        alternate = hooks_mod.hook_config(gp.hooks, 'img2imgalt', {}) or {}
+        texts += [str(alternate.get('override_prompt', '')), str(alternate.get('override_negative', ''))]
         gradient_enabled = hooks_mod.hook_config(gp.hooks, "weight_gradient", {}) is not None
         if (gradient_enabled and hooks_mod.hook_config(gp.hooks, "photomaker", {}) is not None
                 and any(weight_gradient.has_gradient(text) for text in texts)):
@@ -1503,22 +1701,41 @@ class Engine(BaseEngine):
         def finish_batch(imgs, base_seeds, base_subs, seeds, idx0, it, repeat=0, hr_seeds=None, hr_subs=None, pass_gp=None):
             effective_gp = pass_gp if pass_gp is not None else gp
             ad = hooks_mod.hook_config(gp.hooks, "adetailer", {})
-            if hr_plan is None and refine_config is None:
+            if hr_plan is None and refine_config is None and (keyword_plan is None or not ad):
                 if ad:
                     imgs = self._adetailer(effective_gp, req, ctx, ad, imgs, seeds, idx0, total, pag)
                 imgs = ext_mod.post_images(self, gp, None, imgs, ctx=ctx, faces=True)
             for j, im in enumerate(imgs):
-                if hr_plan is not None or refine_config is not None:
+                if hr_plan is not None or refine_config is not None or (keyword_plan is not None and ad):
                     # Publish each finished item before another item's detector/inpaint can interrupt.
-                    item = self._adetailer(effective_gp, req, ctx, ad, [im], [seeds[j]],
-                                           idx0 + j, total, pag) if ad else [im]
+                    item_gp = (replace(effective_gp, prompt=keyword_plan['batches'][it]['clean_prompts'][j])
+                               if keyword_plan is not None else effective_gp)
+                    if ad and keyword_plan is not None:
+                        from .model_keyword import postprocess_keyword_items
+                        item = postprocess_keyword_items([im], [item_gp.prompt], [seeds[j]],
+                            lambda image, text, item_seed, _: self._adetailer(item_gp, req, ctx, ad, [image],
+                                [item_seed], idx0 + j, total, pag)[0])
+                    else:
+                        item = self._adetailer(item_gp, req, ctx, ad, [im], [seeds[j]],
+                                               idx0 + j, total, pag) if ad else [im]
                     im = ext_mod.post_images(self, gp, None, item, ctx=ctx, faces=True)[0]
                 if refine_config is not None:
-                    im = img2img_hires_fix.refine(self, gp, req, ctx, refine_config, im,
+                    refine_gp, refine_req = gp, req
+                    if keyword_plan is not None and 'refinement_prompt' in keyword_plan:
+                        text = (keyword_plan['refinement_prompt'] if keyword_composable else
+                                keyword_plan['refinement_clean_prompt'])
+                        refine_gp = replace(gp, prompt=text)
+                        refine_req = replace(req, img2img_hires_loras=keyword_plan['refinement_loras'])
+                    im = img2img_hires_fix.refine(self, refine_gp, refine_req, ctx, refine_config, im,
                         seeds[j], idx0 + j, total, pag, cn, effective_gp, lora_hashes)
                 path = next_output_path(req.output_dir, str(base_seeds[j]))
                 image_result = {"path": path, "seed": base_seeds[j], "subseed": base_subs[j],
                                 "width": im.width, "height": im.height}
+                if keyword_plan is not None:
+                    image_result['effective_prompt'] = keyword_plan['replay_prompts'][it * bs + j]
+                    image_result['model_keyword_source_prompt'] = keyword_plan['prompts'][it * bs + j]
+                    if 'refinement_prompt' in keyword_plan:
+                        image_result['model_keyword_refinement_prompt'] = keyword_plan['refinement_prompt']
                 if hr_plan is not None and hr_seeds is not None:
                     image_result.update(hires_seed=wire_seed(hr_seeds[j]), hires_subseed=wire_seed(hr_subs[j]),
                         hires_subseed_strength=hr_plan.strength, hires_repeat=repeat,
@@ -1539,12 +1756,51 @@ class Engine(BaseEngine):
                     self._intermediate_recorder.final(im, base_seeds[j], it * repeats + repeat, j)
 
         interrupted = False
+        base_gp = gp
         try:
             for it in range(n_iter):
                 idx0 = it * bs
                 seeds = [seed + idx0 + j for j in range(bs)]
                 subs = [subseed + idx0 + j for j in range(bs)]
                 ctx.check_interrupt()
+                if keyword_plan is not None:
+                    from .model_keyword_conditioning import encode_batch
+                    gp = base_gp if keyword_composable else replace(base_gp, loras=keyword_loras[it])
+                    if hooks_mod.hook_config(gp.hooks, 'photomaker', {}) is not None:
+                        gp = replace(gp, prompt=keyword_plan['batches'][it]['clean_prompts'][0])
+                    if not keyword_composable:
+                        lora_hashes.update(self._apply_loras(gp, req, ctx))
+                    if ctx.resource_hashes is not None:
+                        ctx.resource_hashes.update({f'lora:{name}': value for name, value in lora_hashes.items()})
+                    def scheduled(variants):
+                        result = ScheduledEmbeds(variants[0][1]); result.schedule = variants; return result
+                    batch_prompts = (keyword_plan['prompts'][it * bs:(it + 1) * bs] if keyword_composable
+                                     else keyword_plan['batches'][it]['clean_prompts'])
+                    if keyword_composable:
+                        composable_job = self._composable_job
+                        clock = composable_lora.clock_total(gp, composable_job.config, gradient_steps)
+                        empty_cache = {}
+                        def empty(index, item, key):
+                            source = item.get('_clora_branch', batch_prompts[index])
+                            full = item.get('_clora_prompt', batch_prompts[index])
+                            negative = item.get('_clora_negative', gp.negative_prompt)
+                            cache_key = source, full, negative, key
+                            if cache_key not in empty_cache:
+                                with composable_job.using(source, [key == 'prompt_embeds'], -1, clock, phase='text_encoder',
+                                               full_prompt=full, negative_prompt=negative):
+                                    empty_cache[cache_key] = self._encode_plain('', '', gp, 1)[key]
+                            return empty_cache[cache_key]
+                    else:
+                        empty = self._encode_plain('', '', gp, 1)['prompt_embeds']
+                    embeds = encode_batch(batch_prompts,
+                        lambda text: self._encode_scheduled(text, gp.negative_prompt, gp, 1, gp.steps,
+                                                            gradient_total=gradient_steps),
+                        empty, gp.steps, scheduled)
+                    embeds = self._adjust_embeds(gp, embeds, ctx)
+                    if hires and not separate_loras:
+                        hr_actual = hires_steps(hp.second_pass_steps or gp.steps, hp.denoising_strength)[2]
+                        hr_embeds = self._adjust_embeds(gp, self._encode_scheduled(hr_pos, hr_neg, gp, bs,
+                            gp.steps, hp.second_pass_steps or gp.steps, gradient_total=hr_actual), ctx)
                 if mode == "txt2img":
                     latent_hr = hires and hires_mod.is_latent(hp.upscaler)
                     otype = "latent" if latent_hr else "pil"
@@ -1561,7 +1817,8 @@ class Engine(BaseEngine):
                         imgs, plan = self._run("txt2img", gp, req, ctx, sampler=gp.sampler_name, schedule=gp.scheduler,
                                                cfg_scale=gp.cfg_scale, embeds=embeds, steps=gp.steps, w=w, h=h, seeds=seeds,
                                                pass_="base", image_idx=idx0 * repeats, images_total=total, latents=lat, cn=cn,
-                                               output_type=otype, pag=pag, hook_seed=seeds[0])
+                                               output_type=otype, pag=pag, hook_seed=seeds[0],
+                                               photomaker_prompts=batch_prompts if keyword_plan is not None else None)
                     if hires:
                         tw, th = hp.target_size(w, h)
                         uw, uh = hp.upscale_size(w, h)
@@ -1643,7 +1900,15 @@ class Engine(BaseEngine):
                         ctx.warn("img2img alternative test needs plain img2img with a normal model; ignored")
                         alt = None
                     if alt:
-                        imgs, plan = self._img2imgalt(gp, req, ctx, alt, image, embeds, seeds, idx0, total, w, h, cn, pag)
+                        inverse_embeds = None
+                        if keyword_plan is not None:
+                            inverse_steps = int(alt.get('inversion_steps', 0)) or gp.steps
+                            inverse_embeds = self._adjust_embeds(gp, self._encode_scheduled(
+                                base_gp.prompt, base_gp.negative_prompt, gp, 1, inverse_steps,
+                                gradient_total=inverse_steps), ctx)
+                        args = (gp, req, ctx, alt, image, embeds, seeds, idx0, total, w, h, cn, pag)
+                        imgs, plan = (self._img2imgalt(*args, inverse_embeds=inverse_embeds)
+                                      if keyword_plan is not None else self._img2imgalt(*args))
                     else:
                         imgs, plan = self._run(task, gp, req, ctx, sampler=gp.sampler_name, schedule=gp.scheduler,
                                                cfg_scale=gp.cfg_scale, embeds=embeds, steps=n, w=w, h=h, seeds=seeds,
@@ -1654,7 +1919,7 @@ class Engine(BaseEngine):
                         imgs = [job.finalize(im) for im in imgs]
                 finish_batch(imgs, seeds, subs, seeds, idx0 * repeats, it)
         except EngineError as error:
-            if error.code != "interrupted" or (hr_plan is None and refine_config is None) or not out_images:
+            if error.code != "interrupted" or (hr_plan is None and refine_config is None and keyword_plan is None) or not out_images:
                 raise
             interrupted = True
 
@@ -1738,17 +2003,18 @@ class Engine(BaseEngine):
             out.append(im)
         return out
 
-    def _img2imgalt(self, gp, req, ctx, alt, image, embeds, seeds, idx0, total, w, h, cn, pag):
+    def _img2imgalt(self, gp, req, ctx, alt, image, embeds, seeds, idx0, total, w, h, cn, pag, inverse_embeds=None):
         """img2imgalt.py: invert the init image to noise with DDIM, then sample from that noise."""
         c = adapters.normalize(alt, extras.IMG2IMGALT_DEFAULTS)
         steps = int(c["inversion_steps"]) or gp.steps
-        enc = embeds
+        enc = embeds if inverse_embeds is None else inverse_embeds
         if (hooks_mod.hook_config(gp.hooks, "prompt_fusion", {}) is not None
                 and any(prompt_fusion.active(t) for t in
                         (c["override_prompt"] or gp.prompt, c["override_negative"] or gp.negative_prompt))):
             raise EngineError(UNSUPPORTED, "Prompt Fusion schedules are not supported during img2img Alternative inversion")
         if c["override_prompt"] or c["override_negative"]:
-            if hooks_mod.hook_config(gp.hooks, "neutral_prompt", {}) is not None:
+            if (hooks_mod.hook_config(gp.hooks, "neutral_prompt", {}) is not None or
+                    getattr(self, '_composable_job', None) is not None):
                 candidate = self._encode_scheduled(c["override_prompt"] or gp.prompt, c["override_negative"] or gp.negative_prompt,
                                                    gp, 1, steps, gradient_total=steps)
                 if "_neutral" in candidate:
@@ -1781,6 +2047,11 @@ class Engine(BaseEngine):
         image_cleanups = []
         def inverse_images(scheduler):
             branch_hooks = []
+            if inverse_plan:
+                hook = composable_lora.inversion_branch_hook(getattr(self, '_composable_job', None),
+                                                              inverse_plan, scheduler, gp, steps)
+                if hook is not None:
+                    branch_hooks.append(hook)
             ext_mod.install_reference(self, self.pipe, gp, image_cleanups, w=w, h=h, scheduler=scheduler,
                                       branch_hooks=branch_hooks)
             ext_mod.install_lllite(self, self.pipe, gp, req, image_cleanups, w=w, h=h, image=image,

@@ -32,5 +32,6 @@ def test_acceptance_includes_source_controllers_formats_and_actual_trace_asserti
 def test_advanced_execution_is_explicit_and_guards_cover_compatibility_boundaries():
     harness = script()
     guards = {c['name']: c for c in harness.build_guards('input.png')}
-    assert {'python-opt-in', 'photomaker', 'alternative', 'negpip-signed', 'native-lbw'} <= set(guards)
+    assert {'python-opt-in', 'photomaker', 'native-lbw'} <= set(guards)
+    assert not {'alternative', 'negpip-signed'} & set(guards)
     assert 'python-opt-in' not in {c['name'] for c in harness.build_guards('input.png', True)}

@@ -51,7 +51,10 @@ class VectorSource:
         if any(not isinstance(i, int) or i < 0 or i >= weights.shape[0] for i in ids):
             raise ValueError('unknown token ID')
         # Works with NumPy in pure tests and materialized torch weights at runtime.
-        array = weights[list(ids)]
+        # Read-only access through detached storage also works when Accelerate
+        # has recreated a Parameter with an unavailable version counter.
+        source = weights.data if hasattr(weights, 'detach') else weights
+        array = source[list(ids)]
         if hasattr(array, 'detach'):
             array = array.detach().float().cpu().numpy()
         return np.array(array, dtype=np.float32, copy=True)

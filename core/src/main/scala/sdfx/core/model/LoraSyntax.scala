@@ -9,14 +9,16 @@ object LoraSyntax:
   /** Removes the tags from the prompt and returns them. Weights of the same LoRA are summed (first occurrence
     * order preserved). Separators left dangling by a removed tag (", ," / leading / trailing commas) are cleaned up.
     */
-  def extract(prompt: String): Extracted =
+  def extract(prompt: String, preserveSpacing: Boolean = false): Extracted =
     val found = Re.findAllMatchIn(prompt).map(m => parseTag(m.group(1).trim, Option(m.group(2)).getOrElse(""))).toSeq
     // the same LoRA twice: weights add up, the other arguments come from its first tag
-    val merged = found.groupBy(_.name).map((n, rs) => n -> rs.head.copy(weight = rs.map(_.weight).sum))
-    val order = found.map(_.name).distinct
-    val removed = Re.replaceAllIn(prompt, "").replaceAll("[ \t]{2,}", " ").replaceAll(" ,", ",")
+    val merged = found.groupBy(r => (r.name, r.dyn)).map((n, rs) => n -> rs.head.copy(weight = rs.map(_.weight).sum))
+    val order = found.map(r => (r.name, r.dyn)).distinct
+    val raw = Re.replaceAllIn(prompt, "")
+    val removed = if preserveSpacing then raw else raw.replaceAll("[ \t]{2,}", " ").replaceAll(" ,", ",")
     val stripped =
-      if found.isEmpty then removed.trim
+      if preserveSpacing then removed
+      else if found.isEmpty then removed.trim
       else
         removed
           .replaceAll(",[ \t]*(?=,)", "")      // ", ," left where a tag was
@@ -39,8 +41,11 @@ object LoraSyntax:
     val (stepStart, stepStop) = kv.get("step").map(_.split('-')) match
       case Some(Array(a, b)) => (num(a), num(b))
       case _                 => (None, None)
+    val dyn = kv.get("dyn").orElse(positional.lift(2)).map { value =>
+      value.toIntOption.getOrElse(throw new IllegalArgumentException(s"Invalid LoRA dynamic rank: $value"))
+    }
     LoraRef(name, te, unet, kv.get("lbw").filter(_.nonEmpty),
-      kv.get("start").flatMap(num).orElse(stepStart), kv.get("stop").flatMap(num).orElse(stepStop))
+      kv.get("start").flatMap(num).orElse(stepStart), kv.get("stop").flatMap(num).orElse(stepStop), dyn)
 
   /** Rewrites every `<lora:...>` tag through `f(name, args)` -> new args (the part after the name, ":"-prefixed). */
   def rewriteTags(prompt: String, f: (String, String) => String): String =

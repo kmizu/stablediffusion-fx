@@ -89,6 +89,8 @@ final class PluginsVM(val mode: Mode, scripts: Seq[Plugin], alwaysOnPlugins: Seq
     val fields = Infotext.parse(text).fields
     sdfx.plugins.ConditioningHighresFixPlugin.replay(fields).foreach(values => form("conditioning_highres_fix").foreach(_.load(values)))
     sdfx.plugins.Img2ImgHiresFixPlugin.replay(fields).foreach(values => form("img2img_hires_fix").foreach(_.load(values)))
+    if fields.contains("Model keyword settings") || fields.get("Model keyword replay").exists(_.equalsIgnoreCase("true")) then
+      form("model_keyword").foreach(_.load(Values(Map("enabled" -> "false"))))
     fields.get("Hires seed").flatMap(sdfx.core.infotext.HiresSeedMetadata.parse).foreach { h =>
       val values = Values(h.value.toMap.map { (key, value) => key -> (value match
         case ujson.Bool(b) => b.toString

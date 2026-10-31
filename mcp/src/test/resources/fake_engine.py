@@ -150,6 +150,13 @@ def handle_work(rid, typ, params):
     try:
         if typ in ("txt2img", "img2img"):
             generate(rid, typ, params)
+        elif typ == "model_keyword":
+            if params.get('action') != 'check':
+                error(rid, 'invalid_params', 'fake permits read-only checks only')
+            else:
+                result(rid, {'filename': params.get('match_name') or os.path.basename(params['model_path']),
+                             'hash': 'deadbeef', 'keywords': ['fixture'], 'source': 'default',
+                             'default_catalog_available': params['kind'] == 'checkpoint'})
         elif typ == "vae_tools":
             error(rid, "unsupported", "VAE Tools requires a real loaded VAE; fake engine cannot encode or decode latents")
         elif typ == "load_model":

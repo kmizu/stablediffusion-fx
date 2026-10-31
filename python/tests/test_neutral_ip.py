@@ -168,6 +168,7 @@ def test_free_model_clears_loaded_ip_state(monkeypatch):
     old = engine.ip_state = IPAdapterState(); old.loaded = "adapter"
     engine._drop_hooks = lambda: None
     engine.derived, engine.cn_cache, engine.loaded_loras, engine.loaded_embeddings = {}, {}, {}, set()
+    engine._dora_weight_handles, engine._dora_step_weights, engine.dynamic_dora_adapters = [], {}, set()
     engine.loaded_embedding_files = {"old": "old.safetensors"}
     engine.cuda = False
     monkeypatch.setattr(upscalers, "unload_models", lambda: None)

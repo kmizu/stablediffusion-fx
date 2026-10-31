@@ -29,6 +29,7 @@ BASE = [
     ("w-e-w/embedding-inspector", "reimplemented", "Unlicense behavior reference 5f3451ec0cb5c9359feb37c0b0f984f09d337509; reupload of original tkalayci71 project; independent implementation"),
     ("haraldk/TwelveMonkeys", "dependency", "Bundled TwelveMonkeys ImageIO WebP reader 3.12.0 and its supporting modules"),
     ("viyiviyi/sd-encrypt-image", "reimplemented", "AGPL-3.0 behavior reference 3a44d3c264632aa90442bdc50e42af0770289bfd; independently implemented pixel-scrambling compatibility; upstream core used only for reference fixtures"),
+    ("mix1009/model-keyword", "data and behavior reference", "MIT repository at c3d0833a9434bb41ecd7ea715b5abd5e6b43a5af; checkpoint and LoRA mapping databases copied verbatim; LoRA entries include Civitai-derived data, individual third-party rights not independently established"),
     ("PladsElsker/sd-webui-inpaint-difference", "reimplemented", "MIT behavior reference 656eed0a214186f4fb12fd6100fef582a01558bf; native difference masks and preview; upstream pure functions used only for test fixtures"),
     ("w-e-w/sd-webui-hires-fix-tweaks", "reimplemented", "AGPL3 behavior reference 28902f742a795afc31d86641ad85466afdd280e6; native Hires prompt modes, repeats/seeds, styles and workflow settings; original pure prompt functions used only for reference test fixtures"),
     ("feffy380/sd-webui-token-downsampling", "reimplemented", "MIT behavior reference f1f1cbae82b75d5658b08abbc3cb8ddc0b876cc5; native two-depth K/V nearest-exact downsampling, evaluation cutoff and XYZ controls"),
@@ -183,6 +184,7 @@ BASE = [
 # (commit, license path, SHA-256, SPDX)
 PINNED_LICENSES = {
     "klimaleksus/stable-diffusion-webui-embedding-merge": ("40d439de3cda5965fc1f9cb4412ef329885d1d6d", "LICENSE", "2c42de328b26a7318910d10b3cc4db282be0ad8146dc6543686797fbee4cde3b", "Unlicense (upstream also states WTFPL)"),
+    "mix1009/model-keyword": ("c3d0833a9434bb41ecd7ea715b5abd5e6b43a5af", "LICENSE", "665df3b62b63216be2ca94177c762f511d3df58e4850e875e4857100ec3d5d5f", "MIT"),
     "Tzigo/metadata_utils": ("a4cda9fe899f95de769496946497d20daedb516b", "LICENSE", "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986", "GPL-3.0"),
     "klimaleksus/stable-diffusion-webui-conditioning-highres-fix": (
         "34da5b3461b89121f79f4375d4e798cd87450210", "LICENSE",

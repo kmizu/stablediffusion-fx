@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 122, todo 180, na 51.
+Totals: done 123, todo 179, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-nui | Scope / notes |
 |---|---|---|---|---|---|
@@ -52,7 +52,7 @@ Totals: done 122, todo 180, na 51.
 | 43 | [tokenizer](https://github.com/AUTOMATIC1111/stable-diffusion-webui-tokenizer.git) | 171 | done | `tokenizer` |  |
 | 44 | [Randomize](https://github.com/innightwolfsleep/stable-diffusion-webui-randomize.git) | 25 | done | `randomize` |  |
 | 45 | [conditioning-highres-fix](https://github.com/klimaleksus/stable-diffusion-webui-conditioning-highres-fix.git) | 43 | done | `conditioning_highres_fix` | Pinned seven-mode inpainting conditioning formulas, native controls and PNG replay; 9-channel SD1.5/SDXL source and MainWindow, protected input/output, cancellation/recovery verified. Actual 4-channel SD1.5/SDXL masked and Hires output is unchanged. Disabled retains native baseline; SDXL is a native adaptation. Extracted Windows package, full Torch CPU and Scala suites verified. ControlNet/ADetailer composition is not real-model verified; see conditioning-highres-verification.md. |
-| 46 | [model-keyword](https://github.com/mix1009/model-keyword.git) | 269 | todo | `model_keyword` |  |
+| 46 | [model-keyword](https://github.com/mix1009/model-keyword.git) | 269 | done | `model_keyword` |  |
 | 47 | [Prompt Generator](https://github.com/imrayya/stable-diffusion-webui-Prompt_Generator.git) | 243 | todo | `prompt_generator` |  |
 | 48 | [Promptgen](https://github.com/AUTOMATIC1111/stable-diffusion-webui-promptgen.git) | 540 | todo | `prompt_generator` |  |
 | 49 | [text2prompt](https://github.com/toshiaki1729/stable-diffusion-webui-text2prompt.git) | 167 | todo | `text2prompt` |  |

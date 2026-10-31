@@ -88,6 +88,38 @@ class McpToolsSuite extends munit.FunSuite:
     assertEquals(i2i("inputSchema")("required").arr.map(_.str).toSet, Set("prompt", "init_image"))
   }
 
+  test("model keyword lookup exposes checkpoint and LoRA provenance without arbitrary file access") {
+    ok("set_model", ujson.Obj("name" -> "foo"))
+    val checkpoint = ok("model_keyword_lookup", ujson.Obj())("structuredContent")
+    assertEquals(checkpoint("kind").str, "checkpoint")
+    assertEquals(checkpoint("filename").str, "foo.safetensors")
+    assertEquals(checkpoint("hash").str, "deadbeef")
+    assertEquals(checkpoint("keywords").arr.map(_.str).toSeq, Seq("fixture"))
+    assertEquals(checkpoint("source").str, "default")
+    assertEquals(checkpoint("model").str, "foo.safetensors")
+    assertEquals(checkpoint("match_source").str, "model-keyword.txt")
+    val lora = ok("model_keyword_lookup", ujson.Obj("kind" -> "lora", "name" -> "My Lora"))("structuredContent")
+    assertEquals(lora("kind").str, "lora")
+    assertEquals(lora("filename").str, "My Lora.safetensors")
+    assert(!lora("default_catalog_available").bool)
+    assert(call("model_keyword_lookup", ujson.Obj("kind" -> "lora"))("isError").bool)
+    assert(call("model_keyword_lookup", ujson.Obj("name" -> "../../outside"))("isError").bool)
+    assert(call("model_keyword_lookup", ujson.Obj("action" -> "delete"))("isError").bool)
+  }
+
+  test("MCP generation uses Model Keyword default and respects an explicit opt-out") {
+    ok("set_model", ujson.Obj("name" -> "foo"))
+    def lastHooks = Await.result(services.client.raw("get_state"), 10.seconds)("last_generation")("request")("params")("hooks").obj
+    ok("txt2img", ujson.Obj("prompt" -> "cat", "steps" -> 1, "width" -> 64, "height" -> 64, "return_images" -> false))
+    assert(lastHooks.contains("model_keyword"))
+    ok("txt2img", ujson.Obj("prompt" -> "cat", "steps" -> 1, "width" -> 64, "height" -> 64,
+      "return_images" -> false, "model_keyword" -> false))
+    assert(!lastHooks.contains("model_keyword"))
+    ok("txt2img", ujson.Obj("prompt" -> "cat", "steps" -> 1, "width" -> 64, "height" -> 64,
+      "return_images" -> false, "model_keyword" -> true))
+    assert(lastHooks.contains("model_keyword"))
+  }
+
   test("txt2img returns image + text + structuredContent and saves a PNG with parameters") {
     val r = ok("txt2img", ujson.Obj("prompt" -> "a red fox", "negative_prompt" -> "blurry", "seed" -> 42, "steps" -> 3, "width" -> 64, "height" -> 64,
       "loras" -> ujson.Arr(ujson.Obj("name" -> "My Lora", "weight" -> 0.7)), "max_image_side" -> 32))

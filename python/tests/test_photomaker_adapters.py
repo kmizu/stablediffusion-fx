@@ -120,6 +120,7 @@ def test_window_updates_retain_photomaker_and_restore_window_cache():
     layers.append(layer)
     state = (['manual'], [.5])
     engine._lora_state, engine._lora_key = state, ('before',)
+    engine._dora_step_weights = {}
     engine._lora_windows, engine.sdxl = [(0, 0, .5)], True
     engine.pipe.set_adapters = lambda names, adapter_weights: layer.set_adapter(names)
     engine._set_inference_adapters = lambda pipe, names, weights: pipe.set_adapters(names, adapter_weights=weights)
@@ -164,3 +165,50 @@ def test_id_encoder_restore_failure_invalidates_model():
     with pytest.raises(EngineError) as error:
         with id_encoder_scope(engine, pipe): pass
     assert error.value.code == NO_MODEL and engine.pipe is None
+def test_id_encoder_scope_allows_real_accelerate_sequential_offload():
+    import torch
+    from accelerate import cpu_offload
+    from types import SimpleNamespace
+    from sdfx.photomaker_adapters import id_encoder_scope
+    encoder = torch.nn.Sequential(torch.nn.Linear(3, 2))
+    source = torch.ones(1, 3)
+    expected = encoder(source).detach()
+    cpu_offload(encoder, execution_device=torch.device('cpu'))
+    assert all(p.is_meta for p in encoder.parameters())
+    pipe = SimpleNamespace(id_encoder=encoder)
+    engine = SimpleNamespace(pipe=pipe, device=torch.device('cpu'))
+    with id_encoder_scope(engine, pipe):
+        torch.testing.assert_close(encoder(source), expected)
+    assert all(p.is_meta for p in encoder.parameters())
+    with pytest.raises(RuntimeError, match='cancelled'):
+        with id_encoder_scope(engine, pipe):
+            torch.testing.assert_close(encoder(source), expected)
+            raise RuntimeError('cancelled')
+    assert all(p.is_meta for p in encoder.parameters())
+
+
+def test_first_photomaker_load_materializes_sequential_base_before_loader_reads_device():
+    import torch
+    from accelerate import cpu_offload
+    from accelerate.hooks import remove_hook_from_module
+    from sdfx.photomaker_adapters import load_owned_adapter
+    unet = cpu_offload(torch.nn.Sequential(torch.nn.Linear(3, 2)), execution_device=torch.device('cpu'))
+    base = SimpleNamespace(unet=unet, get_list_adapters=lambda: {})
+    engine = SimpleNamespace(pipe=base, derived={}, _offload=True,
+                             _drop_hooks=lambda: remove_hook_from_module(unet, recurse=True), _free=lambda: None)
+    observed = []
+    pipe = SimpleNamespace(load_photomaker_adapter=lambda *args, **kwargs:
+                           observed.append(next(unet.parameters()).device.type))
+    assert next(unet.parameters()).is_meta
+    load_owned_adapter(engine, pipe, {})
+    assert observed == ['cpu'], 'official loader must not move newly loaded ID weights to meta'
+
+
+def test_id_encoder_scope_rejects_unbacked_meta_weights():
+    import torch
+    from types import SimpleNamespace
+    from sdfx.photomaker_adapters import id_encoder_scope
+    pipe = SimpleNamespace(id_encoder=torch.nn.Linear(3, 2, device='meta'))
+    with pytest.raises(ValueError, match='not materialized'):
+        with id_encoder_scope(SimpleNamespace(pipe=pipe, device=torch.device('cpu')), pipe):
+            pass

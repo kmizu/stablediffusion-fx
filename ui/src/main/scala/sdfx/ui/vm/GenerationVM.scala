@@ -55,6 +55,7 @@ object GenerationVM:
 
 /** All editable generation parameters of one tab as JavaFX properties (works without a running toolkit). */
 final class GenerationVM(val mode: Mode, val shared: ModelVM = new ModelVM):
+  private var keywordReplayPrompt: Option[String] = None
   val prompt = new SimpleStringProperty("")
   val negativePrompt = new SimpleStringProperty("")
   val promptStyles: ObservableList[String] = FXCollections.observableArrayList[String]()
@@ -164,7 +165,8 @@ final class GenerationVM(val mode: Mode, val shared: ModelVM = new ModelVM):
       img2img = img2img,
       controlnet = controlNet.filter(_.isUsable).map(_.toUnit),
       checkpoint = Option(shared.checkpoint.get).map(_.trim).filter(_.nonEmpty),
-      vae = Option(shared.vae.get).map(_.trim).filter(_.nonEmpty)
+      vae = Option(shared.vae.get).map(_.trim).filter(_.nonEmpty),
+      extra = Option.when(keywordReplayPrompt.contains(prompt.get))("Model keyword replay" -> "True").toMap
     )
 
   /** Form state for persistence: like [[toParams]] but keeps disabled ControlNet units. */
@@ -177,6 +179,7 @@ final class GenerationVM(val mode: Mode, val shared: ModelVM = new ModelVM):
     */
   def load(p: GenerationParams, keepImages: Boolean = false, includeModel: Boolean = false,
       variationEnabledState: Boolean = true): Unit =
+    keywordReplayPrompt = None
     prompt.set(p.prompt)
     manualLoras.setAll(p.loras*)
     negativePrompt.set(p.negativePrompt)
@@ -235,6 +238,8 @@ final class GenerationVM(val mode: Mode, val shared: ModelVM = new ModelVM):
       availableStyles, restoreHiresTemplate)
     val hasVariation = parsed.fields.contains("Variation seed") || parsed.fields.contains("Variation seed strength")
     load(restored, keepImages = true, variationEnabledState = hasVariation)
+    keywordReplayPrompt = Option.when(parsed.fields.contains("Model keyword settings") ||
+      parsed.fields.get("Model keyword replay").exists(_.equalsIgnoreCase("true")))(restored.prompt)
     restored
 
   /** Validation of the form; empty when the job can be submitted. Also updates [[problems]]. */

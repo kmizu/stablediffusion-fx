@@ -16,7 +16,7 @@ enum PluginKind:
 
 /** Dynamic choice lists resolved by the host at runtime. */
 enum ChoiceSource:
-  case Samplers, Schedulers, Checkpoints, Vaes, Loras, Upscalers, HiresUpscalers, Preprocessors, ControlNets,
+  case Samplers, Schedulers, Checkpoints, Vaes, Loras, Embeddings, Upscalers, HiresUpscalers, Preprocessors, ControlNets,
     FaceRestorers, SvdModels, Zero123Models, PhotoMakerModels
 
 /** Declarative UI controls; the JavaFX host renders them, MCP exposes them as JSON schema. */

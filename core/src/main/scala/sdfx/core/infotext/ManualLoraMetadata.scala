@@ -14,7 +14,7 @@ object ManualLoraMetadata:
       val values = ujson.read(text).arr
       require(values.size <= 256)
       val refs = values.toSeq.map { value =>
-        require(value.obj.keySet.subsetOf(Set("name", "weight", "unet", "lbw", "start", "stop")))
+        require(value.obj.keySet.subsetOf(Set("name", "weight", "unet", "lbw", "start", "stop", "dyn")))
         val ref = SnakePickle.read[LoraRef](value.render())
         require(ref.name.nonEmpty && ref.name.length <= 4096)
         require((Seq(ref.weight) ++ ref.unet ++ ref.start ++ ref.stop).forall(_.isFinite))

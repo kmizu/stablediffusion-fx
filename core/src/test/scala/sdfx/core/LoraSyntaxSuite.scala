@@ -12,6 +12,19 @@ class LoraSyntaxSuite extends munit.FunSuite:
     assertEquals(e.loras, Seq(LoraRef("foo", 0.8), LoraRef("bar", -0.5)))
   }
 
+  test("dynamic rank survives positional and named tags, including distinct variants") {
+    val refs = extract("<lora:a:0.5:0.7:2> <lora:a:te=1:unet=0.4:dyn=3>").loras
+    assertEquals(refs, Seq(LoraRef("a", .5, unet = Some(.7), dyn = Some(2)),
+      LoraRef("a", 1, unet = Some(.4), dyn = Some(3))))
+    intercept[IllegalArgumentException](extract("<lora:a:dyn=bad>"))
+  }
+
+  test("keyword replay removes tags without changing the actual conditioned text") {
+    val out = extract("<lora:a:0.5>red  , cat", preserveSpacing = true)
+    assertEquals(out.prompt, "red  , cat")
+    assertEquals(out.loras, Seq(LoraRef("a", .5)))
+  }
+
   test("missing / empty / invalid weight defaults to 1") {
     assertEquals(extract("<lora:a>").loras, Seq(LoraRef("a", 1.0)))
     assertEquals(extract("<lora:b:>").loras, Seq(LoraRef("b", 1.0)))

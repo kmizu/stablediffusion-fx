@@ -60,6 +60,15 @@ def _pad(tensor, length):
     return torch.cat([tensor, tensor.new_zeros(tensor.shape[0], length - tensor.shape[1], tensor.shape[2])], dim=1)
 
 
+def encode_photo_target(pipe, text, weight, *, clip_skip, dtype):
+    """Use the native SDXL encoder and token slice for one signed target."""
+    import torch
+    with torch.no_grad():
+        word, _ = prompt.encode_sdxl(pipe, f'({escape_text(text)}:{weight:g})', clip_skip)
+        indices = _positions(pipe, text, word.shape[1])
+        return word[0, indices].to(dtype=dtype)
+
+
 def encode(engine, pos: str, neg: str, gp, bs: int) -> dict:
     import torch
     pos_clean, pos_targets = extract(pos)
@@ -161,6 +170,28 @@ def _forward(original, module):
             for handle in handles:
                 handle.remove()
     return forward
+
+
+class Rebindable:
+    """Own a NegPiP forward wrapper across Accelerate hook replacement."""
+    def __init__(self, pipe):
+        self.pipe = pipe
+        self._remove = None
+
+    @property
+    def active(self):
+        return self._remove is not None
+
+    def install(self):
+        if self._remove is not None:
+            raise RuntimeError('NegPiP already installed')
+        self._remove = install(self.pipe)
+        return self
+
+    def remove(self):
+        if self._remove is not None:
+            remove, self._remove = self._remove, None
+            remove()
 
 
 def install(pipe):

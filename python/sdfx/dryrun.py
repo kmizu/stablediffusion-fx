@@ -76,7 +76,7 @@ class FakeEngine(BaseEngine):
 
     def features(self) -> list[str]:
         from importlib.util import find_spec
-        return (["inpaint_difference"] if HAVE_NUMPY and HAVE_PIL and find_spec('cv2') else []) + ["conditioning_highres_fix", "embedding_merge", "metadata_utils", "img2img_hires_fix", "hires_fix_tweaks", "token_downsampling", "vram_estimator", "steps_animation", "pnginfo_injection", "gpu_temperature_guard", "freeu", "dynamic_thresholding", "hypertile", "pag", "controlnet", "apg", "mahiro", "rescale_cfg",
+        return (["inpaint_difference"] if HAVE_NUMPY and HAVE_PIL and find_spec('cv2') else []) + ["conditioning_highres_fix", "model_keyword", "embedding_merge", "metadata_utils", "img2img_hires_fix", "hires_fix_tweaks", "token_downsampling", "vram_estimator", "steps_animation", "pnginfo_injection", "gpu_temperature_guard", "freeu", "dynamic_thresholding", "hypertile", "pag", "controlnet", "apg", "mahiro", "rescale_cfg",
                 "model_sampling", "kohya_hrfix", "multidiffusion", "latent_modifier", "soft_inpainting", "sag", "neveroom",
                 "reference", "revision", "ip_adapter", "controllllite", "fooocus_inpaint", "photomaker", "img2imgalt",
                 "face_restore", "caption", "img2vid", "novel_view", "ldsr", "marigold", "adetailer", "weight_gradient", "negpip", "neutral_prompt", "prompt_fusion", "save_intermediate", "latent_upscale", "composable_lora", "system_info", "prevent_interrupt"] + list(SAMPLING_HOOKS) + (
@@ -240,6 +240,7 @@ class FakeEngine(BaseEngine):
             # dry run stays usable without any checkpoint (UI development / smoke tests)
             m = {"name": "dry-run", "path": "", "kind": "sd15", "hash": "0000000000"}
             ctx.log("info", "dry run: no model loaded, using placeholder model 'dry-run'")
+        keyword_plan, keyword_loras = self.generation_keyword_plan(gp, req, seed, ctx)
         w, h = gp.width, gp.height
         hires = mode == "txt2img" and gp.hires.enabled
         out_w, out_h = gp.hires.target_size(w, h) if hires else (w, h)
@@ -310,6 +311,11 @@ class FakeEngine(BaseEngine):
                             write_png_rgb(path, out_w, out_h, rows)
                             iw, ih = out_w, out_h
                         entry = {"path": path, "seed": s, "subseed": ss, "width": iw, "height": ih}
+                        if keyword_plan is not None:
+                            entry['effective_prompt'] = keyword_plan['replay_prompts'][k]
+                            entry['model_keyword_source_prompt'] = keyword_plan['prompts'][k]
+                            if 'refinement_prompt' in keyword_plan:
+                                entry['model_keyword_refinement_prompt'] = keyword_plan['refinement_prompt']
                         if hr_plan is not None:
                             entry.update(hires_seed=wire_seed(hr_seeds[j]), hires_subseed=wire_seed(hr_subs[j]),
                                 hires_subseed_strength=hr_plan.strength, hires_repeat=repeat,

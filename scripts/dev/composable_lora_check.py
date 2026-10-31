@@ -88,10 +88,6 @@ def build_guards(init_image, allow_code=False):
     guards = [
         dict(name='photomaker', params=dict(plain, hooks={'composable_lora': {}, 'photomaker': {}}),
              code='unsupported', message='photomaker'),
-        dict(name='alternative', params=dict(plain, hooks={'composable_lora': {}, 'img2imgalt': {}},
-             img2img=dict(init_image=init_image, denoising_strength=.6)), code='unsupported', message='img2imgalt'),
-        dict(name='negpip-signed', params=dict(plain, prompt=BASE + ' (hair:-1) <lora:A:1>',
-             hooks={'composable_lora': {}, 'negpip': {}}), code='unsupported', message='NegPiP'),
         dict(name='native-lbw', params=dict(plain, loras=[dict(name='A', weight=1., lbw='ALL')],
              hooks={'composable_lora': {}}), code='unsupported', message='Block Weight'),
     ]

@@ -9,10 +9,10 @@ class AlwaysOnSuite extends munit.FunSuite:
   val NeedsInput = Set("reference", "revision", "ip_adapter", "controllllite", "fooocus_inpaint", "photomaker", "face_restore",
     "neveroom", "lora_block_weight")
 
-  test("all AlwaysOn plugins are disabled by default and declare their engine feature") {
+  test("AlwaysOn plugins declare their default activation and engine feature") {
     StandardPlugins.alwaysOn.foreach { p =>
       assertEquals(p.kind, PluginKind.AlwaysOn)
-      assert(!p.isActive(Values.defaults(p.controls)), p.id)
+      assertEquals(p.isActive(Values.defaults(p.controls)), p.id == "model_keyword", p.id)
       // image / model based plugins additionally need an input (covered in BuiltinsSuite)
       if !NeedsInput.contains(p.id) then assert(p.isActive(on(p)), p.id)
     }

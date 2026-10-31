@@ -8,6 +8,38 @@ from .embedding_merge_prompts import expressions
 from .embedding_merge_runtime import expression_scope
 
 
+def restore_composable_provenance(result, provenance):
+    """Keep raw expressions in routing metadata after transient rows are removed."""
+    if not provenance or not isinstance(result, dict):
+        return result
+    seen = set()
+    def raw(value):
+        if isinstance(value, str):
+            for name, expression in provenance.items():
+                value = value.replace(name, expression)
+            return value
+        if isinstance(value, list):
+            return [raw(item) for item in value]
+        if isinstance(value, tuple):
+            return tuple(raw(item) for item in value)
+        return value
+    def visit(branch):
+        if not isinstance(branch, dict) or id(branch) in seen:
+            return
+        seen.add(id(branch))
+        for key in ('branch', 'prompt', 'negative'):
+            if '_clora_' + key in branch:
+                branch['_photo_raw_' + key] = raw(branch['_clora_' + key])
+        for _, variant in getattr(branch, 'schedule', None) or ():
+            visit(variant)
+        plan = branch.get('_neutral')
+        if plan is not None:
+            for nested in plan.branches:
+                visit(nested)
+    visit(result)
+    return result
+
+
 def run_encoded(engine, prompts, operation, *, check=lambda: None, tensor_factory=None):
     prompts = tuple(prompts)
     if not any(expressions(text) for text in prompts):
@@ -21,7 +53,7 @@ def run_encoded(engine, prompts, operation, *, check=lambda: None, tensor_factor
         # and rollback. Nested hook placement would invalidate snapshot weights.
         backend = ModelBackend(engine, tensor_factory=tensor_factory, access=lambda call: call())
         with expression_scope(source, prompts, backend, check) as merged:
-            return operation(merged.prompts)
+            return restore_composable_provenance(operation(merged.prompts), merged.provenance)
     return run_encoding_transaction(engine, materialized)
 
 
@@ -46,10 +78,14 @@ class ModelBackend:
             for tokenizer, encoder in streams(self.engine.pipe).values():
                 module = encoder.get_input_embeddings()
                 weight = module.weight
+                inference = False
+                if hasattr(weight, 'detach'):
+                    import torch
+                    inference = torch.is_inference(weight)
                 saved = weight.detach().clone() if hasattr(weight, 'detach') else weight.copy()
                 result.append((tokenizer, copy.deepcopy(tokenizer.__dict__), encoder, module, saved,
                                getattr(module, 'num_embeddings', None), getattr(module, 'padding_idx', None),
-                               getattr(encoder.config, 'vocab_size', None), getattr(encoder, 'vocab_size', None)))
+                               getattr(encoder.config, 'vocab_size', None), getattr(encoder, 'vocab_size', None), inference))
             return result
         return self.access(operation)
 
@@ -74,11 +110,17 @@ class ModelBackend:
 
     def restore(self, snapshot):
         def operation():
-            for tokenizer, state, encoder, module, weight, size, padding, config_size, encoder_size in snapshot:
+            for tokenizer, state, encoder, module, weight, size, padding, config_size, encoder_size, inference in snapshot:
                 tokenizer.__dict__.clear()
                 tokenizer.__dict__.update(state)
                 if hasattr(module.weight, 'detach'):
-                    module.weight.data = weight
+                    # The loader may resize this same module in place. A
+                    # snapshot taken in inference mode must not become the
+                    # persistent Parameter's inference-only storage.
+                    import torch
+                    with torch.inference_mode(inference), torch.no_grad():
+                        restored = weight.detach().clone()
+                    module.weight.data = restored
                 else:
                     module.weight = weight.copy()
                 if size is not None:

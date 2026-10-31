@@ -15,7 +15,20 @@ def clone_tokenizers(components):
             for name, value in components.items()}
 
 
-def run_pipeline(engine, pipe, prompts, operation, *, check, tensor_factory=None):
+def validate_offload_multidiffusion(offload, photomaker, multidiffusion, prompts):
+    if offload and photomaker and multidiffusion and any(expressions(text) for text in prompts):
+        from .protocol import EngineError, UNSUPPORTED
+        raise EngineError(UNSUPPORTED, 'MultiDiffusion with PhotoMaker and Embedding Merge is not supported with offload yet')
+
+
+def validate_keyword_offload_multidiffusion(hooks, offload, photomaker, multidiffusion, prompts):
+    from .hooks import hook_config
+    if hook_config(hooks, 'model_keyword', {}) is not None:
+        validate_offload_multidiffusion(offload, photomaker, multidiffusion, prompts)
+
+
+def run_pipeline(engine, pipe, prompts, operation, *, check, tensor_factory=None, runtime_hook=None,
+                 extra_runtime_hooks=(), pre_runtime_hooks=()):
     raw = tuple(prompts)
     if not any(expressions(text) for text in raw):
         return operation(raw)
@@ -26,6 +39,9 @@ def run_pipeline(engine, pipe, prompts, operation, *, check, tensor_factory=None
     if set(base) != set(target) or any(base[key][1] is not target[key][1] for key in base):
         raise ValueError('text-only pipeline must share the loaded model encoders')
     state = {}
+    runtime_hooks = list(pre_runtime_hooks) + ([runtime_hook] if runtime_hook is not None else []) + list(extra_runtime_hooks)
+    rebind_runtime = bool(runtime_hooks) and bool(getattr(engine, '_offload', False))
+    rebound = []
 
     def prepare():
         check()
@@ -43,13 +59,37 @@ def run_pipeline(engine, pipe, prompts, operation, *, check, tensor_factory=None
         return merged.prompts
 
     try:
+        # Removing Accelerate hooks rewrites UNet.forward. Suspend Neutral
+        # first, then bind it to the new offload wrapper just for invocation.
+        if rebind_runtime:
+            for hook in reversed(runtime_hooks):
+                hook.remove()
         texts = engine._with_embedding_encoder_access(prepare)
         # Full pipeline execution requires its normal offload hooks. Both text
         # passes and the intervening token decode see the same temporary names.
         engine._activate(pipe)
         check()
-        return operation(texts)
+        if rebind_runtime:
+            for hook in runtime_hooks:
+                hook.install()
+                rebound.append(hook)
+        # Transformers' legacy CLIP EOS=2 path pools at the largest token id.
+        # Temporary expression tokens exceed the actual EOS id, so scope the
+        # corrected SDXL pooling to PhotoMaker's own text encoding only.
+        model = getattr(getattr(pipe, 'text_encoder_2', None), 'text_model', None)
+        tokenizer = getattr(pipe, 'tokenizer_2', None)
+        eos = getattr(tokenizer, 'eos_token_id', None)
+        if getattr(pipe, 'id_encoder', None) is None or getattr(model, 'eos_token_id', None) != 2 or eos is None:
+            return operation(texts)
+        try:
+            model.eos_token_id = eos
+            return operation(texts)
+        finally:
+            model.eos_token_id = 2
     finally:
+        if rebind_runtime:
+            for hook in reversed(rebound):
+                hook.remove()
         if 'scope' in state:
             failure = sys.exc_info()
             # Cancellation must not prevent restoration. The shared guard

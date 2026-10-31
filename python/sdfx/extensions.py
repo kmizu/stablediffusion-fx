@@ -188,7 +188,8 @@ def configure_ip_adapter(engine, pipe, gp, req):
 
 
 def install(engine, pipe, task: str, gp, req, kw: dict, ctx, cleanups: list, *, plan: RunPlan, w: int, h: int, sched,
-            cfg_scale: float, image=None, mask=None, steps: int = 0, seed: int = 0, branch_hooks=None) -> list:
+            cfg_scale: float, image=None, mask=None, steps: int = 0, seed: int = 0, branch_hooks=None,
+            forward_wrappers=None) -> list:
     """Installs every requested hook, appending cleanup callables to `cleanups` as it goes (so a failure half way
     still lets the engine undo what was installed)."""
     import torch
@@ -238,6 +239,8 @@ def install(engine, pipe, task: str, gp, req, kw: dict, ctx, cleanups: list, *, 
     if md:
         mw = unet_hooks.MultiDiffusionWrapper(unet, unet_hooks.normalize_multidiffusion(md)).install()
         cleanups.append(mw.remove)
+        if forward_wrappers is not None:
+            forward_wrappers.append(mw)
 
     # --- image conditioning ---------------------------------------------------------------------------------------
     install_reference(engine, pipe, gp, cleanups, w=w, h=h, scheduler=sched, branch_hooks=branch_hooks)

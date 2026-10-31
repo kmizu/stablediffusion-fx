@@ -193,8 +193,10 @@ object Infotext:
         )
       else base.hires.copy(enabled = false)
     val subStrength = d("Variation seed strength").getOrElse(0.0)
+    val keywordReplay = f.contains("Model keyword settings") || f.get("Model keyword replay").exists(_.equalsIgnoreCase("true"))
+    val startingHooks = if keywordReplay then base.hooks - "model_keyword" else base.hooks
     val hiresHooks = f.get("Hires seed").flatMap(HiresSeedMetadata.parse)
-      .fold(base.hooks)(h => base.hooks.updated("hires_fix_tweaks", h))
+      .fold(startingHooks)(h => startingHooks.updated("hires_fix_tweaks", h))
     val restoredHooks = f.get(Img2ImgHiresMetadata.key).flatMap(Img2ImgHiresMetadata.parse)
       .fold(hiresHooks - "img2img_hires_fix")(h => hiresHooks.updated("img2img_hires_fix", h))
     base.copy(

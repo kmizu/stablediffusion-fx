@@ -75,7 +75,8 @@ object PluginForm:
           if !(c.key == "enabled" && form.plugin.kind == PluginKind.AlwaysOn) then
             f.full(W.check(c.label, boolProp(form.props(c.key))))
         case _ =>
-          val node = control(ctx, c, widget, form.props(c.key))
+          val node = control(ctx, c, widget, form.props(c.key), form.plugin.id)
+          node.setId(s"plugin-${form.plugin.id}-${c.key}")
           bindEnabled(form, c.key, node)
           f.add(c.label, node)
     }
@@ -89,7 +90,7 @@ object PluginForm:
       gate.addListener((_, _, v) => update(v))
     }
 
-  private def control(ctx: UiContext, c: Control, widget: Widget, p: StringProperty): Node = (c, widget) match
+  private def control(ctx: UiContext, c: Control, widget: Widget, p: StringProperty, pluginId: String): Node = (c, widget) match
     case (s: Control.Slider, _) =>
       W.doubleSlider(doubleProp(p, s.defaultValue), s.min, s.max, s.step)
     case (i: Control.IntField, _) =>
@@ -97,7 +98,12 @@ object PluginForm:
     case (ch: Control.Choice, _) if ch.previewResources.nonEmpty =>
       PreviewChoice.render(ch, p)
     case (ch: Control.Choice, _) =>
-      W.combo(FXCollections.observableArrayList(ch.options*), p)
+      val items = if pluginId == "model_keyword" && ch.key == "model_choice" then ctx.modelKeywordChoices
+        else if pluginId == "model_keyword" && ch.key == "lora_choice" then ctx.loraKeywordChoices
+        else FXCollections.observableArrayList(ch.options*)
+      val combo = W.combo(items, p)
+      combo.setEditable(ch.allowCustom)
+      combo
     case (dc: Control.DynamicChoice, _) =>
       val combo = W.combo(dynamicItems(ctx, dc), p)
       if dc.source == ChoiceSource.Checkpoints then
@@ -188,8 +194,10 @@ object PluginForm:
   /** Collapsible pane for an AlwaysOn plugin with its "enabled" checkbox in the header. */
   def alwaysOnSection(ctx: UiContext, form: PluginValuesVM, expanded: Boolean): TitledPane =
     val pane = W.section(form.plugin.name, render(ctx, form), expanded, form.plugin.description)
+    pane.setId(s"plugin-${form.plugin.id}-section")
     form.prop("enabled").foreach { en =>
       val cb = new CheckBox()
+      cb.setId(s"plugin-${form.plugin.id}-enabled")
       cb.selectedProperty.bindBidirectional(boolProp(en))
       W.tip(cb, s"Enable ${form.plugin.name}")
       pane.setGraphic(cb)

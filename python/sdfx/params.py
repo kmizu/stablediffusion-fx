@@ -29,6 +29,7 @@ class LoraRef:
     lbw: Optional[str] = None    # LoRA Block Weight: preset name or comma separated block weights
     start: Optional[float] = None
     stop: Optional[float] = None
+    dyn: Optional[int] = None
 
 
 @dataclass

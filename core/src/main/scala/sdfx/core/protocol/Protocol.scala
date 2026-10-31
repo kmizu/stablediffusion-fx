@@ -139,7 +139,9 @@ case class GeneratedImage(path: String, seed: Long, subseed: Long = -1L, width: 
     hardwareInfo: Option[HardwareInfo.Record] = None,
     hiresSeed: Option[Long] = None, hiresSubseed: Option[Long] = None,
     hiresSubseedStrength: Option[Double] = None, hiresRepeat: Option[Int] = None,
-    hiresSeedResizeFromW: Option[Int] = None, hiresSeedResizeFromH: Option[Int] = None) derives RW
+    hiresSeedResizeFromW: Option[Int] = None, hiresSeedResizeFromH: Option[Int] = None,
+    effectivePrompt: Option[String] = None, modelKeywordSourcePrompt: Option[String] = None,
+    modelKeywordRefinementPrompt: Option[String] = None) derives RW
 
 /** Persistent auxiliary output; not an engine temp file or a final-image gallery member. */
 case class IntermediateArtifact(path: String, `type`: String = "image") derives RW

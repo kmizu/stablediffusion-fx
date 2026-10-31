@@ -6,6 +6,15 @@ import sdfx.core.protocol.*
 import sdfx.core.infotext.HardwareInfo
 
 class ProtocolSuite extends munit.FunSuite:
+  test("per-image effective prompts survive protocol decoding and older workers remain compatible") {
+    val result = Json.fromJs[GenerationResult](ujson.read(
+      """{"images":[{"path":"one.png","seed":1,"effective_prompt":"first","model_keyword_source_prompt":"selected"},{"path":"two.png","seed":2,"effective_prompt":"second"}]}"""))
+    assertEquals(result.images.map(_.effectivePrompt), Seq(Some("first"), Some("second")))
+    assertEquals(result.images.map(_.modelKeywordSourcePrompt), Seq(Some("selected"), None))
+    val old = Json.fromJs[GenerationResult](ujson.read(
+      """{"images":[{"path":"old.png","seed":1}]}"""))
+    assertEquals(old.images.head.effectivePrompt, None)
+  }
   import EngineEvent.*
 
   test("difference hook enablement matches engine when determining inpaint mode") {

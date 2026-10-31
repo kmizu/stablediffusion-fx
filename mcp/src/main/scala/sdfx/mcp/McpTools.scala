@@ -86,7 +86,8 @@ final class McpTools(
   // ---- generation params -------------------------------------------------------------------------------------
 
   /** Parsed generation request plus output options. Temp files are deleted after the job. */
-  private final case class GenRequest(params: GenerationParams, returnImages: Boolean, maxSide: Int, temps: Seq[Path])
+  private final case class GenRequest(params: GenerationParams, returnImages: Boolean, maxSide: Int, temps: Seq[Path],
+      alwaysOn: Seq[(Plugin, Values)])
 
   private def parseGen(a: Args, img2img: Boolean, requirePrompt: Boolean = true): GenRequest =
     val temps = Seq.newBuilder[Path]
@@ -202,7 +203,15 @@ final class McpTools(
       val problems = p.validate
       if problems.nonEmpty then throw ToolError(problems.mkString("; "))
       checkWork(p)
-      GenRequest(p, a.bool("return_images").getOrElse(true), a.int("max_image_side", 0, MaxSide).getOrElse(1024), temps.result())
+      // Model Keyword is the only default AlwaysOn plugin exposed here. Respect
+      // the registry setting, and allow callers to override it per request;
+      // do not silently activate unrelated desktop plugins.
+      val keyword = services.registry.get("model_keyword").filter(_ => services.registry.isEnabled("model_keyword")).toSeq.map { plugin =>
+        val initial = services.registry.values(plugin)
+        val values = a.bool("model_keyword").fold(initial)(enabled => initial.updated("enabled", enabled.toString))
+        plugin -> values
+      }.filter((plugin, values) => plugin.isActive(values))
+      GenRequest(p, a.bool("return_images").getOrElse(true), a.int("max_image_side", 0, MaxSide).getOrElse(1024), temps.result(), keyword)
     catch
       case e: Throwable =>
         temps.result().foreach(Images.deleteQuietly)
@@ -361,7 +370,7 @@ final class McpTools(
   private def generationTool(img2img: Boolean, args: ujson.Obj, ctx: ToolContext): ToolResult =
     ready(ctx) // name checks need the catalog
     val req = parseGen(Args(args, genKeys(img2img)), img2img)
-    val job = Job(Job.newId(), req.params, origin = Origin, limits = limits)
+    val job = Job(Job.newId(), req.params, alwaysOn = req.alwaysOn, origin = Origin, limits = limits)
     runBlocking(job, ctx, req.temps) match
       case Outcome.Done(out) => outputResult(job.id, out, req.returnImages, req.maxSide)
       case Outcome.Cancelled(partial) =>
@@ -593,7 +602,7 @@ final class McpTools(
     if !async then ready(ctx)
     val req = parseGen(Args(pObj, scriptParamKeys(img2img)), img2img, requirePrompt = false).copy(returnImages = returnImages, maxSide = maxSide)
     val job =
-      try Job(Job.newId(), req.params, script = Some(plugin -> Values(services.registry.values(plugin).map ++ checkedValues)), origin = Origin, limits = limits)
+      try Job(Job.newId(), req.params, script = Some(plugin -> Values(services.registry.values(plugin).map ++ checkedValues)), alwaysOn = req.alwaysOn, origin = Origin, limits = limits)
       catch
         case e: Throwable =>
           req.temps.foreach(Images.deleteQuietly)
@@ -652,6 +661,7 @@ final class McpTools(
         "LoRAs to apply; appended to the prompt as <lora:name:weight> tags."
       ),
       "styles" -> Schema.arr(Schema.str(), "Saved prompt style names (see list_samplers styles)."),
+      "model_keyword" -> Schema.bool("Enable Model Keyword for this request; omitted uses its saved setting and upstream-enabled default."),
       "return_images" -> Schema.bool("Return base64 previews inline. Files are always saved.", Some(true)),
       "max_image_side" -> Schema.int("Downscale returned previews so the longest side is at most this (0 = full size). The saved file stays full size.", Some(0), Some(MaxSide.toLong), Some(1024)),
       "extra" -> Schema.scalarMap("Advanced: extra key/value parameters recorded in the infotext and passed to the engine.")
@@ -768,14 +778,14 @@ final class McpTools(
       genSchema(false))((a, _) => {
         checkPendingCap()
         val req = parseGen(Args(a, genKeys(false)), img2img = false)
-        submitAsync(Job(Job.newId(), req.params, origin = Origin, limits = limits), "txt2img", req)
+        submitAsync(Job(Job.newId(), req.params, alwaysOn = req.alwaysOn, origin = Origin, limits = limits), "txt2img", req)
       }),
     tool("img2img_async", "Image to image (async)",
       "Queue an img2img/inpaint job and return its job_id immediately. Poll get_job for progress and results.",
       genSchema(true))((a, _) => {
         checkPendingCap()
         val req = parseGen(Args(a, genKeys(true)), img2img = true)
-        submitAsync(Job(Job.newId(), req.params, origin = Origin, limits = limits), "img2img", req)
+        submitAsync(Job(Job.newId(), req.params, alwaysOn = req.alwaysOn, origin = Origin, limits = limits), "img2img", req)
       }),
     tool("get_job", "Get async job",
       "Status, progress (0..1) and, when finished, the images of a job started with *_async or run_script async. wait_seconds blocks until the job finishes or the time passes.",
@@ -800,6 +810,42 @@ final class McpTools(
           "protection" -> result.protection.map(Json.toJs(_)).getOrElse(ujson.Null)),
           Some(if result.blocked then result.message.getOrElse("Interruptions are blocked")
             else if result.cancelled then s"cancel requested for $id" else s"$id is no longer queued or running"))
+      }),
+    tool("model_keyword_lookup", "Look up model keywords",
+      "Read the matching checkpoint or LoRA keywords, legacy hash and mapping source. Only models in configured catalogs are accessible; omitted checkpoint name means the loaded model.",
+      Schema.obj(Seq("kind" -> Schema.str("Model category", Seq("checkpoint", "lora"), Some("checkpoint")),
+        "name" -> Schema.str("Catalog model name; required for LoRA, optional for the loaded checkpoint."))), ro = true)((a, ctx) => {
+        val args = Args(a, Seq("kind", "name"))
+        val kind = args.str("kind").getOrElse("checkpoint")
+        if kind != "checkpoint" && kind != "lora" then throw ToolError("kind must be checkpoint or lora")
+        ready(ctx)
+        ensureCatalog()
+        val name = args.str("name").map(_.trim).filter(_.nonEmpty)
+        val params = ujson.Obj("action" -> "check", "kind" -> kind,
+          "mapping_dir" -> services.home.configDir.resolve("model-keyword").toString)
+        if kind == "checkpoint" then
+          val query = name.orElse(services.supervisor.loadedModel.map(_.path))
+            .getOrElse(throw ToolError("no checkpoint loaded; provide a catalog checkpoint name"))
+          val model = catalog.findCheckpoint(query).getOrElse(throw ToolError(s"checkpoint not found: $query"))
+          params("model_path") = model.path
+        else
+          val query = name.getOrElse(throw ToolError("name is required for LoRA lookup"))
+          val model = catalog.findLora(query).getOrElse(throw ToolError(s"LoRA not found: $query"))
+          val file = Path.of(model.path).getFileName.toString
+          val dot = file.lastIndexOf('.')
+          params("model_path") = model.path
+          params("match_name") = model.name.replace('\\', '/') + (if dot >= 0 then file.substring(dot) else "")
+        val value = Await.result(services.client.raw("model_keyword", params), 2.minutes)
+        val result = ujson.Obj.from(value.obj.toSeq)
+        result("kind") = kind
+        result("model") = result("filename")
+        val source = result("source").str
+        result("match_source") = source match
+          case "default" => if kind == "checkpoint" then "model-keyword.txt" else "lora-keyword.txt"
+          case "user catalog" => "lora-keyword.txt"
+          case "custom" => if kind == "checkpoint" then "custom-mappings.txt" else "lora-keyword-user.txt"
+          case other => other
+        ToolResult.json(result)
       }),
     tool("list_models", "List checkpoints",
       "Checkpoints (with kind: sd15 / sdxl ...) and VAEs available to the engine, marking the loaded one.",
@@ -974,7 +1020,7 @@ object McpTools:
   val HiresKeys: Seq[String] = Seq("enabled", "scale", "upscaler", "steps", "denoising_strength", "resize_x", "resize_y")
 
   private val CommonKeys = Seq("prompt", "negative_prompt", "width", "height", "steps", "cfg_scale", "sampler_name", "scheduler", "seed",
-    "batch_size", "n_iter", "clip_skip", "checkpoint", "vae", "loras", "styles", "return_images", "max_image_side", "extra")
+    "batch_size", "n_iter", "clip_skip", "checkpoint", "vae", "loras", "styles", "return_images", "max_image_side", "extra", "model_keyword")
   private val Img2ImgKeys = Seq("init_image", "mask", "denoising_strength", "resize_mode", "inpainting_fill", "inpaint_full_res",
     "inpaint_full_res_padding", "inpainting_mask_invert", "mask_blur")
 

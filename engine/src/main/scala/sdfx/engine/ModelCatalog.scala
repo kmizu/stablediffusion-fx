@@ -186,6 +186,7 @@ final class ModelCatalog(client: EngineClient, home: AppHome, settings: () => Se
     case ChoiceSource.Checkpoints    => checkpoints.map(_.name)
     case ChoiceSource.Vaes           => vaes.map(_.name)
     case ChoiceSource.Loras          => loras.map(_.name)
+    case ChoiceSource.Embeddings     => embeddings.map(_.name)
     case ChoiceSource.Upscalers      => upscalerNames.filterNot(_.startsWith("Latent"))
     case ChoiceSource.HiresUpscalers => (latentUpscalers.filter(l => samplers.upscalers.isEmpty || samplers.upscalers.contains(l) || l == "Latent") ++ upscalerNames).distinct
     case ChoiceSource.Preprocessors  => samplers.preprocessors
@@ -201,6 +202,7 @@ final class ModelCatalog(client: EngineClient, home: AppHome, settings: () => Se
       case ChoiceSource.ControlNets      => controlnets
       case ChoiceSource.Vaes             => vaes
       case ChoiceSource.Loras            => loras
+      case ChoiceSource.Embeddings       => embeddings
       case ChoiceSource.Upscalers | ChoiceSource.HiresUpscalers => upscalerFiles
       case ChoiceSource.FaceRestorers    => files("face_restore")
       case ChoiceSource.SvdModels        => files("svd")

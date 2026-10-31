@@ -30,6 +30,8 @@ final class UiContext(val services: AppServices, val catalog: CatalogVM, val sta
   var hiresSeedHistory = new sdfx.ui.vm.HiresSeedHistory
   lazy val hiresPreferences = new javafx.beans.property.SimpleObjectProperty(services.settings.hiresFixTweaks)
   val checkpointName = new javafx.beans.property.SimpleStringProperty("")
+  val modelKeywordChoices: ObservableList[String] = FXCollections.observableArrayList("keyword1, keyword2", "random", "iterate", "keyword1", "keyword2")
+  val loraKeywordChoices: ObservableList[String] = FXCollections.observableArrayList("None", "< iterate >", "< random >")
   def checkpointLabel(name: String, hires: Boolean = false): String =
     val entries = catalog.snapshot.get.checkpoints
     entries.find(_.name == name).map(sdfx.ui.vm.CheckpointLabels.label(_, entries,

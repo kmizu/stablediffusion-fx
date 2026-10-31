@@ -8,6 +8,7 @@ import sdfx.core.plugins.api.{Plugin, XyzAxis}
 object StandardPlugins:
   def alwaysOn: Seq[Plugin] = Seq(
     new ConditioningHighresFixPlugin,
+    new ModelKeywordPlugin,
     new InpaintDifferencePlugin,
     new HiresFixTweaksPlugin,
     new Img2ImgHiresFixPlugin,

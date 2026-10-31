@@ -29,6 +29,37 @@ def clock_total(gp, config, actual):
     return actual
 
 
+def branch_weights(layout, texts, prompts, negatives, calculate):
+    """Weights in guidance-group-major, then per-image order."""
+    fields = (texts, prompts, negatives)
+    sizes = {len(value) for value in fields if isinstance(value, (list, tuple))}
+    if len(sizes) > 1 or 0 in sizes:
+        raise ValueError('per-image Composable LoRA branches must have equal nonzero lengths')
+    count = next(iter(sizes), 1)
+    def at(value, index):
+        return value[index] if isinstance(value, (list, tuple)) else value
+    return [calculate(at(texts, i), not positive, at(prompts, i), at(negatives, i))
+            for positive in layout for i in range(count)]
+
+
+def merge_signed_contexts(positive, negative, align):
+    """Combine independently routed encodings without losing NegPiP markers."""
+    if positive.get('_negpip') or negative.get('_negpip'):
+        (_, positive), (_, negative) = align([(0, positive), (0, negative)])
+    result = {**positive, **{key: value for key, value in negative.items() if key.startswith('negative_')}}
+    if positive.get('_negpip') or negative.get('_negpip'):
+        result['_negpip'] = True
+    return result
+
+
+def _photo_hook_target(module, photomaker):
+    # PhotoMaker can inject a PEFT wrapper after this job attaches its hooks.
+    # Keep their order identical when a later job sees an existing wrapper.
+    if photomaker and hasattr(module, 'get_base_layer'):
+        return module.get_base_layer()
+    return module
+
+
 class Job:
     def __init__(self, pipe, gp, req, ctx):
         self.pipe, self.gp, self.req, self.ctx = pipe, gp, req, ctx
@@ -48,7 +79,8 @@ class Job:
                 if spec.name not in {item.name for item in gp.loras}:
                     raise ValueError(f'Composable LoRA manual adapter is not resolved: {spec.name}')
             for spec in gp.loras:
-                if spec.name in self.adapters:
+                key = (spec.name, spec.dyn)
+                if key in self.adapters:
                     continue
                 if spec.lbw or spec.start is not None or spec.stop is not None:
                     raise EngineError(UNSUPPORTED, 'Composable LoRA with native LoRA Block Weight/start/stop fields is not supported; use its step controllers or cmd layer_name')
@@ -57,19 +89,19 @@ class Job:
                 path = req.lora_paths.get(spec.name)
                 if not path or not Path(path).is_file():
                     raise ValueError(f'Composable LoRA file not found: {spec.name}')
-                loaded = patches.load(path, pipe)
+                loaded = patches.load(path, pipe, spec.dyn) if spec.dyn is not None else patches.load(path, pipe)
                 adapter = SimpleNamespace(name=spec.name, path=path, multiplier=spec.weight,
                     te_multiplier=spec.weight, unet_multiplier=spec.unet if spec.unet is not None else spec.weight,
                     modules={name: patch for _, name, _, patch in loaded}, spec=spec)
-                self.adapters[spec.name] = adapter
+                self.adapters[key] = adapter
+                photo = hook_config(gp.hooks, 'photomaker', {}) is not None
                 for component, name, module, patch in loaded:
                     patch.name = spec.name
-                    self.handles.append(module.register_forward_hook(self._hook(component, name, adapter, patch)))
+                    target = _photo_hook_target(module, photo and component == 'unet')
+                    self.handles.append(target.register_forward_hook(self._hook(component, name, adapter, patch)))
             self._validate_tags(gp.prompt + gp.hires.prompt)
-            if self.adapters:
-                for name in ('photomaker', 'img2imgalt'):
-                    if hook_config(gp.hooks, name, {}) is not None:
-                        raise EngineError(UNSUPPORTED, f'Composable LoRA integration is not available with {name} (separate encoder/inversion route)')
+            if self.adapters and hook_config(gp.hooks, 'photomaker', {}) is not None:
+                raise EngineError(UNSUPPORTED, 'Composable LoRA integration is not available with photomaker (pending real pipeline parity)')
             # Parse/validate code before any text encoding or denoising starts.
             if self.with_step:
                 for branch in neutral_prompt.leaves(neutral_prompt.parse(gp.prompt)):
@@ -82,7 +114,7 @@ class Job:
         self._tag_weights(text)
         for match in tags.TAG.finditer(text):
             name = match[2].split(':')[0].strip()
-            if name not in self.adapters:
+            if not any(adapter.name == name for adapter in self.adapters.values()):
                 raise ValueError(f'Composable LoRA tag has no resolved adapter: {name}')
 
     def _controllers(self, text):
@@ -119,6 +151,15 @@ class Job:
         # New hosts identify manual references independently of adapter discovery.
         # Select the tag's component weight before parsing controllers so zero TE
         # and nonzero UNet weights need no division and schedules stay scoped.
+        variants = [a for a in self.adapters.values() if a.name == adapter.name]
+        if len(variants) > 1:
+            from ..model_keyword import parse_lora_activation
+            def select_rank(match):
+                if match[2].split(':', 1)[0].strip() != adapter.name:
+                    return match[0]
+                parsed = parse_lora_activation(match[2].split(':'))
+                return '' if parsed['dyn'] != adapter.spec.dyn else match[0]
+            text, full_prompt = tags.TAG.sub(select_rank, text), tags.TAG.sub(select_rank, full_prompt)
         if self.manual is not None:
             text, full_prompt = (tags.component_prompt(prompt, unet=phase == 'unet') for prompt in (text, full_prompt))
         spec = adapter.spec
@@ -153,7 +194,7 @@ class Job:
             value *= spec.unet / spec.weight if spec.weight else 0.
         if self.manual is not None:
             value += sum(item.unet if phase == 'unet' and item.unet is not None else item.weight
-                         for item in self.manual if item.name == adapter.name)
+                         for item in self.manual if item.name == adapter.name and item.dyn == spec.dyn)
         if not math.isfinite(value):
             raise ValueError('Composable LoRA controller weight must be finite')
         return value
@@ -168,22 +209,28 @@ class Job:
                 return output
             self.ctx.check_interrupt()
             try:
-                weights = [self._weight(adapter, patch, f'{component}.{layer}', text, not positive, step, total, phase,
-                                        full_prompt, negative_prompt)
-                           for positive in layout]
+                weights = branch_weights(layout, text, full_prompt, negative_prompt,
+                    lambda branch, negative, full, neg: self._weight(adapter, patch, f'{component}.{layer}',
+                        branch, negative, step, total, phase, full, neg))
             except (ValueError, OverflowError, ZeroDivisionError, KeyError) as exc:
                 raise EngineError(INVALID_PARAMS, f'Composable LoRA {adapter.name}: {exc}') from exc
-            if output.shape[0] % len(layout):
+            if not weights or output.shape[0] % len(weights):
                 raise EngineError(UNSUPPORTED, f'Composable LoRA unsupported layer batch at {layer}')
-            multiplier = output.new_tensor(weights).repeat_interleave(output.shape[0] // len(layout))
+            multiplier = output.new_tensor(weights).repeat_interleave(output.shape[0] // len(weights))
             multiplier = multiplier.view(-1, *([1] * (output.ndim - 1)))
             if phase == 'unet' and coerce_bool(self.config.get('plot_weights', False)):
-                for positive, value in zip(layout, weights):
-                    key = (pass_name, step, text, not positive, adapter.name)
-                    record = self.trace.setdefault(key, [0., 0, value, value])
-                    record[0] += value
-                    record[1] += 1
-                    record[2], record[3] = min(record[2], value), max(record[3], value)
+                count = len(weights) // len(layout)
+                for group, positive in enumerate(layout):
+                    for item in range(count):
+                        value = weights[group * count + item]
+                        branch = text[item] if isinstance(text, (list, tuple)) else text
+                        variants = sum(a.name == adapter.name for a in self.adapters.values())
+                        label = f'{adapter.name} (dyn={adapter.spec.dyn})' if variants > 1 else adapter.name
+                        key = (pass_name, step, branch, not positive, label)
+                        record = self.trace.setdefault(key, [0., 0, value, value])
+                        record[0] += value
+                        record[1] += 1
+                        record[2], record[3] = min(record[2], value), max(record[3], value)
             if not any(weights):
                 return output
             delta = patch.delta(args[0].to(output.dtype)).to(output.dtype)
@@ -200,12 +247,7 @@ class Job:
         nodes = neutral_prompt.leaves(tree)
         if not self.adapters and len(nodes) == 1:
             return None
-        # Signed value/key marker channels are not ordinary conditioning weights.
-        # Keep this compatibility boundary explicit instead of corrupting those flags.
-        if hook_config(gp.hooks, 'negpip', {}) is not None:
-            from ..negpip import extract
-            if extract(pos)[1] or extract(neg)[1]:
-                raise EngineError(UNSUPPORTED, 'Composable LoRA with NegPiP signed terms is not yet supported')
+        from .. import negpip
         sub = replace(gp, hooks={k: v for k, v in gp.hooks.items() if k not in ('composable_lora', 'neutral_prompt')})
         total = max(1, gradient_total or hires_total or steps)
         prepare_total = clock_total(gp, self.config, total)
@@ -223,10 +265,10 @@ class Job:
             for end in sorted({e for e, _ in ps} | {e for e, _ in ns}):
                 p = next((d for e, d in ps if end <= e), ps[-1][1])
                 n = next((d for e, d in ns if end <= e), ns[-1][1])
-                d = {**p, **{k: v for k, v in n.items() if k.startswith('negative_')}}
+                d = merge_signed_contexts(p, n, negpip.align_variants)
                 # Long chunks are padded separately under the correct text-encoder routing.
                 pe, ne = d['prompt_embeds'], d['negative_prompt_embeds']
-                if pe.shape[1] != ne.shape[1]:
+                if not d.get('_negpip') and pe.shape[1] != ne.shape[1]:
                     longest = max(pe.shape[1], ne.shape[1])
                     for key, x, positive_flag in (('prompt_embeds', pe, True), ('negative_prompt_embeds', ne, False)):
                         if x.shape[1] < longest:
@@ -237,6 +279,8 @@ class Job:
                 d['_clora_branch'] = source
                 d['_clora_prompt'], d['_clora_negative'] = pos, neg
                 variants.append((end, d))
+            if any(value.get('_negpip') for _, value in variants):
+                variants = negpip.align_variants(variants)
             branch = ScheduledEmbeds(variants[0][1])
             branch.schedule = variants
             branches.append(branch)
@@ -338,3 +382,10 @@ class BranchHook:
         if self.context is not None:
             self.context.__exit__(None, None, None)
             self.context = None
+
+
+def inversion_branch_hook(job, plan, scheduler, gp, steps):
+    """Apply the same routed adapters to each branch of DDIM inversion."""
+    if job is None or not plan.branches or not all('_clora_branch' in branch for branch in plan.branches):
+        return None
+    return BranchHook(job, scheduler, clock_total(gp, job.config, steps), pass_name='inversion')
