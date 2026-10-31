@@ -90,6 +90,8 @@ final class AppServices(
     log
   )
   val client: EngineClient = new EngineClient(supervisor)
+  lazy val modelPresets = new sdfx.core.modelpresets.ModelPresetService(home.configDir.resolve("model-presets"))
+
   val catalog: ModelCatalog = new ModelCatalog(client, home, () => _settings)
   val modelCards: ModelCardCatalog = new ModelCardCatalog(home, () => _settings, () => catalog.snapshot)
   val payloads: RequestPayloadStore = new RequestPayloadStore()

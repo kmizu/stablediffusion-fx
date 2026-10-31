@@ -2,7 +2,7 @@
 
 Snapshot of the official extension index (353 extensions), the list reForge's Extensions > Available tab installs from. Status per extension: `done` = built in, `todo` = accepted and planned, `na` = does not apply to a standalone desktop app.
 
-Totals: done 121, todo 181, na 51.
+Totals: done 122, todo 180, na 51.
 
 | # | Extension | Stars | Status | stablediffusion-nui | Scope / notes |
 |---|---|---|---|---|---|
@@ -152,7 +152,7 @@ Totals: done 121, todo 181, na 51.
 | 143 | [zh_Hans Localization](https://github.com/hanamizuki-ai/stable-diffusion-webui-localization-zh_Hans.git) | 481 | todo | `core:localization` |  |
 | 144 | [old localizations](https://github.com/AUTOMATIC1111/stable-diffusion-webui-old-localizations.git) | 22 | todo | `core:localization` |  |
 | 145 | [Model Organizer](https://github.com/alexandersokol/sd-model-organizer.git) | 97 | todo | `model_organizer` |  |
-| 146 | [Model Preset Manager](https://github.com/rifeWithKaiju/model_preset_manager.git) | 102 | todo | `model_presets` |  |
+| 146 | [Model Preset Manager](https://github.com/rifeWithKaiju/model_preset_manager.git) | 102 | done | `core:model-presets` | Native checkpoint-bound raw infotext libraries with preset CRUD/default, trigger controls, capture/send in all three generation modes, JSON/marker sharing, Civitai model information and bounded thumbnails. Independent implementation from unlicensed pinned behavior; full SHA256 identities, revision checks and no-overwrite exports. Real SD1.5/SDXL source and extracted-package replay, protected-image capture/replay, live Civitai retrieval and native hash cancellation verified. Review corrections preserve draft text and require explicit remote-library overwrite; full SHA requests are disclosed. Corrected package SD1.5/SDXL, full Torch CPU and Scala regressions passed; review corrections were checked before the local wave commit. See model-presets-verification.md for evidence and limits. |
 | 147 | [SD-CN-Animation](https://github.com/volotat/SD-CN-Animation.git) | 823 | todo | `cn_animation` |  |
 | 148 | [Model toolkit](https://github.com/arenasys/stable-diffusion-webui-model-toolkit.git) | 528 | done | `model_converter` |  |
 | 149 | [sd-webui-prompt-all-in-one](https://github.com/Physton/sd-webui-prompt-all-in-one) | 3242 | todo | `core:prompt-tools` |  |

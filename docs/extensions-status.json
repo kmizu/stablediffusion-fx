@@ -879,7 +879,7 @@
 "index": 146,
 "name": "Model Preset Manager",
 "url": "https://github.com/rifeWithKaiju/model_preset_manager.git",
-"status": "todo:model_presets"
+"status": "done:core:model-presets"
 },
 {
 "index": 147,

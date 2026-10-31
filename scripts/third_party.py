@@ -23,6 +23,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BASE = [
     ("klimaleksus/stable-diffusion-webui-embedding-merge", "reimplemented", "Pinned SDXL-branch behavior 40d439de3cda5965fc1f9cb4412ef329885d1d6d; independent native vector algebra, scoped prompt expressions, inspection and export; original parser used only in isolated numerical reference fixtures"),
     ("Tzigo/metadata_utils", "reimplemented", "GPL-3.0 behavior reference a4cda9fe899f95de769496946497d20daedb516b; independent native checkpoint/LoRA metadata editor with raw tensor preservation and no-overwrite copy publication"),
+    ("rifeWithKaiju/model_preset_manager", "reimplemented", "Unlicensed behavior reference 4e25eebd4b24fb903d2815ac30b787f37a98923c; independent native checkpoint preset library, sharing, Civitai information and thumbnail workflows; no upstream code copied, imported or evaluated"),
     ("Amadeus-AI/img2img-hires-fix", "reimplemented", "MIT behavior reference b8930527a8cc606dd79dd54ed23bc967314d1859; independent post-image pixel upscale, VAE re-encode and refinement controls for all generation modes"),
     ("klimaleksus/stable-diffusion-webui-conditioning-highres-fix", "reimplemented", "Independent inpainting conditioning reference 34da5b3461b89121f79f4375d4e798cd87450210; original license heading says WTFPL but its body is an Unlicense-style dedication"),
     ("w-e-w/embedding-inspector", "reimplemented", "Unlicense behavior reference 5f3451ec0cb5c9359feb37c0b0f984f09d337509; reupload of original tkalayci71 project; independent implementation"),
@@ -224,6 +225,8 @@ PINNED_LICENSES = {
 # Audited source has no license file. Do not fetch another branch or invent a license text.
 # (commit, notice label)
 PINNED_UNLICENSED = {
+    "rifeWithKaiju/model_preset_manager": (
+        "4e25eebd4b24fb903d2815ac30b787f37a98923c", "no license file published at pinned source"),
     "Gerschel/sd_web_ui_preset_utils": (
         "e301734567f37ac53c6225aec3a5c9858b357e7e", "no license file published"),
 }

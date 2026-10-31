@@ -730,6 +730,7 @@ final class McpTools(
     o
 
   val all: Seq[McpTool] = Seq(
+    new ModelPresetsTool(services),
     tool("vae_tools", "VAE encode / decode",
       "Use the loaded checkpoint/VAE to encode, decode or round-trip original local files. L/RGBA PNG, CMYK TIFF/JPEG and tensor.safetensors retain their bytes and channels. Returns saved paths and quantization/provenance report. Optional weights download requires allow_download=true.",
       Schema.obj(Seq(

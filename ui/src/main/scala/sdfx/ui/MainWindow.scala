@@ -179,6 +179,16 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   val vaeTools = new VaeToolsTab(ctx)
   val metadataUtils = new MetadataUtilsTab(ctx)
   val embeddingMerge = new EmbeddingMergeTab(ctx)
+  val modelPresets = new ModelPresetsTab(ctx,
+    () => services.supervisor.loadedModel.map(m => Path.of(m.path)),
+    () => preview.currentPath.flatMap(sdfx.core.png.PngMetadata.readParameters),
+    (mode, text, checkpoint) => {
+      select(mode)
+      restore(text)
+      if sdfx.core.infotext.Infotext.parse(text).get("Model").forall(_.isEmpty) then
+        services.catalog.findCheckpoint(checkpoint.toString).filter(_.name != model.checkpoint.get)
+          .foreach(entry => loadCheckpoint(entry.name))
+    })
   private val scrambleSession = new ScrambleSessionPane(services.imageScrambleSession, () => ctx.imageAccessChanged())
   private val scrambleBatch = new ScrambleBatchPane(stage)
   private val interruptionControls = new InterruptionControls(ctx)
@@ -212,6 +222,8 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   vaeToolsTab.setId("vae-tools-tab")
   private val embeddingMergeTab = new Tab("Embedding Merge", embeddingMerge.node)
   embeddingMergeTab.setId("embedding-merge-tab")
+  private val modelPresetsTab = new Tab("Model Presets", modelPresets.node)
+  modelPresetsTab.setId("model-presets-tab")
   private val metadataUtilsTab = new Tab("Metadata Utils", metadataUtils.node)
   metadataUtilsTab.setId("metadata-utils-tab")
   private val stylesTab = new Tab("Styles", stylesEditor.view)
@@ -229,7 +241,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   scramblePages.setId("scramble-pages")
   private val scrambleTab = new Tab("Image Scrambling", scramblePages)
   scrambleTab.setId("image-scrambling-tab")
-  tabs.getTabs.addAll(pngTab, extrasTab, tokenizerTab, embeddingInspectorTab, temporalLabTab, systemInfoTab, stylesTab, comparisonTab, vaeToolsTab, metadataUtilsTab, embeddingMergeTab, scrambleTab)
+  tabs.getTabs.addAll(pngTab, extrasTab, tokenizerTab, embeddingInspectorTab, temporalLabTab, systemInfoTab, stylesTab, comparisonTab, vaeToolsTab, metadataUtilsTab, embeddingMergeTab, modelPresetsTab, scrambleTab)
   tabs.getTabs.add(new Tab("VRAM Estimator", vramEstimator.node))
   private var comparisonDivider = initial.dividers.get("main").flatMap(_.headOption).getOrElse(.42)
   private var lastMode: Mode = Mode.Txt2Img
@@ -997,6 +1009,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
       "temporal lab" -> (() => temporalLab.dispose()),
       "styles editor" -> (() => stylesEditor.dispose()),
       "metadata utils" -> (() => metadataUtils.dispose()),
+      "model presets" -> (() => modelPresets.dispose()),
       "VRAM timer" -> (() => vramPoll.stop()),
       "MCP controller" -> (() => mcpExec.execute(() => mcp.close())),
       "MCP executor" -> (() => mcpExec.shutdown()),

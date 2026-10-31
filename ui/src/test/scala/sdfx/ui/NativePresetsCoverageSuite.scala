@@ -38,10 +38,16 @@ class NativePresetsCoverageSuite extends munit.FunSuite:
     assertEquals(statuses(203), "todo:controlnet_fastload")
     assertEquals(statuses(221), "todo:scenario_loader")
     assertEquals(statuses(262), "todo:core:state-manager")
-    assertEquals(statuses(146), "todo:model_presets")
-    Set(203, 221, 262, 146).foreach(i => assertEquals(effective(statuses(i)), statuses(i)))
+    Set(203, 221, 262).foreach(i => assertEquals(effective(statuses(i)), statuses(i)))
     assert(!statuses.values.exists(_ == "todo:core:presets"))
     assert(!implemented("core:presets"))
+
+  test("model preset manager has its own native core implementation"):
+    assertEquals(ledger(146), "done:core:model-presets")
+    val main = Files.readString(root.resolve("ui/src/main/scala/sdfx/ui/MainWindow.scala"))
+    assert(main.contains("new ModelPresetsTab("))
+    assert(main.contains("model-presets-tab"))
+    assert(Files.isRegularFile(root.resolve("core/src/main/scala/sdfx/core/modelpresets/ModelPresetDocument.scala")))
 
   test("generated status preserves every source identity and real non-core done ids are registered"):
     val entries = ujson.read(Files.readString(root.resolve("docs/extensions-status.json"))).arr.toVector
